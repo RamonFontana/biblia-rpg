@@ -63,9 +63,11 @@ A **Fé** substitui a magia mecânica no jogo e mede a comunhão do personagem c
 
 ### 4.1 Fortalezas e Tentações
 
-Na criação de personagem, definem-se dois traços narrativos com peso mecânico:
-- **1 Fortaleza**: Ação honrosa natural (ex: "Misericordioso", "Corajoso"). Atuar de acordo com a Fortaleza pode conceder bônus (Vantagem) na rolagem ou recuperar **1d4 de Fé**.
-- **1 Tentação**: Um defeito de caráter persistente (ex: "Avareza", "Ira"). Se confrontado por um gatilho, o personagem faz um **Teste de Sabedoria (CD do Mestre)**. Em caso de falha, cede ou perde **1d6 pontos de Fé**.
+Na criação de personagem, definem-se dois traços narrativos com peso mecânico (obrigatoriamente 1 de cada no Nível 1):
+- **1 Fortaleza**: Ação honrosa natural. Atuar de acordo com a Fortaleza pode conceder bônus (Vantagem) na rolagem ou recuperar **1d4 de Fé**.
+- **1 Tentação**: Um defeito de caráter persistente. Se confrontado por um gatilho, o personagem faz um **Teste de Sabedoria (CD do Mestre)**. Em caso de falha, cede ou perde **1d6 pontos de Fé**.
+
+*(Consulte o documento [Fortalezas e Tentações](fortalezas-tentacoes.md) para as regras completas e as listas de opções).*
 
 ### 4.2 Degradação de Fé
 
@@ -136,12 +138,12 @@ Para criar seu personagem, siga estes 6 passos exatos:
 1. **Escolha sua Tribo**: Selecione uma das [13 tribos de Israel](./tribos/README.md). Anote suas duas passivas de Nível 1.
 2. **Defina seus Atributos**: Escolha entre Standard Array ou role 4d6 (descarta o menor) seis vezes. Distribua e depois some eventuais restrições/bônus caso o Mestre as utilize.
 3. **Escolha sua Vocação**: Guerreiro, Batedor, Caçador ou Sacerdote. *(Lembre-se: Levitas devem ser Sacerdotes/Sábios).*
-4. **Fortaleza e Tentação**: Escolha uma característica virtuosa e um defeito marcante.
+4. **Fortaleza e Tentação**: Escolha **obrigatoriamente** 1 Fortaleza e 1 Tentação da [lista oficial](fortalezas-tentacoes.md).
 5. **Calcule Dados, CA e Fé**:
    - Calcule seu HP Inicial (Máximo do Dado de Vida da Vocação + Modificador de CON).
    - Calcule a sua CA Base (10 + DES) ou a CA com armadura.
    - Anote sua Fé inicial: 50 (se Levi, 60).
-6. **Compre seus Equipamentos**: Anote os itens iniciais de sua Vocação ou gaste as moedas iniciais (Shekels) comprando itens da lista abaixo.
+6. **Compre seus Equipamentos**: Anote os pacotes iniciais ou compre os itens sugeridos no [Guia de Criação de Personagem](criacao-de-personagem.md).
 
 ---
 
