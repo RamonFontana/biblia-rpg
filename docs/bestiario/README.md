@@ -18,9 +18,10 @@ Cada entrada segue um bloco de estatísticas padrão:
 - **Passivas / Habilidades**: Efeitos constantes ou engatilhados.
 - **Ações**: Os ataques padrão usando armas de bronze, ferro ou garras/presas.
 
-## Categorias
+## Categorias (10 inimigos + 1 template)
 
-- [Inimigos Humanos](inimigos-humanos.md): Soldados, bandidos, generais.
-- [Animais Selvagens](animais-selvagens.md): Feras como leões e ursos.
-- [Gigantes](gigantes.md): Guerreiros de proporções anômalas, os Anakim.
+- [Inimigos Humanos](inimigos-humanos.md): Bandidos, Soldados Filisteus, Generais, Sentinelas Amalequitas, Sacerdotes de Baal.
+- [Animais Selvagens](animais-selvagens.md): Víboras, Leões, Ursos.
+- [Gigantes](gigantes.md): Guerreiros Anakim (Golias).
 - [Template: Endemoniado](template-endemoniado.md): Um modificador mecânico para aplicar possessão em outros inimigos.
+  - *Exemplo pronto:* [Endemoniado Comum](endemoniado-comum.md)

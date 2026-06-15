@@ -55,7 +55,7 @@ Qualquer personagem de qualquer Tribo pode escolher a Vocação de Sacerdote/Sá
 
 ## 4. O Sistema de Fé
 
-A **Fé** substitui a magia mecânica no jogo e mede a comunhão do personagem com a Providência Divina e sua sanidade mental/espiritual frente às abominações ou provações.
+A **Fé** substitui a magia mecânica no jogo e mede a comunhão do personagem com a Providência Divina e sua sanidade mental/espiritual frente às abominações ou provações. A Fé também é a medida primária usada em rolagens de clamor para Intervenções Divinas (Milagres).
 
 - **Barra de Fé**: Escala de 0 a 100 pontos.
 - **Início**: Todos os personagens (exceto levitas) iniciam com **50 pontos de Fé** (Estado Comum).
@@ -83,6 +83,19 @@ Na criação de personagem, definem-se dois traços narrativos com peso mecânic
 
 - **Descanso Longo Devocional**: **1d4** de Fé para o grupo inteiro, desde que haja momento de ensino/oração conduzido. Se for por um Sacerdote, recupera **1d4+2**.
 - **Eventos e Ações**: Atos heroicos de fidelidade a Deus rendem recuperação instantânea (ex: resistir a uma grande tentação, destruir um altar de ídolos) a critério do Mestre (ex: +10 a +30 pontos).
+
+### 4.4 Milagres e Intervenção Divina
+
+Milagres nunca são garantidos por decisão narrativa do Mestre. Quando um personagem clama por um verdadeiro milagre (uma intervenção direta na realidade), a resposta divina é determinada pela sorte (rolagem de dado) e pelo nível de Fé atual do personagem.
+
+1. **Julgamento do Mestre**: O Mestre avalia o pedido e define a Dificuldade do milagre, que se traduz em um redutor na Fé do personagem para o teste.
+   - **Pequena Providência** (Ex: Encontrar água, coincidir um evento menor): Modificador 0.
+   - **Milagre Moderado** (Ex: Curar um veneno mortal instantaneamente): Modificador -20 na Fé.
+   - **Milagre Extraordinário** (Ex: Abrir um rio, chuva de fogo, curas em massa): Modificador -50 na Fé.
+2. **A Rolagem (Vontade Divina)**: O jogador que fez o clamor rola **1d100**.
+3. **Resolução**:
+   - **Sucesso**: O resultado do 1d100 deve ser **menor ou igual** à `(Fé Atual) + (Modificador)`. Se for, o milagre ocorre conforme a vontade de Deus.
+   - **Falha**: A Vontade Divina não atendeu ao pedido ou disse "agora não". A ação é gasta e o milagre não ocorre. Pedidos frívolos, egoístas ou hereges que falham retiram 1d6 ou mais pontos de Fé como punição espiritual.
 
 ---
 
@@ -128,6 +141,11 @@ Em seu turno, um personagem pode:
 - **Atordoado**: Incapacitado. Falha automaticamente em testes de Força ou Destreza. Ataques contra ele têm Vantagem.
 - **Amedrontado**: Desvantagem em rolagens enquanto a fonte do medo estiver visível.
 - **Envenenado**: Desvantagem em rolagens de ataque e testes de habilidade.
+- **Caído**: Ataques a até 1,5m contra o alvo têm Vantagem; ataques à distância têm Desvantagem. Levantar custa metade do movimento.
+- **Agarrado**: Deslocamento cai para 0. Escapar exige uma Ação para teste de Atletismo ou Acrobacias contra o Atletismo do agarrador.
+- **Cego**: Falha automática em testes que exijam visão. Seus ataques têm Desvantagem, e ataques contra você têm Vantagem.
+
+> **Nota**: Situações não cobertas por estas condições são resolvidas pelo bom senso do Mestre.
 
 ---
 
@@ -162,3 +180,10 @@ O cenário ocorre entre a Idade do Bronze e Ferro. As moedas padrões são **She
 ### 8.3 Itens Comuns
 
 *(Movido para o catálogo oficial: [Itens Utilizáveis](itens/utilizaveis.md) e [Itens Consumíveis](itens/consumiveis.md))*
+
+---
+
+## 9. Guias Adicionais
+
+- **Para Jogadores**: Consulte as regras expandidas em [Guia de Criação de Personagem](criacao-de-personagem.md).
+- **Para Mestres**: Consulte as diretrizes de aventura, combate e fé no **[Guia do Mestre](guia-do-mestre.md)** e a versão resumida no **[Guia Rápido do Mestre](guia-rapido-mestre.md)**.
