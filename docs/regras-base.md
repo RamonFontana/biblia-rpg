@@ -153,43 +153,12 @@ O cenário ocorre entre a Idade do Bronze e Ferro. As moedas padrões são **She
 
 ### 8.1 Armas
 
-| Arma | Dano | Propriedades | Preço (SP) |
-|---|---|---|---|
-| **Faca/Adaga de Bronze** | 1d4 perfurante | Acuidade, Leve, Arremesso (6/18m) | 2 |
-| **Espada Curta (Ferro)** | 1d6 cortante | Acuidade, Leve | 10 |
-| **Espada Longa / Khopesh** | 1d8 cortante | Versátil (1d10) | 15 |
-| **Lança Comum** | 1d6 perfurante | Arremesso (6/18m), Versátil (1d8) | 5 |
-| **Machado de Batalha** | 1d8 cortante | Versátil (1d10) | 10 |
-| **Cajado de Pastor** | 1d6 concussão | Versátil (1d8) | 1 |
-| **Funda** | 1d4 concussão | Distância (9/36m), Munição | 1 |
-| **Arco Curto** | 1d6 perfurante | Distância (24/96m), Duas mãos, Munição | 25 |
-| **Arco Longo** | 1d8 perfurante | Distância (45/180m), Duas mãos, Pesada | 50 |
-| **Dardo / Azagaia** | 1d6 perfurante | Arremesso (9/36m) | 3 |
+*(Movido para o catálogo oficial: [Catálogo de Armas](itens/armas.md))*
 
 ### 8.2 Armaduras e Escudos
 
-| Armadura | Tipo | Classe de Armadura (CA) | Propriedades | Preço (SP) |
-|---|---|---|---|---|
-| **Túnica Grossa (Acolchoada)** | Leve | 11 + Des | Desvantagem em Furtividade | 5 |
-| **Couro Cru** | Leve | 11 + Des | - | 10 |
-| **Couro Batido (com tachas)** | Leve | 12 + Des | - | 45 |
-| **Cota de Escamas de Bronze** | Média | 14 + Des (máx +2) | Desvantagem em Furtividade | 50 |
-| **Peitoral de Bronze/Ferro** | Média | 14 + Des (máx +2) | - | 400 |
-| **Cota de Malha de Anéis** | Pesada | 14 | Desvantagem em Furtividade | 30 |
-| **Lorica de Escamas Pesada** | Pesada | 16 | Desvantagem em Furtividade, Requer For 13 | 75 |
-| **Escudo (Madeira/Bronze)** | Escudo | +2 na CA | Ocupa uma mão | 10 |
+*(Movido para o catálogo oficial: [Catálogo de Armaduras e Escudos](itens/armaduras.md))*
 
 ### 8.3 Itens Comuns
 
-| Item | Uso | Preço (SP) |
-|---|---|---|
-| **Corda de Cânhamo (15m)** | Escalada, amarras | 1 |
-| **Odre (Água)** | Sobrevivência no deserto (1 dia) | 1 |
-| **Tocha** | Ilumina 6m (queima por 1h) | 0.5 (5 cobre) |
-| **Bálsamo Curativo / Óleo** | Uso para curar 1d4 HP em Descanso | 5 |
-| **Mochila de Lona** | Carregar itens extras | 2 |
-| **Tenda Comum** | Abrigo para 2 pessoas | 10 |
-| **Ração de Viagem (1 dia)** | Pão seco, tâmaras, queijo duro | 1 |
-| **Amuleto/Símbolo (Proibido)**| Ídolo herege, abaixa Fé se mantido | - |
-| **Saco de Pedras para Funda**| 20 pedras adequadas | 0.5 |
-| **Pederneira e Isqueiro** | Iniciar fogo | 2 |
+*(Movido para o catálogo oficial: [Itens Utilizáveis](itens/utilizaveis.md) e [Itens Consumíveis](itens/consumiveis.md))*
