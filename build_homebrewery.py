@@ -1,12 +1,10 @@
 import os
-import glob
+import re
 
 def read_file(filepath):
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read().strip()
-            # If the file doesn't start with a header, maybe we could add one?
-            # Or just return content
             return content
     except Exception as e:
         return f"Error reading {filepath}: {e}"
@@ -54,9 +52,26 @@ output = []
 for filepath in order:
     if os.path.exists(filepath):
         content = read_file(filepath)
+        
+        # Smart breaks for Homebrewery:
+        # Break columns at every H2 (##), except if it's very close to the start of the file.
+        # This prevents content flowing off the bottom of the page.
+        
+        lines = content.split('\n')
+        new_lines = []
+        for i, line in enumerate(lines):
+            # If it's a ## heading and we're past the first 10 lines, insert a \column break
+            if line.startswith('## ') and i > 10:
+                new_lines.append('')
+                new_lines.append('\\column')
+                new_lines.append('')
+            new_lines.append(line)
+            
+        content = '\n'.join(new_lines)
+        
         output.append(content)
-        # Add Homebrewery page break
-        output.append("\\page\n")
+        # Add Homebrewery page break between files
+        output.append("\n\\page\n")
 
 with open("homebrewery-export.md", "w", encoding="utf-8") as f:
     f.write("\n\n".join(output))

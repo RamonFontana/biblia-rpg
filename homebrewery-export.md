@@ -27,6 +27,9 @@ Na criação do personagem, o jogador escolhe entre dois métodos oficiais para 
 
 ## 2. Classe de Armadura (CA)
 
+\column
+
+
 A Classe de Armadura (CA) define a dificuldade de atingir o personagem.
 - A CA base sem armadura é **10 + Modificador de Destreza**.
 - Ao usar **armaduras da época** (couro, bronze, ferro), a CA muda conforme o equipamento.
@@ -55,6 +58,9 @@ Qualquer personagem de qualquer Tribo pode escolher a Vocação de Sacerdote/Sá
 
 ## 4. O Sistema de Fé
 
+\page
+
+
 A **Fé** substitui a magia mecânica no jogo e mede a comunhão do personagem com a Providência Divina e sua sanidade mental/espiritual frente às abominações ou provações. A Fé também é a medida primária usada em rolagens de clamor para Intervenções Divinas (Milagres).
 
 - **Barra de Fé**: Escala de 0 a 100 pontos.
@@ -70,6 +76,9 @@ Na criação de personagem, definem-se dois traços narrativos com peso mecânic
 *(Consulte o documento [Fortalezas e Tentações](fortalezas-tentacoes.md) para as regras completas e as listas de opções).*
 
 ### 4.2 Degradação de Fé
+
+\column
+
 
 | Faixa de Fé | Estado | Efeito Mecânico |
 |---|---|---|
@@ -87,6 +96,9 @@ Na criação de personagem, definem-se dois traços narrativos com peso mecânic
 ### 4.4 Milagres e Intervenção Divina
 
 Milagres nunca são garantidos por decisão narrativa do Mestre. Quando um personagem clama por um verdadeiro milagre (uma intervenção direta na realidade), a resposta divina é determinada pela sorte (rolagem de dado) e pelo nível de Fé atual do personagem.
+
+\page
+
 
 1. **Julgamento do Mestre**: O Mestre avalia o pedido e define a Dificuldade do milagre, que se traduz em um redutor na Fé do personagem para o teste.
    - **Pequena Providência** (Ex: Encontrar água, coincidir um evento menor): Modificador 0.
@@ -110,6 +122,9 @@ Quando um personagem sobe de nível, ocorrem dois ganhos principais de HP e mec�
    - **Níveis 1, 4, 8, 12, 16, 20**: O personagem ganha habilidades da sua **Tribo** (ver [docs/tribos/](./tribos/README.md)).
    - **Níveis 2, 6, 10, 14, 18**: O personagem ganha habilidades da sua **Vocação**.
    - **Níveis 3, 5, 7, 9, 11, 13, 15, 17, 19**: Aumentos de Proficiência (quando aplicável pelo D&D 5e), melhorias em dano ou usos por dia de habilidades já aprendidas.
+
+\column
+
 
 *Multiclasse não é permitida por padrão neste sistema base.*
 
@@ -136,6 +151,9 @@ Em seu turno, um personagem pode:
 - **Descanso Curto (1 hora)**: Permite gastar Dados de Vida para recuperar HP. Algumas habilidades de vocação se recarregam (se especificado).
 - **Descanso Longo (8 horas)**: Recupera todo HP, metade dos Dados de Vida gastos, e recarrega habilidades de uso diário. Permite recuperação de Fé (se acompanhado de devoção). É necessário pelo menos 6 horas de sono.
 
+\page
+
+
 ### 6.4 Condições Comuns
 - **Sangrando**: Sofre 1d4 de dano no final do seu turno. Acaba se curado ou após teste de Medicina (CD 10) como Ação.
 - **Atordoado**: Incapacitado. Falha automaticamente em testes de Força ou Destreza. Ataques contra ele têm Vantagem.
@@ -152,6 +170,9 @@ Em seu turno, um personagem pode:
 ## 7. Guia de Criação de Personagem
 
 Para criar seu personagem, siga estes 6 passos exatos:
+
+\column
+
 
 1. **Escolha sua Tribo**: Selecione uma das [13 tribos de Israel](./tribos/README.md). Anote suas duas passivas de Nível 1.
 2. **Defina seus Atributos**: Escolha entre Standard Array ou role 4d6 (descarta o menor) seis vezes. Distribua e depois some eventuais restrições/bônus caso o Mestre as utilize.
@@ -185,6 +206,9 @@ O cenário ocorre entre a Idade do Bronze e Ferro. As moedas padrões são **She
 
 ## 9. Guias Adicionais
 
+\page
+
+
 - **Para Jogadores**: Consulte as regras expandidas em [Guia de Criação de Personagem](criacao-de-personagem.md).
 - **Para Mestres**: Consulte as diretrizes de aventura, combate e fé no **[Guia do Mestre](guia-do-mestre.md)** e a versão resumida no **[Guia Rápido do Mestre](guia-rapido-mestre.md)**.
 
@@ -210,6 +234,9 @@ Este guia detalha o passo a passo para criar o seu personagem no RPG Bíblico. A
 Seus atributos principais são Força (FOR), Destreza (DES), Constituição (CON), Inteligência (INT), Sabedoria (SAB) e Carisma (CAR). 
 - **Método de Rolagem**: Role 4d6 e descarte o menor dado para cada um dos seis atributos, anotando a soma. Alternativamente, use o Array Padrão: 15, 14, 13, 12, 10, 8.
 - **Aplicação**: Distribua os valores rolados entre os 6 atributos da forma que melhor servir à sua vocação. Em seguida, adicione os bônus concedidos por sua Tribo.
+
+\column
+
 
 ### 3. Fortalezas e Tentações
 O Sistema de Fé é o cerne deste RPG. 
@@ -239,6 +266,9 @@ Ao invés de rolar dinheiro, você pode simplesmente pegar o pacote corresponden
 - Armadura de couro fervido (CA 11 + Mod Des) e um escudo de madeira (+2 CA).
 - 5 rações de viagem e um cantil de água.
 - Uma faca de osso (1d4 perfurante) e 5 Shekels de prata no bolso.
+
+\page
+
 
 ### Caçador
 - Arco curto (1d6 perfurante) com aljava e 20 flechas OU Funda (1d4 concussão) com 20 pedras.
@@ -289,6 +319,9 @@ Ao invés de rolar dinheiro, você pode simplesmente pegar o pacote corresponden
 | **Manassés** | ⚔️ Valoroso | Tática e Resiliência | Surpresa / Defensor | [manasses.md](./manasses.md) |
 
 ---
+
+\column
+
 
 ## Resumo de Progressão
 
@@ -532,6 +565,9 @@ Qualquer personagem de qualquer Tribo pode escolher a classe **Sacerdote/Sábio*
 
 ---
 
+\column
+
+
 ## Nível 20 — Habilidade Suprema (1x/semana)
 
 ### Caminho A — Oráculo / Juízo
@@ -606,6 +642,7 @@ Qualquer personagem de qualquer Tribo pode escolher a classe **Sacerdote/Sábio*
 - **Uso:** 1x/combate
 - **Efeito:** Permite que um aliado use sua **reação** para atacar ou se mover.
 
+
 ### Caminho B — Médico
 **Cirurgia de Trincheira**
 - **Uso:** 1x/dia
@@ -649,6 +686,9 @@ A tribo de Dã é astuta, associada a emboscadas, julgamento severo e oportunism
 - **Nível 12 - Reflexos Peçonhentos**: Se um inimigo errar um ataque corpo a corpo contra você, você pode usar sua Reação para realizar um ataque corpo a corpo imediato contra ele.
 - **Nível 16 - Bote Fatal**: Se você atacar uma criatura que ainda não agiu no combate, o ataque se torna um Acerto Crítico se acertar.
 
+\column
+
+
 ### Caminho B: O Juiz Severo
 *Foco em punir agressores e liderança por intimidação (como Sansão).*
 
@@ -683,6 +723,9 @@ A tribo de Naftali concentra-se na rapidez, agilidade e excelência na comunica�
 - **Nível 8 - Carga de Baraque (1/Descanso Curto)**: Se você se mover pelo menos 6 metros em linha reta em direção a um alvo e acertar um ataque corpo a corpo, você causa 1d8 de dano extra e pode forçar o alvo a fazer um Teste de Força ou cair caído.
 - **Nível 12 - Impulso Vertiginoso**: Você pode usar uma Ação Bônus no seu turno para dobrar o seu deslocamento até o final do turno.
 - **Nível 16 - Inalcançável**: Reações usadas contra você (como feitiços ou ataques) têm 50% de chance de falhar automaticamente (jogue 1d20, de 1 a 10 falha) devido à sua movimentação imprevisível.
+
+\column
+
 
 ### Caminho B: O Poeta Guerreiro
 *Foco em liderança, inspiração no campo de batalha e habilidades de diplomacia/grito de guerra.*
@@ -770,6 +813,8 @@ A tribo de Naftali concentra-se na rapidez, agilidade e excelência na comunica�
 - **Imune a dano físico** por 1 minuto.
 - Converte dano recebido em **HP Temporário para aliados**.
 
+
+
 ### Caminho B — Dano Bruto
 **Espírito de Sansão**
 - **Força 30** por 3 turnos.
@@ -803,6 +848,9 @@ A tribo de Aser é próspera, ocupando terras férteis no litoral e no norte, es
 
 ### Caminho B: O Emissário Real
 *Foco em suporte, comércio, persuasão e garantir que os aliados rendam no ápice.*
+
+\column
+
 
 - **Nível 4 - Delícias Reais (1/Descanso Longo)**: Durante um descanso curto, você reparte porções de iguarias/azeite. Até 4 pessoas ganham HP Temporário igual ao seu nível + seu Modificador de Carisma ou Constituição (sua escolha).
 - **Nível 8 - Mercador Hábil**: Você tem Vantagem em todos os testes de Carisma para negociações, comércio e apaziguar tensões entre grupos neutros/hostis.
@@ -904,6 +952,9 @@ Os zebulonitas são um povo adaptado às águas, ventos e ao comércio costeiro,
 ### Caminho A: O Marinheiro de Tempestades
 *Foco na agilidade no campo de batalha, adaptação ao terreno e fluidez nos ataques.*
 
+\column
+
+
 - **Nível 4 - Reflexo das Ondas (1/Descanso Curto)**: Se você for atingido por um ataque corpo a corpo, você pode usar sua Reação para reduzir o dano pela metade e dar um passo de 1,5m sem provocar ataque de oportunidade.
 - **Nível 8 - Visão Além do Horizonte**: Nevoeiro, chuvas fortes ou escuridão penumbrosa não afetam a sua visão nem causam desvantagem nos seus testes de Percepção.
 - **Nível 12 - Equilíbrio Perfeito**: Você tem Vantagem para evitar ser derrubado (prono) ou desarmado. Pode se mover e lutar na água sem sofrer penalidades mecânicas.
@@ -916,6 +967,9 @@ Os zebulonitas são um povo adaptado às águas, ventos e ao comércio costeiro,
 - **Nível 8 - Coração Intrépido**: "Não tinham coração dobre" (não eram inconstantes). Você tem Imunidade à condição Encantado e vantagem em resistência de Fé contra heresias que tentem corromper suas lealdades.
 - **Nível 12 - Formação Focada**: Inimigos não ganham Vantagem contra você ou aliados adjacentes caso tentem flanqueá-los (ataques pelas costas/lados).
 - **Nível 16 - Retribuição da Milícia (1/Descanso Curto)**: Se você ou um aliado adjacente receber dano de um ataque, você pode usar sua Reação para ordenar um revide. Você e o aliado realizam um ataque de corpo a corpo contra o atacante imediatamente.
+
+\page
+
 
 ## Habilidade Suprema (Nível 20)
 - **Mestre dos Mares e do Ferro**: Você torna-se uma força incontrolável. Seus ataques ignoram qualquer Resistência à dano de concussão, cortante e perfurante de criaturas mundanas (exceto Demônios e Anjos). Além disso, você tem resistência automática contra o frio e nunca se perde se puder ver as estrelas ou o mar.
@@ -1023,6 +1077,9 @@ A tribo de Efraim sempre assumiu uma postura de liderança militar e orgulho, es
 - **Nível 12 - Flecha Marcada**: Como ação bônus, você foca em um alvo. Seus próximos dois ataques com arco contra ele têm Vantagem.
 - **Nível 16 - Chuva de Efraim**: Uma vez por combate, você pode gastar uma Ação para realizar um ataque com arco contra até três alvos diferentes que estejam dentro de um cone de 18 metros à sua frente.
 
+\column
+
+
 ### Caminho B: O Chifre do Boi Selvagem
 *Foco na força bruta de linha de frente, investidas e liderança autoritária.*
 
@@ -1054,6 +1111,9 @@ Manassés foi dividida em duas "meias-tribos", habitando ambos os lados do rio J
 ### Caminho A: O Tático de Gideão
 *Foco em aproveitar o elemento surpresa, lutar com poucas tropas e desestabilizar os inimigos.*
 
+\column
+
+
 - **Nível 4 - Surpresa Tática (1/Descanso Curto)**: Durante a primeira rodada de um combate, se você atacar antes do alvo agir, você causa 1d6 de dano de concussão extra e o alvo fica Surdo até o fim do próximo turno dele.
 - **Nível 8 - Força na Fraqueza**: Quando você ou um aliado adjacente sofre um Acerto Crítico, você pode usar uma Reação para forçar o inimigo a rolar o ataque novamente. Ele deve usar o novo resultado (pode não ser mais crítico).
 - **Nível 12 - Tática do Cântaro Quebrado**: Uma vez por dia, como Ação Bônus, você pode fazer um barulho e flash ofuscante com tochas e escudos/armas batendo. Inimigos num raio de 9 metros fazem Teste de Sabedoria. Falha os deixa Amedrontados por 1 minuto.
@@ -1061,6 +1121,9 @@ Manassés foi dividida em duas "meias-tribos", habitando ambos os lados do rio J
 
 ### Caminho B: O Senhor de Gileade
 *Foco em sobrevivência, robustez extrema (defesa de terras agrestes de Basã e Gileade) e combate pesado.*
+
+\page
+
 
 - **Nível 4 - Sangue Resiliente**: O seu HP máximo aumenta na quantidade igual ao dobro do seu Modificador de Constituição e você recupera 1 ponto de HP extra por cada Dado de Vida que gasta em Descansos Curtos.
 - **Nível 8 - Guardião da Fronteira**: Se você for alvo de um ataque corpo a corpo, você pode usar uma Reação para empurrar o inimigo 1,5m para trás antes do dano ser rolado (se ele falhar num Teste de Força).
@@ -1117,6 +1180,9 @@ Além das passivas que você ganha com a sua Tribo, ser um Guerreiro lhe concede
 - **Vigor do Defensor (1/Descanso Curto)**: Como ação bônus, você recupera HP equivalente a 1d10 + seu nível.
 - **Bloqueio Inabalável**: Se estiver empunhando um escudo, ataques de oportunidade contra você têm desvantagem.
 
+\column
+
+
 ### Nível 14: Ataque Extra Superior
 - **Ataque Extra (3 ataques)**: Você passa a poder atacar três vezes quando usa a Ação de Ataque no seu turno.
 
@@ -1147,6 +1213,9 @@ Membros dessa vocação são eruditos, profetas, médicos e clérigos. Em um sis
 - **Purificação (1/Descanso Curto)**: Com uma prece fervente (Ação), você encerra um efeito no alvo: Amedrontado, Atordoado, Envenenado, ou cancela uma Possessão Demoníaca em estágio inicial.
 - **Jejum Protetivo**: Ao liderar um Descanso Longo Devocional, o grupo recupera HP completo e você rola **1d4+2** para recuperar a Fé do grupo. Além disso, todos começam o próximo dia com 5 HP Temporários.
 
+\column
+
+
 ### Nível 10: Intervenção Divina Menor e Súplica Aprimorada
 - **Intervenção Divina Menor (1/Semana)**: Você clama por um milagre. Conforme as *Regras Base de Milagres*, você rola **1d100** e precisa tirar um valor menor ou igual à sua **Fé Atual** modificada pela Dificuldade do Mestre. Se bem-sucedido, o milagre ocorre (surgir água da rocha, um relâmpago oportuno, pragas menores num acampamento inimigo). Se falhar, seu limite de Fé cai em 10 até o próximo descanso longo.
 - **Súplica Curativa Aprimorada**: A cura aumenta para 3d8 + Modificador de SAB e cura **1d6+2 de Fé**.
@@ -1163,11 +1232,17 @@ Membros dessa vocação são eruditos, profetas, médicos e clérigos. Em um sis
 
 ## Bênçãos e Incentivos
 
+\page
+
+
 Sacerdotes não possuem o poder de criar eventos sobrenaturais à vontade. Em vez disso, eles usam Pontos de Fé para **fortificar o espírito**, incentivar aliados ou curá-los através da convicção em Deus.
 
 > **Regra de Milagres**: Quando uma situação exige algo que "só Deus pode fazer" (um verdadeiro milagre), o sacerdote realiza um **Clamor**. O Mestre NUNCA decide arbitrariamente se o milagre ocorrerá ou não; ele define a dificuldade (um redutor na sua Fé) e você deve rolar 1d100. Se o resultado for menor ou igual à sua Fé Atual ajustada, o milagre acontece. (Consulte o documento principal de Regras Base para os detalhes completos).
 
 > **Nota**: Todas as bênçãos e incentivos falham automaticamente quando a Barra de Fé está em Ruptura (0 pontos).
+
+\column
+
 
 | Nome | Nível Min. | Custo de Fé | Ação | Usos | Efeito |
 |---|---|---|---|---|---|
@@ -1209,6 +1284,9 @@ O Batedor é o especialista em espreitar, coletar informações e realizar elimi
 - **Ataque Furtivo (5d6)**: Seu dano do Ataque Furtivo aumenta para 5d6.
 - **Mente Escorregadia**: Você ganha Vantagem em Testes de Sabedoria contra Tentações ou para resistir a medo/possessões.
 
+\column
+
+
 ### Nível 14: Ataque Furtivo (7d6) e Golpe Incapacitante
 - **Ataque Furtivo (7d6)**: Seu dano do Ataque Furtivo aumenta para 7d6.
 - **Golpe Incapacitante**: Quando você acerta o Ataque Furtivo, pode abdicar de 3d6 do dano para forçar o alvo a fazer um Teste de Constituição (CD 8 + Proficiência + Modificador de DES). Se falhar, o alvo fica Atordoado até o final do próximo turno dele.
@@ -1241,6 +1319,9 @@ O Caçador (ou Nômade) vive no limiar entre a civilização e os ermos agrestes
 - **Ataque Extra**: Você pode atacar duas vezes quando usa a Ação de Ataque.
 - **Explorador Rústico**: Você ignora terreno difícil não mágico. Viagens em ambientes agrestes não diminuem a velocidade do seu grupo. Você tem Vantagem em testes de Percepção para evitar emboscadas.
 
+\column
+
+
 ### Nível 10: Tiro Multiplicado ou Besta Companheira
 *Escolha um dos dois focos:*
 - **Foco do Atirador**: Como ação, você pode realizar um ataque à distância contra qualquer número de criaturas a até 3 metros de um ponto que você possa ver dentro do alcance da arma (limitado à munição). Você rola um ataque separado para cada alvo.
@@ -1271,6 +1352,9 @@ Fortalezas são traços virtuosos de caráter. Quando o seu personagem agir de f
 
 ### Lista de Fortalezas
 
+\column
+
+
 1. **Compaixão**: Você não consegue ignorar o sofrimento dos vulneráveis (órfãos, viúvas, estrangeiros pobres). *Gatilho: Sacrificar seus próprios recursos ou segurança para ajudar um necessitado.*
 2. **Coragem**: Você é o primeiro a se colocar na linha de frente contra ameaças esmagadoras, confiando na providência. *Gatilho: Enfrentar uma ameaça que faria homens comuns recuarem.*
 3. **Zelo**: Você não tolera que o nome do Criador ou o Tabernáculo sejam desrespeitados. *Gatilho: Confrontar idolatria, injustiça declarada ou desrespeito ao sagrado.*
@@ -1282,6 +1366,9 @@ Fortalezas são traços virtuosos de caráter. Quando o seu personagem agir de f
 9. **Lealdade**: Você valoriza a aliança com seus irmãos de tribo ou companheiros acima da própria vida. *Gatilho: Colocar-se em perigo mortal para cobrir a retaguarda ou salvar um aliado.*
 10. **Perseverança**: Você mantém a esperança mesmo quando todas as evidências apontam para a ruína. *Gatilho: Animar as tropas ou o grupo após uma derrota devastadora.*
 
+\page
+
+
 ---
 
 ## Tentações (Falhas)
@@ -1291,6 +1378,9 @@ Tentações são defeitos de caráter ou fraquezas carnais que assombram o perso
 - **Resistir**: Fazer um Teste de Sabedoria com a Dificuldade (CD) definida pelo Mestre. Se falhar, você não apenas cede à tentação contra a sua vontade, mas sofre um abalo espiritual perdendo **1d6 pontos de Fé**.
 
 ### Lista de Tentações
+
+\column
+
 
 1. **Ira**: Você tem um pavio muito curto e perde a cabeça com insultos. *Gatilho: Alguém desafia sua honra ou insulta sua tribo/família.*
 2. **Avareza**: Você é fascinado por espólios de guerra, prata e riquezas. *Gatilho: A oportunidade de saquear riquezas (mesmo proibidas ou amaldiçoadas) se apresenta.*
@@ -1323,12 +1413,12 @@ Este documento lista as armas disponíveis no cenário, com foco histórico e me
 | **Arco Longo** | 1d8 perfurante | Distância (45/180m), Duas mãos, Pesada | 50 |
 | **Dardo / Azagaia** | 1d6 perfurante | Arremesso (9/36m) | 3 |
 
-\page
-
-
 # Armaduras e Escudos
 
 Este documento lista as opções de proteção da Idade do Bronze/Ferro, bem como seus impactos em furtividade e mobilidade. Sem bônus sobrenaturais.
+
+\column
+
 
 | Armadura | Tipo | Classe de Armadura (CA) | Requisitos / Penalidades | Preço (SP) |
 |---|---|---|---|---|
@@ -1341,9 +1431,6 @@ Este documento lista as opções de proteção da Idade do Bronze/Ferro, bem com
 | **Lorica de Escamas Pesada** | Pesada | 16 | Desvantagem em Furtividade, Requer For 13 | 75 |
 | **Escudo (Madeira/Bronze)** | Escudo | +2 na CA | Ocupa uma mão | 10 |
 
-\page
-
-
 # Itens Consumíveis
 
 Recursos que se desgastam ou são consumidos com o uso.
@@ -1353,11 +1440,14 @@ Recursos que se desgastam ou são consumidos com o uso.
 | **Odre (Água)** | Sobrevivência no deserto (1 dia) | 1 dia de hidratação | 1 |
 | **Tocha** | Ilumina 6m | Queima por 1h | 0.5 (5 cobre) |
 | **Bálsamo Curativo / Óleo** | Uso para curar 1d4 HP em Descanso | Único | 5 |
+
+\page
+| Item | Efeito Mecânico / Uso | Duração (se aplicável) | Preço (SP) |
+|---|---|---|---|
 | **Ração de Viagem (1 dia)** | Pão seco, tâmaras, queijo duro | 1 dia de nutrição | 1 |
 | **Saco de Pedras para Funda**| 20 pedras adequadas | - | 0.5 |
 
 \page
-
 
 # Itens Utilizáveis (Comuns)
 
@@ -1371,10 +1461,8 @@ Equipamentos não consumíveis que facilitam viagens, resolução de problemas e
 | **Amuleto/Símbolo (Proibido)**| Ídolo herege, abaixa Fé se mantido | - |
 | **Pederneira e Isqueiro** | Iniciar fogo | 2 |
 
-\page
-
-
 # Guia do Mestre
+
 
 Este documento fornece as ferramentas narrativas e mecânicas completas para conduzir uma campanha no RPG Bíblico.
 
@@ -1394,6 +1482,8 @@ O Sistema de Fé não é apenas uma barra de recurso, mas o motor narrativo do j
   - *Falha = Perde 1d6 de Fé.*
 - **Cenas de Fortaleza**: Quando o jogador abraçar ativamente sua Fortaleza em sacrifício próprio (ex: proteger um inocente sendo "Protetor" e sofrer dano por isso), conceda-lhe Vantagem em sua próxima ação ou recupere **1d4 de Fé** para o grupo.
 
+
+
 ## 3. Recompensas por Nível de Desafio
 O saque de corpos ou tesouros em cavernas deve refletir o contexto histórico (Idade do Bronze/Ferro). As riquezas vêm em gado, ovelhas, ou moedas rústicas.
 - **ND 1/8 a 1/4**: 1d4 Siclos de Prata (SP), comida para 1 dia, flechas velhas.
@@ -1403,6 +1493,9 @@ O saque de corpos ou tesouros em cavernas deve refletir o contexto histórico (I
 
 ## 4. Ganchos de Aventura Prontos
 Use estes 5 ganchos rápidos para iniciar uma sessão sem muita preparação:
+
+\page
+
 
 1. **Os Ladrões de Gado Amalequitas**
    - *Premissa*: A tribo local de Benjamim perdeu pastores e ovelhas. Rastros indicam que mercenários estão escondidos num vale próximo.
@@ -1419,6 +1512,9 @@ Use estes 5 ganchos rápidos para iniciar uma sessão sem muita preparação:
 5. **O Relatório do Espião**
    - *Premissa*: Um batedor filisteu foi capturado com mapas das muralhas. Alguém na cidade é um traidor e deve ser descoberto antes do sol se pôr.
    - *ND Sugerido*: 1/2 (Interrogatório e confronto com capangas). *Pilares*: Investigação (Social).
+
+\column
+
 
 ## 5. Dicas de Combate para Iniciantes
 - Use capangas ND 1/8 ou 1/4 em grupos para fazer os jogadores se sentirem fortes, sem o risco de matá-los num hit.
@@ -1455,6 +1551,9 @@ A Fé dita o estado mental e espiritual do grupo.
 **Recuperação**:
 - Ações Honrosas / Resistir Tentação: +1d4 de Fé.
 - Descanso Longo Devocional: +1d4 para o grupo (+1d4+2 se liderado por Sacerdote).
+
+\column
+
 
 ## 3. Gestão de Combate e Condições
 O combate segue as mecânicas tradicionais de D&D 5e adaptadas (6 segundos por turno: Movimento + Ação + Bônus + Reação). 
@@ -1560,6 +1659,7 @@ Homens e mulheres formam a vasta maioria das ameaças enfrentadas. Desde saltead
 **Passivas / Habilidades**
 - **Formação em Parede**: O soldado tem Vantagem em testes de resistência de Força e Destreza enquanto estiver a até 1,5m de um aliado não-incapacitado que também use escudo.
 
+
 **Ações**
 - **Lança**: *Ataque Corpo a Corpo:* +4 para acertar, alcance 1,5m, um alvo. *Dano*: 5 (1d6 + 2) perfurante.
 - **Espada Curta (Ferro)**: *Ataque Corpo a Corpo:* +4 para acertar, alcance 1,5m, um alvo. *Dano*: 5 (1d6 + 2) cortante.
@@ -1609,6 +1709,9 @@ Homens e mulheres formam a vasta maioria das ameaças enfrentadas. Desde saltead
 
 **Passivas / Habilidades**
 - **Ataque Furtivo de Emboscada**: No primeiro turno do combate, tem Vantagem em ataques contra alvos que ainda não agiram.
+
+\page
+
 
 **Ações**
 - **Arco Curto**: *Ataque à Distância:* +4 para acertar, alcance 24/96m, um alvo. *Dano*: 5 (1d6 + 2) perfurante.
@@ -1686,6 +1789,9 @@ As feras das terras ermas são ameaças reais aos pastores, viajantes e mensagei
 - **Perícias**: Furtividade +6, Percepção +3
 - **Sentidos**: Percepção passiva 13
 - **Nível de Desafio / XP**: 1 (200 XP)
+
+\column
+
 
 **Passivas / Habilidades**
 - **Tática de Matilha**: O leão tem vantagem nas rolagens de ataque corpo a corpo contra uma criatura se houver pelo menos um aliado do leão a até 1,5m da criatura e este aliado não estiver incapacitado.
@@ -1803,6 +1909,9 @@ Neste cenário, a possessão e o tormento espiritual são ameaças mecânicas di
 
 ## Novas Habilidades (Passivas)
 
+\column
+
+
 - **Imunidade Psicológica**: O endemoniado é **imune** às condições Encantado e Amedrontado.
 - **Fúria Desumana**: O endemoniado ignora dores mortais. Quando cair a 0 Pontos de Vida, ele faz um Teste de Constituição (CD 10). Se passar, ele sobrevive com 1 Ponto de Vida. O CD aumenta em 5 a cada uso até ele descansar ou ser exorcizado.
 - **Vulnerabilidade Espiritual**: O endemoniado possui vulnerabilidade a ataques ou rituais baseados no **Sistema de Fé** (como orações exorcistas de Sacerdotes). Caso um personagem gaste Pontos de Fé para invocar repreensão, o demônio sofre Dano Espiritual diretamente ou é forçado a fazer um Teste de Resistência de Carisma para não fugir/abandonar o corpo.
@@ -1811,5 +1920,3 @@ Neste cenário, a possessão e o tormento espiritual são ameaças mecânicas di
 
 - **Grito Atormentador**: *Recarga (5-6 no d6)*. A criatura emite um ruído inumano. Todos os inimigos a até 9 metros que possam ouvi-lo devem fazer um Teste de Sabedoria ou perderão **1d4 pontos de Fé** e sofrerão Desvantagem na próxima jogada de ataque.
 - **Ataque Bestial**: A criatura usa as próprias mãos nuas (ou quebra suas armas para atacar com selvageria). Ela ganha um ataque de garra/mordida desarmado que causa dano perfurante igual a `1d6 + Força`.
-
-\page
