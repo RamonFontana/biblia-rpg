@@ -3,6 +3,8 @@ import type { PresenceState } from '@/hooks/useSupabasePresence';
 import { PlayerCard } from './PlayerCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
+import { TokenContextMenu } from './TokenContextMenu';
+import { useAuthStore } from '@/store/authStore';
 
 interface OnlinePlayersListProps {
   onlineUsers: PresenceState[];
@@ -13,14 +15,23 @@ interface OnlinePlayersListProps {
 
 export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId }: OnlinePlayersListProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const { user } = useAuthStore();
 
-  const handlePlayerClick = (userId: string) => {
+  const handlePlayerClick = (userId: string, e?: React.MouseEvent) => {
     if (userId !== gmId) {
-      setSelectedUserId(userId);
+      if (user && userId === user.id && e) {
+        // Clicked on self, open context menu
+        setContextMenuPos({ x: e.clientX, y: e.clientY });
+      } else {
+        // Clicked on someone else, open character sheet
+        setSelectedUserId(userId);
+      }
     }
   };
 
   const closeSheet = () => setSelectedUserId(null);
+  const closeContextMenu = () => setContextMenuPos(null);
 
   const usersToList = isGM ? onlineUsers.filter(u => u.user_id !== gmId) : onlineUsers;
 
@@ -41,7 +52,7 @@ export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId }
                   user={user}
                   isClickable={user.user_id !== gmId}
                   isSessionGM={user.user_id === gmId}
-                  onClick={handlePlayerClick}
+                  onClick={(id, e) => handlePlayerClick(id, e)}
                 />
               </li>
             ))}
@@ -64,6 +75,16 @@ export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId }
           </div>
         </DialogContent>
       </Dialog>
+
+      {contextMenuPos && user && sessionId && (
+        <TokenContextMenu
+          userId={user.id}
+          sessionId={sessionId}
+          x={contextMenuPos.x}
+          y={contextMenuPos.y}
+          onClose={closeContextMenu}
+        />
+      )}
     </>
   );
 }

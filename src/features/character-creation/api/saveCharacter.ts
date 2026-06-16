@@ -1,5 +1,6 @@
 import { supabase } from '../../../lib/supabase';
 import type { DraftCharacter } from '../types';
+import { syncInventoryItems } from '../../character-management/api/syncInventory';
 
 export async function saveCharacter(draft: DraftCharacter) {
   // O usuário já deve estar logado
@@ -34,6 +35,11 @@ export async function saveCharacter(draft: DraftCharacter) {
 
   if (error) {
     throw error;
+  }
+
+  // Sync inventory to new relational tables
+  if (data && draft.equipment) {
+    await syncInventoryItems(data.id, draft.equipment, draft.vocation);
   }
 
   return data;

@@ -5,7 +5,7 @@ interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
   isSessionGM?: boolean;
-  onClick?: (userId: string) => void;
+  onClick?: (userId: string, e: React.MouseEvent) => void;
 }
 
 export function PlayerCard({ user, isClickable = false, isSessionGM = false, onClick }: PlayerCardProps) {
@@ -16,7 +16,7 @@ export function PlayerCard({ user, isClickable = false, isSessionGM = false, onC
       onClick={(e) => {
         if (clickable && onClick) {
           e.stopPropagation();
-          onClick(user.user_id);
+          onClick(user.user_id, e);
         }
       }}
       className={`flex items-center gap-3 p-3 bg-stone-700 rounded-md border border-stone-600 transition-colors

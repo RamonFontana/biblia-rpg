@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Character } from '../types';
+import { syncInventoryItems } from './syncInventory';
 
 export const getCharacters = async (): Promise<Character[]> => {
   const { data, error } = await supabase
@@ -63,6 +64,13 @@ export const updateCharacter = async (id: string, updates: Partial<Character>): 
   if (error) {
     console.error('Error updating character:', error);
     throw error;
+  }
+
+  // Sync inventory if equipment was updated
+  if (data && updates.equipment) {
+    // If vocation isn't in updates, we fallback to the character's current vocation
+    const vocation = updates.vocation || data.vocation || 'Guerreiro';
+    await syncInventoryItems(data.id, updates.equipment as any[], vocation);
   }
 
   return data as unknown as Character;

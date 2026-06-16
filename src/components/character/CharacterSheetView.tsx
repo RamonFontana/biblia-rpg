@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
 import { Shield, Heart, Star, Sparkles, Activity, Target } from 'lucide-react';
@@ -10,6 +10,7 @@ interface CharacterSheetViewProps {
 
 export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProps) {
   const [character, setCharacter] = useState<Character | null>(null);
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,26 +19,82 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
       setIsLoading(true);
       setError(null);
       try {
-        const { data, error } = await supabase
-          .from('characters')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+        let characterIdToFetch: string | null = null;
 
-        if (error) {
-          if (error.code === 'PGRST116') {
+        // Try to find the assigned character for this session
+        if (sessionId) {
+          const { data: participantData } = await supabase
+            .from('session_participants')
+            .select('character_id')
+            .eq('session_id', sessionId)
+            .eq('user_id', userId)
+            .limit(1)
+            .maybeSingle();
+            
+          if (participantData?.character_id) {
+            characterIdToFetch = participantData.character_id;
+          }
+        }
+
+        let charData = null;
+        let charError = null;
+
+        if (characterIdToFetch) {
+          // Fetch the specific assigned character
+          const { data, error } = await supabase
+            .from('characters')
+            .select('*')
+            .eq('id', characterIdToFetch)
+            .single();
+          charData = data;
+          charError = error;
+        } else {
+          // Fallback to the latest character if not explicitly assigned
+          const { data, error } = await supabase
+            .from('characters')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          charData = data;
+          charError = error;
+        }
+
+        if (charError) {
+          if (charError.code === 'PGRST116') {
             setError('Personagem não encontrado para este jogador.');
           } else {
-            throw error;
+            throw charError;
           }
-        } else {
-          setCharacter(data as unknown as Character);
+        } else if (charData) {
+          setCharacter(charData as unknown as Character);
+          
+          // Fetch inventory items
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('character_items')
+            .select(`
+              id,
+              quantity,
+              items (
+                id,
+                name,
+                description,
+                category,
+                is_consumable,
+                requires_target,
+                weight
+              )
+            `)
+            .eq('character_id', charData.id);
+            
+          if (!itemsError && itemsData) {
+            setInventoryItems(itemsData);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching character:', err);
-        setError('Ocorreu um erro ao carregar a ficha.');
+        setError(`Ocorreu um erro ao carregar a ficha. Detalhes: ${err?.message || JSON.stringify(err)}`);
       } finally {
         setIsLoading(false);
       }
@@ -47,6 +104,46 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
       fetchCharacter();
     }
   }, [userId]);
+
+  // Realtime updates for inventory
+  useEffect(() => {
+    if (!character?.id) return;
+
+    const channel = supabase
+      .channel(`character_items_${character.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'character_items', filter: `character_id=eq.${character.id}` },
+        async () => {
+          // Refetch inventory items
+          const { data: itemsData } = await supabase
+            .from('character_items')
+            .select(`
+              id,
+              quantity,
+              items (
+                id,
+                name,
+                description,
+                category,
+                is_consumable,
+                requires_target,
+                weight
+              )
+            `)
+            .eq('character_id', character.id);
+            
+          if (itemsData) {
+            setInventoryItems(itemsData);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [character?.id]);
 
   if (isLoading) {
     return (
@@ -66,7 +163,7 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
     );
   }
 
-  const { attributes, stats, equipment, narrative, tribe, vocation, name } = character;
+  const { attributes, stats, narrative, tribe, vocation, name } = character;
 
   return (
     <div className="flex flex-col bg-stone-950 text-stone-200 overflow-y-auto custom-scrollbar">
@@ -164,30 +261,55 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
           </div>
         )}
 
-        {/* Equipment */}
+        {/* Inventory Items */}
         <div>
           <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
             <Target className="w-5 h-5 text-amber-500" />
-            Equipamentos
+            Inventário
           </h3>
-          {equipment && equipment.length > 0 ? (
-            <div className="space-y-3">
-              {equipment.map((item) => (
-                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-900 border border-stone-800 rounded-lg group hover:border-stone-700 transition-colors">
-                  <div>
-                    <span className="text-stone-200 font-medium block">{item.name}</span>
-                    {item.description && <span className="text-xs text-stone-500 block mt-1">{item.description}</span>}
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 sm:mt-0">
-                    <span className="text-xs px-2 py-1 bg-stone-800 rounded text-stone-400">{item.type}</span>
-                    {item.damage && <span className="text-xs px-2 py-1 bg-red-900/20 text-red-400 rounded border border-red-900/30">Dano: {item.damage}</span>}
-                    {item.armorClass !== undefined && <span className="text-xs px-2 py-1 bg-blue-900/20 text-blue-400 rounded border border-blue-900/30">CA: +{item.armorClass}</span>}
+          {inventoryItems.length > 0 ? (
+            <div className="space-y-6">
+              {/* Group items by category */}
+              {Object.entries(
+                inventoryItems.reduce((acc, curr) => {
+                  const category = curr.items?.category || 'Outros';
+                  if (!acc[category]) acc[category] = [];
+                  acc[category].push(curr);
+                  return acc;
+                }, {} as Record<string, any[]>)
+              ).map(([category, items]: [string, any]) => (
+                <div key={category} className="space-y-2">
+                  <h4 className="text-sm font-bold text-amber-500/80 uppercase tracking-wider mb-2">{category}</h4>
+                  <div className="space-y-2">
+                    {items.map((item: any) => (
+                      <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-900 border border-stone-800 rounded-lg group hover:border-stone-700 transition-colors">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-stone-200 font-medium">{item.items?.name}</span>
+                            {item.quantity > 1 && (
+                              <span className="text-xs px-1.5 py-0.5 bg-stone-800 rounded-md text-stone-400 font-mono">
+                                x{item.quantity}
+                              </span>
+                            )}
+                          </div>
+                          {item.items?.description && <span className="text-xs text-stone-500 block mt-1">{item.items.description}</span>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                          {item.items?.is_consumable && (
+                            <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
+                          )}
+                          {item.items?.weight > 0 && (
+                            <span className="text-xs text-stone-500">{item.items.weight} kg</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-stone-500 italic">Nenhum equipamento registrado.</p>
+            <p className="text-sm text-stone-500 italic">Inventário vazio.</p>
           )}
         </div>
       </div>

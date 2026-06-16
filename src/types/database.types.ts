@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      character_items: {
+        Row: {
+          character_id: string
+          created_at: string | null
+          id: string
+          item_id: string
+          quantity: number | null
+        }
+        Insert: {
+          character_id: string
+          created_at?: string | null
+          id?: string
+          item_id: string
+          quantity?: number | null
+        }
+        Update: {
+          character_id?: string
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_items_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           attributes: Json
@@ -21,7 +60,7 @@ export type Database = {
           created_at: string
           equipment: Json | null
           fortress: string | null
-          has_participated_in_session: boolean
+          has_participated_in_session: boolean | null
           id: string
           name: string
           narrative: Json | null
@@ -38,7 +77,7 @@ export type Database = {
           created_at?: string
           equipment?: Json | null
           fortress?: string | null
-          has_participated_in_session?: boolean
+          has_participated_in_session?: boolean | null
           id?: string
           name: string
           narrative?: Json | null
@@ -55,7 +94,7 @@ export type Database = {
           created_at?: string
           equipment?: Json | null
           fortress?: string | null
-          has_participated_in_session?: boolean
+          has_participated_in_session?: boolean | null
           id?: string
           name?: string
           narrative?: Json | null
@@ -70,132 +109,248 @@ export type Database = {
       }
       game_sessions: {
         Row: {
-          id: string
-          name: string
+          created_at: string
           description: string | null
           gm_id: string
-          status: 'active' | 'finished'
-          created_at: string
+          id: string
+          name: string
+          status: string
           updated_at: string
         }
         Insert: {
+          created_at?: string
+          description?: string | null
+          gm_id: string
           id?: string
           name: string
-          description?: string | null
-          gm_id?: string
-          status: 'active' | 'finished'
-          created_at?: string
+          status: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          name?: string
+          created_at?: string
           description?: string | null
           gm_id?: string
-          status?: 'active' | 'finished'
-          created_at?: string
+          id?: string
+          name?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      items: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_consumable: boolean | null
+          is_kit: boolean | null
+          name: string
+          requires_target: boolean | null
+          weight: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_consumable?: boolean | null
+          is_kit?: boolean | null
+          name: string
+          requires_target?: boolean | null
+          weight?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_consumable?: boolean | null
+          is_kit?: boolean | null
+          name?: string
+          requires_target?: boolean | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      kit_items: {
+        Row: {
+          id: string
+          item_id: string
+          kit_id: string
+          quantity: number | null
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          kit_id: string
+          quantity?: number | null
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          kit_id?: string
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kit_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kit_items_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_enemies: {
         Row: {
-          id: string
-          session_id: string
           base_enemy_id: string
-          name: string
-          current_hp: number
-          max_hp: number
           created_at: string
+          current_hp: number
+          id: string
+          max_hp: number
+          name: string
+          session_id: string
         }
         Insert: {
-          id?: string
-          session_id: string
           base_enemy_id: string
-          name: string
-          current_hp: number
-          max_hp: number
           created_at?: string
+          current_hp: number
+          id?: string
+          max_hp: number
+          name: string
+          session_id: string
         }
         Update: {
-          id?: string
-          session_id?: string
           base_enemy_id?: string
-          name?: string
-          current_hp?: number
-          max_hp?: number
           created_at?: string
+          current_hp?: number
+          id?: string
+          max_hp?: number
+          name?: string
+          session_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "session_enemies_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_npcs: {
         Row: {
-          id: string
-          session_id: string
-          name: string
-          description: string | null
-          stats: Json | null
           created_at: string
+          description: string | null
+          id: string
+          name: string
+          session_id: string
+          stats: Json | null
         }
         Insert: {
-          id?: string
-          session_id: string
-          name: string
-          description?: string | null
-          stats?: Json | null
           created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          session_id: string
+          stats?: Json | null
         }
         Update: {
-          id?: string
-          session_id?: string
-          name?: string
-          description?: string | null
-          stats?: Json | null
           created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          session_id?: string
+          stats?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "session_npcs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_participants: {
         Row: {
-          id: string
-          session_id: string
           character_id: string
-          user_id: string
-          joined: boolean
           created_at: string
+          id: string
+          joined: boolean
+          session_id: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          session_id: string
           character_id: string
-          user_id: string
-          joined?: boolean
           created_at?: string
+          id?: string
+          joined?: boolean
+          session_id: string
+          user_id: string
         }
         Update: {
-          id?: string
-          session_id?: string
           character_id?: string
-          user_id?: string
-          joined?: boolean
           created_at?: string
+          id?: string
+          joined?: boolean
+          session_id?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "session_participants_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      add_kit_to_character: {
+        Args: { p_character_id: string; p_kit_id: string }
+        Returns: undefined
+      }
       create_game_session: {
         Args: {
-          session_name: string
-          session_description: string
           enemies: Json
           npcs: Json
           participant_character_ids: string[]
+          session_description: string
+          session_name: string
         }
         Returns: string
+      }
+      is_session_gm: { Args: { check_session_id: string }; Returns: boolean }
+      is_session_participant: {
+        Args: { check_session_id: string }
+        Returns: boolean
+      }
+      use_consumable_item: {
+        Args: { p_character_item_id: string; p_target_character_id?: string }
+        Returns: boolean
       }
     }
     Enums: {
