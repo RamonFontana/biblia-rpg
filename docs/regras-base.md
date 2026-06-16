@@ -99,9 +99,17 @@ Milagres nunca são garantidos por decisão narrativa do Mestre. Quando um perso
 
 ---
 
-## 5. Progressão de Nível
+## 5. Progressão de Nível e XP
 
-Os personagens ganham níveis de 1 a 20 acumulando experiência (XP) ou por marcos da campanha (Milestones).
+Os personagens ganham níveis de 1 a 20 acumulando Pontos de Experiência (XP). O Mestre concede XP no final de cada sessão baseado nos desafios superados (combates, negociações, testes de fé e milestones de história).
+
+**Tabela Básica de Avanço (XP Acumulado):**
+- Nível 1: 0 XP
+- Nível 2: 300 XP
+- Nível 3: 900 XP
+- Nível 4: 2.700 XP
+- Nível 5: 6.500 XP
+*(A escalada segue a progressão padrão do sistema d20).*
 
 Quando um personagem sobe de nível, ocorrem dois ganhos principais de HP e mecânicas, alternando ou combinando a **Tribo (Raça)** e a **Vocação (Classe)**:
 
@@ -120,21 +128,28 @@ Quando um personagem sobe de nível, ocorrem dois ganhos principais de HP e mec�
 Adaptado do combate de D&D 5e sem uso de magia arcana. O combate se divide em rodadas de 6 segundos.
 
 ### 6.1 Iniciativa e Turnos
-No começo do combate, todos rolam a **Iniciativa** (`1d20 + Modificador de Destreza`). A ordem flui do maior para o menor.
+No começo do combate, o sistema digital rola a **Iniciativa** automaticamente para todos ou o mestre pode determinar a ordem manualmente. A ordem flui do maior para o menor.
 Em seu turno, um personagem pode:
 - **Movimento**: Até seu deslocamento (geralmente 9 metros).
 - **Ação Principal**: Atacar, Correr (Dash), Desengajar, Esquivar, Ajudar, Esconder, Usar um Item ou Usar habilidade ativa da Tribo/Vocação.
 - **Ação Bônus**: Habilidades específicas podem usar uma ação bônus (como ataques com a segunda mão usando armas leves).
 - **Reação**: Uma vez por rodada, em resposta a um gatilho específico (ex: Ataque de Oportunidade quando um inimigo sai da sua área de alcance).
 
-### 6.2 Dano e HP
+O turno é encerrado pelo próprio jogador, passando automaticamente para o próximo da lista, mas o Mestre pode forçar a passagem de turno a qualquer momento.
+
+### 6.2 Dano, HP e Morte
 - **Acertando o Alvo**: Rola-se `1d20 + Modificador de Força (ou Destreza para acuidade/distância) + Proficiência`. Se igualar ou superar a CA do alvo, acerta.
 - **Dano**: Conforme a arma, mais o Modificador de atributo usado.
-- **Ficar a 0 HP**: O personagem cai Inconsciente. Deve fazer **Testes de Morte** (Death Saves) em seus próximos turnos (1d20: 10 ou mais é sucesso, 9 ou menos é falha. 3 sucessos estabiliza, 3 falhas = Morte permanente).
+- **Ficar a 0 HP**: O personagem cai Inconsciente. Deve fazer **Testes de Morte** (Death Saves) em seus próximos turnos (1d20: 10 ou mais é sucesso, 9 ou menos é falha).
+  - **3 sucessos**: Estabiliza (vivo, mas inconsciente com 0 HP).
+  - **3 falhas**: Morte Permanente. O personagem sofre um **Soft Delete** no sistema, bloqueando o acesso do usuário, mantendo a ficha apenas como um memorial histórico.
 
-### 6.3 Descansos
-- **Descanso Curto (1 hora)**: Permite gastar Dados de Vida para recuperar HP. Algumas habilidades de vocação se recarregam (se especificado).
-- **Descanso Longo (8 horas)**: Recupera todo HP, metade dos Dados de Vida gastos, e recarrega habilidades de uso diário. Permite recuperação de Fé (se acompanhado de devoção). É necessário pelo menos 6 horas de sono.
+### 6.3 Sessões, Descansos e Persistência
+- **Fim de Sessão**: Após uma partida encerrada pelo Mestre, o personagem absorve seu XP.
+- **Início de Partida**: O personagem entra na nova sessão totalmente "Descansado", com PV Máximo e usos de habilidades restaurados.
+- **Persistência da Fé**: A Fé **NÃO reseta**. O valor atual de Fé se mantém entre as sessões. A única forma de restaurá-la é via atos heróicos ou descansos devocionais narrativos na partida.
+- **Descanso Curto (1 hora na partida)**: Permite gastar Dados de Vida para recuperar HP. Algumas habilidades de vocação se recarregam (se especificado).
+- **Descanso Longo (8 horas na partida)**: Recupera todo HP e metade dos Dados de Vida gastos. Recupera **1d4 de Fé** para o grupo inteiro (ou 1d4+2 se o ensinamento for conduzido por um Sacerdote).
 
 ### 6.4 Condições Comuns
 - **Sangrando**: Sofre 1d4 de dano no final do seu turno. Acaba se curado ou após teste de Medicina (CD 10) como Ação.

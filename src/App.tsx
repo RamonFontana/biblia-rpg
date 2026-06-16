@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from "@/components/layout"
-import { WelcomeCard } from "@/components/WelcomeCard"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
@@ -11,6 +10,8 @@ import { CharacterCreationPage } from "@/pages/CharacterCreationPage"
 import { CharacterList } from "@/features/character-management/pages/CharacterList"
 import { CharacterEdit } from "@/features/character-management/pages/CharacterEdit"
 import { CharacterDetails } from "@/features/character-management/pages/CharacterDetails"
+import { CreateSessionPage } from "@/pages/session/CreateSessionPage"
+import { ActiveSessionPage } from "@/pages/session/ActiveSessionPage"
 import { Link } from 'react-router-dom'
 
 function Home() {
@@ -23,12 +24,15 @@ function Home() {
         <p className="text-muted-foreground max-w-md">
           A base do projeto está configurada com Vite, React, TypeScript, Tailwind, Shadcn UI, Zustand e React Query.
         </p>
-        <div className="flex gap-4 mt-8">
+        <div className="flex flex-wrap justify-center gap-4 mt-8">
           <Link to="/characters" className="px-6 py-3 bg-stone-800 text-stone-300 font-bold rounded-lg border-2 border-stone-600 hover:bg-stone-700 transition-colors">
             Meus Personagens
           </Link>
           <Link to="/create-character" className="px-6 py-3 bg-amber-600 text-stone-900 font-bold rounded-lg hover:bg-amber-500 transition-colors shadow-lg shadow-amber-900/20">
             Criar Personagem
+          </Link>
+          <Link to="/session/create" className="px-6 py-3 bg-red-700 text-stone-100 font-bold rounded-lg hover:bg-red-600 transition-colors shadow-lg shadow-red-900/20">
+            Mestre: Criar Sessão
           </Link>
         </div>
       </div>
@@ -63,6 +67,16 @@ function App() {
           <Route path="/characters/:id/edit" element={
             <Layout>
               <CharacterEdit />
+            </Layout>
+          } />
+          <Route path="/session/create" element={
+            <Layout>
+              <CreateSessionPage />
+            </Layout>
+          } />
+          <Route path="/session/:id" element={
+            <Layout>
+              <ActiveSessionPage />
             </Layout>
           } />
         </Route>

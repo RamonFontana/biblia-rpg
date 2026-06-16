@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect } from 'react';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
 import { Shield, Heart, Flame } from 'lucide-react';

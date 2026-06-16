@@ -68,12 +68,135 @@ export type Database = {
         }
         Relationships: []
       }
+      game_sessions: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          gm_id: string
+          status: 'active' | 'finished'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          gm_id?: string
+          status: 'active' | 'finished'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          gm_id?: string
+          status?: 'active' | 'finished'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_enemies: {
+        Row: {
+          id: string
+          session_id: string
+          base_enemy_id: string
+          name: string
+          current_hp: number
+          max_hp: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          base_enemy_id: string
+          name: string
+          current_hp: number
+          max_hp: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          base_enemy_id?: string
+          name?: string
+          current_hp?: number
+          max_hp?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      session_npcs: {
+        Row: {
+          id: string
+          session_id: string
+          name: string
+          description: string | null
+          stats: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          name: string
+          description?: string | null
+          stats?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          name?: string
+          description?: string | null
+          stats?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      session_participants: {
+        Row: {
+          id: string
+          session_id: string
+          character_id: string
+          user_id: string
+          joined: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          character_id: string
+          user_id: string
+          joined?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          character_id?: string
+          user_id?: string
+          joined?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_game_session: {
+        Args: {
+          session_name: string
+          session_description: string
+          enemies: Json
+          npcs: Json
+          participant_character_ids: string[]
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

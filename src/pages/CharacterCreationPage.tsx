@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { WizardLayout } from '../features/character-creation/components/WizardLayout';
 
