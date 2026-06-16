@@ -7,6 +7,8 @@ import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { AuthCallbackPage } from "@/pages/auth/AuthCallbackPage"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage"
+import { CharacterCreationPage } from "@/pages/CharacterCreationPage"
+import { Link } from 'react-router-dom'
 
 function Home() {
   return (
@@ -18,7 +20,14 @@ function Home() {
         <p className="text-muted-foreground max-w-md">
           A base do projeto está configurada com Vite, React, TypeScript, Tailwind, Shadcn UI, Zustand e React Query.
         </p>
-        <WelcomeCard />
+        <div className="flex gap-4 mt-8">
+          <button className="px-6 py-3 bg-stone-800 text-stone-300 font-bold rounded-lg border-2 border-stone-600 hover:bg-stone-700 transition-colors opacity-50 cursor-not-allowed">
+            Criar Partida (Em breve)
+          </button>
+          <Link to="/create-character" className="px-6 py-3 bg-amber-600 text-stone-900 font-bold rounded-lg hover:bg-amber-500 transition-colors shadow-lg shadow-amber-900/20">
+            Criar Personagem
+          </Link>
+        </div>
       </div>
     </Layout>
   )
@@ -37,6 +46,7 @@ function App() {
         {/* Rotas Protegidas */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
+          <Route path="/create-character" element={<CharacterCreationPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
