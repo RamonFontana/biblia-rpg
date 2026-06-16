@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCharacters } from '../api/characterApi';
+import { getMyCharacters } from '../api/characterApi';
 import type { Character } from '../types';
 import { CharacterCard } from '../components/CharacterCard';
 
@@ -13,7 +13,7 @@ export function CharacterList() {
   useEffect(() => {
     const fetchCharacters = async () => {
       try {
-        const data = await getCharacters();
+        const data = await getMyCharacters();
         setCharacters(data);
       } catch (err: any) {
         setError(err.message || 'Erro ao carregar personagens');

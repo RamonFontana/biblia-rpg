@@ -18,7 +18,7 @@ export function ActiveSession() {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (!error && data) {
         setSessionData(data);
       } else if (error) {
@@ -52,7 +52,7 @@ export function ActiveSession() {
       .from('game_sessions')
       .update({ status: 'finished' })
       .eq('id', id);
-    
+
     if (!error) {
       navigate('/');
     }
@@ -85,7 +85,7 @@ export function ActiveSession() {
           <h2 className="text-xl font-semibold mb-4 text-primary">Jogadores</h2>
           <p className="text-muted-foreground text-sm italic">Sincronização realtime em breve...</p>
         </div>
-        
+
         <div className="border rounded-lg p-4 bg-card">
           <h2 className="text-xl font-semibold mb-4 text-primary">Inimigos</h2>
           <p className="text-muted-foreground text-sm italic">Sincronização realtime em breve...</p>

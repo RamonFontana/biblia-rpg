@@ -15,6 +15,27 @@ export const getCharacters = async (): Promise<Character[]> => {
   return data as unknown as Character[];
 };
 
+export const getMyCharacters = async (): Promise<Character[]> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.user) {
+    throw new Error('Usuário não autenticado');
+  }
+
+  const { data, error } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching my characters:', error);
+    throw error;
+  }
+
+  return data as unknown as Character[];
+};
+
 export const getCharacterById = async (id: string): Promise<Character | null> => {
   const { data, error } = await supabase
     .from('characters')
