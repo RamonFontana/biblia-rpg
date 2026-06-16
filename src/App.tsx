@@ -16,11 +16,13 @@ import { Link } from 'react-router-dom'
 
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
+import { useActiveSession } from '@/hooks/useActiveSession'
 import { supabase } from '@/lib/supabase'
 
 function Home() {
   const { signOut, user } = useAuthStore()
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  const { activeSessions, loading: loadingSessions } = useActiveSession()
 
   useEffect(() => {
     if (user) {
@@ -69,9 +71,18 @@ function Home() {
           )}
           {activeSessionId && (
             <Link to={`/session/${activeSessionId}`} className="px-6 py-3 bg-green-700 text-stone-100 font-bold rounded-lg hover:bg-green-600 transition-colors shadow-lg shadow-green-900/20">
-              Acessar Sessão Ativa
+              Acessar Sessão Ativa (Mestre)
             </Link>
           )}
+          {!loadingSessions && activeSessions.map((session) => (
+            <Link 
+              key={session.session_id}
+              to={`/session/${session.session_id}`} 
+              className="px-6 py-3 bg-blue-700 text-stone-100 font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20"
+            >
+              Entrar: {session.session_name}
+            </Link>
+          ))}
         </div>
       </div>
     </Layout>
