@@ -13,6 +13,8 @@ export type SessionNPCDraft = {
   name: string;
   description: string;
   stats?: Record<string, any>;
+  isPlayable: boolean;
+  characterData?: Record<string, any>;
 };
 
 interface SessionDraftState {

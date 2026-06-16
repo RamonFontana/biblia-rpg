@@ -14,10 +14,41 @@ import { CreateSessionPage } from "@/pages/session/CreateSessionPage"
 import { ActiveSessionPage } from "@/pages/session/ActiveSessionPage"
 import { Link } from 'react-router-dom'
 
+import { useState, useEffect } from 'react'
+import { useAuthStore } from '@/store/authStore'
+import { supabase } from '@/lib/supabase'
+
 function Home() {
+  const { signOut, user } = useAuthStore()
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('game_sessions')
+        .select('id')
+        .eq('gm_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+        .then(({ data }) => {
+          if (data) setActiveSessionId(data.id)
+        })
+    }
+  }, [user])
+
   return (
     <Layout>
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
+      <div className="flex justify-end mb-4">
+        <button 
+          onClick={signOut}
+          className="px-4 py-2 bg-stone-200 text-stone-800 font-semibold rounded hover:bg-stone-300 transition-colors"
+        >
+          Deslogar
+        </button>
+      </div>
+      <div className="flex flex-col items-center justify-center h-[50vh] gap-4 text-center">
         <h2 className="text-3xl font-extrabold tracking-tight">
           Biblical RPG Development Environment
         </h2>
@@ -31,9 +62,16 @@ function Home() {
           <Link to="/create-character" className="px-6 py-3 bg-amber-600 text-stone-900 font-bold rounded-lg hover:bg-amber-500 transition-colors shadow-lg shadow-amber-900/20">
             Criar Personagem
           </Link>
-          <Link to="/session/create" className="px-6 py-3 bg-red-700 text-stone-100 font-bold rounded-lg hover:bg-red-600 transition-colors shadow-lg shadow-red-900/20">
-            Mestre: Criar Sessão
-          </Link>
+          {!activeSessionId && (
+            <Link to="/session/create" className="px-6 py-3 bg-red-700 text-stone-100 font-bold rounded-lg hover:bg-red-600 transition-colors shadow-lg shadow-red-900/20">
+              Mestre: Criar Sessão
+            </Link>
+          )}
+          {activeSessionId && (
+            <Link to={`/session/${activeSessionId}`} className="px-6 py-3 bg-green-700 text-stone-100 font-bold rounded-lg hover:bg-green-600 transition-colors shadow-lg shadow-green-900/20">
+              Acessar Sessão Ativa
+            </Link>
+          )}
         </div>
       </div>
     </Layout>

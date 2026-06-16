@@ -1,0 +1,32 @@
+[
+  {
+    "id": "guarda_cidade",
+    "name": "Guarda da Cidade",
+    "description": "Um soldado comum com armadura de bronze leve. Ideal para guardas e patrulheiros.",
+    "isPlayable": false
+  },
+  {
+    "id": "mercador",
+    "name": "Mercador Nômade",
+    "description": "Viajante que vende informações ou itens básicos em troca de favores.",
+    "isPlayable": false
+  },
+  {
+    "id": "sacerdote_iniciante",
+    "name": "Sacerdote Iniciante",
+    "description": "Jovem levita aprendendo os ritos. (Exemplo de NPC Jogável)",
+    "isPlayable": true,
+    "characterData": {
+      "level": 1,
+      "tribo": "Levi",
+      "classe": "Sacerdote",
+      "for": 8,
+      "des": 10,
+      "con": 12,
+      "int": 14,
+      "sab": 16,
+      "car": 14,
+      "ca": 10
+    }
+  }
+]

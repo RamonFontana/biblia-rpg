@@ -46,6 +46,27 @@ alter table public.session_enemies enable row level security;
 alter table public.session_npcs enable row level security;
 alter table public.session_participants enable row level security;
 
+-- Create helper functions for RLS to prevent infinite recursion
+create or replace function public.is_session_gm(check_session_id uuid)
+returns boolean as $$
+begin
+  return exists (
+    select 1 from public.game_sessions
+    where id = check_session_id and gm_id = auth.uid()
+  );
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create or replace function public.is_session_participant(check_session_id uuid)
+returns boolean as $$
+begin
+  return exists (
+    select 1 from public.session_participants
+    where session_id = check_session_id and user_id = auth.uid()
+  );
+end;
+$$ language plpgsql security definer set search_path = public;
+
 -- Policies for game_sessions
 create policy "GMs can create sessions"
   on public.game_sessions for insert
@@ -53,14 +74,7 @@ create policy "GMs can create sessions"
 
 create policy "Users can view sessions they are part of or created"
   on public.game_sessions for select
-  using (
-    auth.uid() = gm_id or
-    exists (
-      select 1 from public.session_participants
-      where session_participants.session_id = game_sessions.id
-      and session_participants.user_id = auth.uid()
-    )
-  );
+  using (auth.uid() = gm_id or public.is_session_participant(id));
 
 create policy "GMs can update their sessions"
   on public.game_sessions for update
@@ -69,82 +83,29 @@ create policy "GMs can update their sessions"
 -- Policies for session_enemies
 create policy "Users can view session enemies"
   on public.session_enemies for select
-  using (
-    exists (
-      select 1 from public.game_sessions
-      where game_sessions.id = session_enemies.session_id
-      and (
-        game_sessions.gm_id = auth.uid() or
-        exists (
-          select 1 from public.session_participants
-          where session_participants.session_id = game_sessions.id
-          and session_participants.user_id = auth.uid()
-        )
-      )
-    )
-  );
+  using (public.is_session_gm(session_id) or public.is_session_participant(session_id));
 
 create policy "GMs can manage session enemies"
   on public.session_enemies for all
-  using (
-    exists (
-      select 1 from public.game_sessions
-      where game_sessions.id = session_enemies.session_id
-      and game_sessions.gm_id = auth.uid()
-    )
-  );
+  using (public.is_session_gm(session_id));
 
 -- Policies for session_npcs
 create policy "Users can view session npcs"
   on public.session_npcs for select
-  using (
-    exists (
-      select 1 from public.game_sessions
-      where game_sessions.id = session_npcs.session_id
-      and (
-        game_sessions.gm_id = auth.uid() or
-        exists (
-          select 1 from public.session_participants
-          where session_participants.session_id = game_sessions.id
-          and session_participants.user_id = auth.uid()
-        )
-      )
-    )
-  );
+  using (public.is_session_gm(session_id) or public.is_session_participant(session_id));
 
 create policy "GMs can manage session npcs"
   on public.session_npcs for all
-  using (
-    exists (
-      select 1 from public.game_sessions
-      where game_sessions.id = session_npcs.session_id
-      and game_sessions.gm_id = auth.uid()
-    )
-  );
+  using (public.is_session_gm(session_id));
 
 -- Policies for session_participants
 create policy "Users can view session participants"
   on public.session_participants for select
-  using (
-    exists (
-      select 1 from public.game_sessions
-      where game_sessions.id = session_participants.session_id
-      and (
-        game_sessions.gm_id = auth.uid() or
-        session_participants.user_id = auth.uid()
-      )
-    )
-  );
+  using (user_id = auth.uid() or public.is_session_gm(session_id) or public.is_session_participant(session_id));
 
 create policy "GMs can manage session participants"
   on public.session_participants for all
-  using (
-    exists (
-      select 1 from public.game_sessions
-      where game_sessions.id = session_participants.session_id
-      and game_sessions.gm_id = auth.uid()
-    )
-  );
+  using (public.is_session_gm(session_id));
 
 create policy "Users can join sessions they are invited to"
   on public.session_participants for update

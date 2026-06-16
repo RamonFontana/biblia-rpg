@@ -21,6 +21,8 @@ export function ActiveSession() {
       
       if (!error && data) {
         setSessionData(data);
+      } else if (error) {
+        console.error("Erro ao buscar sessão:", error);
       }
       setIsLoading(false);
     };
