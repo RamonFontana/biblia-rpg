@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           equipment: Json | null
           fortress: string | null
+          has_participated_in_session: boolean
           id: string
           name: string
           narrative: Json | null
@@ -37,6 +38,7 @@ export type Database = {
           created_at?: string
           equipment?: Json | null
           fortress?: string | null
+          has_participated_in_session?: boolean
           id?: string
           name: string
           narrative?: Json | null
@@ -53,6 +55,7 @@ export type Database = {
           created_at?: string
           equipment?: Json | null
           fortress?: string | null
+          has_participated_in_session?: boolean
           id?: string
           name?: string
           narrative?: Json | null

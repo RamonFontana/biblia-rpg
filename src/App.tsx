@@ -8,6 +8,9 @@ import { AuthCallbackPage } from "@/pages/auth/AuthCallbackPage"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage"
 import { CharacterCreationPage } from "@/pages/CharacterCreationPage"
+import { CharacterList } from "@/features/character-management/pages/CharacterList"
+import { CharacterEdit } from "@/features/character-management/pages/CharacterEdit"
+import { CharacterDetails } from "@/features/character-management/pages/CharacterDetails"
 import { Link } from 'react-router-dom'
 
 function Home() {
@@ -21,9 +24,9 @@ function Home() {
           A base do projeto está configurada com Vite, React, TypeScript, Tailwind, Shadcn UI, Zustand e React Query.
         </p>
         <div className="flex gap-4 mt-8">
-          <button className="px-6 py-3 bg-stone-800 text-stone-300 font-bold rounded-lg border-2 border-stone-600 hover:bg-stone-700 transition-colors opacity-50 cursor-not-allowed">
-            Criar Partida (Em breve)
-          </button>
+          <Link to="/characters" className="px-6 py-3 bg-stone-800 text-stone-300 font-bold rounded-lg border-2 border-stone-600 hover:bg-stone-700 transition-colors">
+            Meus Personagens
+          </Link>
           <Link to="/create-character" className="px-6 py-3 bg-amber-600 text-stone-900 font-bold rounded-lg hover:bg-amber-500 transition-colors shadow-lg shadow-amber-900/20">
             Criar Personagem
           </Link>
@@ -47,6 +50,21 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
           <Route path="/create-character" element={<CharacterCreationPage />} />
+          <Route path="/characters" element={
+            <Layout>
+              <CharacterList />
+            </Layout>
+          } />
+          <Route path="/characters/:id" element={
+            <Layout>
+              <CharacterDetails />
+            </Layout>
+          } />
+          <Route path="/characters/:id/edit" element={
+            <Layout>
+              <CharacterEdit />
+            </Layout>
+          } />
         </Route>
       </Routes>
     </BrowserRouter>

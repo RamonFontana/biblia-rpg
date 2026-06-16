@@ -4,9 +4,10 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router';
 
 import { saveCharacter } from '../../api/saveCharacter';
+import { updateCharacter } from '../../../character-management/api/characterApi';
 
 export function Summary() {
-  const { draft, prevStep } = useCharacterCreationStore();
+  const { draft, prevStep, editingId } = useCharacterCreationStore();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -16,9 +17,13 @@ export function Summary() {
     setError('');
 
     try {
-      await saveCharacter(draft);
+      if (editingId) {
+        await updateCharacter(editingId, draft);
+      } else {
+        await saveCharacter(draft);
+      }
       // Success, redirect to home or character view
-      navigate('/');
+      navigate('/characters');
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar personagem.');
     } finally {

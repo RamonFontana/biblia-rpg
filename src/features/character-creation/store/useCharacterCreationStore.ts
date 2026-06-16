@@ -4,9 +4,12 @@ import type { DraftCharacter, CharacterAttributes, EquipmentItem, CharacterStats
 interface CharacterCreationState {
   currentStep: number;
   draft: DraftCharacter;
+  editingId?: string;
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
+  loadDraft: (draft: DraftCharacter, editingId: string) => void;
+  reset: () => void;
   
   setName: (name: string) => void;
   setTribe: (tribe: string) => void;
@@ -29,10 +32,14 @@ const initialState: DraftCharacter = {
 export const useCharacterCreationStore = create<CharacterCreationState>((set) => ({
   currentStep: 1,
   draft: initialState,
+  editingId: undefined,
 
   setStep: (step) => set({ currentStep: step }),
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 9) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
+  
+  loadDraft: (draft, editingId) => set({ draft, editingId, currentStep: 1 }),
+  reset: () => set({ draft: initialState, editingId: undefined, currentStep: 1 }),
 
   setName: (name) => set((state) => ({ draft: { ...state.draft, name } })),
   setTribe: (tribe) => set((state) => ({ draft: { ...state.draft, tribe } })),
