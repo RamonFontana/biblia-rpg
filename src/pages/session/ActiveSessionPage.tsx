@@ -13,6 +13,7 @@ import { useSessionPlayerCharacters } from '@/hooks/useSessionPlayerCharacters';
 import { MasterTestDialog } from '@/components/session/MasterTestDialog';
 import { PlayerTestDialog } from '@/components/session/PlayerTestDialog';
 import { DiceRollerDialog } from '@/components/session/DiceRollerDialog';
+import { NewDayDialog } from '@/components/session/NewDayDialog';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +29,7 @@ export function ActiveSessionPage() {
   const { npcs, updateLocalNPC } = useSessionNPCs(id);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
+  const [isNewDayDialogOpen, setIsNewDayDialogOpen] = useState(false);
 
   // Presence effect
   useEffect(() => {
@@ -69,7 +71,15 @@ export function ActiveSessionPage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${id}` },
         (payload) => {
-          setSessionData(payload.new);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setSessionData((current: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const newSession = payload.new as any;
+            if (current && current.current_period === 'Noite' && newSession.current_period === 'Manhã') {
+              setIsNewDayDialogOpen(true);
+            }
+            return payload.new;
+          });
         }
       )
       .subscribe();
@@ -88,6 +98,40 @@ export function ActiveSessionPage() {
 
     if (!error) {
       navigate('/');
+    }
+  };
+
+  const advanceTime = async () => {
+    if (!id || !sessionData) return;
+    
+    let nextPeriod = 'Manhã';
+    let nextDay = sessionData.current_day || 1;
+    
+    if (sessionData.current_period === 'Manhã') {
+      nextPeriod = 'Tarde';
+    } else if (sessionData.current_period === 'Tarde') {
+      nextPeriod = 'Noite';
+    } else if (sessionData.current_period === 'Noite') {
+      nextPeriod = 'Manhã';
+      nextDay += 1;
+    }
+
+    const { error } = await supabase
+      .from('game_sessions')
+      .update({ current_period: nextPeriod, current_day: nextDay })
+      .eq('id', id);
+      
+    if (error) {
+      console.error("Erro ao avançar o tempo:", error);
+    }
+  };
+
+  const getPeriodIcon = (period: string) => {
+    switch (period) {
+      case 'Manhã': return '🌅';
+      case 'Tarde': return '☀️';
+      case 'Noite': return '🌙';
+      default: return '🌅';
     }
   };
 
@@ -112,6 +156,15 @@ export function ActiveSessionPage() {
           <p className="text-stone-400 mt-1">{sessionData.description}</p>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-center bg-stone-800/50 rounded-full px-3 py-1 border border-stone-700">
+            <span className="text-stone-300 font-medium text-sm mr-2 border-r border-stone-600 pr-2">
+              DIA {sessionData.current_day || 1}
+            </span>
+            <span className="text-amber-400 text-sm font-semibold flex items-center gap-1">
+              {getPeriodIcon(sessionData.current_period || 'Manhã')} {sessionData.current_period || 'Manhã'}
+            </span>
+          </div>
+
           <div className={`px-3 py-1 rounded-full text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-gray-100/20 text-gray-400'}`}>
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
@@ -122,6 +175,9 @@ export function ActiveSessionPage() {
           )}
           {isGM && sessionData.status === 'active' && (
             <>
+              <Button onClick={advanceTime} variant="outline" className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2" title="Avançar Tempo">
+                <span>⏳</span> Avançar
+              </Button>
               <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
                 Solicitar Teste
               </Button>
@@ -203,6 +259,12 @@ export function ActiveSessionPage() {
       <DiceRollerDialog 
         isOpen={isDiceRollerOpen}
         onClose={() => setIsDiceRollerOpen(false)}
+      />
+
+      <NewDayDialog
+        isOpen={isNewDayDialogOpen}
+        onClose={() => setIsNewDayDialogOpen(false)}
+        day={sessionData.current_day || 1}
       />
     </div>
   );

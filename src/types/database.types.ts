@@ -62,6 +62,7 @@ export type Database = {
           fortress: string | null
           has_participated_in_session: boolean | null
           id: string
+          is_npc: boolean | null
           name: string
           narrative: Json | null
           stats: Json
@@ -79,6 +80,7 @@ export type Database = {
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          is_npc?: boolean | null
           name: string
           narrative?: Json | null
           stats: Json
@@ -96,6 +98,7 @@ export type Database = {
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          is_npc?: boolean | null
           name?: string
           narrative?: Json | null
           stats?: Json
@@ -110,6 +113,8 @@ export type Database = {
       game_sessions: {
         Row: {
           created_at: string
+          current_day: number
+          current_period: string
           description: string | null
           gm_id: string
           id: string
@@ -119,6 +124,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_day?: number
+          current_period?: string
           description?: string | null
           gm_id: string
           id?: string
@@ -128,6 +135,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_day?: number
+          current_period?: string
           description?: string | null
           gm_id?: string
           id?: string
@@ -142,6 +151,7 @@ export type Database = {
           category: string
           created_at: string | null
           description: string | null
+          effects: Json | null
           id: string
           is_consumable: boolean | null
           is_kit: boolean | null
@@ -153,6 +163,7 @@ export type Database = {
           category: string
           created_at?: string | null
           description?: string | null
+          effects?: Json | null
           id?: string
           is_consumable?: boolean | null
           is_kit?: boolean | null
@@ -164,6 +175,7 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string | null
+          effects?: Json | null
           id?: string
           is_consumable?: boolean | null
           is_kit?: boolean | null
@@ -317,6 +329,92 @@ export type Database = {
           },
           {
             foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_test_results: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          player_id: string
+          result_value: number | null
+          status: string
+          test_id: string
+          updated_at: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          player_id: string
+          result_value?: number | null
+          status?: string
+          test_id: string
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          player_id?: string
+          result_value?: number | null
+          status?: string
+          test_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_test_results_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_test_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "session_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_tests: {
+        Row: {
+          created_at: string
+          difficulty: number
+          id: string
+          session_id: string
+          status: string
+          test_type: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty: number
+          id?: string
+          session_id: string
+          status?: string
+          test_type: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: number
+          id?: string
+          session_id?: string
+          status?: string
+          test_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_tests_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "game_sessions"
@@ -484,3 +582,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

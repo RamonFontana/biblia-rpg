@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at:
-specs/019-session-master-tools/plan.md
+specs/020-session-time-control/plan.md
 <!-- SPECKIT END -->
 
 ## RPG Bíblico — Documentação do Sistema
