@@ -9,8 +9,10 @@ export interface CharacterAttributes {
 
 export interface CharacterStats {
   pv: number;
+  current_pv?: number;
   ca: number;
   faith: number;
+  current_faith?: number;
 }
 
 export interface EquipmentItem {

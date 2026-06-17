@@ -3,6 +3,8 @@ import { OnlinePlayersList } from '@/components/session/OnlinePlayersList';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { useAuthStore } from '@/store/authStore';
 import { useSupabasePresence, type PresenceState } from '@/hooks/useSupabasePresence';
+import { useSessionNPCs } from '@/hooks/useSessionNPCs';
+import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ export function ActiveSessionPage() {
   }, [user]);
 
   const { onlineUsers } = useSupabasePresence(id, payload);
+  const { npcs } = useSessionNPCs(id);
 
   // Fetch session data and realtime updates
   useEffect(() => {
@@ -121,10 +124,7 @@ export function ActiveSessionPage() {
                 <p className="text-stone-500 text-sm italic">Controle de combate em breve...</p>
               </div>
 
-              <div className="border border-stone-800 rounded-lg p-4 bg-stone-950">
-                <h3 className="text-xl font-semibold mb-4 text-stone-200">NPCs</h3>
-                <p className="text-stone-500 text-sm italic">Gestão de NPCs em breve...</p>
-              </div>
+              <SessionNPCList npcs={npcs} sessionId={id} />
             </div>
           </div>
         ) : (

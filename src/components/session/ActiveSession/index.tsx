@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { useSessionNPCs } from '@/hooks/useSessionNPCs';
+import { SessionNPCList } from '../SessionNPCList';
+import { AddNPCModal } from '../AddNPCModal';
 
 export function ActiveSession() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { npcs, isLoading: isNpcsLoading } = useSessionNPCs(id);
 
   useEffect(() => {
     if (!id) return;
@@ -73,9 +77,12 @@ export function ActiveSession() {
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
           {sessionData.status === 'active' && (
-            <Button variant="destructive" onClick={endSession}>
-              Finalizar Sessão
-            </Button>
+            <>
+              <AddNPCModal sessionId={id!} />
+              <Button variant="destructive" onClick={endSession}>
+                Finalizar Sessão
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -91,9 +98,8 @@ export function ActiveSession() {
           <p className="text-muted-foreground text-sm italic">Sincronização realtime em breve...</p>
         </div>
 
-        <div className="border rounded-lg p-4 bg-card">
-          <h2 className="text-xl font-semibold mb-4 text-primary">NPCs</h2>
-          <p className="text-muted-foreground text-sm italic">Sincronização realtime em breve...</p>
+        <div className="border rounded-lg p-0 bg-transparent shadow-none border-none">
+          <SessionNPCList npcs={npcs} sessionId={id!} />
         </div>
       </div>
     </div>

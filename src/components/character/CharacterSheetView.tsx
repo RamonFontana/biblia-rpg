@@ -1,28 +1,35 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
-import { Shield, Heart, Star, Sparkles, Activity, Target } from 'lucide-react';
+import { Shield, Heart, Star, Sparkles, Activity, Target, Zap } from 'lucide-react';
+import { NPCInventoryManager } from './NPCInventoryManager';
+import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
+import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
+import { getTribeSkills } from '@/data/tribeSkills';
 
 interface CharacterSheetViewProps {
-  userId: string;
-  sessionId: string;
+  userId?: string;
+  sessionId?: string;
+  characterId?: string;
+  isGM?: boolean;
 }
 
-export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProps) {
+export function CharacterSheetView({ userId, sessionId, characterId, isGM }: CharacterSheetViewProps) {
   const [character, setCharacter] = useState<Character | null>(null);
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { useItem, isUpdating } = useUpdateNPCInventory();
 
   useEffect(() => {
     async function fetchCharacter() {
       setIsLoading(true);
       setError(null);
       try {
-        let characterIdToFetch: string | null = null;
+        let characterIdToFetch: string | null = characterId || null;
 
-        // Try to find the assigned character for this session
-        if (sessionId) {
+        // Try to find the assigned character for this session if characterId is not provided
+        if (!characterIdToFetch && sessionId && userId) {
           const { data: participantData } = await supabase
             .from('session_participants')
             .select('character_id')
@@ -48,7 +55,7 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
             .single();
           charData = data;
           charError = error;
-        } else {
+        } else if (userId) {
           // Fallback to the latest character if not explicitly assigned
           const { data, error } = await supabase
             .from('characters')
@@ -59,6 +66,8 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
             .single();
           charData = data;
           charError = error;
+        } else {
+          charError = { message: 'Identificador de personagem ou jogador não fornecido.' };
         }
 
         if (charError) {
@@ -83,7 +92,8 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
                 category,
                 is_consumable,
                 requires_target,
-                weight
+                weight,
+                effects
               )
             `)
             .eq('character_id', charData.id);
@@ -100,10 +110,10 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
       }
     }
 
-    if (userId) {
+    if (userId || characterId) {
       fetchCharacter();
     }
-  }, [userId]);
+  }, [userId, characterId, sessionId]);
 
   // Realtime updates for inventory
   useEffect(() => {
@@ -128,7 +138,8 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
                 category,
                 is_consumable,
                 requires_target,
-                weight
+                weight,
+                effects
               )
             `)
             .eq('character_id', character.id);
@@ -180,6 +191,10 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
           <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
             Vocação: <span className="text-stone-200 font-medium">{vocation || 'Nenhuma'}</span>
           </span>
+          <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm flex items-center gap-1">
+            <Zap className="w-3 h-3 text-blue-400" />
+            Proficiência: <span className="text-stone-200 font-medium">+{calculateProficiency(1)}</span>
+          </span>
         </div>
       </div>
 
@@ -221,15 +236,36 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
               { label: 'SAB', value: attributes?.sab },
               { label: 'CAR', value: attributes?.car },
             ].map((attr) => (
-              <div key={attr.label} className="bg-stone-900 border border-stone-800 rounded-lg p-3 text-center flex flex-col items-center">
+              <div key={attr.label} className="bg-stone-900 border border-stone-800 rounded-lg p-3 text-center flex flex-col items-center relative">
                 <span className="text-stone-500 text-xs font-bold mb-1">{attr.label}</span>
-                <span className="text-xl font-bold text-stone-200">
-                  {attr.value !== undefined ? (attr.value >= 0 ? `+${attr.value}` : attr.value) : 0}
+                <span className="text-2xl font-bold text-stone-100">
+                  {formatModifier(calculateModifier(attr.value))}
+                </span>
+                <span className="text-[10px] text-stone-500 font-mono mt-1 px-1.5 py-0.5 bg-stone-800 rounded">
+                  {attr.value ?? 10}
                 </span>
               </div>
             ))}
           </div>
         </div>
+        
+        {/* Habilidades Raciais */}
+        {tribe && getTribeSkills(tribe).length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
+              <Zap className="w-5 h-5 text-amber-500" />
+              Habilidades de Tribo
+            </h3>
+            <div className="space-y-3">
+              {getTribeSkills(tribe).map((skill, index) => (
+                <div key={index} className="bg-stone-900 border border-stone-800 rounded-lg p-4 shadow-sm">
+                  <h4 className="text-md font-bold text-amber-500 mb-1">{skill.name}</h4>
+                  <p className="text-sm text-stone-400 leading-relaxed">{skill.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Narrative / Description */}
         {narrative && (narrative.history || narrative.physicalDesc || narrative.personality) && (
@@ -296,7 +332,16 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
                         </div>
                         <div className="flex items-center gap-3 mt-2 sm:mt-0">
                           {item.items?.is_consumable && (
-                            <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
+                              <button
+                                onClick={() => useItem(character!.id, item.id, item.quantity, item.items.effects, character!.stats, !(character!.is_npc))}
+                                disabled={isUpdating}
+                                className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50"
+                              >
+                                Usar
+                              </button>
+                            </div>
                           )}
                           {item.items?.weight > 0 && (
                             <span className="text-xs text-stone-500">{item.items.weight} kg</span>
@@ -310,6 +355,12 @@ export function CharacterSheetView({ userId, sessionId }: CharacterSheetViewProp
             </div>
           ) : (
             <p className="text-sm text-stone-500 italic">Inventário vazio.</p>
+          )}
+
+          {isGM && character?.id && (
+            <div className="mt-8 pt-6 border-t border-stone-800">
+              <NPCInventoryManager characterId={character.id} items={inventoryItems} />
+            </div>
           )}
         </div>
       </div>

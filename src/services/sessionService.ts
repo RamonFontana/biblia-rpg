@@ -24,6 +24,7 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
 
     const { data: charData, error: charErr } = await supabase.from('characters').insert({
       user_id: user.id, // Mestre "possui" o NPC por padrão
+      is_npc: true,
       name: npc.name,
       tribe: npc.characterData.tribo || '',
       vocation: npc.characterData.classe || '',
@@ -49,7 +50,7 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
       },
       fortress: 'Coragem', // Placeholder, ideal seria vir do form
       temptation: 'Ganância', // Placeholder
-    }).select('id').single();
+    } as any).select('id').single();
 
     if (charErr) {
       console.error('Error creating playable NPC character:', charErr);
