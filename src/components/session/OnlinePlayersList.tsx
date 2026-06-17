@@ -5,18 +5,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { TokenContextMenu } from './TokenContextMenu';
 import { useAuthStore } from '@/store/authStore';
+import { useSessionTests } from '@/hooks/useSessionTests';
+import { supabase } from '@/lib/supabase';
+import type { Character } from '@/features/character-management/types';
 
 interface OnlinePlayersListProps {
   onlineUsers: PresenceState[];
   isGM?: boolean;
   sessionId?: string;
   gmId?: string;
+  playerCharacters?: { user_id: string; character: Character }[];
+  onUpdatePlayerStat?: (characterId: string, stats: any) => void;
 }
 
-export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId }: OnlinePlayersListProps) {
+export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId, playerCharacters = [], onUpdatePlayerStat }: OnlinePlayersListProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { user } = useAuthStore();
+  const { activeTests, testResults } = useSessionTests(sessionId || '');
 
   const handlePlayerClick = (userId: string, e?: React.MouseEvent) => {
     if (userId !== gmId) {
@@ -33,6 +39,35 @@ export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId }
   const closeSheet = () => setSelectedUserId(null);
   const closeContextMenu = () => setContextMenuPos(null);
 
+  const updatePlayerStat = async (character: Character, statKey: 'current_pv' | 'current_faith', delta: number) => {
+    if (!character.stats) return;
+
+    const baseKey = statKey === 'current_pv' ? 'pv' : 'faith';
+    // PV máximo é o pv do personagem; Fé máxima é sempre 100
+    const maxValue = statKey === 'current_pv'
+      ? (character.stats[baseKey] || 10)
+      : 100;
+    const currentValue = character.stats[statKey] ?? character.stats[baseKey] ?? (statKey === 'current_pv' ? 10 : 0);
+    
+    let newValue = Math.max(0, currentValue + delta);
+    if (newValue > maxValue) newValue = maxValue;
+
+    const newStats = { ...character.stats, [statKey]: newValue };
+
+    try {
+      await supabase
+        .from('characters')
+        .update({ stats: newStats })
+        .eq('id', character.id);
+        
+      if (onUpdatePlayerStat) {
+        onUpdatePlayerStat(character.id, newStats);
+      }
+    } catch (e) {
+      console.error('Erro ao atualizar status do Jogador:', e);
+    }
+  };
+
   const usersToList = isGM ? onlineUsers.filter(u => u.user_id !== gmId) : onlineUsers;
 
   return (
@@ -46,16 +81,29 @@ export function OnlinePlayersList({ onlineUsers, isGM = false, sessionId, gmId }
           <p className="text-stone-400 text-sm">Nenhum jogador conectado no momento.</p>
         ) : (
           <ul className="space-y-3">
-            {usersToList.map((user) => (
-              <li key={user.user_id}>
-                <PlayerCard
-                  user={user}
-                  isClickable={user.user_id !== gmId}
-                  isSessionGM={user.user_id === gmId}
-                  onClick={(id, e) => handlePlayerClick(id, e)}
-                />
-              </li>
-            ))}
+            {usersToList.map((user) => {
+              const isBusy = activeTests.some(test => 
+                test.status === 'active' && 
+                testResults[test.id]?.some(r => r.player_id === user.user_id && r.status === 'pending')
+              )
+              
+              const associatedCharacter = playerCharacters.find(pc => pc.user_id === user.user_id)?.character;
+              
+              return (
+                <li key={user.user_id}>
+                  <PlayerCard
+                    user={user}
+                    isClickable={user.user_id !== gmId}
+                    isSessionGM={user.user_id === gmId}
+                    isBusy={isBusy}
+                    character={associatedCharacter}
+                    viewerIsGM={isGM}
+                    onUpdateStat={associatedCharacter ? (statKey, delta) => updatePlayerStat(associatedCharacter, statKey, delta) : undefined}
+                    onClick={(id, e) => handlePlayerClick(id, e)}
+                  />
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>

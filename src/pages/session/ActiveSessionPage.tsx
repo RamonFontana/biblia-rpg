@@ -8,6 +8,11 @@ import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { useSessionTests } from '@/hooks/useSessionTests';
+import { useSessionPlayerCharacters } from '@/hooks/useSessionPlayerCharacters';
+import { MasterTestDialog } from '@/components/session/MasterTestDialog';
+import { PlayerTestDialog } from '@/components/session/PlayerTestDialog';
+import { DiceRollerDialog } from '@/components/session/DiceRollerDialog';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +21,13 @@ export function ActiveSessionPage() {
   const [payload, setPayload] = useState<PresenceState | undefined>();
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Session tests
+  const { activeTests, testResults } = useSessionTests(id!);
+  const { playerCharacters, updateLocalPlayerCharacter } = useSessionPlayerCharacters(id!);
+  const { npcs, updateLocalNPC } = useSessionNPCs(id);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
 
   // Presence effect
   useEffect(() => {
@@ -29,7 +41,6 @@ export function ActiveSessionPage() {
   }, [user]);
 
   const { onlineUsers } = useSupabasePresence(id, payload);
-  const { npcs } = useSessionNPCs(id);
 
   // Fetch session data and realtime updates
   useEffect(() => {
@@ -86,6 +97,13 @@ export function ActiveSessionPage() {
 
   const isGM = user?.id === sessionData.gm_id;
 
+  // Find pending test for player
+  const currentActiveTest = activeTests.find(t => t.status === 'active');
+  const myResult = currentActiveTest && user 
+    ? (testResults[currentActiveTest.id] || []).find(r => r.player_id === user.id) 
+    : null;
+  const hasPendingTest = !!myResult;
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">
@@ -97,10 +115,20 @@ export function ActiveSessionPage() {
           <div className={`px-3 py-1 rounded-full text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-gray-100/20 text-gray-400'}`}>
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
-          {isGM && sessionData.status === 'active' && (
-            <Button variant="destructive" onClick={endSession}>
-              Finalizar Sessão
+          {sessionData.status === 'active' && (
+            <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2">
+              <span>🎲</span> Dados
             </Button>
+          )}
+          {isGM && sessionData.status === 'active' && (
+            <>
+              <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
+                Solicitar Teste
+              </Button>
+              <Button variant="destructive" onClick={endSession}>
+                Finalizar Sessão
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -117,14 +145,20 @@ export function ActiveSessionPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-              <OnlinePlayersList onlineUsers={onlineUsers} isGM={true} sessionId={id} gmId={sessionData.gm_id} />
-
+              <OnlinePlayersList 
+                onlineUsers={onlineUsers} 
+                isGM={isGM} 
+                sessionId={id} 
+                gmId={sessionData.gm_id} 
+                playerCharacters={playerCharacters}
+                onUpdatePlayerStat={updateLocalPlayerCharacter}
+              /> 
               <div className="border border-stone-800 rounded-lg p-4 bg-stone-950">
                 <h3 className="text-xl font-semibold mb-4 text-stone-200">Inimigos</h3>
                 <p className="text-stone-500 text-sm italic">Controle de combate em breve...</p>
               </div>
 
-              <SessionNPCList npcs={npcs} sessionId={id} />
+              <SessionNPCList npcs={npcs} sessionId={id} onUpdateNPCStat={updateLocalNPC} />
             </div>
           </div>
         ) : (
@@ -143,12 +177,33 @@ export function ActiveSessionPage() {
 
               <div className="border border-stone-800 rounded-lg p-4 bg-stone-950">
                 <h3 className="text-xl font-semibold mb-4 text-stone-200 text-center">Jogadores na Sessão</h3>
-                <OnlinePlayersList onlineUsers={onlineUsers} isGM={false} sessionId={id} gmId={sessionData.gm_id} />
+                <OnlinePlayersList onlineUsers={onlineUsers} isGM={false} sessionId={id} gmId={sessionData.gm_id} playerCharacters={playerCharacters} />
               </div>
             </div>
           </div>
         )}
       </div>
+
+      <MasterTestDialog 
+        sessionId={id!} 
+        isOpen={isTestDialogOpen} 
+        onClose={() => setIsTestDialogOpen(false)} 
+        activeTests={activeTests} 
+        testResults={testResults} 
+        playerCharacters={playerCharacters}
+      />
+
+      <PlayerTestDialog
+        isOpen={hasPendingTest && !isGM}
+        activeTest={currentActiveTest || null}
+        testResult={myResult || null}
+        playerCharacters={playerCharacters}
+      />
+
+      <DiceRollerDialog 
+        isOpen={isDiceRollerOpen}
+        onClose={() => setIsDiceRollerOpen(false)}
+      />
     </div>
   );
 }

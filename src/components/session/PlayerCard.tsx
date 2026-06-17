@@ -1,14 +1,20 @@
 import React from 'react';
 import type { PresenceState } from '@/hooks/useSupabasePresence';
 
+import type { Character } from '@/features/character-management/types';
+
 interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
   isSessionGM?: boolean;
+  isBusy?: boolean;
+  character?: Character | null;
+  viewerIsGM?: boolean;
+  onUpdateStat?: (statKey: 'current_pv' | 'current_faith', delta: number) => void;
   onClick?: (userId: string, e: React.MouseEvent) => void;
 }
 
-export function PlayerCard({ user, isClickable = false, isSessionGM = false, onClick }: PlayerCardProps) {
+export function PlayerCard({ user, isClickable = false, isSessionGM = false, isBusy = false, character, viewerIsGM = false, onUpdateStat, onClick }: PlayerCardProps) {
   const clickable = isClickable && !isSessionGM;
 
   return (
@@ -31,10 +37,48 @@ export function PlayerCard({ user, isClickable = false, isSessionGM = false, onC
               👑 Mestre
             </span>
           )}
+          {isBusy && !isSessionGM && (
+            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30 flex items-center gap-1 animate-pulse">
+              🎲 Testando...
+            </span>
+          )}
         </span>
         <span className="text-xs text-stone-400 block mt-1">
           Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {character && ` • ${character.name}`}
         </span>
+        {character && character.stats && (
+          <div className="flex gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
+            <div className={`flex items-center gap-1 ${viewerIsGM ? 'bg-stone-800 px-2 py-1 rounded' : ''}`}>
+              <span className="text-red-400">♥</span>
+              {viewerIsGM && onUpdateStat ? (
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', -1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">-</button>
+                  <span className="w-8 text-center font-mono">{character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}</span>
+                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', 1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">+</button>
+                </div>
+              ) : (
+                <span>{character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}</span>
+              )}
+            </div>
+            <div className={`flex items-center gap-1 ${viewerIsGM ? 'bg-stone-800 px-2 py-1 rounded' : ''}`}>
+              <span className="text-blue-400">⛨</span>
+              <span className="font-mono">CA {character.stats.ca}</span>
+            </div>
+            <div className={`flex items-center gap-1 ${viewerIsGM ? 'bg-stone-800 px-2 py-1 rounded' : ''}`}>
+              <span className="text-amber-400">✨</span>
+              {viewerIsGM && onUpdateStat ? (
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', -1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">-</button>
+                  <span className="w-8 text-center font-mono">{character.stats.current_faith ?? character.stats.faith}/100</span>
+                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', 1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">+</button>
+                </div>
+              ) : (
+                <span>{character.stats.current_faith ?? character.stats.faith}/100</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       {clickable && (
         <div className="text-stone-400">

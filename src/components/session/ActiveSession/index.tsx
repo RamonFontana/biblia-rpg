@@ -5,6 +5,11 @@ import { Button } from '@/components/ui/button';
 import { useSessionNPCs } from '@/hooks/useSessionNPCs';
 import { SessionNPCList } from '../SessionNPCList';
 import { AddNPCModal } from '../AddNPCModal';
+import { useSessionTests } from '@/hooks/useSessionTests';
+import { MasterTestDialog } from '../MasterTestDialog';
+import { PlayerTestDialog } from '../PlayerTestDialog';
+import { DiceRollerDialog } from '../DiceRollerDialog';
+import { useAuthStore } from '@/store/authStore';
 
 export function ActiveSession() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +17,17 @@ export function ActiveSession() {
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { npcs, isLoading: isNpcsLoading } = useSessionNPCs(id);
+  const { activeTests, testResults } = useSessionTests(id!);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
+  const { user } = useAuthStore();
+
+  // Find if there's an active test for the current player
+  const currentActiveTest = activeTests.find(t => t.status === 'active');
+  const myResult = currentActiveTest && user 
+    ? (testResults[currentActiveTest.id] || []).find(r => r.player_id === user.id) 
+    : null;
+  const hasPendingTest = !!myResult;
 
   useEffect(() => {
     if (!id) return;
@@ -78,6 +94,12 @@ export function ActiveSession() {
           </div>
           {sessionData.status === 'active' && (
             <>
+              <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2">
+                <span>🎲</span> Dados
+              </Button>
+              <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
+                Solicitar Teste
+              </Button>
               <AddNPCModal sessionId={id!} />
               <Button variant="destructive" onClick={endSession}>
                 Finalizar Sessão
@@ -102,6 +124,26 @@ export function ActiveSession() {
           <SessionNPCList npcs={npcs} sessionId={id!} />
         </div>
       </div>
+
+      <MasterTestDialog 
+        sessionId={id!} 
+        isOpen={isTestDialogOpen} 
+        onClose={() => setIsTestDialogOpen(false)} 
+        activeTests={activeTests} 
+        testResults={testResults} 
+        playerCharacters={[]} // TODO: replace with real players
+      />
+
+      <PlayerTestDialog
+        isOpen={hasPendingTest}
+        activeTest={currentActiveTest || null}
+        testResult={myResult || null}
+      />
+
+      <DiceRollerDialog 
+        isOpen={isDiceRollerOpen}
+        onClose={() => setIsDiceRollerOpen(false)}
+      />
     </div>
   );
 }

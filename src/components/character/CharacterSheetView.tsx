@@ -37,7 +37,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             .eq('user_id', userId)
             .limit(1)
             .maybeSingle();
-            
+
           if (participantData?.character_id) {
             characterIdToFetch = participantData.character_id;
           }
@@ -78,7 +78,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           }
         } else if (charData) {
           setCharacter(charData as unknown as Character);
-          
+
           // Fetch inventory items
           const { data: itemsData, error: itemsError } = await supabase
             .from('character_items')
@@ -97,7 +97,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               )
             `)
             .eq('character_id', charData.id);
-            
+
           if (!itemsError && itemsData) {
             setInventoryItems(itemsData);
           }
@@ -115,12 +115,12 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
     }
   }, [userId, characterId, sessionId]);
 
-  // Realtime updates for inventory
+  // Realtime updates for inventory and character stats
   useEffect(() => {
     if (!character?.id) return;
 
     const channel = supabase
-      .channel(`character_items_${character.id}`)
+      .channel(`character_sheet_updates_${character.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'character_items', filter: `character_id=eq.${character.id}` },
@@ -143,10 +143,18 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               )
             `)
             .eq('character_id', character.id);
-            
+
           if (itemsData) {
             setInventoryItems(itemsData);
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'characters', filter: `id=eq.${character.id}` },
+        (payload) => {
+          // Atualiza a ficha local com as novas alterações do banco
+          setCharacter((prev) => prev ? { ...prev, ...payload.new } as Character : null);
         }
       )
       .subscribe();
@@ -204,19 +212,25 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
             <Heart className="w-8 h-8 text-red-500 mb-2" />
-            <span className="text-3xl font-bold text-stone-100">{stats?.pv || 0}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-stone-100">{stats?.current_pv ?? stats?.pv ?? 10}</span>
+              <span className="text-sm text-stone-500 font-medium">/{stats?.pv ?? 10}</span>
+            </div>
             <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">PV</span>
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-stone-500/5 group-hover:bg-stone-500/10 transition-colors"></div>
             <Shield className="w-8 h-8 text-stone-400 mb-2" />
-            <span className="text-3xl font-bold text-stone-100">{stats?.ca || 0}</span>
+            <span className="text-3xl font-bold text-stone-100">{stats?.ca ?? 10}</span>
             <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">CA</span>
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-amber-900/50 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
             <Sparkles className="w-8 h-8 text-amber-500 mb-2" />
-            <span className="text-3xl font-bold text-amber-100">{stats?.faith || 0}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-amber-100">{stats?.current_faith ?? stats?.faith ?? 0}</span>
+              <span className="text-sm text-amber-500/50 font-medium">/100</span>
+            </div>
             <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">Fé</span>
           </div>
         </div>
@@ -248,7 +262,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             ))}
           </div>
         </div>
-        
+
         {/* Habilidades Raciais */}
         {tribe && getTribeSkills(tribe).length > 0 && (
           <div>

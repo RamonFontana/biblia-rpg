@@ -62,6 +62,27 @@ export function useSessionNPCs(sessionId: string | undefined) {
           fetchNPCs();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'characters',
+        },
+        (payload) => {
+          setNpcs((prev) => {
+            const updatedIndex = prev.findIndex(npc => npc.id === payload.new.id);
+            if (updatedIndex === -1) return prev;
+            
+            const newArray = [...prev];
+            newArray[updatedIndex] = {
+              ...newArray[updatedIndex],
+              ...payload.new
+            };
+            return newArray;
+          });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -69,5 +90,19 @@ export function useSessionNPCs(sessionId: string | undefined) {
     };
   }, [sessionId]);
 
-  return { npcs, isLoading };
+  const updateLocalNPC = (npcId: string, updatedStats: any) => {
+    setNpcs((prev) => {
+      const updatedIndex = prev.findIndex(npc => npc.id === npcId);
+      if (updatedIndex === -1) return prev;
+      
+      const newArray = [...prev];
+      newArray[updatedIndex] = {
+        ...newArray[updatedIndex],
+        stats: updatedStats
+      };
+      return newArray;
+    });
+  };
+
+  return { npcs, isLoading, updateLocalNPC };
 }

@@ -13,6 +13,7 @@ export interface CharacterStats {
   ca: number;
   faith: number;
   current_faith?: number;
+  status?: string;
 }
 
 export interface EquipmentItem {
