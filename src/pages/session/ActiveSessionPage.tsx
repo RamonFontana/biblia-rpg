@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSupabasePresence, type PresenceState } from '@/hooks/useSupabasePresence';
 import { useSessionNPCs } from '@/hooks/useSessionNPCs';
 import { SessionNPCList } from '@/components/session/SessionNPCList';
+import { SessionEnemyList } from '@/components/session/SessionEnemyList';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -390,10 +391,7 @@ export function ActiveSessionPage() {
                 onAcceptTrade={handleAcceptTrade}
                 onRejectTrade={handleRejectTrade}
               />
-              <div className="border border-stone-800 rounded-lg p-4 bg-stone-950">
-                <h3 className="text-xl font-semibold mb-4 text-stone-200">Inimigos</h3>
-                <p className="text-stone-500 text-sm italic">Controle de combate em breve...</p>
-              </div>
+              <SessionEnemyList sessionId={id} />
 
               <SessionNPCList
                 npcs={npcs}

@@ -33,6 +33,11 @@ export interface CharacterNarrative {
   personality?: string;
 }
 
+export interface EnemySkill {
+  name: string;
+  description: string;
+}
+
 export interface DraftCharacter {
   name?: string;
   tribe?: string;
@@ -44,4 +49,5 @@ export interface DraftCharacter {
   equipment?: EquipmentItem[];
   coins?: number;
   narrative?: CharacterNarrative;
+  skills?: EnemySkill[];
 }

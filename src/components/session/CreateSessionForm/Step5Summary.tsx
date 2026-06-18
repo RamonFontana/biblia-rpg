@@ -49,7 +49,7 @@ export function Step5Summary() {
           <h3 className="font-semibold text-lg text-primary">Inimigos ({store.enemies.length})</h3>
           {store.enemies.length > 0 ? (
             <ul className="list-disc list-inside">
-              {store.enemies.map(e => <li key={e.id}>{e.name} (HP: {e.current_hp}/{e.max_hp})</li>)}
+              {store.enemies.map(e => <li key={e.id}>{e.name} (HP: {e.hpCurrent}/{e.hpMax})</li>)}
             </ul>
           ) : <p className="text-muted-foreground italic">Nenhum inimigo adicionado.</p>}
         </div>

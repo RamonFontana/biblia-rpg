@@ -48,8 +48,8 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
       narrative: {
         biography: npc.description,
       },
-      fortress: 'Coragem', // Placeholder, ideal seria vir do form
-      temptation: 'Ganância', // Placeholder
+      fortress: 'Coragem',
+      temptation: 'Ganância',
     } as any).select('id').single();
 
     if (charErr) {
@@ -62,11 +62,52 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
     }
   }
 
+  // 1.5 Create Enemies as Characters
+  for (const enemy of payload.enemies) {
+    const newCharacter = {
+      user_id: user.id,
+      is_enemy: true,
+      name: enemy.name,
+      vocation: enemy.vocation || '',
+      tribe: 'Inimigo',
+      has_participated_in_session: true,
+      attributes: {
+        for: enemy.attributes?.for || 0,
+        des: enemy.attributes?.des || 0,
+        con: enemy.attributes?.con || 0,
+        int: enemy.attributes?.int || 0,
+        sab: enemy.attributes?.sab || 0,
+        car: enemy.attributes?.car || 0,
+      },
+      stats: {
+        pv: enemy.hpMax,
+        current_pv: enemy.hpCurrent,
+        ca: enemy.ca,
+        faith: 0,
+        current_faith: 0
+      },
+      skills: enemy.skills || [],
+      narrative: {
+        imageUrl: enemy.imageBase64 || ''
+      }
+    };
+
+    const { data: charData, error: charErr } = await supabase.from('characters').insert(newCharacter as any).select('id').single();
+    if (charErr) {
+      console.error('Error creating enemy character:', charErr);
+      throw charErr;
+    }
+
+    if (charData) {
+      finalParticipantIds.push(charData.id);
+    }
+  }
+
   // 2. Create Session via RPC
   const { data, error } = await supabase.rpc('create_game_session', {
     session_name: payload.session_name,
     session_description: payload.session_description,
-    enemies: payload.enemies,
+    enemies: [], // No longer use session_enemies table
     npcs: simpleNPCs.map(n => ({
       name: n.name,
       description: n.description,

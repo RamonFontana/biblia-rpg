@@ -2,10 +2,21 @@ import { create } from 'zustand';
 
 export type SessionEnemyDraft = {
   id: string; // temp id
-  base_enemy_id: string;
   name: string;
-  max_hp: number;
-  current_hp: number;
+  hpMax: number;
+  hpCurrent: number;
+  ca: number;
+  vocation?: string;
+  attributes?: {
+    for: number;
+    des: number;
+    con: number;
+    int: number;
+    sab: number;
+    car: number;
+  };
+  skills?: { name: string; description: string }[];
+  imageBase64?: string;
 };
 
 export type SessionNPCDraft = {
