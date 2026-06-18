@@ -4,10 +4,13 @@ import { PlayerCard } from './PlayerCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { TokenContextMenu } from './TokenContextMenu';
+import { TradeRequestNotification } from './TradeRequestNotification';
 import { useAuthStore } from '@/store/authStore';
 import { useSessionTests } from '@/hooks/useSessionTests';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
+import type { TradeWithItems } from '@/types/trade';
 
 interface SessionParticipantListProps {
   onlineUsers: PresenceState[];
@@ -16,17 +19,63 @@ interface SessionParticipantListProps {
   gmId?: string;
   playerCharacters?: { user_id: string; character: Character }[];
   npcs?: Character[];
+  activeTrades?: TradeWithItems[];
   onUpdatePlayerStat?: (characterId: string, stats: any) => void;
+  onNegotiate?: (targetUserId: string) => void;
+  onShop?: (targetUserId: string) => void;
+  onNPCNegotiate?: (npc: Character & { is_playable?: boolean }) => void;
+  onAcceptTrade?: (tradeId: string) => void;
+  onRejectTrade?: (tradeId: string) => void;
 }
 
-export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, gmId, playerCharacters = [], npcs = [], onUpdatePlayerStat }: SessionParticipantListProps) {
+export function SessionParticipantList({
+  onlineUsers,
+  isGM = false,
+  sessionId,
+  gmId,
+  playerCharacters = [],
+  npcs = [],
+  activeTrades = [],
+  onUpdatePlayerStat,
+  onNegotiate,
+  onShop,
+  onNPCNegotiate,
+  onAcceptTrade,
+  onRejectTrade,
+}: SessionParticipantListProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { user } = useAuthStore();
   const { activeTests, testResults } = useSessionTests(sessionId || '');
 
+  const isCharacterTrading = (characterId: string | undefined) => {
+    if (!characterId) return false;
+    return activeTrades.some(
+      (t) =>
+        (t.status === 'active' || t.status === 'pending') &&
+        (t.initiator_character_id === characterId || t.target_character_id === characterId)
+    );
+  };
+
+  const pendingTradesForUser = activeTrades.filter((t) => {
+    if (t.status !== 'pending') return false;
+    if (t.type === 'player_trade') {
+      const targetUser = playerCharacters.find(
+        (pc) => pc.character.id === t.target_character_id
+      );
+      return targetUser?.user_id === user?.id;
+    }
+    if (t.type === 'npc_trade' && isGM) {
+      return true;
+    }
+    return false;
+  });
+
   const handlePlayerClick = (userId: string, e?: React.MouseEvent) => {
+    const char = playerCharacters.find((pc) => pc.user_id === userId)?.character;
+    if (isCharacterTrading(char?.id)) return;
+
     if (userId !== gmId) {
       if (user && userId === user.id && e) {
         setContextMenuPos({ x: e.clientX, y: e.clientY });
@@ -48,7 +97,7 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
       ? (character.stats[baseKey] || 10)
       : 100;
     const currentValue = character.stats[statKey] ?? character.stats[baseKey] ?? (statKey === 'current_pv' ? 10 : 0);
-    
+
     let newValue = Math.max(0, currentValue + delta);
     if (newValue > maxValue) newValue = maxValue;
 
@@ -59,7 +108,7 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
         .from('characters')
         .update({ stats: newStats })
         .eq('id', character.id);
-        
+
       if (onUpdatePlayerStat) {
         onUpdatePlayerStat(character.id, newStats);
       }
@@ -68,8 +117,8 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
     }
   };
 
-  const gmUser = onlineUsers.find(u => u.user_id === gmId);
-  const playerUsers = onlineUsers.filter(u => u.user_id !== gmId);
+  const gmUser = onlineUsers.find((u) => u.user_id === gmId);
+  const playerUsers = onlineUsers.filter((u) => u.user_id !== gmId);
 
   return (
     <>
@@ -79,7 +128,6 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
           Participantes Online ({onlineUsers.length})
         </h3>
 
-        {/* Master Section */}
         {gmUser && (
           <div className="mb-6">
             <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">Mestre</h4>
@@ -92,7 +140,6 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
           </div>
         )}
 
-        {/* Players Section */}
         {(!isGM || playerUsers.length > 0) && (
           <div className="mb-6">
             <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">Personagens</h4>
@@ -101,32 +148,50 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
             ) : (
               <ul className="space-y-3">
                 {playerUsers.map((pUser) => {
-                  const isBusy = activeTests.some(test => 
-                    test.status === 'active' && 
-                    testResults[test.id]?.some(r => r.player_id === pUser.user_id && r.status === 'pending')
+                  const isBusy = activeTests.some(
+                    (test) =>
+                      test.status === 'active' &&
+                      testResults[test.id]?.some(
+                        (r) => r.player_id === pUser.user_id && r.status === 'pending'
+                      )
                   );
-                  const associatedCharacter = playerCharacters.find(pc => pc.user_id === pUser.user_id)?.character;
+                  const associatedCharacter = playerCharacters.find(
+                    (pc) => pc.user_id === pUser.user_id
+                  )?.character;
+                  const trading = isCharacterTrading(associatedCharacter?.id);
+                  const blocked = isBusy || trading;
+
                   return (
                     <li key={pUser.user_id}>
                       <PlayerCard
                         user={pUser}
-                        isClickable={true}
+                        isClickable={!blocked}
                         isSessionGM={false}
                         isBusy={isBusy}
+                        isTrading={trading}
                         character={associatedCharacter}
                         viewerIsGM={isGM}
-                        onUpdateStat={associatedCharacter ? (statKey, delta) => updatePlayerStat(associatedCharacter, statKey, delta) : undefined}
-                        onClick={(id, e) => handlePlayerClick(id, e)}
+                        onUpdateStat={
+                          associatedCharacter
+                            ? (statKey, delta) => updatePlayerStat(associatedCharacter, statKey, delta)
+                            : undefined
+                        }
+                        onClick={blocked ? undefined : (id, e) => handlePlayerClick(id, e)}
+                        onNegotiate={
+                          !blocked && onNegotiate && pUser.user_id !== user?.id
+                            ? onNegotiate
+                            : undefined
+                        }
+                        onShop={!blocked && onShop ? onShop : undefined}
                       />
                     </li>
-                  )
+                  );
                 })}
               </ul>
             )}
           </div>
         )}
 
-        {/* NPCs Section (Only for players since Master has their own list, or if npcs are passed) */}
         {npcs.length > 0 && (
           <div>
             <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">NPCs</h4>
@@ -137,8 +202,21 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
                     className={`relative p-3 bg-stone-700 border border-stone-600 rounded-md transition-colors ${(npc as any).is_playable ? 'cursor-pointer hover:bg-stone-600' : ''}`}
                     onClick={() => { if ((npc as any).is_playable) setSelectedNPC(npc); }}
                   >
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="font-semibold text-stone-200">{npc.name}</p>
+                      {!isGM && onNPCNegotiate && (npc as any).is_visible !== false && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNPCNegotiate(npc as Character & { is_playable?: boolean });
+                          }}
+                          className="h-7 text-xs border-stone-500 text-stone-300 hover:bg-stone-600 shrink-0"
+                        >
+                          ⚖️ Negociar
+                        </Button>
+                      )}
                     </div>
                     <p className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
                       {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
@@ -158,6 +236,24 @@ export function SessionParticipantList({ onlineUsers, isGM = false, sessionId, g
           </div>
         )}
       </div>
+
+      {pendingTradesForUser.map((trade) => {
+        const npcName = trade.target_npc_id
+          ? npcs.find((n) => n.id === trade.target_npc_id)?.name
+          : trade.target_character_id
+            ? npcs.find((n) => n.id === trade.target_character_id)?.name
+            : undefined;
+        return (
+        <TradeRequestNotification
+          key={trade.id}
+          trade={trade}
+          playerCharacters={playerCharacters}
+          npcName={npcName}
+          onAccept={(id) => onAcceptTrade?.(id)}
+          onReject={(id) => onRejectTrade?.(id)}
+        />
+        );
+      })}
 
       <Dialog open={!!selectedUserId} onOpenChange={(open: boolean) => !open && closeSheet()}>
         <DialogContent className="w-full sm:max-w-4xl bg-stone-950 border border-stone-800 p-0 text-stone-200 overflow-hidden flex flex-col gap-0">

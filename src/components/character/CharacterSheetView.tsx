@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
-import { Shield, Heart, Star, Sparkles, Activity, Target, Zap } from 'lucide-react';
+import { Coins, Shield, Heart, Star, Sparkles, Activity, Target, Zap } from 'lucide-react';
 import { NPCInventoryManager } from './NPCInventoryManager';
 import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
 import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
@@ -208,7 +208,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
 
       <div className="p-6 space-y-8">
         {/* Vitals / Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
             <Heart className="w-8 h-8 text-red-500 mb-2" />
@@ -232,6 +232,12 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               <span className="text-sm text-amber-500/50 font-medium">/100</span>
             </div>
             <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">Fé</span>
+          </div>
+          <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-yellow-900/50 rounded-xl shadow-inner relative overflow-hidden group">
+            <div className="absolute inset-0 bg-yellow-500/5 group-hover:bg-yellow-500/10 transition-colors"></div>
+            <Coins className="w-8 h-8 text-yellow-500 mb-2" />
+            <span className="text-3xl font-bold text-yellow-100">{character.coins ?? 0}</span>
+            <span className="text-xs text-yellow-500/70 uppercase tracking-wider font-semibold mt-1">SP</span>
           </div>
         </div>
 

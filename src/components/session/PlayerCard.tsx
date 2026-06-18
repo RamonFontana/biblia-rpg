@@ -1,21 +1,41 @@
 import React from 'react';
 import type { PresenceState } from '@/hooks/useSupabasePresence';
-
 import type { Character } from '@/features/character-management/types';
+import { Button } from '@/components/ui/button';
+import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';
 
 interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
   isSessionGM?: boolean;
   isBusy?: boolean;
+  isTrading?: boolean;
   character?: Character | null;
   viewerIsGM?: boolean;
   onUpdateStat?: (statKey: 'current_pv' | 'current_faith', delta: number) => void;
   onClick?: (userId: string, e: React.MouseEvent) => void;
+  onNegotiate?: (userId: string) => void;
+  onShop?: (userId: string) => void;
 }
 
-export function PlayerCard({ user, isClickable = false, isSessionGM = false, isBusy = false, character, viewerIsGM = false, onUpdateStat, onClick }: PlayerCardProps) {
-  const clickable = isClickable && !isSessionGM;
+export function PlayerCard({
+  user,
+  isClickable = false,
+  isSessionGM = false,
+  isBusy = false,
+  isTrading = false,
+  character,
+  viewerIsGM = false,
+  onUpdateStat,
+  onClick,
+  onNegotiate,
+  onShop,
+}: PlayerCardProps) {
+  const blocked = isBusy || isTrading;
+  const clickable = isClickable && !isSessionGM && !blocked;
+  const canOpenShop = viewerIsGM && !isSessionGM && onShop && !blocked;
+  const canNegotiate = !isSessionGM && !viewerIsGM && onNegotiate && character && !blocked;
+  const hasActions = canOpenShop || canNegotiate || clickable;
 
   return (
     <div
@@ -25,67 +45,134 @@ export function PlayerCard({ user, isClickable = false, isSessionGM = false, isB
           onClick(user.user_id, e);
         }
       }}
-      className={`flex items-center gap-3 p-3 bg-stone-700 rounded-md border border-stone-600 transition-colors
+      className={`group min-w-0 rounded-md border border-stone-600 bg-stone-700 p-3 transition-colors
         ${clickable ? 'cursor-pointer hover:bg-stone-600 hover:border-stone-500' : ''}
+        ${blocked ? 'opacity-75' : ''}
       `}
     >
-      <div className="flex-1">
-        <span className="text-stone-200 font-medium text-lg flex items-center gap-2">
-          {character ? character.name : (user.name || 'Jogador')}
-          {isSessionGM && (
-            <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
-              👑 Mestre
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="min-w-0 truncate text-lg font-medium text-stone-200">
+              {character ? character.name : (user.name || 'Jogador')}
             </span>
-          )}
-          {isBusy && !isSessionGM && (
-            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30 flex items-center gap-1 animate-pulse">
-              🎲 Testando...
-            </span>
-          )}
-        </span>
-        <span className="text-xs text-stone-400 block mt-1">
-          {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
-        {character && character.stats && (
-          <div className="flex gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
-            <div className={`flex items-center gap-1 ${viewerIsGM ? 'bg-stone-800 px-2 py-1 rounded' : ''}`}>
-              <span className="text-red-400">♥</span>
-              {viewerIsGM && onUpdateStat ? (
-                <div className="flex items-center gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', -1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">-</button>
-                  <span className="w-8 text-center font-mono">{character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}</span>
-                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', 1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">+</button>
-                </div>
-              ) : (
-                <span>{character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}</span>
-              )}
-            </div>
-            <div className={`flex items-center gap-1 ${viewerIsGM ? 'bg-stone-800 px-2 py-1 rounded' : ''}`}>
-              <span className="text-blue-400">⛨</span>
-              <span className="font-mono">CA {character.stats.ca}</span>
-            </div>
-            <div className={`flex items-center gap-1 ${viewerIsGM ? 'bg-stone-800 px-2 py-1 rounded' : ''}`}>
-              <span className="text-amber-400">✨</span>
-              {viewerIsGM && onUpdateStat ? (
-                <div className="flex items-center gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', -1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">-</button>
-                  <span className="w-8 text-center font-mono">{character.stats.current_faith ?? character.stats.faith}/100</span>
-                  <button onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', 1); }} className="w-5 h-5 bg-stone-700 hover:bg-stone-600 rounded flex items-center justify-center">+</button>
-                </div>
-              ) : (
-                <span>{character.stats.current_faith ?? character.stats.faith}/100</span>
-              )}
-            </div>
+            {isSessionGM && (
+              <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
+                👑 Mestre
+              </span>
+            )}
+            {isBusy && !isSessionGM && (
+              <span className="flex animate-pulse items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+                🎲 Testando...
+              </span>
+            )}
+            {isTrading && !isSessionGM && (
+              <span className="flex animate-pulse items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400">
+                ⚖️ Negociando...
+              </span>
+            )}
+          </div>
+          <span className="mt-1 block truncate text-xs text-stone-400">
+            {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+
+        {hasActions && (
+          <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+            {canOpenShop && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => { e.stopPropagation(); onShop(user.user_id); }}
+                className="h-8 whitespace-nowrap border-amber-600/50 px-2.5 text-xs text-amber-400 hover:bg-amber-600/20"
+              >
+                <Store className="mr-1 h-3.5 w-3.5" />
+                Lojinha
+              </Button>
+            )}
+            {canNegotiate && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => { e.stopPropagation(); onNegotiate(user.user_id); }}
+                className="h-8 whitespace-nowrap border-stone-500 px-2.5 text-xs text-stone-300 hover:bg-stone-600"
+              >
+                <Scale className="mr-1 h-3.5 w-3.5" />
+                Negociar
+              </Button>
+            )}
+            {clickable && (
+              <LogIn
+                className="h-5 w-5 text-stone-400 transition-colors group-hover:text-stone-200"
+                aria-hidden="true"
+              />
+            )}
           </div>
         )}
       </div>
-      {clickable && (
-        <div className="text-stone-400">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" y1="12" x2="3" y2="12" />
-          </svg>
+
+      {character && character.stats && (
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-600/50 pt-2 text-xs text-stone-400">
+          <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
+            <Heart className="h-3.5 w-3.5 text-red-400" />
+            {viewerIsGM && onUpdateStat ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Reduzir PV"
+                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', -1); }}
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
+                >
+                  <Minus className="h-3 w-3" />
+                </button>
+                <span className="min-w-[3.25rem] text-center font-mono tabular-nums">
+                  {character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Aumentar PV"
+                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', 1); }}
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <span className="font-mono tabular-nums">{character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}</span>
+            )}
+          </div>
+          <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
+            <Shield className="h-3.5 w-3.5 text-blue-400" />
+            <span className="font-mono tabular-nums">CA {character.stats.ca}</span>
+          </div>
+          <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            {viewerIsGM && onUpdateStat ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Reduzir Fé"
+                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', -1); }}
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
+                >
+                  <Minus className="h-3 w-3" />
+                </button>
+                <span className="min-w-[3.25rem] text-center font-mono tabular-nums">
+                  {character.stats.current_faith ?? character.stats.faith}/100
+                </span>
+                <button
+                  type="button"
+                  aria-label="Aumentar Fé"
+                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', 1); }}
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <span className="font-mono tabular-nums">{character.stats.current_faith ?? character.stats.faith}/100</span>
+            )}
+          </div>
         </div>
       )}
     </div>

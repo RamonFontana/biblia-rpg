@@ -1,37 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export function useSessionPlayerCharacters(sessionId: string | undefined) {
   const [playerCharacters, setPlayerCharacters] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchPlayers = useCallback(async () => {
     if (!sessionId) return;
 
-    async function fetchPlayers() {
-      // 1. Get all participants for this session
-      const { data: participants, error: pError } = await supabase
-        .from('session_participants')
-        .select('user_id, character_id')
-        .eq('session_id', sessionId as string);
+    // 1. Get all participants for this session
+    const { data: participants, error: pError } = await supabase
+      .from('session_participants')
+      .select('user_id, character_id')
+      .eq('session_id', sessionId as string);
 
-      if (pError || !participants) return;
+    if (pError || !participants) return;
 
 
-      // 3. Fetch characters
-      const charIds = participants.map(p => p.character_id).filter(Boolean);
-      const { data: characters } = await supabase
-        .from('characters')
-        .select('*')
-        .in('id', charIds);
+    // 3. Fetch characters
+    const charIds = participants.map(p => p.character_id).filter(Boolean);
+    const { data: characters } = await supabase
+      .from('characters')
+      .select('*')
+      .in('id', charIds);
 
-      const combined = participants.map(p => {
-        const character = characters?.find(c => c.id === p.character_id) || null;
-        return { user_id: p.user_id, character, profile: null };
-      }).filter(item => item.character); // Only include those with characters
+    const combined = participants.map(p => {
+      const character = characters?.find(c => c.id === p.character_id) || null;
+      return { user_id: p.user_id, character, profile: null };
+    }).filter(item => item.character); // Only include those with characters
 
-      setPlayerCharacters(combined);
-    }
+    setPlayerCharacters(combined);
+  }, [sessionId]);
 
+  useEffect(() => {
+    if (!sessionId) return;
     fetchPlayers();
 
     // Subscribe to session_participants and characters
@@ -79,7 +80,7 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId]);
+  }, [sessionId, fetchPlayers]);
 
   const updateLocalPlayerCharacter = (characterId: string, updatedStats: any) => {
     setPlayerCharacters(prev => {
@@ -98,5 +99,5 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
     });
   };
 
-  return { playerCharacters, updateLocalPlayerCharacter };
+  return { playerCharacters, updateLocalPlayerCharacter, refresh: fetchPlayers };
 }

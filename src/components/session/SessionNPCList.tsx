@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Character } from '@/features/character-management/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
 interface SessionNPC extends Character {
@@ -14,9 +15,11 @@ interface SessionNPCListProps {
   sessionId: string;
   onUpdateNPCStat?: (npcId: string, stats: any) => void;
   onUpdateNPCData?: (npcId: string, data: Partial<SessionNPC>) => void;
+  onNPCNegotiate?: (npc: SessionNPC) => void;
+  showNegotiateButton?: boolean;
 }
 
-export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCData }: SessionNPCListProps) {
+export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCData, onNPCNegotiate, showNegotiateButton = false }: SessionNPCListProps) {
   const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
 
   const handleNPCClick = (npc: SessionNPC) => {
@@ -112,6 +115,17 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                         </span>
                       )}
                     </div>
+                    <div className="flex items-center gap-2">
+                      {showNegotiateButton && npc.is_visible && onNPCNegotiate && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => { e.stopPropagation(); onNPCNegotiate(npc); }}
+                          className="h-7 text-xs border-stone-500 text-stone-300 hover:bg-stone-600"
+                        >
+                          ⚖️ Negociar
+                        </Button>
+                      )}
                     <div 
                       className="flex items-center gap-2 cursor-pointer"
                       onClick={(e) => toggleVisibility(e, npc)}
@@ -133,6 +147,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                           }`}
                         />
                       </button>
+                    </div>
                     </div>
                   </div>
                   <p className={`text-sm ${npc.is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>

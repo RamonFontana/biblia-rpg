@@ -33,7 +33,7 @@ function Home() {
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
         .then(({ data }) => {
           if (data) setActiveSessionId(data.id)
         })

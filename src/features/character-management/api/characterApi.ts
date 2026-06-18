@@ -6,6 +6,7 @@ export const getCharacters = async (): Promise<Character[]> => {
   const { data, error } = await supabase
     .from('characters')
     .select('*')
+    .or('is_npc.eq.false,is_npc.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -27,6 +28,7 @@ export const getMyCharacters = async (): Promise<Character[]> => {
     .from('characters')
     .select('*')
     .eq('user_id', session.user.id)
+    .or('is_npc.eq.false,is_npc.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {
