@@ -34,7 +34,8 @@ export function useSessionNPCs(sessionId: string | undefined) {
           tribe: 'NPC Simples',
           vocation: d.description || '',
           stats: d.stats || { pv: 10, current_pv: 10, ca: 10, faith: 0, current_faith: 0 },
-          is_playable: false
+          is_playable: false,
+          is_visible: d.is_visible
         }));
 
         setNpcs([...sessionNpcs, ...simpleSessionNpcs] as any);
@@ -83,6 +84,18 @@ export function useSessionNPCs(sessionId: string | undefined) {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'session_npcs',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => {
+          fetchNPCs();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -90,7 +103,7 @@ export function useSessionNPCs(sessionId: string | undefined) {
     };
   }, [sessionId]);
 
-  const updateLocalNPC = (npcId: string, updatedStats: any) => {
+  const updateLocalNPCData = (npcId: string, newData: any) => {
     setNpcs((prev) => {
       const updatedIndex = prev.findIndex(npc => npc.id === npcId);
       if (updatedIndex === -1) return prev;
@@ -98,11 +111,15 @@ export function useSessionNPCs(sessionId: string | undefined) {
       const newArray = [...prev];
       newArray[updatedIndex] = {
         ...newArray[updatedIndex],
-        stats: updatedStats
+        ...newData
       };
       return newArray;
     });
   };
 
-  return { npcs, isLoading, updateLocalNPC };
+  const updateLocalNPC = (npcId: string, updatedStats: any) => {
+    updateLocalNPCData(npcId, { stats: updatedStats });
+  };
+
+  return { npcs, isLoading, updateLocalNPC, updateLocalNPCData };
 }

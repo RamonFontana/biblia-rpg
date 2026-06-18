@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { OnlinePlayersList } from '@/components/session/OnlinePlayersList';
+import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { useAuthStore } from '@/store/authStore';
 import { useSupabasePresence, type PresenceState } from '@/hooks/useSupabasePresence';
@@ -14,6 +14,8 @@ import { MasterTestDialog } from '@/components/session/MasterTestDialog';
 import { PlayerTestDialog } from '@/components/session/PlayerTestDialog';
 import { DiceRollerDialog } from '@/components/session/DiceRollerDialog';
 import { NewDayDialog } from '@/components/session/NewDayDialog';
+import { SessionRestControls } from '@/components/session/SessionRestControls';
+import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +28,7 @@ export function ActiveSessionPage() {
   // Session tests
   const { activeTests, testResults } = useSessionTests(id!);
   const { playerCharacters, updateLocalPlayerCharacter } = useSessionPlayerCharacters(id!);
-  const { npcs, updateLocalNPC } = useSessionNPCs(id);
+  const { npcs, updateLocalNPC, updateLocalNPCData } = useSessionNPCs(id);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [isNewDayDialogOpen, setIsNewDayDialogOpen] = useState(false);
@@ -118,7 +120,11 @@ export function ActiveSessionPage() {
 
     const { error } = await supabase
       .from('game_sessions')
-      .update({ current_period: nextPeriod, current_day: nextDay })
+      .update({ 
+        current_period: nextPeriod, 
+        current_day: nextDay,
+        ...(sessionData.current_period === 'Noite' ? { short_rests_today: 0 } : {})
+      })
       .eq('id', id);
       
     if (error) {
@@ -199,9 +205,11 @@ export function ActiveSessionPage() {
               <p className="text-amber-200/70 text-sm mt-1">Você é o mestre desta sessão. Aqui você gerencia os inimigos, NPCs e a narrativa.</p>
             </div>
 
+            <SessionRestControls sessionId={id} sessionData={sessionData} playerCharacters={playerCharacters} npcs={npcs} />
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-              <OnlinePlayersList 
+              <SessionParticipantList 
                 onlineUsers={onlineUsers} 
                 isGM={isGM} 
                 sessionId={id} 
@@ -214,7 +222,7 @@ export function ActiveSessionPage() {
                 <p className="text-stone-500 text-sm italic">Controle de combate em breve...</p>
               </div>
 
-              <SessionNPCList npcs={npcs} sessionId={id} onUpdateNPCStat={updateLocalNPC} />
+              <SessionNPCList npcs={npcs} sessionId={id} onUpdateNPCStat={updateLocalNPC} onUpdateNPCData={updateLocalNPCData} />
             </div>
           </div>
         ) : (
@@ -226,14 +234,16 @@ export function ActiveSessionPage() {
               <p className="text-blue-200/70 text-sm mt-1">Você está conectado como jogador. Aguarde as instruções do Mestre.</p>
             </div>
 
+            <PlayerRestIndicator sessionData={sessionData} character={playerCharacters.find(pc => pc.user_id === user.id)?.character} />
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl mt-4">
               <div className="border border-stone-800 rounded-lg p-4 bg-stone-950 lg:col-span-2">
                 <CharacterSheetView userId={user.id} sessionId={id} />
               </div>
 
               <div className="border border-stone-800 rounded-lg p-4 bg-stone-950">
-                <h3 className="text-xl font-semibold mb-4 text-stone-200 text-center">Jogadores na Sessão</h3>
-                <OnlinePlayersList onlineUsers={onlineUsers} isGM={false} sessionId={id} gmId={sessionData.gm_id} playerCharacters={playerCharacters} />
+                <h3 className="text-xl font-semibold mb-4 text-stone-200 text-center">Personagens na Sessão</h3>
+                <SessionParticipantList onlineUsers={onlineUsers} isGM={false} sessionId={id} gmId={sessionData.gm_id} playerCharacters={playerCharacters} npcs={npcs.filter(n => (n as unknown as { is_visible?: boolean }).is_visible)} />
               </div>
             </div>
           </div>

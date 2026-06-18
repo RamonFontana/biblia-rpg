@@ -63,6 +63,8 @@ export type Database = {
           has_participated_in_session: boolean | null
           id: string
           is_npc: boolean | null
+          is_visible: boolean
+          level: number | null
           name: string
           narrative: Json | null
           stats: Json
@@ -81,6 +83,8 @@ export type Database = {
           has_participated_in_session?: boolean | null
           id?: string
           is_npc?: boolean | null
+          is_visible?: boolean
+          level?: number | null
           name: string
           narrative?: Json | null
           stats: Json
@@ -99,6 +103,8 @@ export type Database = {
           has_participated_in_session?: boolean | null
           id?: string
           is_npc?: boolean | null
+          is_visible?: boolean
+          level?: number | null
           name?: string
           narrative?: Json | null
           stats?: Json
@@ -121,6 +127,8 @@ export type Database = {
           name: string
           status: string
           updated_at: string
+          short_rests_today: number | null
+          last_long_rest_day: number | null
         }
         Insert: {
           created_at?: string
@@ -132,6 +140,8 @@ export type Database = {
           name: string
           status: string
           updated_at?: string
+          short_rests_today?: number | null
+          last_long_rest_day?: number | null
         }
         Update: {
           created_at?: string
@@ -143,6 +153,8 @@ export type Database = {
           name?: string
           status?: string
           updated_at?: string
+          short_rests_today?: number | null
+          last_long_rest_day?: number | null
         }
         Relationships: []
       }
@@ -264,6 +276,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_visible: boolean
           name: string
           session_id: string
           stats: Json | null
@@ -272,6 +285,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_visible?: boolean
           name: string
           session_id: string
           stats?: Json | null
@@ -280,6 +294,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_visible?: boolean
           name?: string
           session_id?: string
           stats?: Json | null

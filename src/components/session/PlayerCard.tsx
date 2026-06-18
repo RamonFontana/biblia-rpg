@@ -31,7 +31,7 @@ export function PlayerCard({ user, isClickable = false, isSessionGM = false, isB
     >
       <div className="flex-1">
         <span className="text-stone-200 font-medium text-lg flex items-center gap-2">
-          {user.name || 'Jogador'}
+          {character ? character.name : (user.name || 'Jogador')}
           {isSessionGM && (
             <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
               👑 Mestre
@@ -44,8 +44,7 @@ export function PlayerCard({ user, isClickable = false, isSessionGM = false, isB
           )}
         </span>
         <span className="text-xs text-stone-400 block mt-1">
-          Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          {character && ` • ${character.name}`}
+          {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
         {character && character.stats && (
           <div className="flex gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">

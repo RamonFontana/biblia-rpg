@@ -6,15 +6,17 @@ import { supabase } from '@/lib/supabase';
 
 interface SessionNPC extends Character {
   is_playable?: boolean;
+  is_visible?: boolean;
 }
 
 interface SessionNPCListProps {
   npcs: SessionNPC[];
   sessionId: string;
   onUpdateNPCStat?: (npcId: string, stats: any) => void;
+  onUpdateNPCData?: (npcId: string, data: Partial<SessionNPC>) => void;
 }
 
-export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat }: SessionNPCListProps) {
+export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCData }: SessionNPCListProps) {
   const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
 
   const handleNPCClick = (npc: SessionNPC) => {
@@ -60,6 +62,31 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat }: SessionNPCL
     }
   };
 
+  const toggleVisibility = async (e: React.MouseEvent, npc: SessionNPC) => {
+    e.stopPropagation();
+    
+    // Atualização otimista na UI para não precisar do F5
+    if (onUpdateNPCData) {
+      onUpdateNPCData(npc.id, { is_visible: !npc.is_visible });
+    }
+
+    try {
+      if (npc.is_playable) {
+        await supabase
+          .from('characters')
+          .update({ is_visible: !npc.is_visible })
+          .eq('id', npc.id);
+      } else {
+        await supabase
+          .from('session_npcs')
+          .update({ is_visible: !npc.is_visible })
+          .eq('id', npc.id);
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar visibilidade do NPC:', err);
+    }
+  };
+
   return (
     <>
       <div className="bg-stone-800 p-4 rounded-lg border border-stone-700 shadow-md">
@@ -76,13 +103,37 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat }: SessionNPCL
                   className={`relative p-3 bg-stone-900 border border-stone-700 rounded-md transition-colors ${npc.is_playable ? 'cursor-pointer hover:bg-stone-700' : ''} ${npc.stats?.status === 'Morto' ? 'opacity-60 grayscale' : ''}`}
                   onClick={() => handleNPCClick(npc)}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold text-stone-200">{npc.name}</p>
-                    {npc.is_playable && (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                        Ficha Completa
+                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-stone-200">{npc.name}</p>
+                      {npc.is_playable && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                          Ficha Completa
+                        </span>
+                      )}
+                    </div>
+                    <div 
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={(e) => toggleVisibility(e, npc)}
+                      title={npc.is_visible ? "Visível aos jogadores - Clique para ocultar" : "Oculto dos jogadores - Clique para mostrar"}
+                    >
+                      <span className={`text-[10px] font-medium uppercase tracking-wider ${npc.is_visible ? 'text-green-400' : 'text-stone-500'}`}>
+                        {npc.is_visible ? "Visível" : "Oculto"}
                       </span>
-                    )}
+                      <button
+                        type="button"
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
+                          npc.is_visible ? 'bg-green-500' : 'bg-stone-700'
+                        }`}
+                      >
+                        <span className="sr-only">Alternar visibilidade</span>
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            npc.is_visible ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                   <p className={`text-sm ${npc.is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
                     {npc.is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
