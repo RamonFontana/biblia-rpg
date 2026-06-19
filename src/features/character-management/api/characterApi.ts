@@ -7,6 +7,9 @@ export const getCharacters = async (): Promise<Character[]> => {
     .from('characters')
     .select('*')
     .or('is_npc.eq.false,is_npc.is.null')
+    .or('is_enemy.eq.false,is_enemy.is.null')
+    .or('is_deleted.eq.false,is_deleted.is.null')
+    .or('is_dead.eq.false,is_dead.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -29,6 +32,9 @@ export const getMyCharacters = async (): Promise<Character[]> => {
     .select('*')
     .eq('user_id', session.user.id)
     .or('is_npc.eq.false,is_npc.is.null')
+    .or('is_enemy.eq.false,is_enemy.is.null')
+    .or('is_deleted.eq.false,is_deleted.is.null')
+    .or('is_dead.eq.false,is_dead.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {

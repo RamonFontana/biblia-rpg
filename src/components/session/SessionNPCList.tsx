@@ -153,7 +153,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                   <p className={`text-sm ${npc.is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
                     {npc.is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
                   </p>
-                  {npc.stats && (
+                  {npc.stats && npc.is_playable && (
                     <div className="flex gap-4 mt-2 pt-2 border-t border-stone-800/50 text-xs text-stone-400">
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-red-400">♥</span>

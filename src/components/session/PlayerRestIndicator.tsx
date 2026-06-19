@@ -5,7 +5,7 @@ interface PlayerRestIndicatorProps {
   character?: any;
 }
 
-export function PlayerRestIndicator({ sessionData, character }: PlayerRestIndicatorProps) {
+export function PlayerRestIndicator({ sessionData, character: _character }: PlayerRestIndicatorProps) {
   if (!sessionData) return null;
 
   const shortRestsTaken = sessionData.short_rests_today || 0;

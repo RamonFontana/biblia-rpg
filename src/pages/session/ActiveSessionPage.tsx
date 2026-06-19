@@ -21,6 +21,12 @@ import { NewDayDialog } from '@/components/session/NewDayDialog';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
 import type { TradeWithItems } from '@/types/trade';
+import { useSessionEnemies } from '@/hooks/useSessionEnemies';
+import { CombatSetupModal } from '@/components/combat/CombatSetupModal';
+import { CombatDashboard } from '@/components/combat/CombatDashboard';
+import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
+import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
+import { useCombatStore } from '@/store/combatStore';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +48,17 @@ export function ActiveSessionPage() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [isNewDayDialogOpen, setIsNewDayDialogOpen] = useState(false);
+  const [isCombatSetupOpen, setIsCombatSetupOpen] = useState(false);
+
+  const { enemies } = useSessionEnemies(id);
+  const { activeCombat, initSubscriptions, cleanupSubscriptions } = useCombatStore();
+
+  useEffect(() => {
+    if (id) {
+      initSubscriptions(id);
+      return () => cleanupSubscriptions();
+    }
+  }, [id, initSubscriptions, cleanupSubscriptions]);
 
   useEffect(() => {
     if (user) {
@@ -234,16 +251,31 @@ export function ActiveSessionPage() {
     }
 
     try {
-      // Delete playable NPCs associated with this session
-      const npcIds = playerCharacters
-        .filter(pc => pc.character?.is_npc)
-        .map(pc => pc.character.id);
+      // Deletar personagens (NPCs e inimigos) que foram criados para esta sessão
+      const { data: participants } = await supabase
+        .from('session_participants')
+        .select('character_id')
+        .eq('session_id', id);
 
-      if (npcIds.length > 0) {
-        await supabase.from('characters').delete().in('id', npcIds);
+      if (participants && participants.length > 0) {
+        const charIds = participants.map(p => p.character_id).filter(Boolean);
+        
+        if (charIds.length > 0) {
+          // Apenas exclui os que são NPCs ou Inimigos
+          const { data: charsToDelete } = await supabase
+            .from('characters')
+            .select('id')
+            .in('id', charIds)
+            .or('is_npc.eq.true,is_enemy.eq.true');
+
+          if (charsToDelete && charsToDelete.length > 0) {
+            const deleteIds = charsToDelete.map(c => c.id);
+            await supabase.from('characters').delete().in('id', deleteIds);
+          }
+        }
       }
     } catch (e) {
-      console.error('Erro ao deletar NPCs da sessão:', e);
+      console.error('Erro ao deletar NPCs/Inimigos da sessão:', e);
     }
 
     const { error } = await supabase
@@ -310,6 +342,27 @@ export function ActiveSessionPage() {
     }
   };
 
+  const availableEntities = useMemo(() => [
+    ...playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy).map(pc => ({
+      id: pc.character.id,
+      name: pc.character.name || 'Jogador',
+      type: 'player' as const,
+      hpCurrent: pc.character.stats?.current_pv || (pc.character.stats as any)?.current_hp || 0
+    })),
+    ...npcs.filter(npc => !npc.is_deleted && npc.is_playable).map(npc => ({
+      id: npc.id,
+      name: npc.name || 'NPC',
+      type: 'npc' as const,
+      hpCurrent: (npc.stats as any)?.current_pv || (npc.stats as any)?.current_hp || 0
+    })),
+    ...enemies.filter(enemy => !enemy.is_deleted).map(enemy => ({
+      id: enemy.id,
+      name: enemy.name || 'Inimigo',
+      type: 'enemy' as const,
+      hpCurrent: enemy.stats?.current_pv || (enemy.stats as any)?.current_hp || 0
+    }))
+  ], [playerCharacters, npcs, enemies]);
+
   if (isLoading) return <div className="p-8 text-center text-stone-300">Carregando sessão...</div>;
   if (!user) return <div className="p-8 text-center text-stone-300">Autenticação necessária.</div>;
   if (!sessionData || !id) return <div className="p-8 text-center text-stone-300">Sessão não encontrada.</div>;
@@ -325,11 +378,14 @@ export function ActiveSessionPage() {
     ? npcs.find((n) => n.id === myActiveTrade.target_npc_id)?.name
     : undefined;
 
+  const myCharacter = playerCharacters.find((pc) => pc.user_id === user.id)?.character;
+  const isSpectator = myCharacter && myCharacter.is_deleted;
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-stone-100">{sessionData.name}</h1>
+          <h1 className="text-3xl font-extrabold text-stone-100">{sessionData.name} {isSpectator && <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">Modo Espectador</span>}</h1>
           <p className="text-stone-400 mt-1">{sessionData.description}</p>
         </div>
         <div className="flex items-center gap-4">
@@ -345,7 +401,7 @@ export function ActiveSessionPage() {
           <div className={`px-3 py-1 rounded-full text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-gray-100/20 text-gray-400'}`}>
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
-          {sessionData.status === 'active' && (
+          {sessionData.status === 'active' && !isSpectator && (
             <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2">
               <span>🎲</span> Dados
             </Button>
@@ -357,6 +413,9 @@ export function ActiveSessionPage() {
               </Button>
               <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
                 Solicitar Teste
+              </Button>
+              <Button onClick={() => setIsCombatSetupOpen(true)} variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2">
+                <span>⚔️</span> Iniciar Combate
               </Button>
               <Button variant="destructive" onClick={endSession}>
                 Finalizar Sessão
@@ -378,13 +437,19 @@ export function ActiveSessionPage() {
 
             <SessionRestControls sessionId={id} sessionData={sessionData} playerCharacters={playerCharacters} npcs={npcs} />
 
+            {activeCombat && (
+              <div className="mb-6 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
+                <CombatDashboard sessionId={id!} availableEntities={availableEntities} />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <SessionParticipantList
                 onlineUsers={onlineUsers}
                 isGM={isGM}
                 sessionId={id}
                 gmId={sessionData.gm_id}
-                playerCharacters={playerCharacters}
+                playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
                 activeTrades={activeTrades}
                 onUpdatePlayerStat={updateLocalPlayerCharacter}
                 onShop={handleShop}
@@ -402,6 +467,21 @@ export function ActiveSessionPage() {
               />
             </div>
           </div>
+        ) : isSpectator ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-6 max-w-md w-full text-center">
+              <h2 className="text-stone-300 font-bold flex items-center justify-center gap-2 text-xl">
+                <span>👻</span> Modo Espectador
+              </h2>
+              <p className="text-stone-400 text-sm mt-2">
+                Seu personagem não está mais entre os vivos nesta jornada. Você ainda pode acompanhar a sessão e as rolagens no chat ou na tela da sala.
+              </p>
+            </div>
+
+            <div className="w-full max-w-4xl opacity-70 pointer-events-none grayscale">
+              <CharacterSheetView userId={user.id} sessionId={id} />
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-md mb-6 max-w-md w-full text-center">
@@ -412,6 +492,18 @@ export function ActiveSessionPage() {
             </div>
 
             <PlayerRestIndicator sessionData={sessionData} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} />
+
+            {myCharacter && (myCharacter.stats?.current_pv ?? myCharacter.stats?.pv) <= 0 && !myCharacter.is_dead && !activeCombat && (
+              <div className="w-full max-w-4xl mt-4">
+                <DeathSavesModal character={myCharacter} />
+              </div>
+            )}
+
+            {activeCombat && (
+              <div className="w-full max-w-6xl mt-4 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
+                <PlayerCombatView sessionId={id!} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl mt-4">
               <div className="border border-stone-800 rounded-lg p-4 bg-stone-950 lg:col-span-2">
@@ -425,7 +517,7 @@ export function ActiveSessionPage() {
                   isGM={false}
                   sessionId={id}
                   gmId={sessionData.gm_id}
-                  playerCharacters={playerCharacters}
+                  playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
                   npcs={npcs.filter((n) => (n as unknown as { is_visible?: boolean }).is_visible)}
                   activeTrades={activeTrades}
                   onNegotiate={handleNegotiate}
@@ -478,6 +570,15 @@ export function ActiveSessionPage() {
         onClose={() => setIsNewDayDialogOpen(false)}
         day={sessionData.current_day || 1}
       />
+
+      {isCombatSetupOpen && (
+        <CombatSetupModal
+          isOpen={isCombatSetupOpen}
+          onClose={() => setIsCombatSetupOpen(false)}
+          sessionId={id!}
+          availableEntities={availableEntities}
+        />
+      )}
     </div>
   );
 }

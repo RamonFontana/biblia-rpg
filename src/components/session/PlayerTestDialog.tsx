@@ -13,8 +13,8 @@ export function PlayerTestDialog({
   isOpen,
   activeTest,
   testResult,
-  playerCharacters = [],
-  onClose
+  playerCharacters: _playerCharacters = [],
+  onClose: _onClose
 }: PlayerTestDialogProps) {
   const [resultValue, setResultValue] = useState<number | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -189,7 +189,6 @@ export function PlayerTestDialog({
     const duration = 1000
     const minInterval = 50
     const maxInterval = 150
-    let currentStep = 0
     let elapsed = 0
 
     const rollStep = () => {
@@ -224,7 +223,6 @@ export function PlayerTestDialog({
     const duration = 1500 // 1.5 seconds of rolling
     const minInterval = 50
     const maxInterval = 200
-    let currentStep = 0
     let elapsed = 0
 
     const rollStep = () => {

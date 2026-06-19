@@ -75,6 +75,20 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'combats',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          if (payload.new.status === 'finished') {
+            fetchPlayers();
+          }
+        }
+      )
       .subscribe();
 
     return () => {

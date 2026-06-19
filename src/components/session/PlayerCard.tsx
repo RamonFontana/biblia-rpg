@@ -3,6 +3,7 @@ import type { PresenceState } from '@/hooks/useSupabasePresence';
 import type { Character } from '@/features/character-management/types';
 import { Button } from '@/components/ui/button';
 import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';
+import { MasterDeathControls } from '../combat/MasterDeathControls';
 
 interface PlayerCardProps {
   user: PresenceState;
@@ -173,6 +174,12 @@ export function PlayerCard({
               <span className="font-mono tabular-nums">{character.stats.current_faith ?? character.stats.faith}/100</span>
             )}
           </div>
+        </div>
+      )}
+
+      {viewerIsGM && character && (((character.stats?.current_pv ?? character.stats?.pv ?? 1) <= 0) || character.is_dead || character.is_stable) && (
+        <div className="mt-3 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
+          <MasterDeathControls characterId={character.id} />
         </div>
       )}
     </div>

@@ -58,11 +58,16 @@ export type Database = {
           attributes: Json
           coins: number | null
           created_at: string
+          death_saves_failures: number
+          death_saves_successes: number
           equipment: Json | null
           fortress: string | null
           has_participated_in_session: boolean | null
           id: string
+          is_dead: boolean
+          is_deleted: boolean
           is_npc: boolean | null
+          is_stable: boolean
           is_visible: boolean
           level: number | null
           name: string
@@ -78,11 +83,16 @@ export type Database = {
           attributes: Json
           coins?: number | null
           created_at?: string
+          death_saves_failures?: number
+          death_saves_successes?: number
           equipment?: Json | null
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          is_dead?: boolean
+          is_deleted?: boolean
           is_npc?: boolean | null
+          is_stable?: boolean
           is_visible?: boolean
           level?: number | null
           name: string
@@ -98,11 +108,16 @@ export type Database = {
           attributes?: Json
           coins?: number | null
           created_at?: string
+          death_saves_failures?: number
+          death_saves_successes?: number
           equipment?: Json | null
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          is_dead?: boolean
+          is_deleted?: boolean
           is_npc?: boolean | null
+          is_stable?: boolean
           is_visible?: boolean
           level?: number | null
           name?: string
@@ -115,6 +130,91 @@ export type Database = {
           vocation?: string
         }
         Relationships: []
+      }
+      combats: {
+        Row: {
+          created_at: string
+          current_turn_index: number
+          id: string
+          round_number: number
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_turn_index?: number
+          id?: string
+          round_number?: number
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_turn_index?: number
+          id?: string
+          round_number?: number
+          session_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combats_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combat_participants: {
+        Row: {
+          combat_id: string
+          conditions: Json
+          created_at: string
+          entity_id: string
+          entity_type: string
+          hp_current: number
+          id: string
+          initiative: number
+          is_surprised: boolean
+          updated_at: string
+        }
+        Insert: {
+          combat_id: string
+          conditions?: Json
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          hp_current?: number
+          id?: string
+          initiative?: number
+          is_surprised?: boolean
+          updated_at?: string
+        }
+        Update: {
+          combat_id?: string
+          conditions?: Json
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          hp_current?: number
+          id?: string
+          initiative?: number
+          is_surprised?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_participants_combat_id_fkey"
+            columns: ["combat_id"]
+            isOneToOne: false
+            referencedRelation: "combats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       game_sessions: {
         Row: {

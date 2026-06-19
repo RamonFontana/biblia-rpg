@@ -8,9 +8,10 @@ interface SessionRestControlsProps {
   sessionData: any;
   playerCharacters: any[];
   npcs?: any[];
+  onRestCompleted?: () => void;
 }
 
-export function SessionRestControls({ sessionId, sessionData, playerCharacters, npcs = [] }: SessionRestControlsProps) {
+export function SessionRestControls({ sessionId, sessionData, playerCharacters, npcs = [], onRestCompleted }: SessionRestControlsProps) {
   const [isResting, setIsResting] = useState(false);
 
   if (!sessionData) return null;
@@ -48,8 +49,8 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
       // 2. Update characters if amount > 0
       if (amount > 0) {
         const allCharacters = [
-          ...playerCharacters.filter(pc => pc.character).map(pc => pc.character),
-          ...npcs
+          ...playerCharacters.filter(pc => pc.character && !pc.character.is_enemy).map(pc => pc.character),
+          ...npcs.filter(npc => !npc.is_enemy)
         ];
 
         const updates = allCharacters.map(char => {
@@ -71,6 +72,7 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
         });
 
         await Promise.all(updates);
+        if (onRestCompleted) onRestCompleted();
       }
 
       alert(`Descanso Curto concluído! Todos recuperaram ${amount} PV.`);
@@ -108,8 +110,8 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
 
       // 3. Update all characters (players and npcs)
       const allCharacters = [
-        ...playerCharacters.filter(pc => pc.character).map(pc => pc.character),
-        ...npcs
+        ...playerCharacters.filter(pc => pc.character && !pc.character.is_enemy).map(pc => pc.character),
+        ...npcs.filter(npc => !npc.is_enemy)
       ];
 
       const updates = allCharacters.map(char => {
@@ -133,8 +135,9 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
       });
 
       await Promise.all(updates);
+      if (onRestCompleted) onRestCompleted();
 
-      alert(`Descanso Longo concluído! Todos recuperaram Vida total e o grupo recuperou ${faithRecovered} de Fé.`);
+      alert(`Descanso Longo concluído! Todos os personagens recuperaram toda a vida, habilidades e fé. O grupo recuperou ${faithRecovered} de Fé.`);
     } catch (error) {
       console.error('Erro ao acionar descanso longo:', error);
       alert('Erro ao realizar descanso longo.');

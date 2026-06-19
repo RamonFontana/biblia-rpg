@@ -16,7 +16,7 @@ export function ActiveSession() {
   const navigate = useNavigate();
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { npcs, isLoading: isNpcsLoading } = useSessionNPCs(id);
+  const { npcs, isLoading: _isNpcsLoading } = useSessionNPCs(id);
   const { activeTests, testResults } = useSessionTests(id!);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);

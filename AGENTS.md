@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at:
-specs/025-enemy-form-merge/plan.md
+specs/027-combat-death-saves/plan.md
 <!-- SPECKIT END -->
 
 ## RPG Bíblico — Documentação do Sistema
