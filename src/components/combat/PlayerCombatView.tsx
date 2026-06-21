@@ -89,7 +89,7 @@ export function PlayerCombatView({ sessionId: _sessionId, character }: PlayerCom
         </Card>
       )}
 
-      <PhysicalRollForm playerId={playerId} />
+      <PhysicalRollForm playerId={playerId} character={character} />
     </div>
   );
 }

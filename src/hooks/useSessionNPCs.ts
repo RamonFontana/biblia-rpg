@@ -14,7 +14,7 @@ export function useSessionNPCs(sessionId: string | undefined) {
       const { data: playableData, error: playableError } = await supabase
         .from('session_participants')
         .select(`
-          characters (*)
+          characters (*, character_items(*, items(*)))
         `)
         .eq('session_id', sessionId);
 
@@ -76,10 +76,12 @@ export function useSessionNPCs(sessionId: string | undefined) {
             if (updatedIndex === -1) return prev;
             
             const newArray = [...prev];
+            const oldNpc = newArray[updatedIndex] as any;
             newArray[updatedIndex] = {
-              ...newArray[updatedIndex],
-              ...payload.new
-            };
+              ...oldNpc,
+              ...payload.new,
+              character_items: (payload.new as any).character_items || oldNpc.character_items
+            } as Character;
             return newArray;
           });
         }

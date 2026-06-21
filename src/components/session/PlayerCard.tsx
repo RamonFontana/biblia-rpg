@@ -4,6 +4,7 @@ import type { Character } from '@/features/character-management/types';
 import { Button } from '@/components/ui/button';
 import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';
 import { MasterDeathControls } from '../combat/MasterDeathControls';
+import { getCombatStats } from '@/lib/equipmentUtils';
 
 interface PlayerCardProps {
   user: PresenceState;
@@ -144,7 +145,7 @@ export function PlayerCard({
           </div>
           <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
             <Shield className="h-3.5 w-3.5 text-blue-400" />
-            <span className="font-mono tabular-nums">CA {character.stats.ca}</span>
+            <span className="font-mono tabular-nums">CA {getCombatStats(character).totalAc}</span>
           </div>
           <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />

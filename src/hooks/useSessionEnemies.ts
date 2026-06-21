@@ -14,7 +14,7 @@ export function useSessionEnemies(sessionId: string | undefined) {
       const { data, error } = await supabase
         .from('session_participants')
         .select(`
-          characters (*)
+          characters (*, character_items(*, items(*)))
         `)
         .eq('session_id', sessionId);
 
@@ -71,10 +71,13 @@ export function useSessionEnemies(sessionId: string | undefined) {
             }
 
             const newArray = [...prev];
+            // Preserve character_items if not provided in the payload
+            const oldEnemy = newArray[updatedIndex] as any;
             newArray[updatedIndex] = {
-              ...newArray[updatedIndex],
-              ...payload.new
-            };
+              ...oldEnemy,
+              ...payload.new,
+              character_items: (payload.new as any).character_items || oldEnemy.character_items
+            } as Character;
             return newArray;
           });
         }

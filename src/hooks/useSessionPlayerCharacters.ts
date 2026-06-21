@@ -20,7 +20,7 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
     const charIds = participants.map(p => p.character_id).filter(Boolean);
     const { data: characters } = await supabase
       .from('characters')
-      .select('*')
+      .select('*, character_items(*, items(*))')
       .in('id', charIds);
 
     const combined = participants.map(p => {
@@ -64,11 +64,13 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
             if (updatedIndex === -1) return prev;
             
             const newArray = [...prev];
+            const oldCharacter = newArray[updatedIndex].character as any;
             newArray[updatedIndex] = {
               ...newArray[updatedIndex],
               character: {
-                ...newArray[updatedIndex].character,
-                ...payload.new
+                ...oldCharacter,
+                ...payload.new,
+                character_items: (payload.new as any).character_items || oldCharacter.character_items
               }
             };
             return newArray;

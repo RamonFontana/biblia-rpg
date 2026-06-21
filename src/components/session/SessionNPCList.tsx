@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { getCombatStats } from '@/lib/equipmentUtils';
 
 interface SessionNPC extends Character {
   is_playable?: boolean;
@@ -142,7 +143,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                       >
                         <span className="sr-only">Alternar visibilidade</span>
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-primary-foreground shadow-lg ring-0 transition duration-200 ease-in-out ${
                             npc.is_visible ? 'translate-x-4' : 'translate-x-0'
                           }`}
                         />
@@ -168,7 +169,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
 
                       <div className="flex items-center gap-1 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-blue-400">⛨</span>
-                        <span className="font-mono">CA {npc.stats.ca ?? 10}</span>
+                        <span className="font-mono">CA {getCombatStats(npc).totalAc}</span>
                       </div>
 
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">

@@ -8,7 +8,7 @@ interface CharacterCardProps {
 export function CharacterCard({ character, onClick }: CharacterCardProps) {
   return (
     <div
-      className="p-4 border rounded-lg shadow-sm hover:shadow-md cursor-pointer transition-shadow bg-white"
+      className="p-4 border rounded-lg shadow-sm hover:shadow-md cursor-pointer transition-shadow bg-card"
       onClick={() => onClick(character)}
     >
       <div className="flex justify-between items-start">

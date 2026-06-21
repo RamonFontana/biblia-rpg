@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
-import { Coins, Shield, Heart, Star, Sparkles, Activity, Target, Zap } from 'lucide-react';
+import { Shield, Coins, Heart, Star, Sparkles, Activity, Zap } from 'lucide-react';
 import { NPCInventoryManager } from './NPCInventoryManager';
 import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
+import { EquipmentSlots } from '../inventory/EquipmentSlots';
+import { InventoryList } from '../inventory/InventoryList';
+import { updateCharacterEquipment } from '@/lib/supabase';
+import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
 import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
 import { getTribeSkills } from '@/data/tribeSkills';
 
@@ -20,6 +24,38 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { useItem, isUpdating } = useUpdateNPCInventory();
+  const [isEquipping, setIsEquipping] = useState(false);
+
+  const handleEquip = async (characterItemId: string, itemEffects: any, targetHand?: 'mainHand' | 'offHand') => {
+    if (!character) return;
+    setIsEquipping(true);
+    try {
+      const currentEquipment = character.equipment || { head: null, body: null, mainHand: null, offHand: null };
+      const newEquipment = equipItem(characterItemId, itemEffects, currentEquipment, targetHand);
+      await updateCharacterEquipment(character.id, newEquipment);
+      setCharacter({ ...character, equipment: newEquipment });
+    } catch (err) {
+      console.error('Error equipping item:', err);
+      // Optional: add a toast or error state here
+    } finally {
+      setIsEquipping(false);
+    }
+  };
+
+  const handleUnequip = async (slot: 'head' | 'body' | 'mainHand' | 'offHand') => {
+    if (!character) return;
+    setIsEquipping(true);
+    try {
+      const currentEquipment = character.equipment || { head: null, body: null, mainHand: null, offHand: null };
+      const newEquipment = unequipSlot(slot, currentEquipment);
+      await updateCharacterEquipment(character.id, newEquipment);
+      setCharacter({ ...character, equipment: newEquipment });
+    } catch (err) {
+      console.error('Error unequipping item:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -184,6 +220,35 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
 
   const { attributes, stats, narrative, tribe, vocation, name } = character;
 
+  // Calculate dynamic AC
+  const baseAc = Number(stats?.ca) || 10;
+  let bonusAc = 0;
+  
+  const getAcModifier = (effects: any) => {
+    if (!effects) return 0;
+    // Support acBonus, ca, or if armorClass is provided, armorClass - 10
+    if (effects.acBonus !== undefined) return Number(effects.acBonus);
+    if (effects.ca !== undefined) return Number(effects.ca);
+    if (effects.armorClass !== undefined) return Math.max(0, Number(effects.armorClass) - 10);
+    return 0;
+  };
+
+  if (character.equipment) {
+    const headItem = inventoryItems.find((i) => i.id === character.equipment?.head);
+    const bodyItem = inventoryItems.find((i) => i.id === character.equipment?.body);
+    const mainHandItem = inventoryItems.find((i) => i.id === character.equipment?.mainHand);
+    const offHandItem = inventoryItems.find((i) => i.id === character.equipment?.offHand);
+    
+    bonusAc += getAcModifier(headItem?.items?.effects);
+    bonusAc += getAcModifier(bodyItem?.items?.effects);
+    bonusAc += getAcModifier(mainHandItem?.items?.effects);
+    // Don't count offHand twice if it's the same as mainHand (2h weapon)
+    if (character.equipment.offHand !== character.equipment.mainHand) {
+      bonusAc += getAcModifier(offHandItem?.items?.effects);
+    }
+  }
+  const totalAc = baseAc + bonusAc;
+
   return (
     <div className="flex flex-col bg-stone-950 text-stone-200 overflow-y-auto custom-scrollbar">
       {/* Header Profile */}
@@ -221,7 +286,12 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-stone-500/5 group-hover:bg-stone-500/10 transition-colors"></div>
             <Shield className="w-8 h-8 text-stone-400 mb-2" />
-            <span className="text-3xl font-bold text-stone-100">{stats?.ca ?? 10}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-stone-100">{totalAc}</span>
+              {bonusAc > 0 && (
+                <span className="text-sm text-blue-400 font-medium" title={`Base ${baseAc} + Bônus ${bonusAc}`}>(+{bonusAc})</span>
+              )}
+            </div>
             <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">CA</span>
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-amber-900/50 rounded-xl shadow-inner relative overflow-hidden group">
@@ -317,65 +387,26 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           </div>
         )}
 
-        {/* Inventory Items */}
-        <div>
-          <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
-            <Target className="w-5 h-5 text-amber-500" />
-            Inventário
-          </h3>
-          {inventoryItems.length > 0 ? (
-            <div className="space-y-6">
-              {/* Group items by category */}
-              {Object.entries(
-                inventoryItems.reduce((acc, curr) => {
-                  const category = curr.items?.category || 'Outros';
-                  if (!acc[category]) acc[category] = [];
-                  acc[category].push(curr);
-                  return acc;
-                }, {} as Record<string, any[]>)
-              ).map(([category, items]: [string, any]) => (
-                <div key={category} className="space-y-2">
-                  <h4 className="text-sm font-bold text-amber-500/80 uppercase tracking-wider mb-2">{category}</h4>
-                  <div className="space-y-2">
-                    {items.map((item: any) => (
-                      <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-900 border border-stone-800 rounded-lg group hover:border-stone-700 transition-colors">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-stone-200 font-medium">{item.items?.name}</span>
-                            {item.quantity > 1 && (
-                              <span className="text-xs px-1.5 py-0.5 bg-stone-800 rounded-md text-stone-400 font-mono">
-                                x{item.quantity}
-                              </span>
-                            )}
-                          </div>
-                          {item.items?.description && <span className="text-xs text-stone-500 block mt-1">{item.items.description}</span>}
-                        </div>
-                        <div className="flex items-center gap-3 mt-2 sm:mt-0">
-                          {item.items?.is_consumable && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
-                              <button
-                                onClick={() => useItem(character!.id, item.id, item.quantity, item.items.effects, character!.stats, !(character!.is_npc))}
-                                disabled={isUpdating}
-                                className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50"
-                              >
-                                Usar
-                              </button>
-                            </div>
-                          )}
-                          {item.items?.weight > 0 && (
-                            <span className="text-xs text-stone-500">{item.items.weight} kg</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-stone-500 italic">Inventário vazio.</p>
-          )}
+        {/* Equipment & Inventory */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <EquipmentSlots 
+              equipment={character.equipment || { head: null, body: null, mainHand: null, offHand: null }} 
+              inventoryItems={inventoryItems} 
+              characterVocation={vocation}
+              onUnequip={handleUnequip} 
+            />
+          </div>
+          <div className="lg:col-span-2">
+            <InventoryList
+              inventoryItems={inventoryItems}
+              equipment={character.equipment || { head: null, body: null, mainHand: null, offHand: null }}
+              onEquip={handleEquip}
+              onUseConsumable={(item) => useItem(character!.id, item.id, item.quantity, item.items.effects, character!.stats, !(character!.is_npc))}
+              isUpdating={isUpdating || isEquipping}
+            />
+          </div>
+        </div>
 
           {isGM && character?.id && (
             <div className="mt-8 pt-6 border-t border-stone-800">
@@ -383,7 +414,6 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

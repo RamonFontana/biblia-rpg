@@ -46,7 +46,7 @@ export interface DraftCharacter {
   fortress?: string;
   temptation?: string;
   stats?: CharacterStats;
-  equipment?: EquipmentItem[];
+  equipment?: any; // Replace with CharacterEquipment from combat types later or just any for now to avoid circular deps. Actually let's import it.
   coins?: number;
   narrative?: CharacterNarrative;
   skills?: EnemySkill[];

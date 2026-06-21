@@ -5,6 +5,7 @@ import { CharacterSheetView } from '../character/CharacterSheetView';
 import { supabase } from '@/lib/supabase';
 import { useSessionEnemies } from '@/hooks/useSessionEnemies';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
+import { getCombatStats } from '@/lib/equipmentUtils';
 
 interface SessionEnemyListProps {
   sessionId: string;
@@ -97,7 +98,7 @@ export function SessionEnemyList({ sessionId }: SessionEnemyListProps) {
 
                       <div className="flex items-center gap-1 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-blue-400">⛨</span>
-                        <span className="font-mono">CA {enemy.stats.ca ?? 10}</span>
+                        <span className="font-mono">CA {getCombatStats(enemy).totalAc}</span>
                       </div>
                     </div>
                   )}

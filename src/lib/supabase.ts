@@ -9,3 +9,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+export async function updateCharacterEquipment(characterId: string, equipment: any) {
+  const { data, error } = await supabase
+    .from('characters')
+    .update({ equipment })
+    .eq('id', characterId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating equipment:', error);
+    throw error;
+  }
+  return data;
+}

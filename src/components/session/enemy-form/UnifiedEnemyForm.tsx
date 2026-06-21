@@ -255,7 +255,7 @@ export function UnifiedEnemyForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-4 py-2 bg-stone-200 text-stone-900 rounded-md font-medium hover:bg-white transition-colors disabled:opacity-50"
+          className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? 'Salvando...' : submitLabel}
         </button>

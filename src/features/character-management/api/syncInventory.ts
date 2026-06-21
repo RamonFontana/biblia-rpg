@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { EquipmentItem } from '../../character-creation/types';
+import { ITEMS_DB } from '@/data/itemsDb';
 
 const VOCATION_KIT_ITEMS: Record<string, any[]> = {
   'Guerreiro': [
@@ -30,6 +31,44 @@ const VOCATION_KIT_ITEMS: Record<string, any[]> = {
     { name: 'Bálsamo Curativo / Óleo', category: 'Todas', is_consumable: true, type: 'Consumível', quantity: 3 },
   ]
 };
+
+function getEffectsFromItemName(name: string) {
+  const dbItem = ITEMS_DB.find(i => i.name === name);
+  if (!dbItem) return {};
+
+  const effects: any = {};
+  if (dbItem.damage) {
+    const parts = dbItem.damage.split(' ');
+    effects.damageDie = parts[0];
+    if (parts.length > 1) effects.damageType = parts[1];
+  }
+  if (dbItem.armorClass) {
+    if (dbItem.type === 'Escudo') {
+      effects.acBonus = dbItem.armorClass;
+    } else {
+      effects.armorClass = dbItem.armorClass;
+    }
+  }
+  if (dbItem.category) {
+    effects.weaponCategory = dbItem.category;
+  }
+  if (dbItem.description && dbItem.description.includes('Versátil')) {
+     const match = dbItem.description.match(/Versátil \((1d\d+)\)/);
+     if (match) effects.versatileDamageDie = match[1];
+  }
+
+  let slot = '';
+  const cat = (dbItem.category || '').toUpperCase();
+  if (dbItem.type === 'Escudo') slot = 'shield';
+  else if (dbItem.type === 'Armadura') slot = 'body';
+  else if (dbItem.type === 'Arma') {
+    if (dbItem.description && dbItem.description.includes('Duas mãos')) slot = '2h';
+    else slot = '1h';
+  }
+  if (slot) effects.slot = slot;
+
+  return effects;
+}
 
 export async function syncInventoryItems(characterId: string, equipment: EquipmentItem[], vocation: string) {
   try {
@@ -78,7 +117,7 @@ export async function syncInventoryItems(characterId: string, equipment: Equipme
             name: itemData.name,
             category: itemData.category,
             is_consumable: itemData.is_consumable,
-            // Assuming requires_target is false by default
+            effects: getEffectsFromItemName(itemData.name),
             requires_target: false
           })
           .select('id')

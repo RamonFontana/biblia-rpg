@@ -19,7 +19,8 @@ export function Summary() {
 
     try {
       if (editingId) {
-        await updateCharacter(editingId, draft);
+        const { equipment, coins, ...draftWithoutEquipment } = draft;
+        await updateCharacter(editingId, draftWithoutEquipment);
       } else {
         await saveCharacter(draft);
       }

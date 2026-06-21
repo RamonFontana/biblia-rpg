@@ -56,7 +56,7 @@ export function CharacterDetails() {
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border space-y-6">
+      <div className="bg-card p-6 rounded-lg shadow-sm border space-y-6">
 
         {character.has_participated_in_session && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">

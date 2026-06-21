@@ -7,7 +7,14 @@ import { MasterDeathControls } from './MasterDeathControls';
 
 interface CombatDashboardProps {
   sessionId: string;
-  availableEntities?: { id: string, name: string, type: 'player' | 'npc' | 'enemy', hpCurrent: number }[];
+  availableEntities?: { 
+    id: string, 
+    name: string, 
+    type: 'player' | 'npc' | 'enemy', 
+    hpCurrent: number,
+    totalAc?: number,
+    weapon?: { name: string, damageDie: string } 
+  }[];
 }
 
 export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] }: CombatDashboardProps) {
@@ -69,6 +76,26 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
                     <span className="text-sm text-muted-foreground">HP Atual:</span>
                     <span className="font-bold text-lg">{participant.hp_current}</span>
                   </div>
+
+                  {entityDetails?.totalAc !== undefined && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm text-muted-foreground">CA Total:</span>
+                      <span className="font-bold text-blue-400">{entityDetails.totalAc}</span>
+                    </div>
+                  )}
+
+                  {displayType === 'enemy' && entityDetails?.weapon && (
+                    <div className="flex justify-between items-center mt-2 p-2 bg-stone-900 rounded border border-stone-800">
+                      <div className="flex flex-col">
+                        <span className="text-xs text-muted-foreground">Arma:</span>
+                        <span className="text-sm font-semibold text-amber-500">{entityDetails.weapon.name}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs text-muted-foreground">Dano:</span>
+                        <span className="text-sm font-bold">{entityDetails.weapon.damageDie}</span>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex flex-wrap gap-1 mt-2">
                     {/* Condições mock, em app real pegar de participant.conditions */}
@@ -83,7 +110,7 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full"
+                      className="w-full min-h-[44px]"
                       onClick={() => handleApplyDamage(participant.id, displayName)}
                     >
                       Modificar Vida

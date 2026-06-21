@@ -27,6 +27,7 @@ import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
 import { useCombatStore } from '@/store/combatStore';
+import { getCombatStats } from '@/lib/equipmentUtils';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -347,19 +348,22 @@ export function ActiveSessionPage() {
       id: pc.character.id,
       name: pc.character.name || 'Jogador',
       type: 'player' as const,
-      hpCurrent: pc.character.stats?.current_pv || (pc.character.stats as any)?.current_hp || 0
+      hpCurrent: pc.character.stats?.current_pv || (pc.character.stats as any)?.current_hp || 0,
+      ...getCombatStats(pc.character)
     })),
     ...npcs.filter(npc => !npc.is_deleted && npc.is_playable).map(npc => ({
       id: npc.id,
       name: npc.name || 'NPC',
       type: 'npc' as const,
-      hpCurrent: (npc.stats as any)?.current_pv || (npc.stats as any)?.current_hp || 0
+      hpCurrent: (npc.stats as any)?.current_pv || (npc.stats as any)?.current_hp || 0,
+      ...getCombatStats(npc)
     })),
     ...enemies.filter(enemy => !enemy.is_deleted).map(enemy => ({
       id: enemy.id,
       name: enemy.name || 'Inimigo',
       type: 'enemy' as const,
-      hpCurrent: enemy.stats?.current_pv || (enemy.stats as any)?.current_hp || 0
+      hpCurrent: enemy.stats?.current_pv || (enemy.stats as any)?.current_hp || 0,
+      ...getCombatStats(enemy)
     }))
   ], [playerCharacters, npcs, enemies]);
 

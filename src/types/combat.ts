@@ -30,3 +30,20 @@ export const PhysicalRollSchema = z.object({
 });
 
 export type PhysicalRollFormValues = z.infer<typeof PhysicalRollSchema>;
+
+// 4. Equipamentos e Inventário
+export interface CharacterEquipment {
+  head: string | null;      // character_item_id
+  body: string | null;      // character_item_id
+  mainHand: string | null;  // character_item_id
+  offHand: string | null;   // character_item_id
+}
+
+export interface ItemEffects {
+  slot?: 'head' | 'body' | '1h' | '2h' | 'shield';
+  acBonus?: number;       // For armor and shields
+  damageDie?: string;     // e.g. "1d8", "1d6"
+  damageType?: string;    // e.g. "cortante", "perfurante"
+  properties?: string[];  // e.g. ["Versátil", "Acuidade"]
+  stealthDisadvantage?: boolean;
+}

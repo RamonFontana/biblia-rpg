@@ -90,8 +90,8 @@ Milagres nunca são garantidos por decisão narrativa do Mestre. Quando um perso
 
 1. **Julgamento do Mestre**: O Mestre avalia o pedido e define a Dificuldade do milagre, que se traduz em um redutor na Fé do personagem para o teste.
    - **Pequena Providência** (Ex: Encontrar água, coincidir um evento menor): Modificador 0.
-   - **Milagre Moderado** (Ex: Curar um veneno mortal instantaneamente): Modificador -20 na Fé.
-   - **Milagre Extraordinário** (Ex: Abrir um rio, chuva de fogo, curas em massa): Modificador -50 na Fé.
+   - **Milagre Moderado** (Ex: Curar um veneno mortal instantaneamente): Modificador +20 na Fé.
+   - **Milagre Extraordinário** (Ex: Abrir um rio, chuva de fogo, curas em massa): Modificador +50 na Fé.
 2. **A Rolagem (Vontade Divina)**: O jogador que fez o clamor rola **1d100**.
 3. **Resolução**:
    - **Sucesso**: O resultado do 1d100 deve ser **menor ou igual** à `(Fé Atual) + (Modificador)`. Se for, o milagre ocorre conforme a vontade de Deus.

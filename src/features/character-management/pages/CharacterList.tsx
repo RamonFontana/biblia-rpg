@@ -62,7 +62,7 @@ export function CharacterList() {
       </div>
 
       {characters.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
+        <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Nenhum personagem</h3>
           <p className="mt-1 text-sm text-gray-500">Comece criando um novo personagem para sua jornada.</p>
         </div>
