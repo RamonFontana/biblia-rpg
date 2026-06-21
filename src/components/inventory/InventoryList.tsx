@@ -1,6 +1,7 @@
 import { Target } from 'lucide-react';
 import type { CharacterEquipment } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
+import { ITEMS_DB } from '@/data/itemsDb';
 
 interface InventoryListProps {
   inventoryItems: any[];
@@ -60,6 +61,11 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                 
                 const normalizedEffects = { ...itemEffects, slot: itemSlot };
 
+                const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
+                const displayDamage = normalizedEffects.damageDie 
+                  ? `${normalizedEffects.damageDie}${normalizedEffects.damageType ? ' ' + normalizedEffects.damageType : ''}` 
+                  : dbItem?.damage;
+
                 const equippedCount = 
                   (equipment?.head === item.id ? 1 : 0) +
                   (equipment?.body === item.id ? 1 : 0) +
@@ -90,8 +96,8 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                         )}
                       </div>
                       {item.items?.description && <span className="text-xs text-stone-500 block mt-1">{item.items.description}</span>}
-                      {normalizedEffects.damageDie && (
-                        <span className="text-xs text-amber-500 font-bold block mt-1">Dano: {normalizedEffects.damageDie}</span>
+                      {displayDamage && (
+                        <span className="text-xs text-amber-500 font-bold block mt-1">Dano: {displayDamage}</span>
                       )}
                       {(() => {
                         let bonus = 0;
