@@ -55,8 +55,8 @@ export function PlayerTestDialog({
   // If already submitted, show waiting screen
   if (testResult.status === 'submitted') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-sm w-full text-stone-200 shadow-2xl text-center relative">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+        <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl text-center relative">
           <button 
             onClick={() => setDismissed(true)} 
             className="absolute top-4 right-4 text-stone-400 hover:text-white transition-colors"
@@ -256,8 +256,8 @@ export function PlayerTestDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-sm w-full text-stone-200 shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+      <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl relative overflow-hidden">
         {/* Decorative corner */}
         <div className="absolute top-0 right-0 w-16 h-16 bg-amber-600/20 rotate-45 transform translate-x-8 -translate-y-8" />
         

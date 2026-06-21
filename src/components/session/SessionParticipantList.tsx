@@ -202,8 +202,8 @@ export function SessionParticipantList({
                     className={`relative p-3 bg-stone-700 border border-stone-600 rounded-md transition-colors ${(npc as any).is_playable ? 'cursor-pointer hover:bg-stone-600' : ''}`}
                     onClick={() => { if ((npc as any).is_playable) setSelectedNPC(npc); }}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="font-semibold text-stone-200">{npc.name}</p>
+                    <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
+                      <p className="font-semibold text-stone-200 truncate min-w-0 max-w-[70%] sm:max-w-none" title={npc.name}>{npc.name}</p>
                       {!isGM && onNPCNegotiate && (npc as any).is_visible !== false && (
                         <Button
                           size="sm"
@@ -222,7 +222,7 @@ export function SessionParticipantList({
                       {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
                     </p>
                     {npc.stats && (
-                      <div className="flex gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
+                      <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
                         <div className="flex items-center gap-1">
                           <span className="text-red-400">♥</span>
                           <span>{npc.stats.current_pv ?? npc.stats.pv}/{npc.stats.pv}</span>

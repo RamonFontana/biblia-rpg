@@ -55,7 +55,7 @@ export function PlayerCard({
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="min-w-0 truncate text-lg font-medium text-stone-200">
+            <span className="min-w-0 truncate block max-w-[200px] sm:max-w-full text-lg font-medium text-stone-200">
               {character ? character.name : (user.name || 'Jogador')}
             </span>
             {isSessionGM && (
@@ -80,7 +80,7 @@ export function PlayerCard({
         </div>
 
         {hasActions && (
-          <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+          <div className="flex flex-wrap sm:flex-nowrap shrink-0 items-center justify-end gap-1.5 pt-0.5">
             {canOpenShop && (
               <Button
                 size="sm"

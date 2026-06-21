@@ -47,7 +47,10 @@ export const useActiveSession = () => {
             session_name: d.game_sessions?.name || 'Sessão Ativa',
             gm_id: d.game_sessions?.gm_id || '',
           }));
-          setActiveSessions(sessions);
+          const uniqueSessions = Array.from(
+            new Map(sessions.map((item: any) => [item.session_id, item])).values()
+          ) as ActivePlayerSession[];
+          setActiveSessions(uniqueSessions);
         }
       } catch (err) {
         console.error('Error fetching active sessions:', err);

@@ -58,7 +58,6 @@ function getEffectsFromItemName(name: string) {
   }
 
   let slot = '';
-  const cat = (dbItem.category || '').toUpperCase();
   if (dbItem.type === 'Escudo') slot = 'shield';
   else if (dbItem.type === 'Armadura') slot = 'body';
   else if (dbItem.type === 'Arma') {

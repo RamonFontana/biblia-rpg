@@ -1,4 +1,4 @@
-import type { EquipmentItem } from '../../features/character-creation/types';
+import type { EquipmentItem } from '../features/character-creation/types';
 
 export type ItemCategory = 'Simples' | 'Marcial' | 'Leve' | 'Média' | 'Pesada' | 'Escudo' | 'Todas';
 

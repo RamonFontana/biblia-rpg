@@ -107,11 +107,11 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                   className={`relative p-3 bg-stone-900 border border-stone-700 rounded-md transition-colors ${npc.is_playable ? 'cursor-pointer hover:bg-stone-700' : ''} ${npc.stats?.status === 'Morto' ? 'opacity-60 grayscale' : ''}`}
                   onClick={() => handleNPCClick(npc)}
                 >
-                    <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-stone-200">{npc.name}</p>
+                    <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2 min-w-0 max-w-[70%] sm:max-w-none">
+                      <p className="font-semibold text-stone-200 truncate" title={npc.name}>{npc.name}</p>
                       {npc.is_playable && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                        <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-500 border border-amber-500/30">
                           Ficha Completa
                         </span>
                       )}
@@ -155,7 +155,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                     {npc.is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
                   </p>
                   {npc.stats && npc.is_playable && (
-                    <div className="flex gap-4 mt-2 pt-2 border-t border-stone-800/50 text-xs text-stone-400">
+                    <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 pt-2 border-t border-stone-800/50 text-xs text-stone-400">
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-red-400">♥</span>
                         <div className="flex items-center gap-1">

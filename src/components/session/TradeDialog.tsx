@@ -126,7 +126,7 @@ export function TradeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full sm:max-w-4xl bg-stone-950 border border-stone-800 text-stone-200">
+      <DialogContent className="w-full sm:max-w-4xl max-h-[95vh] overflow-y-auto bg-stone-950 border border-stone-800 text-stone-200">
         <DialogHeader>
           <DialogTitle className="text-stone-100 flex items-center gap-2">
             {trade.type === 'shop' && <span>🏪</span>}

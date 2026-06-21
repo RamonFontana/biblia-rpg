@@ -28,6 +28,13 @@ import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
 import { useCombatStore } from '@/store/combatStore';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { Menu } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -386,44 +393,69 @@ export function ActiveSessionPage() {
   const isSpectator = myCharacter && myCharacter.is_deleted;
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-stone-100">{sessionData.name} {isSpectator && <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">Modo Espectador</span>}</h1>
+    <div className="container mx-auto py-4 md:py-8 px-2 md:px-4 overflow-x-hidden">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-stone-800 pb-4">
+        <div className="w-full lg:w-auto">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-100">{sessionData.name} {isSpectator && <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">Modo Espectador</span>}</h1>
           <p className="text-stone-400 mt-1">{sessionData.description}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full lg:w-auto">
           <div className="flex items-center bg-stone-800/50 rounded-full px-3 py-1 border border-stone-700">
-            <span className="text-stone-300 font-medium text-sm mr-2 border-r border-stone-600 pr-2">
+            <span className="text-stone-300 font-medium text-xs md:text-sm mr-2 border-r border-stone-600 pr-2">
               DIA {sessionData.current_day || 1}
             </span>
-            <span className="text-amber-400 text-sm font-semibold flex items-center gap-1">
+            <span className="text-amber-400 text-xs md:text-sm font-semibold flex items-center gap-1">
               {getPeriodIcon(sessionData.current_period || 'Manhã')} {sessionData.current_period || 'Manhã'}
             </span>
           </div>
 
-          <div className={`px-3 py-1 rounded-full text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-gray-100/20 text-gray-400'}`}>
+          <div className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-gray-100/20 text-gray-400'}`}>
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
           {sessionData.status === 'active' && !isSpectator && (
-            <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2">
-              <span>🎲</span> Dados
+            <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2 h-8 md:h-10 px-2 md:px-4">
+              <span>🎲</span> <span className="hidden md:inline">Dados</span>
             </Button>
           )}
           {isGM && sessionData.status === 'active' && (
             <>
-              <Button onClick={advanceTime} variant="outline" className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2" title="Avançar Tempo">
-                <span>⏳</span> Avançar
-              </Button>
-              <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
-                Solicitar Teste
-              </Button>
-              <Button onClick={() => setIsCombatSetupOpen(true)} variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2">
-                <span>⚔️</span> Iniciar Combate
-              </Button>
-              <Button variant="destructive" onClick={endSession}>
-                Finalizar Sessão
-              </Button>
+              <div className="hidden lg:flex items-center gap-2">
+                <Button onClick={advanceTime} variant="outline" className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2" title="Avançar Tempo">
+                  <span>⏳</span> Avançar
+                </Button>
+                <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
+                  Solicitar Teste
+                </Button>
+                <Button onClick={() => setIsCombatSetupOpen(true)} variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2">
+                  <span>⚔️</span> Iniciar Combate
+                </Button>
+                <Button variant="destructive" onClick={endSession}>
+                  Finalizar Sessão
+                </Button>
+              </div>
+              <div className="lg:hidden ml-auto">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="border-stone-600 bg-stone-800 h-8 px-2 md:h-10 md:px-4">
+                      <Menu className="h-4 w-4 md:h-5 md:w-5 text-stone-300" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-stone-900 border-stone-800 text-stone-300">
+                    <DropdownMenuItem onClick={advanceTime} className="hover:bg-stone-800 cursor-pointer">
+                      <span className="mr-2">⏳</span> Avançar Tempo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsTestDialogOpen(true)} className="hover:bg-stone-800 cursor-pointer">
+                      <span className="mr-2">🎲</span> Solicitar Teste
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsCombatSetupOpen(true)} className="hover:bg-stone-800 cursor-pointer text-red-400">
+                      <span className="mr-2">⚔️</span> Iniciar Combate
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={endSession} className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium">
+                      Finalizar Sessão
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </>
           )}
         </div>
@@ -447,7 +479,7 @@ export function ActiveSessionPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <SessionParticipantList
                 onlineUsers={onlineUsers}
                 isGM={isGM}
@@ -509,13 +541,13 @@ export function ActiveSessionPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl mt-4">
-              <div className="border border-stone-800 rounded-lg p-4 bg-stone-950 lg:col-span-2">
+            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 w-full max-w-6xl mt-4">
+              <div className="border border-stone-800 rounded-lg p-2 md:p-4 bg-stone-950 lg:col-span-2 w-full overflow-hidden">
                 <CharacterSheetView userId={user.id} sessionId={id} />
               </div>
 
-              <div className="border border-stone-800 rounded-lg p-4 bg-stone-950">
-                <h3 className="text-xl font-semibold mb-4 text-stone-200 text-center">Personagens na Sessão</h3>
+              <div className="border border-stone-800 rounded-lg p-4 bg-stone-950 w-full overflow-hidden">
+                <h3 className="text-lg md:text-xl font-semibold mb-4 text-stone-200 text-center">Personagens na Sessão</h3>
                 <SessionParticipantList
                   onlineUsers={onlineUsers}
                   isGM={false}

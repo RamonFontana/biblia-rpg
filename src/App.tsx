@@ -74,7 +74,9 @@ function Home() {
               Acessar Sessão Ativa (Mestre)
             </Link>
           )}
-          {!loadingSessions && activeSessions.map((session) => (
+          {!loadingSessions && activeSessions
+            .filter((session) => session.gm_id !== user?.id)
+            .map((session) => (
             <Link 
               key={session.session_id}
               to={`/session/${session.session_id}`} 

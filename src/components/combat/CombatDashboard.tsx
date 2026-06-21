@@ -42,11 +42,11 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Painel de Combate (Rodada {activeCombat.round_number})</h2>
-        <div className="flex gap-2">
-          <Button variant="destructive" onClick={endCombat}>Finalizar Combate</Button>
-          <Button onClick={nextTurn}>Próximo Turno</Button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold tracking-tight truncate">Painel de Combate (Rodada {activeCombat.round_number})</h2>
+        <div className="flex flex-wrap sm:flex-nowrap gap-2">
+          <Button variant="destructive" onClick={endCombat} className="flex-1 sm:flex-none">Finalizar Combate</Button>
+          <Button onClick={nextTurn} className="flex-1 sm:flex-none">Próximo Turno</Button>
         </div>
       </div>
 
@@ -60,10 +60,10 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
           return (
             <Card key={participant.id} className={isCurrentTurn ? 'border-primary ring-2 ring-primary ring-offset-2' : ''}>
               <CardHeader className="pb-2">
-                <CardTitle className="flex justify-between items-start text-lg">
-                  <div className="flex flex-col">
-                    <span>{displayName}</span>
-                    <span className="text-xs text-muted-foreground capitalize mt-1 font-normal">
+                <CardTitle className="flex justify-between items-start text-lg gap-2">
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="truncate" title={displayName}>{displayName}</span>
+                    <span className="text-xs text-muted-foreground capitalize mt-1 font-normal truncate">
                       {displayType === 'player' ? 'Personagem' : displayType === 'enemy' ? 'Inimigo' : 'NPC'} • Init: {participant.initiative}
                     </span>
                   </div>
