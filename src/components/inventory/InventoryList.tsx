@@ -62,8 +62,15 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                 const normalizedEffects = { ...itemEffects, slot: itemSlot };
 
                 const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
-                const displayDamage = normalizedEffects.damageDie 
-                  ? `${normalizedEffects.damageDie}${normalizedEffects.damageType ? ' ' + normalizedEffects.damageType : ''}` 
+                
+                const isEquipped2h = equipment?.mainHand === item.id && equipment?.offHand === item.id;
+                let damageDie = normalizedEffects.damageDie;
+                if (isEquipped2h && normalizedEffects.versatileDamageDie) {
+                  damageDie = normalizedEffects.versatileDamageDie;
+                }
+
+                const displayDamage = damageDie 
+                  ? `${damageDie}${normalizedEffects.damageType ? ' ' + normalizedEffects.damageType : ''}` 
                   : dbItem?.damage;
 
                 const equippedCount = 
@@ -149,6 +156,15 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                                   className="text-[10px] px-2 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold rounded border border-stone-700 transition-colors disabled:opacity-50"
                                 >
                                   Mão Secundária
+                                </button>
+                              )}
+                              {normalizedEffects.properties?.includes('versatile') && equipment?.mainHand !== item.id && equipment?.offHand !== item.id && (
+                                <button
+                                  onClick={() => onEquip(item.id, { ...normalizedEffects, slot: '2h' })}
+                                  disabled={isUpdating}
+                                  className="text-[10px] px-2 py-1 bg-amber-900/60 hover:bg-amber-800/80 text-amber-300 font-bold rounded border border-amber-800/50 transition-colors disabled:opacity-50"
+                                >
+                                  Duas Mãos
                                 </button>
                               )}
                             </>

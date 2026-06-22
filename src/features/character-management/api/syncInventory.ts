@@ -66,6 +66,14 @@ function getEffectsFromItemName(name: string) {
   }
   if (slot) effects.slot = slot;
 
+  if (dbItem.properties && dbItem.properties.length > 0) {
+    effects.properties = dbItem.properties;
+  }
+
+  if (dbItem.statPenalty) {
+    effects.statPenalty = dbItem.statPenalty;
+  }
+
   return effects;
 }
 

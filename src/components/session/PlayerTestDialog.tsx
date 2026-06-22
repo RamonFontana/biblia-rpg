@@ -22,6 +22,10 @@ export function PlayerTestDialog({
   const [dismissed, setDismissed] = useState(false)
   const [isRolling, setIsRolling] = useState(false)
   
+  // Equipment and passive effects
+  const [hasStealthDisadvantage, setHasStealthDisadvantage] = useState(false)
+  const [faithPenalty, setFaithPenalty] = useState(0)
+  
   // Faith test penalty state
   const [showPenaltyScreen, setShowPenaltyScreen] = useState(false)
   const [initialRollValue, setInitialRollValue] = useState<number>(0)
@@ -48,7 +52,49 @@ export function PlayerTestDialog({
       setFaithPenaltyResult('')
       setIsRollingPenalty(false)
     }
-  }, [activeTest])
+
+    if (activeTest && testResult) {
+      // Fetch character stats, equipment, and items
+      const fetchCharContext = async () => {
+        const { supabase } = await import('@/lib/supabase')
+        const { data: charData } = await supabase
+          .from('characters')
+          .select('stats, equipment')
+          .eq('id', testResult.character_id)
+          .single()
+
+        const { data: charItems } = await supabase
+          .from('character_items')
+          .select(`id, items!inner(effects)`)
+          .eq('character_id', testResult.character_id)
+
+        let stealthDis = false;
+        let penaltyF = 0;
+
+        if (charData && charItems) {
+          const equipmentIds = Object.values(charData.equipment || {}).filter(Boolean) as string[];
+          for (const cItem of charItems) {
+            const effects = (cItem.items as any)?.effects || {};
+            // Check passive penalty regardless of being equipped
+            if (effects.statPenalty && effects.statPenalty.stat === 'faith') {
+              penaltyF += effects.statPenalty.value;
+            }
+
+            // Check stealth disadvantage only if equipped
+            if (equipmentIds.includes(cItem.id) && effects.properties?.includes('stealth_disadvantage')) {
+              stealthDis = true;
+            }
+          }
+        }
+
+        if (isMounted.current) {
+          setHasStealthDisadvantage(stealthDis);
+          setFaithPenalty(penaltyF);
+        }
+      }
+      fetchCharContext();
+    }
+  }, [activeTest, testResult])
 
   if (!isOpen || !activeTest || !testResult || dismissed) return null
 
@@ -125,7 +171,9 @@ export function PlayerTestDialog({
         .eq('id', testResult.character_id)
         .single()
       const stats = charData?.stats as Record<string, any> | undefined
-      const currentFaith = stats?.current_faith ?? stats?.faith ?? 0;
+      let currentFaith = stats?.current_faith ?? stats?.faith ?? 0;
+      currentFaith += faithPenalty; // faithPenalty is usually negative
+      
       // Misericórdia subtrai do DADO, não da fé
       // Passa se (dado - misericórdia) <= fé
       isFailedFaithTest = (val - activeTest.difficulty) > currentFaith;
@@ -287,6 +335,20 @@ export function PlayerTestDialog({
 
           {!showPenaltyScreen ? (
             <>
+              {hasStealthDisadvantage && activeTest.test_type === 'Destreza' && (
+                <div className="bg-red-900/30 border border-red-500/50 p-2 rounded mb-4 text-center">
+                  <p className="text-red-400 text-sm font-bold">⚠️ Desvantagem</p>
+                  <p className="text-stone-300 text-xs">Sua armadura pesada prejudica seus reflexos e furtividade. Role 2 dados e escolha o pior!</p>
+                </div>
+              )}
+
+              {activeTest.test_type === 'Fé' && faithPenalty < 0 && (
+                <div className="bg-purple-900/30 border border-purple-500/50 p-2 rounded mb-4 text-center">
+                  <p className="text-purple-400 text-sm font-bold">⚠️ Profanação</p>
+                  <p className="text-stone-300 text-xs">A presença de um item profano no seu inventário reduziu sua Fé em {Math.abs(faithPenalty)} para este teste.</p>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-center text-sm font-medium text-stone-300 mb-3">
                   Qual foi o resultado da rolagem?
