@@ -160,6 +160,7 @@ export function TradeDialog({
             isReady={trade.initiator_ready}
             otherSideReady={trade.target_ready}
             canEdit={userControlsInitiator && trade.status === 'active'}
+            isGM={isGM}
             useCatalog={trade.type === 'shop'}
             skipBalanceCheck={trade.type === 'shop'}
             characterId={trade.initiator_character_id}
@@ -180,6 +181,7 @@ export function TradeDialog({
             isReady={trade.target_ready}
             otherSideReady={trade.initiator_ready}
             canEdit={userControlsTarget && trade.status === 'active'}
+            isGM={isGM}
             useCatalog={
               trade.type === 'npc_trade' && isGM && !!trade.target_npc_id && !trade.target_character_id
             }

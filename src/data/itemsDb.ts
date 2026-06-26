@@ -28,10 +28,10 @@ export const ITEMS_DB: ShopItem[] = [
   { id: 'dardo', name: 'Dardo / Azagaia', type: 'Arma', cost: 3, damage: '1d6 perfurante', category: 'Simples', description: 'Arremesso (9/36m)', properties: ['thrown'] },
 
   // Consumíveis
-  { id: 'odre', name: 'Odre (Água)', type: 'Consumível', cost: 1, description: 'Sobrevivência no deserto (1 dia)', category: 'Todas' },
+  { id: 'odre', name: 'Odre (Água)', type: 'Consumível', cost: 1, description: 'Cura 2 PV. Sobrevivência no deserto (1 dia)', category: 'Todas' },
   { id: 'tocha', name: 'Tocha', type: 'Consumível', cost: 0.5, description: 'Ilumina 6m. Queima por 1h', category: 'Todas' },
   { id: 'balsamo', name: 'Bálsamo Curativo / Óleo', type: 'Consumível', cost: 5, description: 'Cura 1d4 HP em Descanso', category: 'Todas' },
-  { id: 'racao', name: 'Ração de Viagem', type: 'Consumível', cost: 1, description: '1 dia de nutrição', category: 'Todas' },
+  { id: 'racao', name: 'Ração de Viagem', type: 'Consumível', cost: 1, description: 'Cura 1d4 PV. 1 dia de nutrição', category: 'Todas' },
   { id: 'pedras_funda', name: 'Saco de Pedras para Funda', type: 'Consumível', cost: 0.5, description: '20 pedras', category: 'Todas' },
   { id: 'flechas', name: 'Flechas', type: 'Consumível', cost: 1, description: '20 flechas para arcos', category: 'Todas' },
 

@@ -13,6 +13,7 @@ interface TradeSideProps {
   isReady: boolean;
   otherSideReady: boolean;
   canEdit: boolean;
+  isGM?: boolean;
   useCatalog?: boolean;
   skipBalanceCheck?: boolean;
   characterId?: string | null;
@@ -31,6 +32,7 @@ export function TradeSide({
   isReady,
   otherSideReady,
   canEdit,
+  isGM = false,
   useCatalog = false,
   skipBalanceCheck = false,
   characterId,
@@ -226,6 +228,37 @@ export function TradeSide({
                 <span className="text-[10px] px-1 py-0.5 rounded bg-stone-700 text-stone-400">
                   {ti.items?.price != null ? `${ti.items.price} SP` : '—'}
                 </span>
+                {isGM && canEdit && !isReady ? (
+                  <div className="flex items-center gap-0.5 bg-stone-800 rounded border border-stone-700 h-5">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await tradeService.updateTradeItemLevel(ti.id, Math.max(1, (ti.level || 1) - 1));
+                        onItemsChanged();
+                      }}
+                      className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
+                      disabled={(ti.level || 1) <= 1}
+                    >-</button>
+                    <span className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none" title="Nível do Item">
+                      Nv.{ti.level || 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await tradeService.updateTradeItemLevel(ti.id, Math.min(5, (ti.level || 1) + 1));
+                        onItemsChanged();
+                      }}
+                      className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
+                      disabled={(ti.level || 1) >= 5}
+                    >+</button>
+                  </div>
+                ) : (
+                  (ti.level || 1) > 1 && (
+                    <span className="text-[10px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold leading-none" title={`Nível ${ti.level}`}>
+                      Nv.{ti.level}
+                    </span>
+                  )
+                )}
               </li>
             ))}
           </ul>

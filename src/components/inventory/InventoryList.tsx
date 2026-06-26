@@ -65,6 +65,38 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
 
                 const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
                 
+                // Fallback and scaling logic for healing
+                let healDice = normalizedEffects.heal_dice;
+                let fixedHeal = normalizedEffects.heal;
+                
+                if (!healDice && !fixedHeal && dbItem?.description) {
+                  const healDiceMatch = dbItem.description.match(/Cura\s+(\d+d\d+)\s+(HP|PV)/i);
+                  if (healDiceMatch) {
+                    healDice = healDiceMatch[1];
+                  } else {
+                    const healFixedMatch = dbItem.description.match(/Cura\s+(\d+)\s+(HP|PV)/i);
+                    if (healFixedMatch) {
+                      fixedHeal = Number(healFixedMatch[1]);
+                    }
+                  }
+                }
+                
+                const level = item.level || 1;
+                if (healDice) {
+                  const DICE_PROGRESSION = ['1', '1d4', '1d6', '1d8', '1d10', '1d12', '2d6', '2d8', '2d10', '2d12', '3d8', '3d10', '3d12'];
+                  const levelBonus = Math.max(0, level - 1);
+                  const baseIndex = DICE_PROGRESSION.indexOf(healDice.toLowerCase().trim());
+                  if (baseIndex !== -1) {
+                    const newIndex = Math.min(baseIndex + levelBonus, DICE_PROGRESSION.length - 1);
+                    healDice = DICE_PROGRESSION[newIndex];
+                  }
+                  normalizedEffects.heal_dice = healDice;
+                } else if (fixedHeal) {
+                  const levelBonus = Math.max(0, level - 1);
+                  fixedHeal = fixedHeal + (levelBonus * 2);
+                  normalizedEffects.heal = fixedHeal;
+                }
+                
                 const isEquipped2h = equipment?.mainHand === item.id && equipment?.offHand === item.id;
                 let damageDie = normalizedEffects.damageDie;
                 if (isEquipped2h && normalizedEffects.versatileDamageDie) {
@@ -126,6 +158,16 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                             Equipado {equippedCount > 1 ? `(x${equippedCount})` : ''}
                           </span>
                         )}
+                        {normalizedEffects.heal_dice && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded border border-green-900/50 flex items-center gap-1 font-bold" title="Cura Variável">
+                            ❤️ {normalizedEffects.heal_dice}
+                          </span>
+                        )}
+                        {!normalizedEffects.heal_dice && normalizedEffects.heal && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded border border-green-900/50 flex items-center gap-1 font-bold" title="Cura Fixa">
+                            ❤️ {normalizedEffects.heal} PV
+                          </span>
+                        )}
                       </div>
                       {item.items?.description && <span className="text-xs text-stone-500 block mt-1">{item.items.description}</span>}
                       {displayDamage && (
@@ -154,7 +196,7 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
                           <button
-                            onClick={() => onUseConsumable(item)}
+                            onClick={() => onUseConsumable({ ...item, items: { ...item.items, effects: normalizedEffects } })}
                             disabled={isUpdating}
                             className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50"
                           >

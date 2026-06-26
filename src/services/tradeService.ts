@@ -13,6 +13,7 @@ const TRADE_ITEM_SELECT = `
   side,
   item_id,
   quantity,
+  level,
   created_at,
   items (
     id,
@@ -185,6 +186,25 @@ export const tradeService = {
     const { error } = await (supabase as any)
       .from('trade_items')
       .delete()
+      .eq('id', tradeItemId);
+
+    if (error) throw error;
+    await resetReadyFlags(tradeItem.trade_id);
+  },
+
+  async updateTradeItemLevel(tradeItemId: string, level: number): Promise<void> {
+    const { data: tradeItem, error: fetchError } = await (supabase as any)
+      .from('trade_items')
+      .select('trade_id')
+      .eq('id', tradeItemId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const clampedLevel = Math.max(1, Math.min(5, level));
+    const { error } = await (supabase as any)
+      .from('trade_items')
+      .update({ level: clampedLevel })
       .eq('id', tradeItemId);
 
     if (error) throw error;
