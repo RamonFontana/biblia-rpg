@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useSessionEnemies } from '@/hooks/useSessionEnemies';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 interface SessionEnemyListProps {
   sessionId: string;
@@ -75,14 +76,23 @@ export function SessionEnemyList({ sessionId }: SessionEnemyListProps) {
                   className={`relative p-3 bg-stone-900 border border-stone-700 rounded-md transition-colors cursor-pointer hover:bg-stone-700 ${enemy.stats?.status === 'Morto' ? 'opacity-60 grayscale' : ''}`}
                   onClick={() => handleEnemyClick(enemy)}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-stone-200">{enemy.name}</p>
+                  <div className="flex items-start gap-3">
+                    <CharacterAvatar 
+                      imageUrl={enemy.narrative?.imageUrl} 
+                      name={enemy.name || 'Inimigo'} 
+                      className="w-10 h-10 border border-stone-700 shrink-0" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-stone-200 truncate">{enemy.name}</p>
+                        </div>
+                      </div>
+                      {enemy.vocation && (
+                        <p className="text-sm text-stone-400 line-clamp-1">{enemy.vocation}</p>
+                      )}
                     </div>
                   </div>
-                  {enemy.vocation && (
-                    <p className="text-sm text-stone-400 line-clamp-1">{enemy.vocation}</p>
-                  )}
                   {enemy.stats && (
                     <div className="flex gap-4 mt-2 pt-2 border-t border-stone-800/50 text-xs text-stone-400">
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
 import type { TradeWithItems } from '@/types/trade';
+import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 interface SessionParticipantListProps {
   onlineUsers: PresenceState[];
@@ -202,25 +203,34 @@ export function SessionParticipantList({
                     className={`relative p-3 bg-stone-700 border border-stone-600 rounded-md transition-colors ${(npc as any).is_playable ? 'cursor-pointer hover:bg-stone-600' : ''}`}
                     onClick={() => { if ((npc as any).is_playable) setSelectedNPC(npc); }}
                   >
-                    <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
-                      <p className="font-semibold text-stone-200 truncate min-w-0 max-w-[70%] sm:max-w-none" title={npc.name}>{npc.name}</p>
-                      {!isGM && onNPCNegotiate && (npc as any).is_visible !== false && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onNPCNegotiate(npc as Character & { is_playable?: boolean });
-                          }}
-                          className="h-7 text-xs border-stone-500 text-stone-300 hover:bg-stone-600 shrink-0"
-                        >
-                          ⚖️ Negociar
-                        </Button>
-                      )}
+                    <div className="flex items-start gap-3">
+                      <CharacterAvatar 
+                        imageUrl={npc.narrative?.imageUrl} 
+                        name={npc.name || 'NPC'} 
+                        className="w-10 h-10 border border-stone-600 shrink-0" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
+                          <p className="font-semibold text-stone-200 truncate min-w-0 max-w-[70%] sm:max-w-none" title={npc.name}>{npc.name}</p>
+                          {!isGM && onNPCNegotiate && (npc as any).is_visible !== false && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onNPCNegotiate(npc as Character & { is_playable?: boolean });
+                              }}
+                              className="h-7 text-xs border-stone-500 text-stone-300 hover:bg-stone-600 shrink-0"
+                            >
+                              ⚖️ Negociar
+                            </Button>
+                          )}
+                        </div>
+                        <p className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
+                          {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
+                        </p>
+                      </div>
                     </div>
-                    <p className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
-                      {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
-                    </p>
                     {npc.stats && (
                       <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
                         <div className="flex items-center gap-1">

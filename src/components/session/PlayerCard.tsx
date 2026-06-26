@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';
 import { MasterDeathControls } from '../combat/MasterDeathControls';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 interface PlayerCardProps {
   user: PresenceState;
@@ -53,9 +54,17 @@ export function PlayerCard({
       `}
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="min-w-0 truncate block max-w-[200px] sm:max-w-full text-lg font-medium text-stone-200">
+        <div className="flex min-w-0 flex-1 gap-3 items-center">
+          {character && (
+            <CharacterAvatar 
+              imageUrl={character.narrative?.imageUrl} 
+              name={character.name || user.name || 'Desconhecido'} 
+              className="w-12 h-12 border border-stone-600 shadow-sm shrink-0" 
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="min-w-0 truncate block max-w-[200px] sm:max-w-full text-lg font-medium text-stone-200">
               {character ? character.name : (user.name || 'Jogador')}
             </span>
             {isSessionGM && (
@@ -74,9 +83,10 @@ export function PlayerCard({
               </span>
             )}
           </div>
-          <span className="mt-1 block truncate text-xs text-stone-400">
-            {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
+            <span className="mt-1 block truncate text-xs text-stone-400">
+              {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
         </div>
 
         {hasActions && (

@@ -5,6 +5,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 // import { Button } from '../ui/button';
 import { PhysicalRollForm } from './PhysicalRollForm';
+import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 import { DeathSavesModal } from './DeathSavesModal';
 
@@ -43,6 +44,24 @@ export function PlayerCombatView({ sessionId: _sessionId, character }: PlayerCom
 
   return (
     <div className="space-y-6">
+      {/* Character Profile Header */}
+      {character && (
+        <div className="flex items-center gap-4 p-4 bg-stone-900 border border-stone-800 rounded-lg shadow-sm">
+          <CharacterAvatar 
+            imageUrl={character.narrative?.imageUrl} 
+            name={character.name || 'Desconhecido'} 
+            className="w-16 h-16 border-2 border-stone-700" 
+          />
+          <div>
+            <h2 className="text-xl font-bold text-stone-200">{character.name || 'Desconhecido'}</h2>
+            <div className="text-sm text-stone-400">
+              {character.tribe && <span>{character.tribe}</span>}
+              {character.vocation && <span className="ml-2">• {character.vocation}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {isDying && (
         <DeathSavesModal character={character} participantId={participant.id} />
       )}
