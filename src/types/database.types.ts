@@ -21,6 +21,7 @@ export type Database = {
           id: string
           item_id: string
           quantity: number | null
+          level: number
         }
         Insert: {
           character_id: string
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           item_id: string
           quantity?: number | null
+          level?: number
         }
         Update: {
           character_id?: string
@@ -35,6 +37,7 @@ export type Database = {
           id?: string
           item_id?: string
           quantity?: number | null
+          level?: number
         }
         Relationships: [
           {

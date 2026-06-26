@@ -27,6 +27,7 @@ export interface TradeItemRecord {
   side: TradeSide;
   item_id: string;
   quantity: number;
+  level: number;
   created_at: string;
 }
 

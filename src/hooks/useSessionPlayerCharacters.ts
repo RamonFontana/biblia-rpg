@@ -53,6 +53,17 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
       .on(
         'postgres_changes',
         {
+          event: '*',
+          schema: 'public',
+          table: 'character_items',
+        },
+        () => {
+          fetchPlayers();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'UPDATE',
           schema: 'public',
           table: 'characters',

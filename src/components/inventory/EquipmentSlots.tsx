@@ -1,6 +1,7 @@
 import { Shield, Sword, User } from 'lucide-react';
 import type { CharacterEquipment } from '@/types/combat';
 import { checkWeaponProficiency } from '@/lib/equipmentUtils';
+import { ITEMS_DB } from '@/data/itemsDb';
 
 interface EquipmentSlotsProps {
   equipment: CharacterEquipment | null;
@@ -26,14 +27,43 @@ export function EquipmentSlots({ equipment, inventoryItems, characterVocation = 
   const isOffProficient = isOffHandWeapon ? checkWeaponProficiency(offHandItem?.items, characterVocation) : true;
 
   const renderItemStats = (item: any) => {
-    if (!item?.items?.effects) return null;
-    const { damageDie, acBonus, ca, armorClass } = item.items.effects;
-    const totalCaBonus = (acBonus ? Number(acBonus) : 0) + (ca ? Number(ca) : 0) + (armorClass ? Math.max(0, Number(armorClass) - 10) : 0);
+    let effects = item?.items?.effects || {};
+    
+    // Fallback if DB item doesn't have effects populated
+    if (Object.keys(effects).length === 0) {
+      const staticItem = ITEMS_DB.find(i => i.name === item?.items?.name);
+      if (staticItem) {
+        if (staticItem.damage) effects.damageDie = staticItem.damage;
+        if (staticItem.armorClass) {
+          if (staticItem.type === 'Escudo') effects.acBonus = staticItem.armorClass;
+          else effects.armorClass = staticItem.armorClass;
+        }
+      }
+    }
+    
+    if (Object.keys(effects).length === 0) return null;
+    
+    const { damageDie, acBonus, ca, armorClass } = effects;
+    const baseCaBonus = (acBonus ? Number(acBonus) : 0) + (ca ? Number(ca) : 0) + (armorClass ? Math.max(0, Number(armorClass) - 10) : 0);
+    const levelBonus = baseCaBonus > 0 ? (item.level || 1) - 1 : 0;
+    const totalCaBonus = baseCaBonus + levelBonus;
     
     return (
       <div className="flex gap-2 mt-1 text-[11px] font-medium">
         {damageDie && <span className="text-red-400 flex items-center gap-1">⚔️ {damageDie}</span>}
-        {totalCaBonus > 0 && <span className="text-blue-400 flex items-center gap-1">🛡️ +{totalCaBonus} CA</span>}
+        {totalCaBonus > 0 && <span className="text-blue-400 flex items-center gap-1" title={levelBonus > 0 ? `+${baseCaBonus} (base) +${levelBonus} (nível)` : undefined}>🛡️ +{totalCaBonus} CA</span>}
+      </div>
+    );
+  };
+
+  const renderItemName = (item: any) => {
+    const level = item.level || 1;
+    return (
+      <div className="flex items-center gap-1 justify-center flex-wrap">
+        <span className="text-stone-200 font-medium text-sm text-center">{item.items.name}</span>
+        {level > 1 && (
+          <span className="text-[9px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold" title={`Nível ${level}`}>Nv.{level}</span>
+        )}
       </div>
     );
   };
@@ -50,7 +80,7 @@ export function EquipmentSlots({ equipment, inventoryItems, characterVocation = 
           <span className="text-[10px] text-stone-500 font-bold uppercase absolute top-2 left-2">Cabeça</span>
           {headItem ? (
             <div className="mt-4 flex flex-col items-center">
-              <span className="text-stone-200 font-medium text-sm text-center">{headItem.items.name}</span>
+              {renderItemName(headItem)}
               {renderItemStats(headItem)}
               {onUnequip && (
                 <button onClick={() => onUnequip('head')} className="text-[10px] text-red-500 hover:text-red-400 mt-1">Remover</button>
@@ -69,7 +99,7 @@ export function EquipmentSlots({ equipment, inventoryItems, characterVocation = 
           <span className="text-[10px] text-stone-500 font-bold uppercase absolute top-2 left-2">Corpo</span>
           {bodyItem ? (
             <div className="mt-4 flex flex-col items-center">
-              <span className="text-stone-200 font-medium text-sm text-center">{bodyItem.items.name}</span>
+              {renderItemName(bodyItem)}
               {renderItemStats(bodyItem)}
               {onUnequip && (
                 <button onClick={() => onUnequip('body')} className="text-[10px] text-red-500 hover:text-red-400 mt-1">Remover</button>
@@ -88,7 +118,7 @@ export function EquipmentSlots({ equipment, inventoryItems, characterVocation = 
           <div className="col-span-2 flex flex-col items-center p-3 bg-stone-950 border border-amber-900/30 rounded-lg group relative">
             <span className="text-[10px] text-amber-500 font-bold uppercase absolute top-2 left-2">Duas Mãos</span>
             <div className="mt-4 flex flex-col items-center">
-              <span className="text-amber-200 font-medium text-sm text-center">{mainHandItem.items.name}</span>
+              {renderItemName(mainHandItem)}
               {renderItemStats(mainHandItem)}
               {isMainHandWeapon && !isMainProficient && (
                 <span className="text-[10px] text-red-400 mt-1 font-semibold" title="O personagem não tem proficiência com esta arma.">Não Proficiente</span>
@@ -105,7 +135,7 @@ export function EquipmentSlots({ equipment, inventoryItems, characterVocation = 
               <span className="text-[10px] text-stone-500 font-bold uppercase absolute top-2 left-2">Mão Principal</span>
               {mainHandItem ? (
                 <div className="mt-4 flex flex-col items-center">
-                  <span className="text-stone-200 font-medium text-sm text-center">{mainHandItem.items.name}</span>
+                  {renderItemName(mainHandItem)}
                   {renderItemStats(mainHandItem)}
                   {isMainHandWeapon && !isMainProficient && (
                     <span className="text-[10px] text-red-400 mt-1 font-semibold" title="O personagem não tem proficiência com esta arma.">Não Proficiente</span>
@@ -127,7 +157,7 @@ export function EquipmentSlots({ equipment, inventoryItems, characterVocation = 
               <span className="text-[10px] text-stone-500 font-bold uppercase absolute top-2 left-2">Mão Secundária</span>
               {offHandItem ? (
                 <div className="mt-4 flex flex-col items-center">
-                  <span className="text-stone-200 font-medium text-sm text-center">{offHandItem.items.name}</span>
+                  {renderItemName(offHandItem)}
                   {renderItemStats(offHandItem)}
                   {isOffHandWeapon && !isOffProficient && (
                     <span className="text-[10px] text-red-400 mt-1 font-semibold" title="O personagem não tem proficiência com esta arma.">Não Proficiente</span>

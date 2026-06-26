@@ -66,6 +66,17 @@ export function useSessionNPCs(sessionId: string | undefined) {
       .on(
         'postgres_changes',
         {
+          event: '*',
+          schema: 'public',
+          table: 'character_items',
+        },
+        () => {
+          fetchNPCs();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'UPDATE',
           schema: 'public',
           table: 'characters',

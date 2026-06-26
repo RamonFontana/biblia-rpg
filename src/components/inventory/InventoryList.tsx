@@ -9,9 +9,11 @@ interface InventoryListProps {
   onEquip: (characterItemId: string, itemEffects: any, targetHand?: 'mainHand' | 'offHand') => void;
   onUseConsumable: (item: any) => void;
   isUpdating: boolean;
+  isGM?: boolean;
+  onChangeLevel?: (characterItemId: string, newLevel: number) => void;
 }
 
-export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating }: InventoryListProps) {
+export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel }: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
       <div>
@@ -91,6 +93,29 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-stone-200 font-medium">{item.items?.name}</span>
+                        {isGM ? (
+                          <div className="flex items-center gap-1 bg-stone-800 rounded border border-stone-700 h-5">
+                            <button 
+                              onClick={() => onChangeLevel?.(item.id, Math.max(1, (item.level || 1) - 1))}
+                              className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
+                              disabled={isUpdating || (item.level || 1) <= 1}
+                            >-</button>
+                            <span className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none" title="Nível do Item">
+                              Nv.{item.level || 1}
+                            </span>
+                            <button 
+                              onClick={() => onChangeLevel?.(item.id, Math.min(5, (item.level || 1) + 1))}
+                              className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
+                              disabled={isUpdating || (item.level || 1) >= 5}
+                            >+</button>
+                          </div>
+                        ) : (
+                          (item.level > 1) && (
+                            <span className="text-[10px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold leading-none" title={`Nível ${item.level}`}>
+                              Nv.{item.level}
+                            </span>
+                          )
+                        )}
                         {item.quantity > 1 && (
                           <span className="text-xs px-1.5 py-0.5 bg-stone-800 rounded-md text-stone-400 font-mono">
                             x{item.quantity}
@@ -113,9 +138,11 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                         else if (normalizedEffects.armorClass !== undefined) bonus = Math.max(0, Number(normalizedEffects.armorClass) - 10);
                         
                         if (bonus > 0) {
+                          const levelBonus = (item.level || 1) - 1;
+                          const totalBonus = bonus + levelBonus;
                           return (
-                            <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold">
-                              CA +{bonus}
+                            <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold" title={levelBonus > 0 ? `+${bonus} (base) +${levelBonus} (nível)` : undefined}>
+                              CA +{totalBonus}
                             </span>
                           );
                         }

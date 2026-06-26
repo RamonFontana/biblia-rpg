@@ -8,6 +8,7 @@ import { EquipmentSlots } from '../inventory/EquipmentSlots';
 import { InventoryList } from '../inventory/InventoryList';
 import { updateCharacterEquipment } from '@/lib/supabase';
 import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
+import { getCombatStats } from '@/lib/equipmentUtils';
 import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
 import { getTribeSkills } from '@/data/tribeSkills';
 
@@ -52,6 +53,22 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
       setCharacter({ ...character, equipment: newEquipment });
     } catch (err) {
       console.error('Error unequipping item:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
+
+  const handleUpdateItemLevel = async (characterItemId: string, newLevel: number) => {
+    setIsEquipping(true);
+    try {
+      const { error } = await supabase
+        .from('character_items')
+        .update({ level: newLevel })
+        .eq('id', characterItemId);
+      if (error) throw error;
+      // Realtime listener will automatically pick up the change and update state
+    } catch (err) {
+      console.error('Error updating item level:', err);
     } finally {
       setIsEquipping(false);
     }
@@ -121,6 +138,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             .select(`
               id,
               quantity,
+              level,
               items (
                 id,
                 name,
@@ -167,6 +185,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             .select(`
               id,
               quantity,
+              level,
               items (
                 id,
                 name,
@@ -220,34 +239,11 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
 
   const { attributes, stats, narrative, tribe, vocation, name } = character;
 
-  // Calculate dynamic AC
-  const baseAc = Number(stats?.ca) || 10;
-  let bonusAc = 0;
-  
-  const getAcModifier = (effects: any) => {
-    if (!effects) return 0;
-    // Support acBonus, ca, or if armorClass is provided, armorClass - 10
-    if (effects.acBonus !== undefined) return Number(effects.acBonus);
-    if (effects.ca !== undefined) return Number(effects.ca);
-    if (effects.armorClass !== undefined) return Math.max(0, Number(effects.armorClass) - 10);
-    return 0;
-  };
-
-  if (character.equipment) {
-    const headItem = inventoryItems.find((i) => i.id === character.equipment?.head);
-    const bodyItem = inventoryItems.find((i) => i.id === character.equipment?.body);
-    const mainHandItem = inventoryItems.find((i) => i.id === character.equipment?.mainHand);
-    const offHandItem = inventoryItems.find((i) => i.id === character.equipment?.offHand);
-    
-    bonusAc += getAcModifier(headItem?.items?.effects);
-    bonusAc += getAcModifier(bodyItem?.items?.effects);
-    bonusAc += getAcModifier(mainHandItem?.items?.effects);
-    // Don't count offHand twice if it's the same as mainHand (2h weapon)
-    if (character.equipment.offHand !== character.equipment.mainHand) {
-      bonusAc += getAcModifier(offHandItem?.items?.effects);
-    }
-  }
-  const totalAc = baseAc + bonusAc;
+  // Calculate dynamic AC using getCombatStats to properly include item level bonuses
+  const { totalAc, baseAc, bonusAc } = getCombatStats({
+    ...character,
+    character_items: inventoryItems,
+  });
 
   return (
     <div className="flex flex-col bg-stone-950 text-stone-200 overflow-y-auto custom-scrollbar">
@@ -404,6 +400,8 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               onEquip={handleEquip}
               onUseConsumable={(item) => useItem(character!.id, item.id, item.quantity, item.items.effects, character!.stats, !(character!.is_npc))}
               isUpdating={isUpdating || isEquipping}
+              isGM={isGM}
+              onChangeLevel={handleUpdateItemLevel}
             />
           </div>
         </div>

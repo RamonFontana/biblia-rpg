@@ -49,6 +49,17 @@ export function useSessionEnemies(sessionId: string | undefined) {
       .on(
         'postgres_changes',
         {
+          event: '*',
+          schema: 'public',
+          table: 'character_items',
+        },
+        () => {
+          fetchEnemies();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'UPDATE',
           schema: 'public',
           table: 'characters',

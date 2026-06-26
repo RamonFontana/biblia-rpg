@@ -1,4 +1,5 @@
 import type { CharacterEquipment, ItemEffects } from '../types/combat';
+import { ITEMS_DB } from '../data/itemsDb';
 
 export function canEquipItem(itemEffects: ItemEffects, _currentEquipment: CharacterEquipment): boolean {
   if (!itemEffects.slot) return false;
@@ -103,7 +104,19 @@ export function getCombatStats(character: any) {
   let bonusAc = 0;
   let weapon: { name: string, damageDie: string } | undefined = undefined;
 
-  const getAcModifier = (effects: any) => {
+  const getAcModifier = (invItem: any) => {
+    if (!invItem) return 0;
+    let effects = invItem.items?.effects;
+    
+    // Fallback for items in DB without effects
+    if (!effects || Object.keys(effects).length === 0) {
+      const staticItem = ITEMS_DB.find(i => i.name === invItem.items?.name);
+      if (staticItem?.armorClass) {
+        if (staticItem.type === 'Escudo') return Number(staticItem.armorClass);
+        return Math.max(0, Number(staticItem.armorClass) - 10);
+      }
+    }
+
     if (!effects) return 0;
     if (effects.acBonus !== undefined) return Number(effects.acBonus);
     if (effects.ca !== undefined) return Number(effects.ca);
@@ -117,12 +130,22 @@ export function getCombatStats(character: any) {
     const mainHandItem = inventoryItems.find((i: any) => i.id === equipment.mainHand);
     const offHandItem = inventoryItems.find((i: any) => i.id === equipment.offHand);
 
-    bonusAc += getAcModifier(headItem?.items?.effects);
-    bonusAc += getAcModifier(bodyItem?.items?.effects);
-    bonusAc += getAcModifier(mainHandItem?.items?.effects);
+    const getItemAc = (invItem: any) => {
+      if (!invItem) return 0;
+      const baseModifier = getAcModifier(invItem);
+      if (baseModifier > 0) {
+        const level = invItem.level || 1;
+        return baseModifier + (level - 1);
+      }
+      return baseModifier; 
+    };
+
+    bonusAc += getItemAc(headItem);
+    bonusAc += getItemAc(bodyItem);
+    bonusAc += getItemAc(mainHandItem);
     
     if (equipment.offHand !== equipment.mainHand) {
-      bonusAc += getAcModifier(offHandItem?.items?.effects);
+      bonusAc += getItemAc(offHandItem);
     }
 
     if (mainHandItem?.items?.effects?.damageDie) {
@@ -135,6 +158,6 @@ export function getCombatStats(character: any) {
 
   const totalAc = baseAc + bonusAc;
 
-  return { totalAc, weapon };
+  return { totalAc, baseAc, bonusAc, weapon };
 }
 
