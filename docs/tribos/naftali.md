@@ -29,3 +29,21 @@ A tribo de Naftali concentra-se na rapidez, agilidade e excelência na comunica�
 
 ## Habilidade Suprema (Nível 20)
 - **Rapidez Divina**: Você está sob o efeito permanente equivalente à magia *Movimentação Livre* (sempre ignora penalidades de velocidade, não pode ser paralisado ou contido fisicamente por efeitos não-mágicos, e correntes ou cordas se soltam de você automaticamente).
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Passos de Gazela | 1 | Passiva | - | - | Deslocamento +3m. S/ penalidade mov. terreno montanha/colina. |
+| Palavras Formosas | 1 | Passiva | - | - | Proficiência Persuasão. Vantagem próx teste CAR após 1 min conv. |
+| Evasão Rápida | 4 (A) | Passiva | - | - | Inimigo tem Desvantagem em ataque de oportunidade contra você. |
+| Cântico de Débora | 4 (B) | Ação Bônus | 1d6 | 1 / D. Curto | Aliado 9m ganha 1d6 p/ rolagem ataque/teste/TR (1 min). |
+| Carga de Baraque | 8 (A) | Passiva | 1d8 | 1 / D. Curto | Após mover 6m reto e acertar c/c: +1d8 dano e alvo cai (TR FOR). |
+| Repreensão Elegante | 8 (B) | Reação | - | - | Se inimigo errar atq (9m), ele tem Desvantagem no próx atq. |
+| Impulso Vertiginoso | 12 (A) | Ação Bônus | - | - | Dobra o deslocamento até o final do turno. |
+| Espírito Irrefreável | 12 (B) | Passiva | - | - | Aliados (4,5m) não podem ser Amedrontados. |
+| Inalcançável | 16 (A) | Passiva | - | - | Reações inimigas têm 50% de chance de falhar automaticamente. |
+| Palavras de Retirada/Avanço| 16 (B) | Ação | - | - | Aliados (18m) usam Reação p/ mover metade desloc. s/ atq oport. |
+| Rapidez Divina | 20 | Passiva | - | - | Ignora penalidade vel., imune paralisia física, solta cordas. |

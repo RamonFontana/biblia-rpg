@@ -66,3 +66,22 @@
 ### Caminho B — Lavrador
 **Guardião do Vale**
 - **Cura e escudo** em área para todos os aliados.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Emboscada Rústica | 1 | Passiva | - | - | +1 FOR/DES no acerto/dano ao matar furtivamente. |
+| Resistência Solar | 1 | Passiva | - | - | Imune a exaustão solar. |
+| Contrato de Sangue | 4 (A) | Ação Bônus | - | - | Marca alvo; bônus ofensivo contra ele. |
+| Raízes Profundas | 4 (B) | Passiva | - | - | Bônus de CA enquanto estiver imóvel. |
+| Ataque Coordenado | 8 (A) | Passiva | - | - | Ataque bônus se aliado perto do alvo. |
+| Cura Máxima | 8 (B) | Passiva | - | - | Cura máxima durante descanso. |
+| Golpe Paralisante | 12 (A) | Passiva | - | - | Acerto crítico zera a velocidade do inimigo. |
+| Casca Grossa | 12 (B) | Passiva | - | - | Resistência a armas não-metálicas. |
+| Esconder-se Rápido | 16 (A) | Reação | - | - | Pode esconder-se imediatamente após abater alvo. |
+| Fúria do Lavrador | 16 (B) | Passiva | - | - | Dano máximo automático quando HP < 50%. |
+| A Ceifa | 20 (A) | Ação | - | 1 / Semana | Morte letal furtiva (ignora defesas). |
+| Guardião do Vale | 20 (B) | Ação | - | 1 / Semana | Cura e escudo em área p/ todos os aliados. |

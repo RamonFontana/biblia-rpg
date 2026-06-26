@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { PresenceState } from '@/hooks/useSupabasePresence';
 import { PlayerCard } from './PlayerCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

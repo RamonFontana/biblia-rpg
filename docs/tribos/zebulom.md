@@ -30,3 +30,21 @@ Os zebulonitas são um povo adaptado às águas, ventos e ao comércio costeiro,
 
 ## Habilidade Suprema (Nível 20)
 - **Mestre dos Mares e do Ferro**: Você torna-se uma força incontrolável. Seus ataques ignoram qualquer Resistência à dano de concussão, cortante e perfurante de criaturas mundanas (exceto Demônios e Anjos). Além disso, você tem resistência automática contra o frio e nunca se perde se puder ver as estrelas ou o mar.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Guerreiros dos Portos | 1 | Passiva | - | - | Profic. mar. Nada s/ penalidade; respira 2x mais. |
+| Ombro a Ombro | 1 | Passiva | - | - | Adjacente a aliado (1,5m): ambos +1 CA cont. atq dist. |
+| Reflexo das Ondas | 4 (A) | Reação | - | 1 / D. Curto | Atq c/c: reduz dano 1/2 e move 1,5m s/ atq oport. |
+| Treino Bélico Avançado| 4 (B) | Passiva | - | - | Arma marcial escolhida: rolagens de dano <3 viram 3. |
+| Visão Além do Horiz. | 8 (A) | Passiva | - | - | Percepção normal em nevoeiro/chuva/escuridão. |
+| Coração Intrépido | 8 (B) | Passiva | - | - | Imune a Encantado; Vantagem em TR Fé cont. heresia. |
+| Equilíbrio Perfeito | 12 (A) | Passiva | - | - | Vantagem p/ não cair/desarmar. Luta na água s/ penal. |
+| Formação Focada | 12 (B) | Passiva | - | - | Inimigos não ganham Vantagem flanqueando você/aliado adj. |
+| Tempestade de Golpes | 16 (A) | Passiva | 1d10 | - | Acertar >1 atq no mesmo alvo causa +1d10 dano extra. |
+| Retribuição da Milícia| 16 (B) | Reação | - | 1 / D. Curto | Se dano (você/aliado adj), ambos atq c/c imediato. |
+| Mestre dos Mares | 20 | Passiva | - | - | Ignora resist. física. Resistência a frio. Não se perde. |

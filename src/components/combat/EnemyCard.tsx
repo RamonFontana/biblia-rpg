@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent } from '../ui/card';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { Shield, Heart } from 'lucide-react';
@@ -24,8 +23,8 @@ export function EnemyCard({ enemy, participant, onClick }: EnemyCardProps) {
       <CardContent className="p-4 flex items-center gap-4">
         <CharacterAvatar 
           imageUrl={enemy.narrative?.imageUrl} 
-          name={enemy.name} 
-          className="w-12 h-12 border-2 border-red-900/50" 
+          name={enemy.name || 'Inimigo'} 
+          className={`w-12 h-12 border border-red-900/50 ${isDead ? 'grayscale opacity-60' : ''}`} 
         />
         <div className="flex-1 overflow-hidden">
           <h3 className="font-bold text-stone-200 truncate">{enemy.name}</h3>

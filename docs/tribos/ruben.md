@@ -67,3 +67,22 @@
 ### Caminho B — Lábia
 **Embaixador da Paz**
 - **Encerra guerras inteiras** na lábia, sem derramar sangue.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| A Língua do Comércio | 1 | Passiva | - | - | Compram c/ 10% desconto e vendem c/ 10% lucro. |
+| Companheiro de Jornada | 1 | Passiva | - | - | Auxiliados por mascote menor que carrega 2x o peso. |
+| Lehakhepil | 4 (A) | Ação Bônus | - | - | Comanda o animal em combate. |
+| Hashikhenu'a | 4 (B) | Ação | - | - | Persuade e confunde inimigos ou negociantes. |
+| Fera Letal | 8 (A) | Passiva | - | - | Ataques do animal ignoram resistências não-mágicas. |
+| Suborno Tático | 8 (B) | Ação | - | - | Suborna cidades para obter rotas e milícias. |
+| Fera Protetora | 12 (A) | Passiva | - | - | Animal ganha resistência e protege dono a 0 HP. |
+| Compra de Lealdade | 12 (B) | Ação | - | - | Paga exércitos desmotivados para fugirem. |
+| Chamado Selvagem | 16 (A) | Ação | - | 1 / Semana | Convoca temporariamente feras do deserto. |
+| Lábia Infalível | 16 (B) | Ação | - | 1 / D. Longo | Acerto Crítico automático em Persuasão p/ governantes. |
+| O Beemote | 20 (A) | Ação | - | 1 / Semana | Animal Enorme, dobro HP e causa terror em área. |
+| Embaixador da Paz | 20 (B) | Ação | - | 1 / Semana | Encerra guerras na lábia sem derramar sangue. |

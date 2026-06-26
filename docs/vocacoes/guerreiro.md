@@ -31,3 +31,20 @@ Além das passivas que você ganha com a sua Tribo, ser um Guerreiro lhe concede
 
 ### Nível 18: Presença do General
 - **Grito de Guerra (1/Descanso Longo)**: Como Ação, você emite um comando ou grito encorajador. Até 6 aliados que puderem ouvi-lo ganham Vantagem nos ataques até o fim do próximo turno deles e recuperam imediatamente 2d6 de HP. Inimigos a até 9 metros que ouvirem devem passar num Teste de Sabedoria ou ficarão Amedrontados por 1 minuto.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Estilo: Defesa | 2 | Passiva | - | - | (Escolha 1) +1 CA com armadura. |
+| Estilo: Duelo | 2 | Passiva | - | - | (Escolha 1) +2 dano com arma de uma mão. |
+| Estilo: Proteção | 2 | Reação | - | - | (Escolha 1) Com escudo, impõe Desv. atq em aliado 1,5m. |
+| Surto de Ação | 2 | Ação Livre | - | 1 / D. Curto | Ação adicional no turno. |
+| Ataque Extra | 6 | Passiva | - | - | Ataca duas vezes com Ação de Ataque. |
+| Determinação | 6 | Reação | - | 1 / D. Longo | Rerrola Teste de SAB (medo/tentações) falho. |
+| Vigor do Defensor | 10 | Ação Bônus | 1d10 | 1 / D. Curto | Recupera HP igual a 1d10 + Nível. |
+| Bloqueio Inabalável | 10 | Passiva | - | - | Com escudo, atqs de oportunidade têm Desv. contra você. |
+| Ataque Extra Superior | 14 | Passiva | - | - | Ataca três vezes com Ação de Ataque. |
+| Grito de Guerra | 18 | Ação | 2d6 | 1 / D. Longo | 6 aliados c/ Vant. atq e curam 2d6 HP. Inimigos TR SAB/fogem. |

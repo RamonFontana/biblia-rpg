@@ -29,3 +29,19 @@ O Caçador (ou Nômade) vive no limiar entre a civilização e os ermos agrestes
 
 ### Nível 18: Sentidos de Predador
 - **Sentidos Aguçados**: Você não sofre desvantagem em ataques por não enxergar o alvo (desde que o alvo não esteja invisível magicamente). Se você acertar um Inimigo Favorecido, o dano é dobrado.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Inimigo Favorecido | 2 | Passiva | - | - | Vantagem Sobrevivência/INT contra Feras/Humanóides. |
+| Estilo: Arquearia | 2 | Passiva | - | - | (Escolha 1) +2 atq à distância. |
+| Estilo: Duas Armas | 2 | Passiva | - | - | (Escolha 1) Add mod. hab. no dano do 2º atq leve. |
+| Ataque Extra | 6 | Passiva | - | - | Ataca duas vezes com Ação de Ataque. |
+| Explorador Rústico | 6 | Passiva | - | - | Ignora terreno difícil; Vantagem em Percepção p/ emboscada. |
+| Foco do Atirador | 10 | Ação | - | - | (Escolha 1) Atq à dist. em vários alvos a até 3m de um ponto. |
+| Besta Companheira | 10 | Ação Bônus | - | - | (Escolha 1) Comanda companheiro animal. |
+| Fuga Engenhosa | 14 | Ação Bônus | - | - | Esconder-se. Inimigos c/ Desv. se você em cobertura. |
+| Sentidos Aguçados | 18 | Passiva | - | - | Sem desv. por não ver alvo. Dobra dano em Inim. Favorecido. |

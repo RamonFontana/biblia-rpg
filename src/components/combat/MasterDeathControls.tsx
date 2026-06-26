@@ -20,7 +20,8 @@ export function MasterDeathControls({ characterId, participantId }: MasterDeathC
     };
     fetchChar();
 
-    const channel = supabase.channel(`char_death_${characterId}`)
+    const channelId = Math.random().toString(36).substring(7);
+    const channel = supabase.channel(`char_death_${characterId}_${channelId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'characters', filter: `id=eq.${characterId}` }, (payload) => {
         setCharacterState(payload.new);
       })

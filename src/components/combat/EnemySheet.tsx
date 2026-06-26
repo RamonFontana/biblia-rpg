@@ -1,4 +1,3 @@
-import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet';
 import type { Character } from '@/features/character-management/types';
 import { Shield, Heart } from 'lucide-react';
@@ -26,7 +25,7 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
           <div className="flex items-center gap-4">
             <CharacterAvatar 
               imageUrl={enemy.narrative?.imageUrl} 
-              name={enemy.name} 
+              name={enemy.name || 'Inimigo'} 
               className={`w-16 h-16 border-2 border-red-900/50 ${isDead ? 'grayscale opacity-60' : ''}`} 
             />
             <div>
@@ -76,11 +75,11 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
             </div>
           </div>
 
-          {enemy.skills && enemy.skills.length > 0 && (
+          {Array.isArray(enemy.skills) && enemy.skills.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-stone-300 mb-3 border-b border-stone-800 pb-2 uppercase tracking-wider">Habilidades</h3>
               <ul className="space-y-3">
-                {enemy.skills.map((skill: any, idx: number) => {
+                {(enemy.skills as any[]).map((skill: any, idx: number) => {
                   const title = skill.name || skill.description;
                   const hasDesc = skill.name && skill.description;
                   return (

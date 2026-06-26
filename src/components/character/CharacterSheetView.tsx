@@ -10,8 +10,10 @@ import { updateCharacterEquipment } from '@/lib/supabase';
 import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
-import { getTribeSkills } from '@/data/tribeSkills';
+import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
+import { AbilityCard } from '../combat/AbilityCard';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
+import { updateCharacter } from '@/features/character-management/api/characterApi';
 
 interface CharacterSheetViewProps {
   userId?: string;
@@ -72,6 +74,65 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
       console.error('Error updating item level:', err);
     } finally {
       setIsEquipping(false);
+    }
+  };
+
+  const handleUseAbility = async (ability: any) => {
+    if (!character || isUpdating) return;
+    
+    try {
+      const skills = (character.skills as any) || {};
+      const abilityUses = skills.ability_uses || {};
+      const currentUsed = abilityUses[ability.id] || 0;
+      
+      const newSkills = {
+        ...skills,
+        ability_uses: {
+          ...abilityUses,
+          [ability.id]: currentUsed + 1
+        }
+      };
+      
+      const updates: any = { skills: newSkills };
+      
+      if (ability.faithCost) {
+        const stats = (character.stats as any) || {};
+        const currentFaith = stats.current_faith ?? stats.faith ?? 0;
+        
+        if (currentFaith >= ability.faithCost) {
+          updates.stats = {
+            ...stats,
+            current_faith: currentFaith - ability.faithCost
+          };
+        } else {
+          return;
+        }
+      }
+      
+      await updateCharacter(character.id, updates);
+    } catch (error) {
+      console.error('Failed to use ability:', error);
+    }
+  };
+
+  const handleRestoreAbility = async (ability: any) => {
+    if (!character || !isGM || isUpdating) return;
+    
+    try {
+      const skills = (character.skills as any) || {};
+      const abilityUses = skills.ability_uses || {};
+      
+      const newAbilityUses = { ...abilityUses };
+      delete newAbilityUses[ability.id];
+      
+      const newSkills = {
+        ...skills,
+        ability_uses: newAbilityUses
+      };
+      
+      await updateCharacter(character.id, { skills: newSkills });
+    } catch (error) {
+      console.error('Failed to restore ability:', error);
     }
   };
 
@@ -174,8 +235,9 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   useEffect(() => {
     if (!character?.id) return;
 
+    const channelId = Math.random().toString(36).substring(7);
     const channel = supabase
-      .channel(`character_sheet_updates_${character.id}`)
+      .channel(`character_sheet_updates_${character.id}_${channelId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'character_items', filter: `character_id=eq.${character.id}` },
@@ -345,20 +407,58 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           </div>
         </div>
 
-        {/* Habilidades Raciais */}
-        {tribe && getTribeSkills(tribe).length > 0 && (
+        {/* Habilidades */}
+        {character && !Array.isArray(character.skills) && getAbilitiesForCharacter(
+          character.tribe || '', 
+          character.vocation || '', 
+          (character as any).level || 1, 
+          (character.skills as any)?.path_choices
+        ).length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
               <Zap className="w-5 h-5 text-amber-500" />
-              Habilidades de Tribo
+              Habilidades
             </h3>
             <div className="space-y-3">
-              {getTribeSkills(tribe).map((skill, index) => (
-                <div key={index} className="bg-stone-900 border border-stone-800 rounded-lg p-4 shadow-sm">
-                  <h4 className="text-md font-bold text-amber-500 mb-1">{skill.name}</h4>
-                  <p className="text-sm text-stone-400 leading-relaxed">{skill.description}</p>
-                </div>
-              ))}
+              {getAbilitiesForCharacter(
+                character.tribe || '', 
+                character.vocation || '', 
+                (character as any).level || 1, 
+                (character.skills as any)?.path_choices
+              ).map((ability, index) => {
+                const currentUsed = ((character.skills as any)?.ability_uses?.[ability.id]) || 0;
+                const remainingUses = ability.maxUses ? Math.max(0, ability.maxUses - currentUsed) : undefined;
+                let disabled = false;
+                let disabledReason = '';
+                
+                if (ability.faithCost) {
+                  const currentFaith = (character.stats as any)?.current_faith ?? (character.stats as any)?.faith ?? 0;
+                  if (currentFaith < ability.faithCost) {
+                    disabled = true;
+                    disabledReason = 'Fé Insuficiente';
+                  }
+                }
+                
+                if (!disabled && ability.maxUses) {
+                  if (currentUsed >= ability.maxUses) {
+                    disabled = true;
+                    disabledReason = 'Sem Usos';
+                  }
+                }
+                
+                return (
+                  <AbilityCard
+                    key={index}
+                    ability={ability}
+                    currentUses={remainingUses}
+                    onUse={() => handleUseAbility(ability)}
+                    onRestore={() => handleRestoreAbility(ability)}
+                    isGM={isGM}
+                    disabled={disabled && !isGM}
+                    disabledReason={disabled && !isGM ? disabledReason : ''}
+                  />
+                );
+              })}
             </div>
           </div>
         )}

@@ -30,3 +30,21 @@ Manassés foi dividida em duas "meias-tribos", habitando ambos os lados do rio J
 
 ## Habilidade Suprema (Nível 20)
 - **O Unificador**: Uma vez por combate, você pode proclamar o triunfo sob pressão. Você e todos os aliados num raio de 18 metros removem uma condição negativa atual de si mesmos (Exceto Ruptura de Fé) e ganham Resistência a todos os tipos de dano mundano por 1 minuto.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Homem Valoroso | 1 | Passiva | - | - | Vantagem c/c contra oponente maior ou se HP < 50%. |
+| Guerreiro de Fronteira | 1 | Passiva | - | - | Proficiência Sobrevivência e Atletismo. |
+| Surpresa Tática | 4 (A) | Passiva | 1d6 | 1 / D. Curto | 1ª rodada: se atacar antes do alvo, +1d6 dano e alvo Surdo. |
+| Sangue Resiliente | 4 (B) | Passiva | - | - | HP máx aumenta 2x CON; +1 HP por Dado de Vida em D. Curto. |
+| Força na Fraqueza | 8 (A) | Reação | - | - | Força rerrolagem de Acerto Crítico sofrido por aliado/si. |
+| Guardião da Fronteira | 8 (B) | Reação | - | - | Empurra inimigo 1,5m antes do dano c/c (Teste FOR). |
+| Tática do Cântaro Quebrado | 12 (A) | Ação Bônus | - | 1 / D. Longo | Inimigos 9m Teste SAB; falha = Amedrontado (1 min). |
+| Implacável | 12 (B) | Passiva | - | - | Rola Dado de Vida no turno p/ curar se Envenenado/Surdo/Sangrando. |
+| Destruidor de Altares | 16 (A) | Passiva | - | - | Dano duplo contra místicos/demoníacos ou hereges. |
+| A Muralha do Jordão | 16 (B) | Ação Bônus | - | 1 / D. Longo | Por 1 min, inimigo na área de ameaça tem mov reduzido a 0. |
+| O Unificador | 20 | Ação | - | 1 / Combate | Aliados 18m perdem condição negativa e resistem dano mundano. |

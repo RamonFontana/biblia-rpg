@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Coffee, Moon, Loader2 } from 'lucide-react';
+import { calculateRechargedAbilities } from '@/utils/abilityUtils';
 
 interface SessionRestControlsProps {
   sessionId: string;
@@ -60,13 +61,24 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
           
           const newPv = Math.min(maxPv, currentPv + amount);
 
+          // Calculate recharged abilities
+          const currentSkills = char.skills || {};
+          const abilityUses = currentSkills.ability_uses || {};
+          const newAbilityUses = calculateRechargedAbilities(abilityUses, 'short_rest');
+          
+          const newSkills = {
+            ...currentSkills,
+            ability_uses: newAbilityUses
+          };
+
           return supabase
             .from('characters')
             .update({
               stats: {
                 ...currentStats,
                 current_pv: newPv,
-              }
+              },
+              skills: newSkills
             })
             .eq('id', char.id);
         });
@@ -122,6 +134,16 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
 
         const newFaith = Math.min(maxFaith, currentFaith + faithRecovered);
 
+        // Calculate recharged abilities
+        const currentSkills = char.skills || {};
+        const abilityUses = currentSkills.ability_uses || {};
+        const newAbilityUses = calculateRechargedAbilities(abilityUses, 'long_rest');
+        
+        const newSkills = {
+          ...currentSkills,
+          ability_uses: newAbilityUses
+        };
+
         return supabase
           .from('characters')
           .update({
@@ -129,7 +151,8 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
               ...currentStats,
               current_pv: maxPv,
               current_faith: newFaith,
-            }
+            },
+            skills: newSkills
           })
           .eq('id', char.id);
       });

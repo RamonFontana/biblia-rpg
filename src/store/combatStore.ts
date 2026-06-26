@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
+import { resetCombatAbilities } from '../utils/abilityUtils';
 
 export type Combat = Database['public']['Tables']['combats']['Row'];
 export type CombatParticipant = Database['public']['Tables']['combat_participants']['Row'];
@@ -103,6 +104,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       console.error('Failed to insert participants', participantsError);
       throw participantsError;
     }
+
+    // Reset combat abilities for all non-enemy participants
+    const entityIds = setupParticipants.filter(p => p.entityType !== 'enemy').map(p => p.entityId);
+    if (entityIds.length > 0) {
+      const { data: chars } = await supabase.from('characters').select('id, skills').in('id', entityIds);
+      if (chars) {
+        const updates = chars.map(char => {
+          const currentSkills = (char.skills as any) || {};
+          const abilityUses = currentSkills.ability_uses || {};
+          const newAbilityUses = resetCombatAbilities(abilityUses);
+          
+          return supabase
+            .from('characters')
+            .update({
+              skills: {
+                ...currentSkills,
+                ability_uses: newAbilityUses
+              }
+            })
+            .eq('id', char.id);
+        });
+        
+        await Promise.all(updates).catch(e => console.error('Error resetting combat abilities:', e));
+      }
+    }
   },
 
   initSubscriptions: (sessionId: string) => {
@@ -122,7 +148,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     });
 
     // Setup channel
-    const channel = supabase.channel(`combat:session-${sessionId}`);
+    const channelId = Math.random().toString(36).substring(7);
+    const channel = supabase.channel(`combat:session-${sessionId}-${channelId}`);
 
     // Listen to combats
     channel.on(

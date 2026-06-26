@@ -30,3 +30,22 @@ A tribo de Aser é próspera, ocupando terras férteis no litoral e no norte, es
 
 ## Habilidade Suprema (Nível 20)
 - **A Benção Eterna de Aser**: A abundância da tribo flui em você. No final de todo turno seu em combate, se você estiver com HP menor que a metade, você recupera 10 HP passivamente.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Fartura da Terra | 1 | Passiva | - | - | Ração/refeição recupera +1d4 HP adicional no descanso. |
+| Vigor do Azeite | 1 | Passiva | - | - | Vantagem em TR contra venenos, doenças e exaustão. |
+| Calçado de Ferro | 4 (A) | Passiva | - | - | Imunidade a ser derrubado (prono) ou empurrado contra a vontade. |
+| Delícias Reais | 4 (B) | Ação | - | 1 / D. Longo | (Desc. Curto) Até 4 pessoas ganham HP Temp igual a Nível + MOD Car/Con. |
+| Corpo Nutrrido | 8 (A) | Passiva | - | - | HP máximo +8 e +1 por nível subsequente. |
+| Mercador Hábil | 8 (B) | Passiva | - | - | Vantagem em testes de Carisma para comércio e apaziguar tensões. |
+| Ungido | 12 (A) | Ação Bônus | 3d8 | 1 / D. Longo | Cura 3d8 HP e remove envenenamento/doença do alvo. |
+| Banquete do Acampamento | 12 (B) | Passiva | - | - | Bônus de refeição sobe p/ 1d8 HP e remove 1 exaustão do grupo. |
+| Muralha Inabalável | 16 (A) | Passiva | - | - | Reduz dano não-mágico de concussão, cortante ou perfurante em 3. |
+| A Favor dos Reis | 16 (B) | Reação | - | 1 / D. Curto | Comanda aliado para realizar um Ataque ou Ação imediatamente. |
+| A Benção Eterna de Aser | 20 | Passiva | - | - | Se HP < metade, recupera 10 HP no final do turno (combate). |
+

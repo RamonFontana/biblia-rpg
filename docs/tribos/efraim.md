@@ -30,3 +30,21 @@ A tribo de Efraim sempre assumiu uma postura de liderança militar e orgulho, es
 
 ## Habilidade Suprema (Nível 20)
 - **A Liderança Inquestionável**: Seu Carisma natural e aura de liderança atingem o ápice. Aliados a até 9 metros de você adicionam seu Modificador de Carisma nas rolagens de dano, e inimigos nessa área têm Desvantagem para atacá-lo caso você não os tenha atacado no turno atual.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Orgulho do Norte | 1 | Passiva | - | - | Vantagem em TR Amedrontado. +1 dano se for o 1º a agir. |
+| Treino com Arcos | 1 | Passiva | - | - | Profic. Arco Curto/Longo. (Se já tiver, +1 atq). |
+| Tiro Penetrante | 4 (A) | Ação | - | 1 / D. Curto | Próx tiro com arco ignora armadura física (CA base + Des). |
+| Investida Majestosa | 4 (B) | Ação Bônus | - | - | Após mover 6m reto e atacar, pode dar Empurrão (Shove). |
+| Disparo Evasivo | 8 (A) | Passiva | - | - | Sem Desvantagem atq à distância se inimigo a até 1,5m. |
+| Vigor Orgulhoso | 8 (B) | Reação | - | 1 / D. Longo | Se a 0 HP, Teste CON CD 15 para ficar com 1 HP. |
+| Flecha Marcada | 12 (A) | Ação Bônus | - | - | Próx 2 ataques com arco no alvo focado têm Vantagem. |
+| Grito de Comando | 12 (B) | Ação Bônus | - | 1 / D. Curto | Ordena aliado adjacente a fazer ataque c/c (Reação). |
+| Chuva de Efraim | 16 (A) | Ação | - | 1 / Combate | Ataca com arco até 3 alvos em cone 18m. |
+| Impacto do Touro | 16 (B) | Passiva | - | - | Ao acertar c/c após 4,5m mov, rola dano duas vezes. |
+| A Liderança Inquestionável | 20 | Passiva | - | - | Aliados (9m) somam CAR dano. Inimigos c/ desvantagem. |

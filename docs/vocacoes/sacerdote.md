@@ -41,16 +41,19 @@ Sacerdotes não possuem o poder de criar eventos sobrenaturais à vontade. Em ve
 
 > **Nota**: Todas as bênçãos e incentivos falham automaticamente quando a Barra de Fé está em Ruptura (0 pontos).
 
-| Nome | Nível Min. | Custo de Fé | Ação | Usos | Efeito |
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
 |---|---|---|---|---|---|
-| Imposição de Mãos | 1 | 3 | Ação | 2 / D. Longo | Bênção que fortifica o corpo: Cura 1d6 HP fora de combate. |
-| Oração de Proteção | 1 | 5 | Ação | 1 / D. Longo | Aliado recebe +2 CA temporário por 1 minuto, como incentivo moral. |
-| Guia Espiritual | 1 | 2 | Ação Bônus | 3 / D. Longo | Aliado recebe Vantagem no próximo teste de Sabedoria. |
-| Repreensão Divina | 2 | 8 | Ação | 1 / D. Curto | Endemoniado faz teste SAB (CD 12+SAB) ou foge abalado por 1 minuto. |
-| Súplica Curativa | 2 | - | Ação | 3 / D. Longo | Fortalece o ânimo: Cura 1d8+SAB HP e recupera 1d4 Fé do aliado. |
-| Purificação | 6 | - | Ação | 1 / D. Curto | Encerra Amedrontado, Atordoado, Envenenado ou Possessão inicial. |
-| Consagração | 6 | 10 | 10 Minutos | 1 / D. Longo | Área de 9m se torna segura para descanso contra influências malignas (8h). |
-| Clamor a Deus | 10 | Variável | Ação | 1 / Semana | Pede um milagre direto. O Mestre define a CD e o jogador rola a Fé para a resposta. |
-| Barreira de Fé | 14 | - | Passiva | Constante | A mera presença do sacerdote dá resistência psíquica/espiritual e +2 em SAB a até 6m. |
-| Retribuição Divina| 14 | - | Reação | 1 / D. Curto | Ao ver um aliado cair, o grito do sacerdote causa 2d10+SAB dano e Amedronta o agressor. |
-| Clamor Maior | 18 | Variável | Ação | 1 / Campanha | Clama por intervenção definitiva (curas em massa, queda de muralhas). O Mestre julga a viabilidade e a CD. |
+| Imposição de Mãos | 1 | Ação | 1d6 | 2 / D. Longo | (Custo: 3 Fé) Cura 1d6 HP fora de combate. |
+| Oração de Proteção | 1 | Ação | - | 1 / D. Longo | (Custo: 5 Fé) Aliado recebe +2 CA temporário por 1 minuto. |
+| Guia Espiritual | 1 | Ação Bônus | - | 3 / D. Longo | (Custo: 2 Fé) Aliado recebe Vantagem no próximo teste de SAB. |
+| Autoridade Espiritual | 2 | Passiva | - | - | Vantagem persuasão contra tementes a Deus. |
+| Súplica Curativa | 2 | Ação | 1d8 | 3 / D. Longo | Cura 1d8+SAB HP e recupera 1d4 Fé do aliado. |
+| Repreensão Divina | 2 | Ação | - | 1 / D. Curto | (Custo: 8 Fé) Endemoniado TR SAB ou foge abalado 1 min. |
+| Purificação | 6 | Ação | - | 1 / D. Curto | Encerra Amedrontado, Atordoado, Envenenado ou Possessão. |
+| Jejum Protetivo | 6 | Passiva | 1d4 | - | Desc. Longo: cura total, +1d4+2 Fé p/ grupo, +5 HP Temp. |
+| Consagração | 6 | 10 Minutos | - | 1 / D. Longo | (Custo: 10 Fé) Área de 9m segura para descanso (8h). |
+| Intervenção Menor | 10 | Ação | - | 1 / Semana | Pede milagre. Rola 1d100 contra Fé. |
+| Barreira de Fé | 14 | Passiva | - | - | Presença dá resistência psíquica/espiritual e +2 SAB (6m). |
+| Retribuição Divina| 14 | Reação | 2d10 | 1 / D. Curto | Aliado a 0 HP: causa 2d10+SAB dano e Amedronta agressor. |
+| Intervenção Maior | 18 | Ação | - | 1 / Campanha | Clama por intervenção definitiva. Rola 1d100 contra Fé. |
+| Servo Consagrado | 18 | Passiva | - | - | Fé nunca < 30. Imune a Amedrontado, Encantado e Possessão. |

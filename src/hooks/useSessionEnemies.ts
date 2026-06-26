@@ -32,8 +32,9 @@ export function useSessionEnemies(sessionId: string | undefined) {
     fetchEnemies();
 
     // Subscribe to session_participants and characters changes
+    const channelId = Math.random().toString(36).substring(7);
     const channel = supabase
-      .channel(`session_enemies_${sessionId}`)
+      .channel(`session_enemies_${sessionId}_${channelId}`)
       .on(
         'postgres_changes',
         {

@@ -28,3 +28,20 @@ O Batedor é o especialista em espreitar, coletar informações e realizar elimi
 ### Nível 18: Ataque Furtivo (9d6) e Lâmina Fantasma
 - **Ataque Furtivo (9d6)**: Seu dano do Ataque Furtivo aumenta para 9d6.
 - **Lâmina Fantasma (1/Descanso Longo)**: Se errar um ataque que qualificaria para Ataque Furtivo, você pode rolar novamente com Vantagem. Se acertar, o dano do Ataque Furtivo para esse acerto é maximizado (trate todos os dados de Ataque Furtivo como 6).
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Ataque Furtivo (1d6) | 2 | Passiva | 1d6 | - | Dano extra 1/turno com Vantagem ou aliado a 1,5m. |
+| Agilidade Enganosa | 2 | Ação Bônus | - | - | Esconder-se, Desengajar ou Correr. |
+| Ataque Furtivo (3d6) | 6 | Passiva | 3d6 | - | Dano extra furtivo aumenta. |
+| Evasão | 6 | Passiva | - | - | TR Destreza p/ 1/2 dano = 0 dano se passar, 1/2 se falhar. |
+| Ataque Furtivo (5d6) | 10 | Passiva | 5d6 | - | Dano extra furtivo aumenta. |
+| Mente Escorregadia | 10 | Passiva | - | - | Vantagem TR Sabedoria contra Tentações/Medo/Possessão. |
+| Ataque Furtivo (7d6) | 14 | Passiva | 7d6 | - | Dano extra furtivo aumenta. |
+| Golpe Incapacitante | 14 | Passiva | - | - | Abdica 3d6 do Furtivo p/ forçar TR CON. Falha = Atordoado. |
+| Ataque Furtivo (9d6) | 18 | Passiva | 9d6 | - | Dano extra furtivo aumenta. |
+| Lâmina Fantasma | 18 | Passiva | - | 1 / D. Longo | Erra Furtivo -> rerrola c/ Vantagem. Acertou = maximiza dano. |

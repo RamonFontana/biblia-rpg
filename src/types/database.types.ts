@@ -76,6 +76,7 @@ export type Database = {
           name: string
           narrative: Json | null
           stats: Json
+          skills: Json | null
           temptation: string | null
           tribe: string
           updated_at: string
@@ -101,6 +102,7 @@ export type Database = {
           name: string
           narrative?: Json | null
           stats: Json
+          skills?: Json | null
           temptation?: string | null
           tribe: string
           updated_at?: string
@@ -126,6 +128,7 @@ export type Database = {
           name?: string
           narrative?: Json | null
           stats?: Json
+          skills?: Json | null
           temptation?: string | null
           tribe?: string
           updated_at?: string

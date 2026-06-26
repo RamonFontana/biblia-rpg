@@ -36,8 +36,9 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
     fetchPlayers();
 
     // Subscribe to session_participants and characters
+    const channelId = Math.random().toString(36).substring(7);
     const channel = supabase
-      .channel(`session_players_realtime_${sessionId}`)
+      .channel(`session_players_realtime_${sessionId}_${channelId}`)
       .on(
         'postgres_changes',
         {

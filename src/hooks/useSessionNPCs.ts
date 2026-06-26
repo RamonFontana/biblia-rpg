@@ -48,8 +48,9 @@ export function useSessionNPCs(sessionId: string | undefined) {
     fetchNPCs();
 
     // Subscribe to session_participants changes for this session
+    const channelId = Math.random().toString(36).substring(7);
     const channel = supabase
-      .channel(`session_participants_npcs_${sessionId}`)
+      .channel(`session_participants_npcs_${sessionId}_${channelId}`)
       .on(
         'postgres_changes',
         {

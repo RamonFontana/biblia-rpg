@@ -1,0 +1,2167 @@
+// Auto-generated abilities data from documentation tables
+
+export interface AbilityDefinition {
+  id: string;
+  name: string;
+  sourceType: 'tribe' | 'vocation';
+  sourceId: string;
+  minLevel: number;
+  path?: 'A' | 'B';
+  actionType: 'passive' | 'action' | 'bonus_action' | 'reaction' | 'free_action';
+  usageType: 'unlimited' | 'short_rest' | 'long_rest' | 'combat' | 'week' | 'campaign' | 'faith_cost';
+  maxUses?: number;
+  faithCost?: number;
+  effect: string;
+}
+
+export const ABILITIES: AbilityDefinition[] = [
+  {
+    id: "tribe-aser-1-fartura-da-terr",
+    name: "Fartura da Terra",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ração/refeição recupera +1d4 HP adicional no descanso."
+  },
+  {
+    id: "tribe-aser-1-vigor-do-azeite",
+    name: "Vigor do Azeite",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem em TR contra venenos, doenças e exaustão."
+  },
+  {
+    id: "tribe-aser-4-calcado-de-ferr",
+    name: "Calçado de Ferro",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 4,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Imunidade a ser derrubado (prono) ou empurrado contra a vontade."
+  },
+  {
+    id: "tribe-aser-4-delicias-reais",
+    name: "Delícias Reais",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "(Desc. Curto) Até 4 pessoas ganham HP Temp igual a Nível + MOD Car/Con."
+  },
+  {
+    id: "tribe-aser-8-corpo-nutrrido",
+    name: "Corpo Nutrrido",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "HP máximo +8 e +1 por nível subsequente."
+  },
+  {
+    id: "tribe-aser-8-mercador-habil",
+    name: "Mercador Hábil",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 8,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem em testes de Carisma para comércio e apaziguar tensões."
+  },
+  {
+    id: "tribe-aser-12-ungido",
+    name: "Ungido",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 12,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Cura 3d8 HP e remove envenenamento/doença do alvo."
+  },
+  {
+    id: "tribe-aser-12-banquete-do-aca",
+    name: "Banquete do Acampamento",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Bônus de refeição sobe p/ 1d8 HP e remove 1 exaustão do grupo."
+  },
+  {
+    id: "tribe-aser-16-muralha-inabala",
+    name: "Muralha Inabalável",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 16,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Reduz dano não-mágico de concussão, cortante ou perfurante em 3."
+  },
+  {
+    id: "tribe-aser-16-a-favor-dos-rei",
+    name: "A Favor dos Reis",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 16,
+    path: "B",
+    actionType: "reaction",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Comanda aliado para realizar um Ataque ou Ação imediatamente."
+  },
+  {
+    id: "tribe-aser-20-a-bencao-eterna",
+    name: "A Benção Eterna de Aser",
+    sourceType: "tribe",
+    sourceId: "aser",
+    minLevel: 20,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Se HP < metade, recupera 10 HP no final do turno (combate)."
+  },
+  {
+    id: "tribe-benjamim-1-mira-e-furtivid",
+    name: "Mira e Furtividade",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "+2 em Percepção e Equilíbrio. Mestre em camuflagem."
+  },
+  {
+    id: "tribe-benjamim-1-ambidestria-tat",
+    name: "Ambidestria Tática",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ambidestros. Recuperam arremessáveis com sorte bônus."
+  },
+  {
+    id: "tribe-benjamim-4-yeriah-neqiah",
+    name: "Yeriah Neqiah",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 4,
+    path: "A",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Tiro 100% certeiro até 400m."
+  },
+  {
+    id: "tribe-benjamim-4-litemonn-maleko",
+    name: "Litemonn Malekodett",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Prepara armadilhas para inimigos ou animais."
+  },
+  {
+    id: "tribe-benjamim-8-tiro-certeiro",
+    name: "Tiro Certeiro",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Triplica o dano se o alvo estiver furtivo (<100m)."
+  },
+  {
+    id: "tribe-benjamim-8-vantagem-em-ter",
+    name: "Vantagem em Terreno",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 8,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem em furtividade quando perto das armadilhas."
+  },
+  {
+    id: "tribe-benjamim-12-olhos-de-aguia",
+    name: "Olhos de Águia",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ignora meia-cobertura e penumbra."
+  },
+  {
+    id: "tribe-benjamim-12-passos-leves",
+    name: "Passos Leves",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 12,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Pode Correr/Esconder-se. Não aciona armadilhas por peso."
+  },
+  {
+    id: "tribe-benjamim-16-chuva-da-morte",
+    name: "Chuva da Morte",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 16,
+    path: "A",
+    actionType: "action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Atira em 3 alvos simultâneos."
+  },
+  {
+    id: "tribe-benjamim-16-garganta-cortad",
+    name: "Garganta Cortada",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 16,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Acerto crítico garantido em alvos presos em armadilhas."
+  },
+  {
+    id: "tribe-benjamim-20-flecha-do-livra",
+    name: "Flecha do Livramento",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Ignora armadura, dano massivo."
+  },
+  {
+    id: "tribe-benjamim-20-emboscada-divin",
+    name: "Emboscada Divina",
+    sourceType: "tribe",
+    sourceId: "benjamim",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Transforma área 18x18m em campo de armadilhas mortais."
+  },
+  {
+    id: "tribe-da-1-instinto-da-vib",
+    name: "Instinto da Víbora",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem em Iniciativa; atq. de Oportunidade causam +1d4 de dano extra."
+  },
+  {
+    id: "tribe-da-1-heranca-do-juiz",
+    name: "Herança do Juiz",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Proficiência Intimidação; Vantagem em Intuição p/ mentira."
+  },
+  {
+    id: "tribe-da-4-ataque-ofuscant",
+    name: "Ataque Ofuscante",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 4,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Próx atq ofusca (desvantagem p/ o inimigo no próx ataque dele)."
+  },
+  {
+    id: "tribe-da-4-forca-de-leao",
+    name: "Força de Leão",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 4,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Vantagem em Força; atqs empurram 1,5m p/ trás (1 min)."
+  },
+  {
+    id: "tribe-da-8-rastejar-furtiv",
+    name: "Rastejar Furtivo",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Furtividade sem custo mov; Vantagem em Furtividade (rocha/mato)."
+  },
+  {
+    id: "tribe-da-8-veredito",
+    name: "Veredito",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 8,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem contra agressor se aliado cair a 0 HP a até 9m."
+  },
+  {
+    id: "tribe-da-12-reflexos-peconh",
+    name: "Reflexos Peçonhentos",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 12,
+    path: "A",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Se inimigo errar corpo a corpo, faz ataque imediato nele."
+  },
+  {
+    id: "tribe-da-12-pele-intratavel",
+    name: "Pele Intratável",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Resiste dano concussão (armas não-metálicas/desarmado fera)."
+  },
+  {
+    id: "tribe-da-16-bote-fatal",
+    name: "Bote Fatal",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 16,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ataque contra criatura que não agiu vira Crítico se acertar."
+  },
+  {
+    id: "tribe-da-16-destruidor-de-p",
+    name: "Destruidor de Pilares",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 16,
+    path: "B",
+    actionType: "passive",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Dano máx em estrutura; 1x/dia atordoa alvo no acerto s/ teste."
+  },
+  {
+    id: "tribe-da-20-vinganca-de-da",
+    name: "Vingança de Dã",
+    sourceType: "tribe",
+    sourceId: "da",
+    minLevel: 20,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ao cair a 0 HP, ganha turno imediato com Vantagem e dano duplo."
+  },
+  {
+    id: "tribe-efraim-1-orgulho-do-nort",
+    name: "Orgulho do Norte",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem em TR Amedrontado. +1 dano se for o 1º a agir."
+  },
+  {
+    id: "tribe-efraim-1-treino-com-arco",
+    name: "Treino com Arcos",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Profic. Arco Curto/Longo. (Se já tiver, +1 atq)."
+  },
+  {
+    id: "tribe-efraim-4-tiro-penetrante",
+    name: "Tiro Penetrante",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 4,
+    path: "A",
+    actionType: "action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Próx tiro com arco ignora armadura física (CA base + Des)."
+  },
+  {
+    id: "tribe-efraim-4-investida-majes",
+    name: "Investida Majestosa",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 4,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Após mover 6m reto e atacar, pode dar Empurrão (Shove)."
+  },
+  {
+    id: "tribe-efraim-8-disparo-evasivo",
+    name: "Disparo Evasivo",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Sem Desvantagem atq à distância se inimigo a até 1,5m."
+  },
+  {
+    id: "tribe-efraim-8-vigor-orgulhoso",
+    name: "Vigor Orgulhoso",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 8,
+    path: "B",
+    actionType: "reaction",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Se a 0 HP, Teste CON CD 15 para ficar com 1 HP."
+  },
+  {
+    id: "tribe-efraim-12-flecha-marcada",
+    name: "Flecha Marcada",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 12,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Próx 2 ataques com arco no alvo focado têm Vantagem."
+  },
+  {
+    id: "tribe-efraim-12-grito-de-comand",
+    name: "Grito de Comando",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 12,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Ordena aliado adjacente a fazer ataque c/c (Reação)."
+  },
+  {
+    id: "tribe-efraim-16-chuva-de-efraim",
+    name: "Chuva de Efraim",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 16,
+    path: "A",
+    actionType: "action",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Ataca com arco até 3 alvos em cone 18m."
+  },
+  {
+    id: "tribe-efraim-16-impacto-do-tour",
+    name: "Impacto do Touro",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 16,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ao acertar c/c após 4,5m mov, rola dano duas vezes."
+  },
+  {
+    id: "tribe-efraim-20-a-lideranca-inq",
+    name: "A Liderança Inquestionável",
+    sourceType: "tribe",
+    sourceId: "efraim",
+    minLevel: 20,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Aliados (9m) somam CAR dano. Inimigos c/ desvantagem."
+  },
+  {
+    id: "tribe-gade-1-muralha-humana",
+    name: "Muralha Humana",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Não cai com pesos ou golpes."
+  },
+  {
+    id: "tribe-gade-1-resgate-pesado",
+    name: "Resgate Pesado",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Pode lutar (metade atributos) carregando ferido."
+  },
+  {
+    id: "tribe-gade-4-hafekhadah",
+    name: "Hafekhadah",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 4,
+    path: "A",
+    actionType: "action",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Provoca inimigos a atacá-lo (Intimidação)."
+  },
+  {
+    id: "tribe-gade-4-hakokha-shel-sh",
+    name: "Hakokha shel Shimeshonn",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "+10 Força e +15 Fé em 1 turno."
+  },
+  {
+    id: "tribe-gade-8-grito-resistent",
+    name: "Grito Resistente",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Grito (Hafekhadah) dá resistência física p/ 1 turno."
+  },
+  {
+    id: "tribe-gade-8-ataque-bonus",
+    name: "Ataque Bônus",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 8,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Ataque extra como Ação Bônus."
+  },
+  {
+    id: "tribe-gade-12-guarda-costas",
+    name: "Guarda-Costas",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 12,
+    path: "A",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Troca de lugar c/ aliado adjacente p/ receber dano."
+  },
+  {
+    id: "tribe-gade-12-maos-calejadas",
+    name: "Mãos Calejadas",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Adiciona CON ao dano de concussão."
+  },
+  {
+    id: "tribe-gade-16-bastiao-de-isra",
+    name: "Bastião de Israel",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 16,
+    path: "A",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Ao cair a 0 HP, Teste de Fé para ficar com 1 HP."
+  },
+  {
+    id: "tribe-gade-16-golpe-sismico",
+    name: "Golpe Sísmico",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 16,
+    path: "B",
+    actionType: "action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Atinge chão para derrubar em cone."
+  },
+  {
+    id: "tribe-gade-20-escudo-de-deus",
+    name: "Escudo de Deus",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Imune a dano físico (1 min). Converte dano em HP Temp. p/ aliados."
+  },
+  {
+    id: "tribe-gade-20-espirito-de-san",
+    name: "Espírito de Sansão",
+    sourceType: "tribe",
+    sourceId: "gade",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Força 30 (3 turnos), críticos autos. Perde metade da Fé depois."
+  },
+  {
+    id: "tribe-issacar-1-emboscada-rusti",
+    name: "Emboscada Rústica",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "+1 FOR/DES no acerto/dano ao matar furtivamente."
+  },
+  {
+    id: "tribe-issacar-1-resistencia-sol",
+    name: "Resistência Solar",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Imune a exaustão solar."
+  },
+  {
+    id: "tribe-issacar-4-contrato-de-san",
+    name: "Contrato de Sangue",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 4,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Marca alvo; bônus ofensivo contra ele."
+  },
+  {
+    id: "tribe-issacar-4-raizes-profunda",
+    name: "Raízes Profundas",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 4,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Bônus de CA enquanto estiver imóvel."
+  },
+  {
+    id: "tribe-issacar-8-ataque-coordena",
+    name: "Ataque Coordenado",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ataque bônus se aliado perto do alvo."
+  },
+  {
+    id: "tribe-issacar-8-cura-maxima",
+    name: "Cura Máxima",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 8,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Cura máxima durante descanso."
+  },
+  {
+    id: "tribe-issacar-12-golpe-paralisan",
+    name: "Golpe Paralisante",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Acerto crítico zera a velocidade do inimigo."
+  },
+  {
+    id: "tribe-issacar-12-casca-grossa",
+    name: "Casca Grossa",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Resistência a armas não-metálicas."
+  },
+  {
+    id: "tribe-issacar-16-esconder-se-rap",
+    name: "Esconder-se Rápido",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 16,
+    path: "A",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Pode esconder-se imediatamente após abater alvo."
+  },
+  {
+    id: "tribe-issacar-16-furia-do-lavrad",
+    name: "Fúria do Lavrador",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 16,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano máximo automático quando HP < 50%."
+  },
+  {
+    id: "tribe-issacar-20-a-ceifa",
+    name: "A Ceifa",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Morte letal furtiva (ignora defesas)."
+  },
+  {
+    id: "tribe-issacar-20-guardiao-do-val",
+    name: "Guardião do Vale",
+    sourceType: "tribe",
+    sourceId: "issacar",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Cura e escudo em área p/ todos os aliados."
+  },
+  {
+    id: "tribe-juda-1-aura-de-autorid",
+    name: "Aura de Autoridade",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Discursar/negociar c/ 2+: +2 em testes de Carisma."
+  },
+  {
+    id: "tribe-juda-1-resistencia-sol",
+    name: "Resistência Sólida",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Metade do dano de debuffs (sangramentos, venenos fracos)."
+  },
+  {
+    id: "tribe-juda-4-qeriatt-haqerav",
+    name: "Qeriatt Haqerav",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 4,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Aliados visíveis ganham +2 FOR e +1 mov no prox turno."
+  },
+  {
+    id: "tribe-juda-4-conhecimento-da",
+    name: "Conhecimento da Saúde",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Estabiliza e cura 2d8 + SAB."
+  },
+  {
+    id: "tribe-juda-8-grito-fortaleci",
+    name: "Grito Fortalecido",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Se aliado <20% HP, bônus do Grito dobra (+4 FOR)."
+  },
+  {
+    id: "tribe-juda-8-merape-miadi",
+    name: "Merape Miadi",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 8,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Cura 6d8+SAB e remove debuff longo/maldição."
+  },
+  {
+    id: "tribe-juda-12-coracao-de-leao",
+    name: "Coração de Leão",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Aliados até 9m ganham Vantagem contra medo e perda de Fé."
+  },
+  {
+    id: "tribe-juda-12-balsamo-de-gile",
+    name: "Bálsamo de Gileade",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Em Descanso Curto, curas atingem valor máximo dos dados."
+  },
+  {
+    id: "tribe-juda-16-estandarte-de-j",
+    name: "Estandarte de Judá",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 16,
+    path: "A",
+    actionType: "reaction",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Permite aliado usar reação p/ atacar ou mover."
+  },
+  {
+    id: "tribe-juda-16-cirurgia-de-tri",
+    name: "Cirurgia de Trincheira",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 16,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Reanima aliado com 1/4 do HP máx em combate."
+  },
+  {
+    id: "tribe-juda-20-o-rugido-de-jud",
+    name: "O Rugido de Judá",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Inimigos 18m fogem; aliados ganham HP Temp e +15 Fé."
+  },
+  {
+    id: "tribe-juda-20-o-sopro-da-vida",
+    name: "O Sopro da Vida",
+    sourceType: "tribe",
+    sourceId: "juda",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Restaura 100% HP; ressuscita morto há <2 rodadas."
+  },
+  {
+    id: "tribe-levi-1-jejum-do-desert",
+    name: "Jejum do Deserto",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "3 dias sem comer e 2 sem beber s/ debuffs."
+  },
+  {
+    id: "tribe-levi-1-guardioes-da-le",
+    name: "Guardiões da Lei",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Proficiência em Religião e Intuição."
+  },
+  {
+    id: "tribe-levi-4-shel-hashegakha",
+    name: "Shel Hashegakhah",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 4,
+    path: "A",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Pergunta Sim/Não ao Mestre (Urim e Tumim)."
+  },
+  {
+    id: "tribe-levi-4-hitepalel-lael-",
+    name: "Hitepalel Lael Hagadol",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Cura aliado em 3d8+SAB e retira debuffs."
+  },
+  {
+    id: "tribe-levi-8-oraculo-complex",
+    name: "Oráculo Complexo",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 8,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Pergunta pode ser complexa revelando visões curtas."
+  },
+  {
+    id: "tribe-levi-8-prece-revigoran",
+    name: "Prece Revigorante",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 8,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Prece (Hitepalel) restaura 1d4+1 Fé em área."
+  },
+  {
+    id: "tribe-levi-12-visao-alem-do-v",
+    name: "Visão Além do Véu",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Imune a ilusões/enganações; Vantagem em Intuição."
+  },
+  {
+    id: "tribe-levi-12-manto-da-paz",
+    name: "Manto da Paz",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Inimigos passam em TR Sabedoria para atacá-lo c/c."
+  },
+  {
+    id: "tribe-levi-16-palavra-de-auto",
+    name: "Palavra de Autoridade",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 16,
+    path: "A",
+    actionType: "action",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Paralisa inimigo por 1 turno (peso da culpa)."
+  },
+  {
+    id: "tribe-levi-16-sacrificio-de-l",
+    name: "Sacrifício de Louvor",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 16,
+    path: "B",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Sofre dano intencional e cura aliado no dobro do valor."
+  },
+  {
+    id: "tribe-levi-20-o-juizo-divino",
+    name: "O Juízo Divino",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Inimigos 15m perdem resistência a dano e -2 CA."
+  },
+  {
+    id: "tribe-levi-20-a-gloria-do-tab",
+    name: "A Glória do Tabernáculo",
+    sourceType: "tribe",
+    sourceId: "levi",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Fé aliados = 100; Aplica Descanso Curto instantâneo."
+  },
+  {
+    id: "tribe-manasses-1-homem-valoroso",
+    name: "Homem Valoroso",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem c/c contra oponente maior ou se HP < 50%."
+  },
+  {
+    id: "tribe-manasses-1-guerreiro-de-fr",
+    name: "Guerreiro de Fronteira",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Proficiência Sobrevivência e Atletismo."
+  },
+  {
+    id: "tribe-manasses-4-surpresa-tatica",
+    name: "Surpresa Tática",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 4,
+    path: "A",
+    actionType: "passive",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "1ª rodada: se atacar antes do alvo, +1d6 dano e alvo Surdo."
+  },
+  {
+    id: "tribe-manasses-4-sangue-resilien",
+    name: "Sangue Resiliente",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 4,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "HP máx aumenta 2x CON; +1 HP por Dado de Vida em D. Curto."
+  },
+  {
+    id: "tribe-manasses-8-forca-na-fraque",
+    name: "Força na Fraqueza",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 8,
+    path: "A",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Força rerrolagem de Acerto Crítico sofrido por aliado/si."
+  },
+  {
+    id: "tribe-manasses-8-guardiao-da-fro",
+    name: "Guardião da Fronteira",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 8,
+    path: "B",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Empurra inimigo 1,5m antes do dano c/c (Teste FOR)."
+  },
+  {
+    id: "tribe-manasses-12-tatica-do-canta",
+    name: "Tática do Cântaro Quebrado",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 12,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Inimigos 9m Teste SAB; falha = Amedrontado (1 min)."
+  },
+  {
+    id: "tribe-manasses-12-implacavel",
+    name: "Implacável",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Rola Dado de Vida no turno p/ curar se Envenenado/Surdo/Sangrando."
+  },
+  {
+    id: "tribe-manasses-16-destruidor-de-a",
+    name: "Destruidor de Altares",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 16,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano duplo contra místicos/demoníacos ou hereges."
+  },
+  {
+    id: "tribe-manasses-16-a-muralha-do-jo",
+    name: "A Muralha do Jordão",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 16,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Por 1 min, inimigo na área de ameaça tem mov reduzido a 0."
+  },
+  {
+    id: "tribe-manasses-20-o-unificador",
+    name: "O Unificador",
+    sourceType: "tribe",
+    sourceId: "manasses",
+    minLevel: 20,
+    actionType: "action",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Aliados 18m perdem condição negativa e resistem dano mundano."
+  },
+  {
+    id: "tribe-naftali-1-passos-de-gazel",
+    name: "Passos de Gazela",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Deslocamento +3m. S/ penalidade mov. terreno montanha/colina."
+  },
+  {
+    id: "tribe-naftali-1-palavras-formos",
+    name: "Palavras Formosas",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Proficiência Persuasão. Vantagem próx teste CAR após 1 min conv."
+  },
+  {
+    id: "tribe-naftali-4-evasao-rapida",
+    name: "Evasão Rápida",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 4,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Inimigo tem Desvantagem em ataque de oportunidade contra você."
+  },
+  {
+    id: "tribe-naftali-4-cantico-de-debo",
+    name: "Cântico de Débora",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 4,
+    path: "B",
+    actionType: "bonus_action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Aliado 9m ganha 1d6 p/ rolagem ataque/teste/TR (1 min)."
+  },
+  {
+    id: "tribe-naftali-8-carga-de-baraqu",
+    name: "Carga de Baraque",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Após mover 6m reto e acertar c/c: +1d8 dano e alvo cai (TR FOR)."
+  },
+  {
+    id: "tribe-naftali-8-repreensao-eleg",
+    name: "Repreensão Elegante",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 8,
+    path: "B",
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "Se inimigo errar atq (9m), ele tem Desvantagem no próx atq."
+  },
+  {
+    id: "tribe-naftali-12-impulso-vertigi",
+    name: "Impulso Vertiginoso",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 12,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Dobra o deslocamento até o final do turno."
+  },
+  {
+    id: "tribe-naftali-12-espirito-irrefr",
+    name: "Espírito Irrefreável",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Aliados (4,5m) não podem ser Amedrontados."
+  },
+  {
+    id: "tribe-naftali-16-inalcancavel",
+    name: "Inalcançável",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 16,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Reações inimigas têm 50% de chance de falhar automaticamente."
+  },
+  {
+    id: "tribe-naftali-16-palavras-de-ret",
+    name: "Palavras de Retirada/Avanço",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 16,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Aliados (18m) usam Reação p/ mover metade desloc. s/ atq oport."
+  },
+  {
+    id: "tribe-naftali-20-rapidez-divina",
+    name: "Rapidez Divina",
+    sourceType: "tribe",
+    sourceId: "naftali",
+    minLevel: 20,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ignora penalidade vel., imune paralisia física, solta cordas."
+  },
+  {
+    id: "tribe-ruben-1-a-lingua-do-com",
+    name: "A Língua do Comércio",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Compram c/ 10% desconto e vendem c/ 10% lucro."
+  },
+  {
+    id: "tribe-ruben-1-companheiro-de-",
+    name: "Companheiro de Jornada",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Auxiliados por mascote menor que carrega 2x o peso."
+  },
+  {
+    id: "tribe-ruben-4-lehakhepil",
+    name: "Lehakhepil",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 4,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Comanda o animal em combate."
+  },
+  {
+    id: "tribe-ruben-4-hashikhenu-a",
+    name: "Hashikhenu'a",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Persuade e confunde inimigos ou negociantes."
+  },
+  {
+    id: "tribe-ruben-8-fera-letal",
+    name: "Fera Letal",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ataques do animal ignoram resistências não-mágicas."
+  },
+  {
+    id: "tribe-ruben-8-suborno-tatico",
+    name: "Suborno Tático",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 8,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Suborna cidades para obter rotas e milícias."
+  },
+  {
+    id: "tribe-ruben-12-fera-protetora",
+    name: "Fera Protetora",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Animal ganha resistência e protege dono a 0 HP."
+  },
+  {
+    id: "tribe-ruben-12-compra-de-leald",
+    name: "Compra de Lealdade",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 12,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Paga exércitos desmotivados para fugirem."
+  },
+  {
+    id: "tribe-ruben-16-chamado-selvage",
+    name: "Chamado Selvagem",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 16,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Convoca temporariamente feras do deserto."
+  },
+  {
+    id: "tribe-ruben-16-labia-infalivel",
+    name: "Lábia Infalível",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 16,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Acerto Crítico automático em Persuasão p/ governantes."
+  },
+  {
+    id: "tribe-ruben-20-o-beemote",
+    name: "O Beemote",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Animal Enorme, dobro HP e causa terror em área."
+  },
+  {
+    id: "tribe-ruben-20-embaixador-da-p",
+    name: "Embaixador da Paz",
+    sourceType: "tribe",
+    sourceId: "ruben",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Encerra guerras na lábia sem derramar sangue."
+  },
+  {
+    id: "tribe-simeao-1-mestre-boticari",
+    name: "Mestre Boticário",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Cria curas/venenos se tiver as plantas."
+  },
+  {
+    id: "tribe-simeao-1-dose-extra",
+    name: "Dose Extra",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Produz dose extra ao usar 5+ reagentes."
+  },
+  {
+    id: "tribe-simeao-4-lamina-toxica",
+    name: "Lâmina Tóxica",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 4,
+    path: "A",
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Aplica veneno em armas."
+  },
+  {
+    id: "tribe-simeao-4-cataplasma-de-g",
+    name: "Cataplasma de Gileade",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 4,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Cura e estanca sangramento."
+  },
+  {
+    id: "tribe-simeao-8-veneno-lentific",
+    name: "Veneno Lentificante",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Veneno também reduz velocidade do alvo."
+  },
+  {
+    id: "tribe-simeao-8-antidoto-univer",
+    name: "Antídoto Universal",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 8,
+    path: "B",
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "Cria antídoto universal contra veneno."
+  },
+  {
+    id: "tribe-simeao-12-sangue-amargo",
+    name: "Sangue Amargo",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Imune a veneno; causa dano a quem o morder."
+  },
+  {
+    id: "tribe-simeao-12-nuvem-calmante",
+    name: "Nuvem Calmante",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 12,
+    path: "B",
+    actionType: "action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Nuvem que torna aliados imunes a medo."
+  },
+  {
+    id: "tribe-simeao-16-nuvem-asfixiant",
+    name: "Nuvem Asfixiante",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 16,
+    path: "A",
+    actionType: "action",
+    usageType: "combat",
+    maxUses: 1,
+    effect: "Nuvem de veneno que causa dano contínuo."
+  },
+  {
+    id: "tribe-simeao-16-cura-massiva",
+    name: "Cura Massiva",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 16,
+    path: "B",
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Cura todos aliados e restaura Fé p/ 100."
+  },
+  {
+    id: "tribe-simeao-20-a-praga",
+    name: "A Praga",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 20,
+    path: "A",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Toxina letal que se espalha entre inimigos."
+  },
+  {
+    id: "tribe-simeao-20-sopro-da-criaca",
+    name: "Sopro da Criação",
+    sourceType: "tribe",
+    sourceId: "simeao",
+    minLevel: 20,
+    path: "B",
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Levanta aliados caídos em raio 9m."
+  },
+  {
+    id: "tribe-zebulom-1-guerreiros-dos-",
+    name: "Guerreiros dos Portos",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Profic. mar. Nada s/ penalidade; respira 2x mais."
+  },
+  {
+    id: "tribe-zebulom-1-ombro-a-ombro",
+    name: "Ombro a Ombro",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 1,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Adjacente a aliado (1,5m): ambos +1 CA cont. atq dist."
+  },
+  {
+    id: "tribe-zebulom-4-reflexo-das-ond",
+    name: "Reflexo das Ondas",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 4,
+    path: "A",
+    actionType: "reaction",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Atq c/c: reduz dano 1/2 e move 1,5m s/ atq oport."
+  },
+  {
+    id: "tribe-zebulom-4-treino-belico-a",
+    name: "Treino Bélico Avançado",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 4,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Arma marcial escolhida: rolagens de dano <3 viram 3."
+  },
+  {
+    id: "tribe-zebulom-8-visao-alem-do-h",
+    name: "Visão Além do Horiz.",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 8,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Percepção normal em nevoeiro/chuva/escuridão."
+  },
+  {
+    id: "tribe-zebulom-8-coracao-intrepi",
+    name: "Coração Intrépido",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 8,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Imune a Encantado; Vantagem em TR Fé cont. heresia."
+  },
+  {
+    id: "tribe-zebulom-12-equilibrio-perf",
+    name: "Equilíbrio Perfeito",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 12,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem p/ não cair/desarmar. Luta na água s/ penal."
+  },
+  {
+    id: "tribe-zebulom-12-formacao-focada",
+    name: "Formação Focada",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 12,
+    path: "B",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Inimigos não ganham Vantagem flanqueando você/aliado adj."
+  },
+  {
+    id: "tribe-zebulom-16-tempestade-de-g",
+    name: "Tempestade de Golpes",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 16,
+    path: "A",
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Acertar >1 atq no mesmo alvo causa +1d10 dano extra."
+  },
+  {
+    id: "tribe-zebulom-16-retribuicao-da-",
+    name: "Retribuição da Milícia",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 16,
+    path: "B",
+    actionType: "reaction",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Se dano (você/aliado adj), ambos atq c/c imediato."
+  },
+  {
+    id: "tribe-zebulom-20-mestre-dos-mare",
+    name: "Mestre dos Mares",
+    sourceType: "tribe",
+    sourceId: "zebulom",
+    minLevel: 20,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ignora resist. física. Resistência a frio. Não se perde."
+  },
+  {
+    id: "vocation-batedor-2-ataque-furtivo",
+    name: "Ataque Furtivo (1d6)",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano extra 1/turno com Vantagem ou aliado a 1,5m."
+  },
+  {
+    id: "vocation-batedor-2-agilidade-engan",
+    name: "Agilidade Enganosa",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 2,
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Esconder-se, Desengajar ou Correr."
+  },
+  {
+    id: "vocation-batedor-6-ataque-furtivo",
+    name: "Ataque Furtivo (3d6)",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 6,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano extra furtivo aumenta."
+  },
+  {
+    id: "vocation-batedor-6-evasao",
+    name: "Evasão",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 6,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "TR Destreza p/ 1/2 dano = 0 dano se passar, 1/2 se falhar."
+  },
+  {
+    id: "vocation-batedor-10-ataque-furtivo",
+    name: "Ataque Furtivo (5d6)",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 10,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano extra furtivo aumenta."
+  },
+  {
+    id: "vocation-batedor-10-mente-escorrega",
+    name: "Mente Escorregadia",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 10,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem TR Sabedoria contra Tentações/Medo/Possessão."
+  },
+  {
+    id: "vocation-batedor-14-ataque-furtivo",
+    name: "Ataque Furtivo (7d6)",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 14,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano extra furtivo aumenta."
+  },
+  {
+    id: "vocation-batedor-14-golpe-incapacit",
+    name: "Golpe Incapacitante",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 14,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Abdica 3d6 do Furtivo p/ forçar TR CON. Falha = Atordoado."
+  },
+  {
+    id: "vocation-batedor-18-ataque-furtivo",
+    name: "Ataque Furtivo (9d6)",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 18,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Dano extra furtivo aumenta."
+  },
+  {
+    id: "vocation-batedor-18-lamina-fantasma",
+    name: "Lâmina Fantasma",
+    sourceType: "vocation",
+    sourceId: "batedor",
+    minLevel: 18,
+    actionType: "passive",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Erra Furtivo -> rerrola c/ Vantagem. Acertou = maximiza dano."
+  },
+  {
+    id: "vocation-cacador-2-inimigo-favorec",
+    name: "Inimigo Favorecido",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem Sobrevivência/INT contra Feras/Humanóides."
+  },
+  {
+    id: "vocation-cacador-2-estilo-arqueari",
+    name: "Estilo: Arquearia",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "(Escolha 1) +2 atq à distância."
+  },
+  {
+    id: "vocation-cacador-2-estilo-duas-arm",
+    name: "Estilo: Duas Armas",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "(Escolha 1) Add mod. hab. no dano do 2º atq leve."
+  },
+  {
+    id: "vocation-cacador-6-ataque-extra",
+    name: "Ataque Extra",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 6,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ataca duas vezes com Ação de Ataque."
+  },
+  {
+    id: "vocation-cacador-6-explorador-rust",
+    name: "Explorador Rústico",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 6,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ignora terreno difícil; Vantagem em Percepção p/ emboscada."
+  },
+  {
+    id: "vocation-cacador-10-foco-do-atirado",
+    name: "Foco do Atirador",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 10,
+    actionType: "action",
+    usageType: "unlimited",
+    effect: "(Escolha 1) Atq à dist. em vários alvos a até 3m de um ponto."
+  },
+  {
+    id: "vocation-cacador-10-besta-companhei",
+    name: "Besta Companheira",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 10,
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "(Escolha 1) Comanda companheiro animal."
+  },
+  {
+    id: "vocation-cacador-14-fuga-engenhosa",
+    name: "Fuga Engenhosa",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 14,
+    actionType: "bonus_action",
+    usageType: "unlimited",
+    effect: "Esconder-se. Inimigos c/ Desv. se você em cobertura."
+  },
+  {
+    id: "vocation-cacador-18-sentidos-agucad",
+    name: "Sentidos Aguçados",
+    sourceType: "vocation",
+    sourceId: "cacador",
+    minLevel: 18,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Sem desv. por não ver alvo. Dobra dano em Inim. Favorecido."
+  },
+  {
+    id: "vocation-guerreiro-2-estilo-defesa",
+    name: "Estilo: Defesa",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "(Escolha 1) +1 CA com armadura."
+  },
+  {
+    id: "vocation-guerreiro-2-estilo-duelo",
+    name: "Estilo: Duelo",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "(Escolha 1) +2 dano com arma de uma mão."
+  },
+  {
+    id: "vocation-guerreiro-2-estilo-protecao",
+    name: "Estilo: Proteção",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 2,
+    actionType: "reaction",
+    usageType: "unlimited",
+    effect: "(Escolha 1) Com escudo, impõe Desv. atq em aliado 1,5m."
+  },
+  {
+    id: "vocation-guerreiro-2-surto-de-acao",
+    name: "Surto de Ação",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 2,
+    actionType: "free_action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Ação adicional no turno."
+  },
+  {
+    id: "vocation-guerreiro-6-ataque-extra",
+    name: "Ataque Extra",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 6,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ataca duas vezes com Ação de Ataque."
+  },
+  {
+    id: "vocation-guerreiro-6-determinacao",
+    name: "Determinação",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 6,
+    actionType: "reaction",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "Rerrola Teste de SAB (medo/tentações) falho."
+  },
+  {
+    id: "vocation-guerreiro-10-vigor-do-defens",
+    name: "Vigor do Defensor",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 10,
+    actionType: "bonus_action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Recupera HP igual a 1d10 + Nível."
+  },
+  {
+    id: "vocation-guerreiro-10-bloqueio-inabal",
+    name: "Bloqueio Inabalável",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 10,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Com escudo, atqs de oportunidade têm Desv. contra você."
+  },
+  {
+    id: "vocation-guerreiro-14-ataque-extra-su",
+    name: "Ataque Extra Superior",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 14,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Ataca três vezes com Ação de Ataque."
+  },
+  {
+    id: "vocation-guerreiro-18-grito-de-guerra",
+    name: "Grito de Guerra",
+    sourceType: "vocation",
+    sourceId: "guerreiro",
+    minLevel: 18,
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    effect: "6 aliados c/ Vant. atq e curam 2d6 HP. Inimigos TR SAB/fogem."
+  },
+  {
+    id: "vocation-sacerdote-1-imposicao-de-ma",
+    name: "Imposição de Mãos",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 1,
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 2,
+    faithCost: 3,
+    effect: "Cura 1d6 HP fora de combate."
+  },
+  {
+    id: "vocation-sacerdote-1-oracao-de-prote",
+    name: "Oração de Proteção",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 1,
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    faithCost: 5,
+    effect: "Aliado recebe +2 CA temporário por 1 minuto."
+  },
+  {
+    id: "vocation-sacerdote-1-guia-espiritual",
+    name: "Guia Espiritual",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 1,
+    actionType: "bonus_action",
+    usageType: "long_rest",
+    maxUses: 3,
+    faithCost: 2,
+    effect: "Aliado recebe Vantagem no próximo teste de SAB."
+  },
+  {
+    id: "vocation-sacerdote-2-autoridade-espi",
+    name: "Autoridade Espiritual",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 2,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Vantagem persuasão contra tementes a Deus."
+  },
+  {
+    id: "vocation-sacerdote-2-suplica-curativ",
+    name: "Súplica Curativa",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 2,
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 3,
+    effect: "Cura 1d8+SAB HP e recupera 1d4 Fé do aliado."
+  },
+  {
+    id: "vocation-sacerdote-2-repreensao-divi",
+    name: "Repreensão Divina",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 2,
+    actionType: "action",
+    usageType: "short_rest",
+    maxUses: 1,
+    faithCost: 8,
+    effect: "Endemoniado TR SAB ou foge abalado 1 min."
+  },
+  {
+    id: "vocation-sacerdote-6-purificacao",
+    name: "Purificação",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 6,
+    actionType: "action",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Encerra Amedrontado, Atordoado, Envenenado ou Possessão."
+  },
+  {
+    id: "vocation-sacerdote-6-jejum-protetivo",
+    name: "Jejum Protetivo",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 6,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Desc. Longo: cura total, +1d4+2 Fé p/ grupo, +5 HP Temp."
+  },
+  {
+    id: "vocation-sacerdote-6-consagracao",
+    name: "Consagração",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 6,
+    actionType: "action",
+    usageType: "long_rest",
+    maxUses: 1,
+    faithCost: 10,
+    effect: "Área de 9m segura para descanso (8h)."
+  },
+  {
+    id: "vocation-sacerdote-10-intervencao-men",
+    name: "Intervenção Menor",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 10,
+    actionType: "action",
+    usageType: "week",
+    maxUses: 1,
+    effect: "Pede milagre. Rola 1d100 contra Fé."
+  },
+  {
+    id: "vocation-sacerdote-14-barreira-de-fe",
+    name: "Barreira de Fé",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 14,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Presença dá resistência psíquica/espiritual e +2 SAB (6m)."
+  },
+  {
+    id: "vocation-sacerdote-14-retribuicao-div",
+    name: "Retribuição Divina",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 14,
+    actionType: "reaction",
+    usageType: "short_rest",
+    maxUses: 1,
+    effect: "Aliado a 0 HP: causa 2d10+SAB dano e Amedronta agressor."
+  },
+  {
+    id: "vocation-sacerdote-18-intervencao-mai",
+    name: "Intervenção Maior",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 18,
+    actionType: "action",
+    usageType: "campaign",
+    maxUses: 1,
+    effect: "Clama por intervenção definitiva. Rola 1d100 contra Fé."
+  },
+  {
+    id: "vocation-sacerdote-18-servo-consagrad",
+    name: "Servo Consagrado",
+    sourceType: "vocation",
+    sourceId: "sacerdote",
+    minLevel: 18,
+    actionType: "passive",
+    usageType: "unlimited",
+    effect: "Fé nunca < 30. Imune a Amedrontado, Encantado e Possessão."
+  }
+];
+
+export function getAbilitiesForCharacter(
+  tribe: string,
+  vocation: string,
+  level: number,
+  pathChoices?: { tribe?: 'A' | 'B'; vocation?: 'A' | 'B' }
+): AbilityDefinition[] {
+  return ABILITIES.filter(ability => {
+    // Check level requirement
+    if (ability.minLevel > level) return false;
+
+    // Filter by source
+    if (ability.sourceType === 'tribe' && ability.sourceId !== tribe) return false;
+    if (ability.sourceType === 'vocation' && ability.sourceId !== vocation) return false;
+
+    // Filter by path choice if applicable
+    if (ability.path) {
+      const chosenPath = ability.sourceType === 'tribe' 
+        ? pathChoices?.tribe 
+        : pathChoices?.vocation;
+      
+      // If a path is required but hasn't been chosen yet (e.g. they are level 4 but haven't selected),
+      // we might not return it. Or if they chose different path.
+      if (chosenPath && chosenPath !== ability.path) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}

@@ -76,3 +76,22 @@
 **O Sopro da Vida**
 - Restaura **100% do HP**.
 - **Ressuscita** um alvo morto há menos de 2 rodadas.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Aura de Autoridade | 1 | Passiva | - | - | Discursar/negociar c/ 2+: +2 em testes de Carisma. |
+| Resistência Sólida | 1 | Passiva | - | - | Metade do dano de debuffs (sangramentos, venenos fracos). |
+| Qeriatt Haqerav | 4 (A) | Ação Bônus | - | 1 / Combate | Aliados visíveis ganham +2 FOR e +1 mov no prox turno. |
+| Conhecimento da Saúde | 4 (B) | Ação | 2d8 | - | Estabiliza e cura 2d8 + SAB. |
+| Grito Fortalecido | 8 (A) | Passiva | - | - | Se aliado <20% HP, bônus do Grito dobra (+4 FOR). |
+| Merape Miadi | 8 (B) | Ação | 6d8 | 1 / D. Longo | Cura 6d8+SAB e remove debuff longo/maldição. |
+| Coração de Leão | 12 (A) | Passiva | - | - | Aliados até 9m ganham Vantagem contra medo e perda de Fé. |
+| Bálsamo de Gileade | 12 (B) | Passiva | - | - | Em Descanso Curto, curas atingem valor máximo dos dados. |
+| Estandarte de Judá | 16 (A) | Reação | - | 1 / Combate | Permite aliado usar reação p/ atacar ou mover. |
+| Cirurgia de Trincheira | 16 (B) | Ação | - | 1 / D. Longo | Reanima aliado com 1/4 do HP máx em combate. |
+| O Rugido de Judá | 20 (A) | Ação | - | 1 / Semana | Inimigos 18m fogem; aliados ganham HP Temp e +15 Fé. |
+| O Sopro da Vida | 20 (B) | Ação | - | 1 / Semana | Restaura 100% HP; ressuscita morto há <2 rodadas. |

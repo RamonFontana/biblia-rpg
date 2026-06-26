@@ -71,3 +71,22 @@
 ### Caminho B — Curas
 **Sopro da Criação**
 - **Levanta aliados caídos** em raio de **9 metros**.
+
+---
+
+## Resumo de Habilidades
+
+| Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
+|---|---|---|---|---|---|
+| Mestre Boticário | 1 | Passiva | - | - | Cria curas/venenos se tiver as plantas. |
+| Dose Extra | 1 | Passiva | - | - | Produz dose extra ao usar 5+ reagentes. |
+| Lâmina Tóxica | 4 (A) | Ação Bônus | - | - | Aplica veneno em armas. |
+| Cataplasma de Gileade | 4 (B) | Ação | - | - | Cura e estanca sangramento. |
+| Veneno Lentificante | 8 (A) | Passiva | - | - | Veneno também reduz velocidade do alvo. |
+| Antídoto Universal | 8 (B) | Ação | - | - | Cria antídoto universal contra veneno. |
+| Sangue Amargo | 12 (A) | Passiva | - | - | Imune a veneno; causa dano a quem o morder. |
+| Nuvem Calmante | 12 (B) | Ação | - | 1 / D. Curto | Nuvem que torna aliados imunes a medo. |
+| Nuvem Asfixiante | 16 (A) | Ação | - | 1 / Combate | Nuvem de veneno que causa dano contínuo. |
+| Cura Massiva | 16 (B) | Ação | - | 1 / D. Longo | Cura todos aliados e restaura Fé p/ 100. |
+| A Praga | 20 (A) | Ação | - | 1 / Semana | Toxina letal que se espalha entre inimigos. |
+| Sopro da Criação | 20 (B) | Ação | - | 1 / Semana | Levanta aliados caídos em raio 9m. |

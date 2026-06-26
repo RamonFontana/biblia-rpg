@@ -38,6 +38,14 @@ export interface EnemySkill {
   description: string;
 }
 
+export interface CharacterSkills {
+  path_choices?: {
+    tribe?: 'A' | 'B';
+    vocation?: 'A' | 'B';
+  };
+  ability_uses?: Record<string, number>;
+}
+
 export interface DraftCharacter {
   name?: string;
   tribe?: string;
@@ -49,5 +57,5 @@ export interface DraftCharacter {
   equipment?: any; // Replace with CharacterEquipment from combat types later or just any for now to avoid circular deps. Actually let's import it.
   coins?: number;
   narrative?: CharacterNarrative;
-  skills?: EnemySkill[];
+  skills?: CharacterSkills | EnemySkill[];
 }
