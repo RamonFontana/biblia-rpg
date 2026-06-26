@@ -8,6 +8,7 @@ import { PhysicalRollForm } from './PhysicalRollForm';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 import { DeathSavesModal } from './DeathSavesModal';
+import { EnemyCombatList } from './EnemyCombatList';
 
 interface PlayerCombatViewProps {
   sessionId: string;
@@ -61,6 +62,9 @@ export function PlayerCombatView({ sessionId: _sessionId, character }: PlayerCom
           </div>
         </div>
       )}
+
+      {/* Render the Enemy List */}
+      <EnemyCombatList sessionId={character?.session_id || _sessionId} />
 
       {isDying && (
         <DeathSavesModal character={character} participantId={participant.id} />
