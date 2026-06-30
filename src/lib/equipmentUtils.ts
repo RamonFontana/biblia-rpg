@@ -104,13 +104,24 @@ export function getCombatStats(character: any) {
   let bonusAc = 0;
   let weapon: { name: string, damageDie: string } | undefined = undefined;
 
+  // Ensure equipment is an object (sometimes JSONB can be stringified)
+  let parsedEquipment = equipment;
+  if (typeof equipment === 'string') {
+    try {
+      parsedEquipment = JSON.parse(equipment);
+    } catch (e) {
+      parsedEquipment = {};
+    }
+  }
+
   const getAcModifier = (invItem: any) => {
     if (!invItem) return 0;
-    let effects = invItem.items?.effects;
+    const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
+    let effects = itemData?.effects;
     
     // Fallback for items in DB without effects
     if (!effects || Object.keys(effects).length === 0) {
-      const staticItem = ITEMS_DB.find(i => i.name === invItem.items?.name);
+      const staticItem = ITEMS_DB.find(i => i.name === itemData?.name);
       if (staticItem?.armorClass) {
         if (staticItem.type === 'Escudo') return Number(staticItem.armorClass);
         return Math.max(0, Number(staticItem.armorClass) - 10);
@@ -124,11 +135,16 @@ export function getCombatStats(character: any) {
     return 0;
   };
 
-  if (equipment) {
-    const headItem = inventoryItems.find((i: any) => i.id === equipment.head);
-    const bodyItem = inventoryItems.find((i: any) => i.id === equipment.body);
-    const mainHandItem = inventoryItems.find((i: any) => i.id === equipment.mainHand);
-    const offHandItem = inventoryItems.find((i: any) => i.id === equipment.offHand);
+  if (parsedEquipment) {
+    const findItem = (slotId: string | null | undefined) => {
+      if (!slotId) return undefined;
+      return inventoryItems.find((i: any) => i.id === slotId || (i.item_id && i.item_id === slotId));
+    };
+
+    const headItem = findItem(parsedEquipment.head);
+    const bodyItem = findItem(parsedEquipment.body);
+    const mainHandItem = findItem(parsedEquipment.mainHand);
+    const offHandItem = findItem(parsedEquipment.offHand);
 
     const getItemAc = (invItem: any) => {
       if (!invItem) return 0;
@@ -144,14 +160,15 @@ export function getCombatStats(character: any) {
     bonusAc += getItemAc(bodyItem);
     bonusAc += getItemAc(mainHandItem);
     
-    if (equipment.offHand !== equipment.mainHand) {
+    if (parsedEquipment.offHand !== parsedEquipment.mainHand) {
       bonusAc += getItemAc(offHandItem);
     }
 
-    if (mainHandItem?.items?.effects?.damageDie) {
+    const mainHandData = Array.isArray(mainHandItem?.items) ? mainHandItem.items[0] : mainHandItem?.items;
+    if (mainHandData?.effects?.damageDie) {
       weapon = {
-        name: mainHandItem.items.name,
-        damageDie: mainHandItem.items.effects.damageDie
+        name: mainHandData.name,
+        damageDie: mainHandData.effects.damageDie
       };
     }
   }

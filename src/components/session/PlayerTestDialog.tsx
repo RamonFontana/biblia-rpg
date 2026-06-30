@@ -326,9 +326,11 @@ export function PlayerTestDialog({
               </div>
               <div>
                 <p className="text-xs text-stone-400 mb-1 uppercase">
-                  {activeTest.test_type === 'Fé' ? 'Misericórdia' : 'Dificuldade'}
+                  {activeTest.test_type === 'Fé' 
+                    ? (activeTest.difficulty < 0 ? 'Punição' : 'Misericórdia') 
+                    : 'Dificuldade'}
                 </p>
-                <p className="font-bold text-red-500 text-2xl leading-none">{activeTest.difficulty}</p>
+                <p className="font-bold text-red-500 text-2xl leading-none">{Math.abs(activeTest.difficulty)}</p>
               </div>
             </div>
           </div>

@@ -23,6 +23,7 @@ export function MasterTestDialog({
 }: MasterTestDialogProps) {
   const [testType, setTestType] = useState(TEST_TYPES[0])
   const [difficulty, setDifficulty] = useState(10)
+  const [faithModifierType, setFaithModifierType] = useState<'mercy' | 'punishment'>('mercy')
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,12 +57,17 @@ export function MasterTestDialog({
       return
     }
     if (difficulty < 0 || difficulty > 100) {
-      setError('A Misericórdia deve estar entre 0 e 100.')
+      setError('O valor deve estar entre 0 e 100.')
       return
     }
 
     setError(null)
     setIsSubmitting(true)
+
+    let finalDifficulty = difficulty
+    if (testType === 'Fé') {
+      finalDifficulty = faithModifierType === 'punishment' ? -Math.abs(difficulty) : Math.abs(difficulty)
+    }
 
     try {
       const targets = selectedPlayers.map(charId => {
@@ -72,7 +78,7 @@ export function MasterTestDialog({
         }
       }).filter(t => t.playerId !== '')
 
-      await sessionTestService.createTest(sessionId, testType, difficulty, targets)
+      await sessionTestService.createTest(sessionId, testType, finalDifficulty, targets)
       // The state will be updated via the realtime hook in the parent
     } catch (err: any) {
       setError(err.message || 'Erro ao criar o teste.')
@@ -123,8 +129,12 @@ export function MasterTestDialog({
                 <p className="text-lg font-bold text-amber-400">{currentActiveTest.test_type}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-stone-400">Dificuldade</p>
-                <p className="text-2xl font-bold text-red-500">{currentActiveTest.difficulty}</p>
+                <p className="text-sm text-stone-400">
+                  {currentActiveTest.test_type === 'Fé' 
+                    ? (currentActiveTest.difficulty < 0 ? 'Punição' : 'Misericórdia') 
+                    : 'Dificuldade'}
+                </p>
+                <p className="text-2xl font-bold text-red-500">{Math.abs(currentActiveTest.difficulty)}</p>
               </div>
             </div>
           </div>
@@ -189,7 +199,7 @@ export function MasterTestDialog({
         </div>
 
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid ${testType === 'Fé' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
             <div>
               <label className="block text-sm font-medium text-stone-400 mb-1">Tipo de Teste</label>
               <select
@@ -202,9 +212,24 @@ export function MasterTestDialog({
                 ))}
               </select>
             </div>
+            {testType === 'Fé' && (
+              <div>
+                <label className="block text-sm font-medium text-stone-400 mb-1">Modificador</label>
+                <select
+                  value={faithModifierType}
+                  onChange={(e) => setFaithModifierType(e.target.value as 'mercy' | 'punishment')}
+                  className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-500"
+                >
+                  <option value="mercy">Misericórdia</option>
+                  <option value="punishment">Punição</option>
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-stone-400 mb-1">
-                {testType === 'Fé' ? 'Misericórdia (0-100)' : 'Dificuldade'}
+                {testType === 'Fé' 
+                  ? (faithModifierType === 'mercy' ? 'Misericórdia (0-100)' : 'Punição (0-100)') 
+                  : 'Dificuldade'}
               </label>
               <input
                 type="number"
