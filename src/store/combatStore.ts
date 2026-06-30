@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
 import { resetCombatAbilities } from '../utils/abilityUtils';
+import { conditionsService } from '../services/conditionsService';
+import type { ConditionEntry } from '../types/combat';
 
 export type Combat = Database['public']['Tables']['combats']['Row'];
 export type CombatParticipant = Database['public']['Tables']['combat_participants']['Row'];
@@ -37,7 +39,7 @@ interface CombatStore extends PlayerCombatState {
   nextTurn: () => Promise<void>;
   endCombat: () => Promise<void>;
   applyDamageOrHealing: (participantId: string, amount: number, type: 'damage' | 'healing') => Promise<void>;
-  updateConditions: (participantId: string, conditions: string[]) => Promise<void>;
+  updateConditions: (participantId: string, conditions: ConditionEntry[]) => Promise<void>;
 }
 
 export const useCombatStore = create<CombatStore>((set, get) => ({
@@ -87,6 +89,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       throw combatError;
     }
 
+    // Fetch existing conditions for characters
+    const entityIds = setupParticipants.filter(p => p.entityType !== 'enemy').map(p => p.entityId);
+    let charactersConditions: Record<string, any[]> = {};
+    if (entityIds.length > 0) {
+      const { data: chars } = await supabase.from('characters').select('id, conditions').in('id', entityIds);
+      if (chars) {
+        chars.forEach(c => {
+          charactersConditions[c.id] = (c.conditions as any[]) || [];
+        });
+      }
+    }
+
     // Insert participants
     const participantsData = setupParticipants.map(p => ({
       combat_id: combat.id,
@@ -94,6 +108,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       entity_type: p.entityType,
       initiative: p.initiative,
       hp_current: p.hpCurrent,
+      conditions: charactersConditions[p.entityId] || [],
     }));
 
     const { error: participantsError } = await supabase
@@ -106,7 +121,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     // Reset combat abilities for all non-enemy participants
-    const entityIds = setupParticipants.filter(p => p.entityType !== 'enemy').map(p => p.entityId);
     if (entityIds.length > 0) {
       const { data: chars } = await supabase.from('characters').select('id, skills').in('id', entityIds);
       if (chars) {
@@ -227,6 +241,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (newIndex >= participants.length) {
       newIndex = 0;
       newRound += 1;
+
+      // Tick conditions on round change
+      const conditionUpdates = participants.map(async (p) => {
+        const currentConds = (p.conditions as ConditionEntry[]) || [];
+        if (currentConds.length > 0) {
+          const ticked = conditionsService.tickConditions(currentConds);
+          await supabase
+            .from('combat_participants')
+            .update({ conditions: ticked as any })
+            .eq('id', p.id);
+        }
+      });
+      await Promise.all(conditionUpdates);
     }
 
     const { error } = await supabase
@@ -273,8 +300,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const currentStats = (char.stats as any) || {};
             const newStats = { ...currentStats, current_pv: participant.hp_current };
             
-            // Sync HP
-            await supabase.from('characters').update({ stats: newStats }).eq('id', char.id);
+            // Clean temporary conditions and keep permanent ones
+            const currentConditions = (participant.conditions as ConditionEntry[]) || [];
+            const permanentConditions = conditionsService.cleanTemporaryConditions(currentConditions);
+            
+            // Sync HP and conditions
+            await supabase.from('characters').update({ 
+              stats: newStats,
+              conditions: permanentConditions as any
+            }).eq('id', char.id);
 
             // Check if dead
             if (char.is_dead || participant.hp_current <= 0 && currentStats.status === 'Morto') {
@@ -323,10 +357,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
   },
 
-  updateConditions: async (participantId: string, conditions: string[]) => {
+  updateConditions: async (participantId: string, conditions: ConditionEntry[]) => {
     const { error } = await supabase
       .from('combat_participants')
-      .update({ conditions })
+      .update({ conditions: conditions as any })
       .eq('id', participantId);
 
     if (error) {

@@ -47,3 +47,8 @@ export interface ItemEffects {
   properties?: string[];  // e.g. ["Versátil", "Acuidade"]
   stealthDisadvantage?: boolean;
 }
+
+export interface ConditionEntry {
+  conditionId: string;
+  duration: number | null; // null = permanente/indefinido (até ser curado)
+}

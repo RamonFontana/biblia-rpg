@@ -70,23 +70,7 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
           table: 'characters',
         },
         (payload) => {
-          // If the updated character is one of our session characters, update its stats locally
-          setPlayerCharacters((prev) => {
-            const updatedIndex = prev.findIndex(p => p.character?.id === payload.new.id);
-            if (updatedIndex === -1) return prev;
-            
-            const newArray = [...prev];
-            const oldCharacter = newArray[updatedIndex].character as any;
-            newArray[updatedIndex] = {
-              ...newArray[updatedIndex],
-              character: {
-                ...oldCharacter,
-                ...payload.new,
-                character_items: (payload.new as any).character_items || oldCharacter.character_items
-              }
-            };
-            return newArray;
-          });
+          fetchPlayers();
         }
       )
       .on(
@@ -110,7 +94,7 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
     };
   }, [sessionId, fetchPlayers]);
 
-  const updateLocalPlayerCharacter = (characterId: string, updatedStats: any) => {
+  const updateLocalPlayerData = (characterId: string, newData: any) => {
     setPlayerCharacters(prev => {
       const updatedIndex = prev.findIndex(p => p.character?.id === characterId);
       if (updatedIndex === -1) return prev;
@@ -120,12 +104,16 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
         ...newArray[updatedIndex],
         character: {
           ...newArray[updatedIndex].character,
-          stats: updatedStats
+          ...newData
         }
       };
       return newArray;
     });
   };
 
-  return { playerCharacters, updateLocalPlayerCharacter, refresh: fetchPlayers };
+  const updateLocalPlayerCharacter = (characterId: string, updatedStats: any) => {
+    updateLocalPlayerData(characterId, { stats: updatedStats });
+  };
+
+  return { playerCharacters, updateLocalPlayerCharacter, updateLocalPlayerData, refresh: fetchPlayers };
 }

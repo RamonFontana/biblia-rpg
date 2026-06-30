@@ -65,6 +65,7 @@ export type Database = {
           death_saves_successes: number
           equipment: Json | null
           fortress: string | null
+          conditions: Json | null
           has_participated_in_session: boolean | null
           id: string
           is_dead: boolean
@@ -91,6 +92,7 @@ export type Database = {
           death_saves_successes?: number
           equipment?: Json | null
           fortress?: string | null
+          conditions?: Json | null
           has_participated_in_session?: boolean | null
           id?: string
           is_dead?: boolean
@@ -117,6 +119,7 @@ export type Database = {
           death_saves_successes?: number
           equipment?: Json | null
           fortress?: string | null
+          conditions?: Json | null
           has_participated_in_session?: boolean | null
           id?: string
           is_dead?: boolean

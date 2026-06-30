@@ -12,6 +12,7 @@ export interface AbilityDefinition {
   maxUses?: number;
   faithCost?: number;
   effect: string;
+  applyConditions?: { conditionId: string; duration?: number }[];
 }
 
 export const ABILITIES: AbilityDefinition[] = [

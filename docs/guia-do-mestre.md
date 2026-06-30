@@ -49,3 +49,19 @@ Use estes 5 ganchos rápidos para iniciar uma sessão sem muita preparação:
 - Introduza ND 1/2 ou 1 apenas como mini-chefes no Nível 1.
 - Sempre dê cobertura aos arqueiros. Inimigos agem de forma inteligente, tentando cercar ou derrubar personagens vulneráveis primeiro (focar ataques).
 - Se os jogadores estiverem perdendo, permita que o terreno desabe, ou sugira uma rota de fuga. Fuga é melhor que TPK (Total Party Kill).
+
+## 6. Gerenciamento de Efeitos e Condições no VTT
+
+O sistema virtual é projetado para facilitar a vida do Mestre de uma mesa física. Condições como *Sangrando*, *Envenenado* ou *Cego* possuem regras específicas e seu gerenciamento no aplicativo segue duas lógicas principais:
+
+### 1. Gatilhos Manuais (O Poder do Mestre)
+Sempre que uma armadilha for ativada fora de combate, um jogador beber água envenenada, ou o cenário exigir um debuff narrativo, você tem o controle total.
+- Acesse a **Ficha Global do Personagem** (ou o painel rápido do Mestre).
+- Clique em adicionar condição e selecione o efeito.
+- Isso afixará um emblema na ficha do personagem, lembrando a mesa física de que o efeito está ativo.
+
+### 2. Automação de Combate
+Quando o combate estiver rodando no **Tracker de Iniciativa**, habilidades e consumíveis dos jogadores poderão disparar condições automaticamente caso o alvo falhe na salvaguarda (ex: um ataque venenoso bem-sucedido pode automaticamente marcar o inimigo como envenenado).
+- **Atenção à Transição:** As condições que os personagens tiverem antes de entrar no combate serão **importadas** automaticamente.
+- Quando você encerrar o combate (Botão Finalizar Combate), o sistema **salvará** as condições permanentes ou nocivas (Sangramento, Veneno) de volta na Ficha Global, e limpará automaticamente debuffs passageiros (como Atordoado, Agarrado ou Caído). Isso evita que os jogadores esqueçam de remover o status "Caído" quando estão andando pela cidade.
+- Fora de combate, lembre-se de arbitrar a passagem do tempo: se um jogador está sangrando e o grupo decide "caminhar meia hora", aplique o dano relativo à passagem de tempo antes deles chegarem ao destino, a não ser que parem para curar.

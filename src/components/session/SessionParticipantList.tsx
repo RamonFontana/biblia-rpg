@@ -12,6 +12,10 @@ import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
 import type { TradeWithItems } from '@/types/trade';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
+import { ConditionBadge } from '../conditions/ConditionBadge';
+import { ConditionSelector } from '../conditions/ConditionSelector';
+import { conditionsService } from '@/services/conditionsService';
+import type { ConditionEntry } from '@/types/combat';
 
 interface SessionParticipantListProps {
   onlineUsers: PresenceState[];
@@ -22,6 +26,8 @@ interface SessionParticipantListProps {
   npcs?: Character[];
   activeTrades?: TradeWithItems[];
   onUpdatePlayerStat?: (characterId: string, stats: any) => void;
+  onUpdatePlayerData?: (characterId: string, data: any) => void;
+  onUpdateNPCData?: (npcId: string, data: any) => void;
   onNegotiate?: (targetUserId: string) => void;
   onShop?: (targetUserId: string) => void;
   onNPCNegotiate?: (npc: Character & { is_playable?: boolean }) => void;
@@ -38,6 +44,8 @@ export function SessionParticipantList({
   npcs = [],
   activeTrades = [],
   onUpdatePlayerStat,
+  onUpdatePlayerData,
+  onUpdateNPCData,
   onNegotiate,
   onShop,
   onNPCNegotiate,
@@ -118,6 +126,29 @@ export function SessionParticipantList({
     }
   };
 
+  const handleAddNPCCondition = async (npcId: string, conditionId: string, duration: number) => {
+    const npc = npcs.find(n => n.id === npcId);
+    if (!npc) return;
+    const current = (npc.conditions as ConditionEntry[]) || [];
+    const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
+    
+    const updated = [...current.filter(c => c.conditionId !== conditionId), newCond];
+    if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
+
+    await conditionsService.applyToCharacter(npcId, current, newCond);
+  };
+
+  const handleRemoveNPCCondition = async (npcId: string, conditionId: string) => {
+    const npc = npcs.find(n => n.id === npcId);
+    if (!npc) return;
+    const current = (npc.conditions as ConditionEntry[]) || [];
+    
+    const updated = current.filter(c => c.conditionId !== conditionId);
+    if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
+
+    await conditionsService.removeFromCharacter(npcId, current, conditionId);
+  };
+
   const gmUser = onlineUsers.find((u) => u.user_id === gmId);
   const playerUsers = onlineUsers.filter((u) => u.user_id !== gmId);
 
@@ -175,6 +206,11 @@ export function SessionParticipantList({
                         onUpdateStat={
                           associatedCharacter
                             ? (statKey, delta) => updatePlayerStat(associatedCharacter, statKey, delta)
+                            : undefined
+                        }
+                        onUpdateConditions={
+                          associatedCharacter && onUpdatePlayerData
+                            ? (charId, conditions) => onUpdatePlayerData(charId, { conditions })
                             : undefined
                         }
                         onClick={blocked ? undefined : (id, e) => handlePlayerClick(id, e)}
@@ -237,6 +273,23 @@ export function SessionParticipantList({
                           <span className="text-red-400">♥</span>
                           <span>{npc.stats.current_pv ?? npc.stats.pv}/{npc.stats.pv}</span>
                         </div>
+                      </div>
+                    )}
+                    {/* Condições do NPC */}
+                    {((npc.conditions as ConditionEntry[])?.length > 0 || isGM) && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
+                        {((npc.conditions as ConditionEntry[]) || []).map((cond) => (
+                          <ConditionBadge
+                            key={cond.conditionId}
+                            conditionId={cond.conditionId}
+                            duration={cond.duration || undefined}
+                            onRemove={isGM ? () => handleRemoveNPCCondition(npc.id, cond.conditionId) : undefined}
+                            readonly={!isGM}
+                          />
+                        ))}
+                        {isGM && (
+                          <ConditionSelector onAddCondition={(cId, dur) => handleAddNPCCondition(npc.id, cId, dur)} />
+                        )}
                       </div>
                     )}
                   </div>

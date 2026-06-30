@@ -48,6 +48,7 @@ export function ActiveSessionPage() {
   const {
     playerCharacters,
     updateLocalPlayerCharacter,
+    updateLocalPlayerData,
     refresh: refreshPlayerCharacters,
   } = useSessionPlayerCharacters(id!);
   const { npcs, updateLocalNPC, updateLocalNPCData } = useSessionNPCs(id);
@@ -488,6 +489,8 @@ export function ActiveSessionPage() {
                 playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
                 activeTrades={activeTrades}
                 onUpdatePlayerStat={updateLocalPlayerCharacter}
+                onUpdatePlayerData={updateLocalPlayerData}
+                onUpdateNPCData={updateLocalNPCData}
                 onShop={handleShop}
                 onAcceptTrade={handleAcceptTrade}
                 onRejectTrade={handleRejectTrade}
@@ -556,6 +559,8 @@ export function ActiveSessionPage() {
                   playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
                   npcs={npcs.filter((n) => (n as unknown as { is_visible?: boolean }).is_visible)}
                   activeTrades={activeTrades}
+                  onUpdatePlayerData={updateLocalPlayerData}
+                  onUpdateNPCData={updateLocalNPCData}
                   onNegotiate={handleNegotiate}
                   onNPCNegotiate={handleNPCNegotiate}
                   onAcceptTrade={handleAcceptTrade}

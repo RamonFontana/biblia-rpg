@@ -6,7 +6,10 @@ import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucid
 import { MasterDeathControls } from '../combat/MasterDeathControls';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
-
+import { ConditionBadge } from '../conditions/ConditionBadge';
+import { ConditionSelector } from '../conditions/ConditionSelector';
+import { conditionsService } from '@/services/conditionsService';
+import type { ConditionEntry } from '@/types/combat';
 interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
@@ -16,6 +19,7 @@ interface PlayerCardProps {
   character?: Character | null;
   viewerIsGM?: boolean;
   onUpdateStat?: (statKey: 'current_pv' | 'current_faith', delta: number) => void;
+  onUpdateConditions?: (characterId: string, conditions: ConditionEntry[]) => void;
   onClick?: (userId: string, e: React.MouseEvent) => void;
   onNegotiate?: (userId: string) => void;
   onShop?: (userId: string) => void;
@@ -30,6 +34,7 @@ export function PlayerCard({
   character,
   viewerIsGM = false,
   onUpdateStat,
+  onUpdateConditions,
   onClick,
   onNegotiate,
   onShop,
@@ -39,6 +44,35 @@ export function PlayerCard({
   const canOpenShop = viewerIsGM && !isSessionGM && onShop && !blocked;
   const canNegotiate = !isSessionGM && !viewerIsGM && onNegotiate && character && !blocked;
   const hasActions = canOpenShop || canNegotiate || clickable;
+
+  const handleAddCondition = async (conditionId: string, duration: number) => {
+    if (!character?.id) return;
+    const current = (character.conditions as ConditionEntry[]) || [];
+    const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
+    
+    // Optimistic Update
+    const updated = [...current.filter(c => c.conditionId !== conditionId), newCond];
+    if (onUpdateConditions) {
+      onUpdateConditions(character.id, updated);
+    }
+
+    await conditionsService.applyToCharacter(character.id, current, newCond);
+  };
+
+  const handleRemoveCondition = async (conditionId: string) => {
+    if (!character?.id) return;
+    const current = (character.conditions as ConditionEntry[]) || [];
+    
+    // Optimistic Update
+    const updated = current.filter(c => c.conditionId !== conditionId);
+    if (onUpdateConditions) {
+      onUpdateConditions(character.id, updated);
+    }
+
+    await conditionsService.removeFromCharacter(character.id, current, conditionId);
+  };
+
+  const currentConditions = (character?.conditions as ConditionEntry[]) || [];
 
   return (
     <div
@@ -185,6 +219,24 @@ export function PlayerCard({
               <span className="font-mono tabular-nums">{character.stats.current_faith ?? character.stats.faith}/100</span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Condições e Efeitos */}
+      {character && (currentConditions.length > 0 || viewerIsGM) && !isSessionGM && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
+          {currentConditions.map((cond) => (
+            <ConditionBadge
+              key={cond.conditionId}
+              conditionId={cond.conditionId}
+              duration={cond.duration || undefined}
+              onRemove={viewerIsGM ? handleRemoveCondition : undefined}
+              readonly={!viewerIsGM}
+            />
+          ))}
+          {viewerIsGM && (
+            <ConditionSelector onAddCondition={handleAddCondition} />
+          )}
         </div>
       )}
 

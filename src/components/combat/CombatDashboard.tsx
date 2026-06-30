@@ -4,6 +4,10 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { HealthModificationModal } from './HealthModificationModal';
 import { MasterDeathControls } from './MasterDeathControls';
+import { ConditionBadge } from '../conditions/ConditionBadge';
+import { ConditionSelector } from '../conditions/ConditionSelector';
+import { conditionsService } from '../../services/conditionsService';
+import type { ConditionEntry } from '../../types/combat';
 
 interface CombatDashboardProps {
   sessionId: string;
@@ -97,13 +101,26 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
                     </div>
                   )}
                   
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {/* Condições mock, em app real pegar de participant.conditions */}
-                    {Array.isArray(participant.conditions) && participant.conditions.map((cond, i) => (
-                      <span key={i} className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
-                        {cond as string}
-                      </span>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {Array.isArray(participant.conditions) && participant.conditions.map((condObj: any, i) => (
+                      <ConditionBadge 
+                        key={i} 
+                        conditionId={condObj.conditionId} 
+                        duration={condObj.duration || undefined}
+                        onRemove={async (conditionId) => {
+                          const newConditions = conditionsService.removeCondition(participant.conditions as ConditionEntry[], conditionId);
+                          await useCombatStore.getState().updateConditions(participant.id, newConditions);
+                        }}
+                      />
                     ))}
+                    <ConditionSelector 
+                      onAddCondition={async (conditionId, duration) => {
+                        const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
+                        const current = (participant.conditions as ConditionEntry[]) || [];
+                        const newConditions = conditionsService.mergeCondition(current, newCond);
+                        await useCombatStore.getState().updateConditions(participant.id, newConditions);
+                      }} 
+                    />
                   </div>
 
                   <div className="pt-4 flex gap-2">
