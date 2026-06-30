@@ -58,6 +58,17 @@ export function ActiveSessionPage() {
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [isNewDayDialogOpen, setIsNewDayDialogOpen] = useState(false);
   const [isCombatSetupOpen, setIsCombatSetupOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleToast = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setToastMessage(customEvent.detail.message);
+      setTimeout(() => setToastMessage(null), 4000);
+    };
+    window.addEventListener('combat-toast', handleToast);
+    return () => window.removeEventListener('combat-toast', handleToast);
+  }, []);
 
   const { enemies } = useSessionEnemies(id);
   const { activeCombat, initSubscriptions, cleanupSubscriptions } = useCombatStore();
@@ -619,6 +630,15 @@ export function ActiveSessionPage() {
           sessionId={id!}
           availableEntities={availableEntities}
         />
+      )}
+
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 z-50 bg-stone-800 border-2 border-amber-500 text-stone-100 p-4 rounded shadow-lg animate-in slide-in-from-bottom-5 max-w-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-500 text-xl">🛡️</span>
+            <span className="font-semibold text-sm">{toastMessage}</span>
+          </div>
+        </div>
       )}
     </div>
   );

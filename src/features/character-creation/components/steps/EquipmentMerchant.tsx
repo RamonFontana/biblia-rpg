@@ -189,6 +189,16 @@ export function EquipmentMerchant() {
                         {item.damage ? ` • ${item.damage}` : ''} 
                         {item.armorClass ? ` • CA ${item.armorClass}` : ''}
                       </p>
+                      {item.level && item.conditionResistances && (
+                         <div className="mt-2 flex gap-2 items-center flex-wrap">
+                            <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-900/40 text-amber-500 border border-amber-500/20">
+                              Resistência Nv{item.level}
+                            </span>
+                            <span className="text-xs text-stone-400 italic">
+                              vs {item.conditionResistances.join(', ')}
+                            </span>
+                         </div>
+                      )}
                     </div>
                     <button 
                       type="button"

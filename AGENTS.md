@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at:
-specs/042-effects-conditions/plan.md
+specs/043-armor-resistance/plan.md
 <!-- SPECKIT END -->
 
 ## RPG Bíblico — Documentação do Sistema

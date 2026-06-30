@@ -1,19 +1,25 @@
 import type { EquipmentItem } from '../features/character-creation/types';
 
-export type ItemCategory = 'Simples' | 'Marcial' | 'Leve' | 'Média' | 'Pesada' | 'Escudo' | 'Todas';
+export type ItemCategory = 'Simples' | 'Marcial' | 'Leve' | 'Média' | 'Pesada' | 'Escudo' | 'Sagrada' | 'Todas';
 
 export type ShopItem = EquipmentItem & { category: ItemCategory, properties?: string[], statPenalty?: { stat: string, value: number, type: string } };
 
 export const ITEMS_DB: ShopItem[] = [
   // Armaduras
-  { id: 'tunica', name: 'Túnica Grossa (Acolchoada)', type: 'Armadura', cost: 5, armorClass: 11, category: 'Leve', description: 'CA: 11 + Des. Desvantagem em Furtividade', properties: ['stealth_disadvantage'] },
-  { id: 'couro_cru', name: 'Couro Cru', type: 'Armadura', cost: 10, armorClass: 11, category: 'Leve', description: 'CA: 11 + Des. Armadura básica' },
-  { id: 'couro_batido', name: 'Couro Batido (com tachas)', type: 'Armadura', cost: 45, armorClass: 12, category: 'Leve', description: 'CA: 12 + Des. Armadura leve reforçada' },
-  { id: 'cota_escamas', name: 'Cota de Escamas de Bronze', type: 'Armadura', cost: 50, armorClass: 14, category: 'Média', description: 'CA: 14 + Des (máx 2). Desvantagem em Furtividade', properties: ['stealth_disadvantage'] },
-  { id: 'peitoral_bronze', name: 'Peitoral de Bronze/Ferro', type: 'Armadura', cost: 400, armorClass: 14, category: 'Média', description: 'CA: 14 + Des (máx 2). Proteção superior no peito' },
-  { id: 'cota_malha', name: 'Cota de Malha de Anéis', type: 'Armadura', cost: 30, armorClass: 14, category: 'Pesada', description: 'CA: 14. Desvantagem em Furtividade', properties: ['stealth_disadvantage'] },
-  { id: 'lorica', name: 'Lorica de Escamas Pesada', type: 'Armadura', cost: 75, armorClass: 16, category: 'Pesada', description: 'CA: 16. Desvantagem em Furtividade, Requer For 13', properties: ['stealth_disadvantage', 'heavy'] },
-  { id: 'escudo', name: 'Escudo (Madeira/Bronze)', type: 'Escudo', cost: 10, armorClass: 2, category: 'Escudo', description: '+2 CA. Ocupa uma mão' },
+  { id: 'tunica', name: 'Túnica Grossa (Acolchoada)', type: 'Armadura', cost: 5, armorClass: 11, category: 'Leve', description: 'CA: 11 + Des. Desvantagem em Furtividade', properties: ['stealth_disadvantage'], slot: 'body', level: 1, conditionResistances: ['poisoned'] },
+  { id: 'tunica_sagrada', name: 'Túnica Sagrada (Levita)', type: 'Armadura', cost: 20, armorClass: 11, category: 'Sagrada', description: 'CA: 11 + Des. Abençoada contra medos.', slot: 'body', level: 2, conditionResistances: ['frightened'] },
+  { id: 'couro_cru', name: 'Couro Cru', type: 'Armadura', cost: 10, armorClass: 11, category: 'Leve', description: 'CA: 11 + Des. Armadura básica', slot: 'body', level: 1 },
+  { id: 'couro_batido', name: 'Couro Batido (com tachas)', type: 'Armadura', cost: 45, armorClass: 12, category: 'Leve', description: 'CA: 12 + Des. Armadura leve reforçada', slot: 'body', level: 2, conditionResistances: ['grappled'] },
+  { id: 'cota_escamas', name: 'Cota de Escamas de Bronze', type: 'Armadura', cost: 50, armorClass: 14, category: 'Média', description: 'CA: 14 + Des (máx 2). Desvantagem em Furtividade', properties: ['stealth_disadvantage'], slot: 'body', level: 2, conditionResistances: ['bleeding'] },
+  { id: 'peitoral_bronze', name: 'Peitoral de Bronze/Ferro', type: 'Armadura', cost: 400, armorClass: 14, category: 'Média', description: 'CA: 14 + Des (máx 2). Proteção superior no peito', slot: 'body', level: 3, conditionResistances: ['bleeding', 'poisoned'] },
+  { id: 'cota_malha', name: 'Cota de Malha de Anéis', type: 'Armadura', cost: 30, armorClass: 14, category: 'Pesada', description: 'CA: 14. Desvantagem em Furtividade', properties: ['stealth_disadvantage'], slot: 'body', level: 3, conditionResistances: ['bleeding'] },
+  { id: 'lorica', name: 'Lorica de Escamas Pesada', type: 'Armadura', cost: 75, armorClass: 16, category: 'Pesada', description: 'CA: 16. Desvantagem em Furtividade, Requer For 13', properties: ['stealth_disadvantage', 'heavy'], slot: 'body', level: 4, conditionResistances: ['bleeding', 'stunned'] },
+  
+  // Elmos
+  { id: 'chapeu_couro', name: 'Chapéu de Couro Fervido', type: 'Armadura', cost: 2, armorClass: 0, category: 'Leve', description: 'Proteção básica para a cabeça.', slot: 'head', level: 1, conditionResistances: ['blinded'] },
+  { id: 'elmo_bronze', name: 'Elmo de Bronze Fechado', type: 'Armadura', cost: 15, armorClass: 0, category: 'Pesada', description: 'Proteção total do rosto. Desvantagem em Percepção.', properties: ['perception_disadvantage'], slot: 'head', level: 3, conditionResistances: ['stunned', 'blinded'] },
+
+  { id: 'escudo', name: 'Escudo (Madeira/Bronze)', type: 'Escudo', cost: 10, armorClass: 2, category: 'Escudo', description: '+2 CA. Ocupa uma mão', slot: 'offHand', level: 2, conditionResistances: ['restrained'] },
 
   // Armas
   { id: 'adaga', name: 'Faca/Adaga de Bronze', type: 'Arma', cost: 2, damage: '1d4 perfurante', category: 'Simples', description: 'Acuidade, Leve, Arremesso (6/18m)', properties: ['finesse', 'thrown'] },
@@ -80,6 +86,6 @@ export const VOCATION_PROFICIENCIES: Record<string, ItemCategory[]> = {
   'Guerreiro': ['Simples', 'Marcial', 'Leve', 'Média', 'Pesada', 'Escudo', 'Todas'],
   'Caçador': ['Simples', 'Marcial', 'Leve', 'Média', 'Todas'],
   'Batedor': ['Simples', 'Marcial', 'Leve', 'Média', 'Todas'],
-  'Sacerdote': ['Simples', 'Leve', 'Todas'],
-  'Sábio': ['Simples', 'Leve', 'Todas'],
+  'Sacerdote': ['Simples', 'Leve', 'Sagrada', 'Todas'],
+  'Sábio': ['Simples', 'Leve', 'Sagrada', 'Todas'],
 };

@@ -24,6 +24,9 @@ export interface EquipmentItem {
   cost?: number;
   damage?: string;
   armorClass?: number;
+  level?: number;
+  conditionResistances?: string[];
+  slot?: string;
 }
 
 export interface CharacterNarrative {
