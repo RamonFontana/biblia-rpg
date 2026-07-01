@@ -108,7 +108,7 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
                         conditionId={condObj.conditionId} 
                         duration={condObj.duration || undefined}
                         onRemove={async (conditionId) => {
-                          const newConditions = conditionsService.removeCondition(participant.conditions as ConditionEntry[], conditionId);
+                          const newConditions = conditionsService.removeCondition((participant as any).conditions as unknown as ConditionEntry[], conditionId);
                           await useCombatStore.getState().updateConditions(participant.id, newConditions);
                         }}
                       />
@@ -116,7 +116,7 @@ export function CombatDashboard({ sessionId: _sessionId, availableEntities = [] 
                     <ConditionSelector 
                       onAddCondition={async (conditionId, duration) => {
                         const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
-                        const current = (participant.conditions as ConditionEntry[]) || [];
+                        const current = ((participant as any).conditions as unknown as ConditionEntry[]) || [];
                         const newConditions = conditionsService.mergeCondition(current, newCond);
                         await useCombatStore.getState().updateConditions(participant.id, newConditions);
                       }} 

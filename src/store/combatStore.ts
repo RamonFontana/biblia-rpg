@@ -244,7 +244,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       // Tick conditions on round change
       const conditionUpdates = participants.map(async (p) => {
-        const currentConds = (p.conditions as ConditionEntry[]) || [];
+        const currentConds = ((p as any).conditions as unknown as ConditionEntry[]) || [];
         if (currentConds.length > 0) {
           const ticked = conditionsService.tickConditions(currentConds);
           await supabase
@@ -301,7 +301,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const newStats = { ...currentStats, current_pv: participant.hp_current };
             
             // Clean temporary conditions and keep permanent ones
-            const currentConditions = (participant.conditions as ConditionEntry[]) || [];
+            const currentConditions = ((participant as any).conditions as unknown as ConditionEntry[]) || [];
             const permanentConditions = conditionsService.cleanTemporaryConditions(currentConditions);
             
             // Sync HP and conditions

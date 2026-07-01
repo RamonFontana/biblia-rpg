@@ -69,7 +69,7 @@ export function useSessionPlayerCharacters(sessionId: string | undefined) {
           schema: 'public',
           table: 'characters',
         },
-        (payload) => {
+        () => {
           fetchPlayers();
         }
       )

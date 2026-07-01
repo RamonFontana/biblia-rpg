@@ -47,7 +47,7 @@ export function PlayerCard({
 
   const handleAddCondition = async (conditionId: string, duration: number) => {
     if (!character?.id) return;
-    const current = (character.conditions as ConditionEntry[]) || [];
+    const current = ((character as any).conditions as unknown as ConditionEntry[]) || [];
     const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
     
     // Optimistic Update
@@ -61,7 +61,7 @@ export function PlayerCard({
 
   const handleRemoveCondition = async (conditionId: string) => {
     if (!character?.id) return;
-    const current = (character.conditions as ConditionEntry[]) || [];
+    const current = ((character as any).conditions as unknown as ConditionEntry[]) || [];
     
     // Optimistic Update
     const updated = current.filter(c => c.conditionId !== conditionId);
@@ -72,7 +72,7 @@ export function PlayerCard({
     await conditionsService.removeFromCharacter(character.id, current, conditionId);
   };
 
-  const currentConditions = (character?.conditions as ConditionEntry[]) || [];
+  const currentConditions = ((character as any)?.conditions as unknown as ConditionEntry[]) || [];
 
   return (
     <div

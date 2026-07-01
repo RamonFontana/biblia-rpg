@@ -77,6 +77,22 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
     }
   };
 
+  const handleUpdateItemResistances = async (characterItemId: string, newResistances: string[]) => {
+    setIsEquipping(true);
+    try {
+      const { error } = await supabase
+        .from('character_items')
+        .update({ custom_condition_resistances: newResistances } as any)
+        .eq('id', characterItemId);
+      if (error) throw error;
+      // Realtime listener will automatically pick up the change and update state
+    } catch (err) {
+      console.error('Error updating item resistances:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
+
   const handleUseAbility = async (ability: any) => {
     if (!character || isUpdating) return;
     
@@ -201,6 +217,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               id,
               quantity,
               level,
+              custom_condition_resistances,
               items (
                 id,
                 name,
@@ -249,6 +266,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               id,
               quantity,
               level,
+              custom_condition_resistances,
               items (
                 id,
                 name,
@@ -303,7 +321,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   const { attributes, stats, narrative, tribe, vocation, name } = character;
 
   // Calculate dynamic AC using getCombatStats to properly include item level bonuses
-  const { totalAc, baseAc, bonusAc } = getCombatStats({
+  const { totalAc, baseAc, bonusAc, resistances = [] } = getCombatStats({
     ...character,
     character_items: inventoryItems,
   });
@@ -361,6 +379,13 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               )}
             </div>
             <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">CA</span>
+            {resistances.length > 0 && (
+              <div className="absolute bottom-1 w-full text-center">
+                <span className="text-[9px] text-indigo-300 bg-indigo-900/50 px-1 rounded" title={resistances.join(', ')}>
+                  Resistência
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-amber-900/50 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
@@ -512,6 +537,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               isUpdating={isUpdating || isEquipping}
               isGM={isGM}
               onChangeLevel={handleUpdateItemLevel}
+              onChangeResistances={handleUpdateItemResistances}
             />
           </div>
         </div>

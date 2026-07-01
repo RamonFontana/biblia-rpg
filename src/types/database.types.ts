@@ -20,24 +20,24 @@ export type Database = {
           created_at: string | null
           id: string
           item_id: string
-          quantity: number | null
           level: number
+          quantity: number | null
         }
         Insert: {
           character_id: string
           created_at?: string | null
           id?: string
           item_id: string
-          quantity?: number | null
           level?: number
+          quantity?: number | null
         }
         Update: {
           character_id?: string
           created_at?: string | null
           id?: string
           item_id?: string
-          quantity?: number | null
           level?: number
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -60,24 +60,24 @@ export type Database = {
         Row: {
           attributes: Json
           coins: number | null
+          conditions: Json | null
           created_at: string
           death_saves_failures: number
           death_saves_successes: number
           equipment: Json | null
           fortress: string | null
-          conditions: Json | null
           has_participated_in_session: boolean | null
           id: string
           is_dead: boolean
           is_deleted: boolean
+          is_enemy: boolean
           is_npc: boolean | null
           is_stable: boolean
           is_visible: boolean
-          level: number | null
           name: string
           narrative: Json | null
-          stats: Json
           skills: Json | null
+          stats: Json
           temptation: string | null
           tribe: string
           updated_at: string
@@ -87,24 +87,24 @@ export type Database = {
         Insert: {
           attributes: Json
           coins?: number | null
+          conditions?: Json | null
           created_at?: string
           death_saves_failures?: number
           death_saves_successes?: number
           equipment?: Json | null
           fortress?: string | null
-          conditions?: Json | null
           has_participated_in_session?: boolean | null
           id?: string
           is_dead?: boolean
           is_deleted?: boolean
+          is_enemy?: boolean
           is_npc?: boolean | null
           is_stable?: boolean
           is_visible?: boolean
-          level?: number | null
           name: string
           narrative?: Json | null
-          stats: Json
           skills?: Json | null
+          stats: Json
           temptation?: string | null
           tribe: string
           updated_at?: string
@@ -114,24 +114,24 @@ export type Database = {
         Update: {
           attributes?: Json
           coins?: number | null
+          conditions?: Json | null
           created_at?: string
           death_saves_failures?: number
           death_saves_successes?: number
           equipment?: Json | null
           fortress?: string | null
-          conditions?: Json | null
           has_participated_in_session?: boolean | null
           id?: string
           is_dead?: boolean
           is_deleted?: boolean
+          is_enemy?: boolean
           is_npc?: boolean | null
           is_stable?: boolean
           is_visible?: boolean
-          level?: number | null
           name?: string
           narrative?: Json | null
-          stats?: Json
           skills?: Json | null
+          stats?: Json
           temptation?: string | null
           tribe?: string
           updated_at?: string
@@ -140,51 +140,13 @@ export type Database = {
         }
         Relationships: []
       }
-      combats: {
-        Row: {
-          created_at: string
-          current_turn_index: number
-          id: string
-          round_number: number
-          session_id: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          current_turn_index?: number
-          id?: string
-          round_number?: number
-          session_id: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          current_turn_index?: number
-          id?: string
-          round_number?: number
-          session_id?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "combats_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "game_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       combat_participants: {
         Row: {
           combat_id: string
           conditions: Json
           created_at: string
           entity_id: string
-          entity_type: string
+          entity_type: Database["public"]["Enums"]["combat_entity_type"]
           hp_current: number
           id: string
           initiative: number
@@ -196,7 +158,7 @@ export type Database = {
           conditions?: Json
           created_at?: string
           entity_id: string
-          entity_type: string
+          entity_type: Database["public"]["Enums"]["combat_entity_type"]
           hp_current?: number
           id?: string
           initiative?: number
@@ -208,7 +170,7 @@ export type Database = {
           conditions?: Json
           created_at?: string
           entity_id?: string
-          entity_type?: string
+          entity_type?: Database["public"]["Enums"]["combat_entity_type"]
           hp_current?: number
           id?: string
           initiative?: number
@@ -225,6 +187,44 @@ export type Database = {
           },
         ]
       }
+      combats: {
+        Row: {
+          created_at: string
+          current_turn_index: number
+          id: string
+          round_number: number
+          session_id: string
+          status: Database["public"]["Enums"]["combat_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_turn_index?: number
+          id?: string
+          round_number?: number
+          session_id: string
+          status?: Database["public"]["Enums"]["combat_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_turn_index?: number
+          id?: string
+          round_number?: number
+          session_id?: string
+          status?: Database["public"]["Enums"]["combat_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combats_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_sessions: {
         Row: {
           created_at: string
@@ -233,11 +233,11 @@ export type Database = {
           description: string | null
           gm_id: string
           id: string
+          last_long_rest_day: number | null
           name: string
+          short_rests_today: number | null
           status: string
           updated_at: string
-          short_rests_today: number | null
-          last_long_rest_day: number | null
         }
         Insert: {
           created_at?: string
@@ -246,11 +246,11 @@ export type Database = {
           description?: string | null
           gm_id: string
           id?: string
+          last_long_rest_day?: number | null
           name: string
+          short_rests_today?: number | null
           status: string
           updated_at?: string
-          short_rests_today?: number | null
-          last_long_rest_day?: number | null
         }
         Update: {
           created_at?: string
@@ -259,48 +259,63 @@ export type Database = {
           description?: string | null
           gm_id?: string
           id?: string
+          last_long_rest_day?: number | null
           name?: string
+          short_rests_today?: number | null
           status?: string
           updated_at?: string
-          short_rests_today?: number | null
-          last_long_rest_day?: number | null
         }
         Relationships: []
       }
       items: {
         Row: {
+          armor_class: number | null
           category: string
+          condition_resistances: string[] | null
           created_at: string | null
+          damage: string | null
           description: string | null
           effects: Json | null
           id: string
           is_consumable: boolean | null
           is_kit: boolean | null
+          level: number | null
           name: string
+          price: number | null
           requires_target: boolean | null
           weight: number | null
         }
         Insert: {
+          armor_class?: number | null
           category: string
+          condition_resistances?: string[] | null
           created_at?: string | null
+          damage?: string | null
           description?: string | null
           effects?: Json | null
           id?: string
           is_consumable?: boolean | null
           is_kit?: boolean | null
+          level?: number | null
           name: string
+          price?: number | null
           requires_target?: boolean | null
           weight?: number | null
         }
         Update: {
+          armor_class?: number | null
           category?: string
+          condition_resistances?: string[] | null
           created_at?: string | null
+          damage?: string | null
           description?: string | null
           effects?: Json | null
           id?: string
           is_consumable?: boolean | null
           is_kit?: boolean | null
+          level?: number | null
           name?: string
+          price?: number | null
           requires_target?: boolean | null
           weight?: number | null
         }
@@ -546,6 +561,131 @@ export type Database = {
           },
         ]
       }
+      trade_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          level: number
+          quantity: number
+          side: string
+          trade_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          level?: number
+          quantity?: number
+          side: string
+          trade_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          level?: number
+          quantity?: number
+          side?: string
+          trade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_items_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trades: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          initiator_character_id: string | null
+          initiator_coins: number
+          initiator_ready: boolean
+          initiator_user_id: string
+          session_id: string
+          status: string
+          target_character_id: string | null
+          target_coins: number
+          target_npc_id: string | null
+          target_ready: boolean
+          type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          initiator_character_id?: string | null
+          initiator_coins?: number
+          initiator_ready?: boolean
+          initiator_user_id: string
+          session_id: string
+          status?: string
+          target_character_id?: string | null
+          target_coins?: number
+          target_npc_id?: string | null
+          target_ready?: boolean
+          type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          initiator_character_id?: string | null
+          initiator_coins?: number
+          initiator_ready?: boolean
+          initiator_user_id?: string
+          session_id?: string
+          status?: string
+          target_character_id?: string | null
+          target_coins?: number
+          target_npc_id?: string | null
+          target_ready?: boolean
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_initiator_character_id_fkey"
+            columns: ["initiator_character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_target_character_id_fkey"
+            columns: ["target_character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_target_npc_id_fkey"
+            columns: ["target_npc_id"]
+            isOneToOne: false
+            referencedRelation: "session_npcs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -553,6 +693,10 @@ export type Database = {
     Functions: {
       add_kit_to_character: {
         Args: { p_character_id: string; p_kit_id: string }
+        Returns: undefined
+      }
+      cancel_session_trades: {
+        Args: { p_session_id: string }
         Returns: undefined
       }
       create_game_session: {
@@ -565,9 +709,14 @@ export type Database = {
         }
         Returns: string
       }
+      execute_trade: { Args: { p_trade_id: string }; Returns: Json }
       is_session_gm: { Args: { check_session_id: string }; Returns: boolean }
       is_session_participant: {
         Args: { check_session_id: string }
+        Returns: boolean
+      }
+      is_trade_participant: {
+        Args: { check_trade_id: string }
         Returns: boolean
       }
       use_consumable_item: {
@@ -576,7 +725,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      combat_entity_type: "player" | "npc" | "enemy"
+      combat_status: "setup" | "active" | "paused" | "finished"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -703,7 +853,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      combat_entity_type: ["player", "npc", "enemy"],
+      combat_status: ["setup", "active", "paused", "finished"],
+    },
   },
 } as const
-

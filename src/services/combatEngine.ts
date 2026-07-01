@@ -4,7 +4,7 @@ import { useCombatStore } from '../store/combatStore';
 import type { ConditionEntry, CharacterEquipment } from '../types/combat';
 import { supabase } from '../lib/supabase';
 import { ITEMS_DB } from '../data/itemsDb';
-import type { EquipmentItem } from '../features/character-creation/types';
+
 
 export const combatEngine = {
   /**
@@ -31,7 +31,7 @@ export const combatEngine = {
     if (target.entity_type !== 'enemy' && target.entity_id) {
       const { data: charData } = await supabase
         .from('characters')
-        .select('equipment, character_items')
+        .select('equipment, character_items(*)')
         .eq('id', target.entity_id)
         .single();
         
@@ -41,18 +41,28 @@ export const combatEngine = {
         
         const equippedIds = [equipment?.head, equipment?.body, equipment?.mainHand, equipment?.offHand].filter(Boolean);
         
-        // Map equipped IDs to actual items from ITEMS_DB
-        const equippedItems = equippedIds.map(slotId => {
+        const equippedItemsData = equippedIds.map(slotId => {
           // It could be a character_item uuid or directly the item id
           const invItem = charItems.find(i => i.id === slotId || i.item_id === slotId);
           const itemId = invItem?.item_id || slotId;
-          return ITEMS_DB.find(i => i.id === itemId);
-        }).filter(Boolean) as EquipmentItem[];
+          const dbItem = ITEMS_DB.find(i => i.id === itemId);
+          if (!dbItem) return null;
+
+          const baseResistances = dbItem.conditionResistances || [];
+          const customResistances = invItem?.custom_condition_resistances || [];
+          const allResistances = [...baseResistances, ...customResistances];
+
+          return {
+            ...dbItem,
+            level: invItem?.level || 1,
+            conditionResistances: allResistances
+          };
+        }).filter(Boolean);
         
         // Evaluate incoming conditions against resistances
         for (const cond of ability.applyConditions) {
-          for (const item of equippedItems) {
-            if (item.conditionResistances?.includes(cond.conditionId)) {
+          for (const item of equippedItemsData) {
+            if (item && item.conditionResistances && item.conditionResistances.includes(cond.conditionId)) {
               maxResistanceLevel = Math.max(maxResistanceLevel, item.level || 1);
             }
           }

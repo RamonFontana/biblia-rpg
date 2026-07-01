@@ -129,7 +129,7 @@ export function SessionParticipantList({
   const handleAddNPCCondition = async (npcId: string, conditionId: string, duration: number) => {
     const npc = npcs.find(n => n.id === npcId);
     if (!npc) return;
-    const current = (npc.conditions as ConditionEntry[]) || [];
+    const current = ((npc as any).conditions as unknown as ConditionEntry[]) || [];
     const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
     
     const updated = [...current.filter(c => c.conditionId !== conditionId), newCond];
@@ -141,7 +141,7 @@ export function SessionParticipantList({
   const handleRemoveNPCCondition = async (npcId: string, conditionId: string) => {
     const npc = npcs.find(n => n.id === npcId);
     if (!npc) return;
-    const current = (npc.conditions as ConditionEntry[]) || [];
+    const current = ((npc as any).conditions as unknown as ConditionEntry[]) || [];
     
     const updated = current.filter(c => c.conditionId !== conditionId);
     if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
@@ -276,9 +276,9 @@ export function SessionParticipantList({
                       </div>
                     )}
                     {/* Condições do NPC */}
-                    {((npc.conditions as ConditionEntry[])?.length > 0 || isGM) && (
+                    {(((npc as any).conditions as unknown as ConditionEntry[])?.length > 0 || isGM) && (
                       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
-                        {((npc.conditions as ConditionEntry[]) || []).map((cond) => (
+                        {(((npc as any).conditions as unknown as ConditionEntry[]) || []).map((cond) => (
                           <ConditionBadge
                             key={cond.conditionId}
                             conditionId={cond.conditionId}

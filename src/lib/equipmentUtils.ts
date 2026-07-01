@@ -102,6 +102,7 @@ export function getCombatStats(character: any) {
   const { stats, equipment, character_items: inventoryItems = [] } = character || {};
   const baseAc = Number(stats?.ca) || 10;
   let bonusAc = 0;
+  let resistances: string[] = [];
   let weapon: { name: string, damageDie: string } | undefined = undefined;
 
   // Ensure equipment is an object (sometimes JSONB can be stringified)
@@ -156,13 +157,33 @@ export function getCombatStats(character: any) {
       return baseModifier; 
     };
 
+    const getResistances = (invItem: any) => {
+      if (!invItem) return [];
+      const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
+      
+      const baseResistances = itemData?.condition_resistances || [];
+      const customResistances = invItem.custom_condition_resistances || [];
+      
+      return [...baseResistances, ...customResistances];
+    };
+
+    let allResistances: string[] = [];
+
     bonusAc += getItemAc(headItem);
+    allResistances.push(...getResistances(headItem));
+
     bonusAc += getItemAc(bodyItem);
+    allResistances.push(...getResistances(bodyItem));
+
     bonusAc += getItemAc(mainHandItem);
+    allResistances.push(...getResistances(mainHandItem));
     
     if (parsedEquipment.offHand !== parsedEquipment.mainHand) {
       bonusAc += getItemAc(offHandItem);
+      allResistances.push(...getResistances(offHandItem));
     }
+
+    resistances = [...new Set(allResistances)];
 
     const mainHandData = Array.isArray(mainHandItem?.items) ? mainHandItem.items[0] : mainHandItem?.items;
     if (mainHandData?.effects?.damageDie) {
@@ -175,6 +196,6 @@ export function getCombatStats(character: any) {
 
   const totalAc = baseAc + bonusAc;
 
-  return { totalAc, baseAc, bonusAc, weapon };
+  return { totalAc, baseAc, bonusAc, weapon, resistances };
 }
 

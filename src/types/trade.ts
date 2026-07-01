@@ -28,6 +28,7 @@ export interface TradeItemRecord {
   item_id: string;
   quantity: number;
   level: number;
+  custom_condition_resistances?: string[];
   created_at: string;
 }
 

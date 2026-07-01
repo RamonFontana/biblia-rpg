@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TradeItemSelector, type SelectableItem } from './TradeItemSelector';
-import type { TradeItemWithDetails, TradeSide } from '@/types/trade';
+import type { TradeItemWithDetails, TradeSide as TradeSideType } from '@/types/trade';
 import { tradeService } from '@/services/tradeService';
+import { ShieldPlus } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+const AVAILABLE_RESISTANCES = [
+  'Corte', 'Perfuração', 'Impacto', 
+  'Fogo', 'Frio', 'Ácido', 'Veneno'
+];
 
 interface TradeSideProps {
   label: string;
-  side: TradeSide;
+  side: TradeSideType;
   tradeId: string;
   coins: number;
   tradeItems: TradeItemWithDetails[];
@@ -228,9 +235,10 @@ export function TradeSide({
                 <span className="text-[10px] px-1 py-0.5 rounded bg-stone-700 text-stone-400">
                   {ti.items?.price != null ? `${ti.items.price} SP` : '—'}
                 </span>
-                {isGM && canEdit && !isReady ? (
-                  <div className="flex items-center gap-0.5 bg-stone-800 rounded border border-stone-700 h-5">
-                    <button
+                {isGM && canEdit && !isReady && (
+                  <>
+                    <div className="flex items-center gap-0.5 bg-stone-800 rounded border border-stone-700 h-5">
+                      <button
                       type="button"
                       onClick={async () => {
                         await tradeService.updateTradeItemLevel(ti.id, Math.max(1, (ti.level || 1) - 1));
@@ -252,12 +260,48 @@ export function TradeSide({
                       disabled={(ti.level || 1) >= 5}
                     >+</button>
                   </div>
-                ) : (
-                  (ti.level || 1) > 1 && (
-                    <span className="text-[10px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold leading-none" title={`Nível ${ti.level}`}>
-                      Nv.{ti.level}
-                    </span>
-                  )
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                        title="Adicionar Resistências"
+                      >
+                        <ShieldPlus className="w-3 h-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                      <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
+                      {AVAILABLE_RESISTANCES.map(res => {
+                        const isChecked = (ti.custom_condition_resistances || []).includes(res);
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={res}
+                            checked={isChecked}
+                            onCheckedChange={async (checked) => {
+                              let current = [...(ti.custom_condition_resistances || [])];
+                              if (checked) current.push(res);
+                              else current = current.filter(r => r !== res);
+                              await tradeService.updateTradeItemResistances(ti.id, current);
+                              onItemsChanged();
+                            }}
+                            className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                          >
+                            {res}
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  </>
+                )}
+                {ti.custom_condition_resistances && ti.custom_condition_resistances.length > 0 && (
+                  <div className="flex flex-wrap gap-1 ml-2">
+                    {ti.custom_condition_resistances.map((res: string) => (
+                      <span key={res} className="text-[9px] px-1 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50">
+                        {res}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </li>
             ))}

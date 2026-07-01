@@ -1,4 +1,5 @@
-import { Target } from 'lucide-react';
+import { Target, ShieldPlus } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { CharacterEquipment } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/data/itemsDb';
@@ -11,9 +12,15 @@ interface InventoryListProps {
   isUpdating: boolean;
   isGM?: boolean;
   onChangeLevel?: (characterItemId: string, newLevel: number) => void;
+  onChangeResistances?: (characterItemId: string, newResistances: string[]) => void;
 }
 
-export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel }: InventoryListProps) {
+const AVAILABLE_RESISTANCES = [
+  'Corte', 'Perfuração', 'Impacto', 
+  'Fogo', 'Frio', 'Ácido', 'Veneno'
+];
+
+export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances }: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
       <div>
@@ -126,21 +133,55 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                       <div className="flex items-center gap-2">
                         <span className="text-stone-200 font-medium">{item.items?.name}</span>
                         {isGM ? (
-                          <div className="flex items-center gap-1 bg-stone-800 rounded border border-stone-700 h-5">
-                            <button 
-                              onClick={() => onChangeLevel?.(item.id, Math.max(1, (item.level || 1) - 1))}
-                              className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
-                              disabled={isUpdating || (item.level || 1) <= 1}
-                            >-</button>
-                            <span className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none" title="Nível do Item">
-                              Nv.{item.level || 1}
-                            </span>
-                            <button 
-                              onClick={() => onChangeLevel?.(item.id, Math.min(5, (item.level || 1) + 1))}
-                              className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
-                              disabled={isUpdating || (item.level || 1) >= 5}
-                            >+</button>
-                          </div>
+                          <>
+                            <div className="flex items-center gap-1 bg-stone-800 rounded border border-stone-700 h-5">
+                              <button 
+                                onClick={() => onChangeLevel?.(item.id, Math.max(1, (item.level || 1) - 1))}
+                                className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
+                                disabled={isUpdating || (item.level || 1) <= 1}
+                              >-</button>
+                              <span className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none" title="Nível do Item">
+                                Nv.{item.level || 1}
+                              </span>
+                              <button 
+                                onClick={() => onChangeLevel?.(item.id, Math.min(5, (item.level || 1) + 1))}
+                                className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
+                                disabled={isUpdating || (item.level || 1) >= 5}
+                              >+</button>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button 
+                                  className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                                  title="Adicionar Resistências"
+                                >
+                                  <ShieldPlus className="w-3 h-3" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                                <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
+                                {AVAILABLE_RESISTANCES.map(res => {
+                                  const isChecked = (item.custom_condition_resistances || []).includes(res);
+                                  return (
+                                    <DropdownMenuCheckboxItem
+                                      key={res}
+                                      checked={isChecked}
+                                      onCheckedChange={(checked) => {
+                                        if (!onChangeResistances) return;
+                                        let current = [...(item.custom_condition_resistances || [])];
+                                        if (checked) current.push(res);
+                                        else current = current.filter(r => r !== res);
+                                        onChangeResistances(item.id, current);
+                                      }}
+                                      className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                    >
+                                      {res}
+                                    </DropdownMenuCheckboxItem>
+                                  );
+                                })}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
                         ) : (
                           (item.level > 1) && (
                             <span className="text-[10px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold leading-none" title={`Nível ${item.level}`}>
@@ -190,6 +231,15 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                         }
                         return null;
                       })()}
+                      {item.custom_condition_resistances && item.custom_condition_resistances.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.custom_condition_resistances.map((res: string) => (
+                            <span key={res} className="text-[10px] px-1.5 py-0.5 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50">
+                              Resiste: {res}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 mt-2 sm:mt-0">
                       {item.items?.is_consumable && (
