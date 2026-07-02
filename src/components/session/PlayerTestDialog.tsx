@@ -218,7 +218,14 @@ export function PlayerTestDialog({
       setError('Insira um valor válido.')
       return
     }
-    executeSubmit(Number(resultValue))
+    
+    let finalResult = Number(resultValue);
+    if (activeTest.test_type !== 'Fé') {
+      const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
+      finalResult += attrMod + profBonus;
+    }
+    
+    executeSubmit(finalResult)
   }
 
   const handleSubmitPenalty = () => {
@@ -285,23 +292,12 @@ export function PlayerTestDialog({
       const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2)
 
       if (elapsed >= duration) {
-        // Final result
+        // Final base result
         const maxDice = activeTest.test_type === 'Fé' ? 100 : 20;
         const baseResult = Math.floor(Math.random() * maxDice) + 1
         
-        let finalResult = baseResult;
-        if (activeTest.test_type !== 'Fé') {
-          const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
-          finalResult = baseResult + attrMod + profBonus;
-        }
-
-        setResultValue(finalResult)
-        // Automatically submit after a tiny delay so the user sees the final number
-        setTimeout(() => {
-          if (isMounted.current) {
-            executeSubmit(finalResult)
-          }
-        }, 400)
+        setResultValue(baseResult)
+        setIsRolling(false) // Parar o estado de rolando
       } else {
         // Show random number
         const maxDice = activeTest.test_type === 'Fé' ? 100 : 20;
@@ -362,28 +358,58 @@ export function PlayerTestDialog({
                 </div>
               )}
               
-              <div>
-                <label className="block text-center text-sm font-medium text-stone-300 mb-3">
-                  Qual foi o resultado da rolagem?
+              <div className="flex flex-col items-center">
+                <label className="block text-center text-sm font-medium text-stone-300 mb-1">
+                  Qual foi o valor tirado no dado?
                 </label>
+                {activeTest.test_type !== 'Fé' && (
+                  <p className="text-center text-xs text-stone-500 mb-3">
+                    Seus bônus serão aplicados automaticamente.
+                  </p>
+                )}
+                
                 <input
                   type="number"
-                  min="0"
+                  min="1"
+                  max={activeTest.test_type === 'Fé' ? 100 : 20}
                   autoFocus
                   disabled={isRolling || isSubmitting}
                   value={resultValue}
                   onChange={(e) => setResultValue(e.target.value === '' ? '' : parseInt(e.target.value))}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isRolling && !isSubmitting) {
+                    if (e.key === 'Enter' && !isRolling && !isSubmitting && resultValue !== '') {
                       handleSubmit()
                     }
                   }}
-                  className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-amber-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70"
+                  className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-amber-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70 mb-2"
                   placeholder="0"
                 />
+
+                {resultValue !== '' && !isRolling && activeTest.test_type !== 'Fé' && (() => {
+                  const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
+                  const totalBonus = attrMod + profBonus;
+                  return (
+                    <div className="w-full bg-stone-800 border border-stone-700 px-4 py-3 rounded-lg flex justify-between items-center text-sm font-mono mt-2 animate-in fade-in zoom-in duration-200">
+                      <div className="flex flex-col items-center">
+                        <span className="text-stone-500 text-[10px] uppercase">Dado</span>
+                        <span className="text-stone-300">{resultValue}</span>
+                      </div>
+                      <span className="text-stone-600">+</span>
+                      <div className="flex flex-col items-center">
+                        <span className="text-stone-500 text-[10px] uppercase">Bônus</span>
+                        <span className="text-amber-500">{totalBonus >= 0 ? `+${totalBonus}` : totalBonus}</span>
+                      </div>
+                      <span className="text-stone-600">=</span>
+                      <div className="flex flex-col items-center">
+                        <span className="text-stone-500 text-[10px] uppercase">Total</span>
+                        <span className="text-white font-bold text-lg">{Number(resultValue) + totalBonus}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
-              {error && <div className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded">{error}</div>}
+              {error && <div className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded mt-2">{error}</div>}
 
               <div className="grid grid-cols-2 gap-3">
                 <button
