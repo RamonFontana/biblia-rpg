@@ -26,7 +26,8 @@ export type HealthModificationFormValues = z.infer<typeof HealthModificationSche
 // 3. Resolução Híbrida de Rolagem (Jogador)
 export const PhysicalRollSchema = z.object({
   attackRoll: z.number().int().min(1, "O dado deve ser no mínimo 1").max(30, "Valor irreal para um d20 + mod"),
-  damageRoll: z.number().int().min(0, "O dano não pode ser negativo").optional()
+  damageRoll: z.number().int().min(0, "O dano não pode ser negativo").optional(),
+  naturalRoll: z.number().int().min(1).max(20).optional()
 });
 
 export type PhysicalRollFormValues = z.infer<typeof PhysicalRollSchema>;
@@ -39,7 +40,7 @@ export interface CharacterEquipment {
   offHand: string | null;   // character_item_id
 }
 
-export interface ItemEffects {
+export type ItemEffects = {
   slot?: 'head' | 'body' | '1h' | '2h' | 'shield';
   acBonus?: number;       // For armor and shields
   damageDie?: string;     // e.g. "1d8", "1d6"
@@ -51,4 +52,9 @@ export interface ItemEffects {
 export interface ConditionEntry {
   conditionId: string;
   duration: number | null; // null = permanente/indefinido (até ser curado)
+}
+
+export type WeaponEffect = {
+  conditionId: string;
+  trigger: 'natural_18_plus';
 }

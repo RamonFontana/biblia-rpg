@@ -32,6 +32,9 @@ export const ITEMS_DB: ShopItem[] = [
   { id: 'arco_curto', name: 'Arco Curto', type: 'Arma', cost: 25, damage: '1d6 perfurante', category: 'Marcial', description: 'Distância (24/96m), Duas mãos, Munição', properties: ['ammunition'] },
   { id: 'arco_longo', name: 'Arco Longo', type: 'Arma', cost: 50, damage: '1d8 perfurante', category: 'Marcial', description: 'Distância (45/180m), Duas mãos, Pesada', properties: ['ammunition', 'heavy'] },
   { id: 'dardo', name: 'Dardo / Azagaia', type: 'Arma', cost: 3, damage: '1d6 perfurante', category: 'Simples', description: 'Arremesso (9/36m)', properties: ['thrown'] },
+  { id: 'espada_grande', name: 'Espada Grande de Ferro', type: 'Arma', cost: 50, damage: '2d6 cortante', category: 'Marcial', description: 'Pesada, Duas mãos.', properties: ['two-handed', 'heavy'] },
+  { id: 'martelo_guerra', name: 'Martelo de Guerra', type: 'Arma', cost: 50, damage: '2d6 concussão', category: 'Marcial', description: 'Pesada, Duas mãos.', properties: ['two-handed', 'heavy'] },
+  { id: 'clava_grande', name: 'Clava Grande', type: 'Arma', cost: 5, damage: '1d10 concussão', category: 'Simples', description: 'Pesada, Duas mãos.', properties: ['two-handed', 'heavy'] },
 
   // Consumíveis
   { id: 'odre', name: 'Odre (Água)', type: 'Consumível', cost: 1, description: 'Cura 2 PV. Sobrevivência no deserto (1 dia)', category: 'Todas' },

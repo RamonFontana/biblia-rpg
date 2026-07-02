@@ -1,8 +1,9 @@
-import { Target, ShieldPlus } from 'lucide-react';
+import { Target, ShieldPlus, Zap } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import type { CharacterEquipment } from '@/types/combat';
+import type { CharacterEquipment, WeaponEffect } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/data/itemsDb';
+import { CONDITIONS } from '@/data/conditions';
 
 interface InventoryListProps {
   inventoryItems: any[];
@@ -13,6 +14,7 @@ interface InventoryListProps {
   isGM?: boolean;
   onChangeLevel?: (characterItemId: string, newLevel: number) => void;
   onChangeResistances?: (characterItemId: string, newResistances: string[]) => void;
+  onChangeWeaponEffects?: (characterItemId: string, effects: WeaponEffect[]) => void;
 }
 
 const AVAILABLE_RESISTANCES = [
@@ -20,7 +22,7 @@ const AVAILABLE_RESISTANCES = [
   'Fogo', 'Frio', 'Ácido', 'Veneno'
 ];
 
-export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances }: InventoryListProps) {
+export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances, onChangeWeaponEffects }: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
       <div>
@@ -59,7 +61,10 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                 // Infer slot from category if missing
                 if (!itemSlot) {
                   const category = item.items?.category?.toUpperCase() || '';
-                  if (category.includes('SIMPLES') || category.includes('MARCIAL')) {
+                  const properties = item.items?.effects?.properties || [];
+                  if (properties.includes('two-handed')) {
+                    itemSlot = '2h';
+                  } else if (category.includes('SIMPLES') || category.includes('MARCIAL')) {
                     itemSlot = '1h'; // Default to 1h
                   } else if (category.includes('LEVE') || category.includes('MÉDI') || category.includes('PESAD') || category.includes('ARMADURA')) {
                     itemSlot = 'body';
@@ -149,38 +154,79 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                                 disabled={isUpdating || (item.level || 1) >= 5}
                               >+</button>
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button 
-                                  className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
-                                  title="Adicionar Resistências"
-                                >
-                                  <ShieldPlus className="w-3 h-3" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                                <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
-                                {AVAILABLE_RESISTANCES.map(res => {
-                                  const isChecked = (item.custom_condition_resistances || []).includes(res);
-                                  return (
-                                    <DropdownMenuCheckboxItem
-                                      key={res}
-                                      checked={isChecked}
-                                      onCheckedChange={(checked) => {
-                                        if (!onChangeResistances) return;
-                                        let current = [...(item.custom_condition_resistances || [])];
-                                        if (checked) current.push(res);
-                                        else current = current.filter(r => r !== res);
-                                        onChangeResistances(item.id, current);
-                                      }}
-                                      className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
-                                    >
-                                      {res}
-                                    </DropdownMenuCheckboxItem>
-                                  );
-                                })}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            
+                            {item.items?.type !== 'Arma' && item.items?.type !== 'Consumível' && item.items?.type !== 'Utilidade' && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button 
+                                    className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                                    title="Adicionar Resistências"
+                                  >
+                                    <ShieldPlus className="w-3 h-3" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
+                                  {AVAILABLE_RESISTANCES.map(res => {
+                                    const isChecked = (item.custom_condition_resistances || []).includes(res);
+                                    return (
+                                      <DropdownMenuCheckboxItem
+                                        key={res}
+                                        checked={isChecked}
+                                        onCheckedChange={(checked) => {
+                                          if (!onChangeResistances) return;
+                                          let current = [...(item.custom_condition_resistances || [])];
+                                          if (checked) current.push(res);
+                                          else current = current.filter(r => r !== res);
+                                          onChangeResistances(item.id, current);
+                                        }}
+                                        className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                      >
+                                        {res}
+                                      </DropdownMenuCheckboxItem>
+                                    );
+                                  })}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+
+                            {item.items?.type === 'Arma' && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button 
+                                    className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-amber-400 transition-colors flex items-center justify-center"
+                                    title="Adicionar Efeito de Arma (Natural 18+)"
+                                  >
+                                    <Zap className="w-3 h-3" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-amber-500/80">Efeitos Ofensivos (Nat 18+)</div>
+                                  {Object.values(CONDITIONS).map(cond => {
+                                    const isChecked = (item.weapon_effects || []).some((e: WeaponEffect) => e.conditionId === cond.id);
+                                    return (
+                                      <DropdownMenuCheckboxItem
+                                        key={cond.id}
+                                        checked={isChecked}
+                                        onCheckedChange={(checked) => {
+                                          if (!onChangeWeaponEffects) return;
+                                          let current = [...(item.weapon_effects || [])];
+                                          if (checked) {
+                                            current.push({ conditionId: cond.id, trigger: 'natural_18_plus' });
+                                          } else {
+                                            current = current.filter((e: WeaponEffect) => e.conditionId !== cond.id);
+                                          }
+                                          onChangeWeaponEffects(item.id, current);
+                                        }}
+                                        className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                      >
+                                        {cond.name}
+                                      </DropdownMenuCheckboxItem>
+                                    );
+                                  })}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </>
                         ) : (
                           (item.level > 1) && (
@@ -238,6 +284,19 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                               Resiste: {res}
                             </span>
                           ))}
+                        </div>
+                      )}
+                      {item.weapon_effects && item.weapon_effects.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.weapon_effects.map((effect: WeaponEffect) => {
+                            const cond = CONDITIONS[effect.conditionId as keyof typeof CONDITIONS];
+                            return (
+                              <span key={effect.conditionId} className="text-[10px] px-1.5 py-0.5 bg-amber-900/40 text-amber-300 rounded border border-amber-900/50 flex items-center gap-1" title="Aplicado em Natural 18+">
+                                <Zap className="w-2.5 h-2.5" />
+                                {cond?.name || effect.conditionId}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

@@ -14,7 +14,7 @@ import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { AbilityCard } from '../combat/AbilityCard';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { updateCharacter } from '@/features/character-management/api/characterApi';
-
+import { updateWeaponEffects } from '@/services/characterItemService';
 interface CharacterSheetViewProps {
   userId?: string;
   sessionId?: string;
@@ -88,6 +88,18 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
       // Realtime listener will automatically pick up the change and update state
     } catch (err) {
       console.error('Error updating item resistances:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
+
+  const handleUpdateWeaponEffects = async (characterItemId: string, newEffects: any[]) => {
+    setIsEquipping(true);
+    try {
+      await updateWeaponEffects(characterItemId, newEffects);
+      // Realtime listener will automatically pick up the change and update state
+    } catch (err) {
+      console.error('Error updating weapon effects:', err);
     } finally {
       setIsEquipping(false);
     }
@@ -218,6 +230,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               quantity,
               level,
               custom_condition_resistances,
+              weapon_effects,
               items (
                 id,
                 name,
@@ -267,6 +280,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               quantity,
               level,
               custom_condition_resistances,
+              weapon_effects,
               items (
                 id,
                 name,
@@ -538,6 +552,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               isGM={isGM}
               onChangeLevel={handleUpdateItemLevel}
               onChangeResistances={handleUpdateItemResistances}
+              onChangeWeaponEffects={handleUpdateWeaponEffects}
             />
           </div>
         </div>

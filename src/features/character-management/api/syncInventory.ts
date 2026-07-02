@@ -61,7 +61,7 @@ function getEffectsFromItemName(name: string) {
   if (dbItem.type === 'Escudo') slot = 'shield';
   else if (dbItem.type === 'Armadura') slot = 'body';
   else if (dbItem.type === 'Arma') {
-    if (dbItem.description && dbItem.description.includes('Duas mãos')) slot = '2h';
+    if ((dbItem.description && dbItem.description.includes('Duas mãos')) || (dbItem.properties && dbItem.properties.includes('two-handed'))) slot = '2h';
     else slot = '1h';
   }
   if (slot) effects.slot = slot;

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PhysicalRollSchema, type PhysicalRollFormValues } from '../../types/combat';
 import { supabase } from '@/lib/supabase';
 import { checkWeaponProficiency } from '@/lib/equipmentUtils';
+import { combatEngine } from '@/services/combatEngine';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
@@ -13,9 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 interface PhysicalRollFormProps {
   playerId: string;
   character?: any;
+  targetParticipantId?: string;
 }
 
-export function PhysicalRollForm({ playerId: _playerId, character }: PhysicalRollFormProps) {
+export function PhysicalRollForm({ playerId: _playerId, character, targetParticipantId }: PhysicalRollFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [equippedWeapon, setEquippedWeapon] = useState<any | null>(null);
   const [useVersatile, setUseVersatile] = useState(false);
@@ -41,13 +43,14 @@ export function PhysicalRollForm({ playerId: _playerId, character }: PhysicalRol
           items (
             name,
             effects
-          )
+          ),
+          weapon_effects
         `)
         .eq('id', character.equipment.mainHand)
         .single();
         
       if (!error && data) {
-        setEquippedWeapon(data.items);
+        setEquippedWeapon({ ...data.items, weapon_effects: data.weapon_effects });
       }
     }
     fetchEquippedWeapon();
@@ -70,6 +73,10 @@ export function PhysicalRollForm({ playerId: _playerId, character }: PhysicalRol
       // Como a especificação simplifica para demonstrar a rolagem enviando para o estado,
       // no futuro isso pode notificar o mestre ou selecionar o alvo no frontend.
       // Por enquanto, não aplicamos dano num id mocado.
+
+      if (values.naturalRoll && equippedWeapon?.weapon_effects && targetParticipantId) {
+        await combatEngine.checkWeaponEffects(equippedWeapon.weapon_effects, values.naturalRoll, targetParticipantId);
+      }
 
       console.log('Fired Roll Event:', values);
       form.reset();
@@ -130,6 +137,20 @@ export function PhysicalRollForm({ playerId: _playerId, character }: PhysicalRol
                     <FormLabel>Ataque (d20 + Mod)</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="naturalRoll"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Natural (Opcional, 1-20)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

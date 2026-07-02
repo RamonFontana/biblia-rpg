@@ -14,3 +14,15 @@ Este documento lista as armas disponíveis no cenário, com foco histórico e me
 | **Arco Curto** | 1d6 perfurante | Distância (24/96m), Duas mãos, Munição | 25 |
 | **Arco Longo** | 1d8 perfurante | Distância (45/180m), Duas mãos, Pesada | 50 |
 | **Dardo / Azagaia** | 1d6 perfurante | Arremesso (9/36m) | 3 |
+| **Espada Grande de Ferro** | 2d6 cortante | Pesada, Duas mãos | 50 |
+| **Martelo de Guerra** | 2d6 concussão | Pesada, Duas mãos | 50 |
+| **Clava Grande** | 1d10 concussão | Pesada, Duas mãos | 5 |
+
+## Efeitos de Arma
+
+O Mestre pode atribuir condições específicas a uma instância de arma de um personagem (ex: uma espada com lâmina serrilhada que causa sangramento, ou uma flecha envenenada). 
+
+- **Como funciona**: Estes efeitos são puramente mundanos (físicos ou químicos).
+- **Gatilho**: Para que o efeito seja ativado, o jogador deve obter um resultado **Natural 18 ou maior** no d20 da rolagem de ataque (~15% de chance). Se acertar o alvo com 18+, a condição é aplicada além do dano.
+- **Configuração**: O Mestre configura esses efeitos individualmente pelo painel de inventário do personagem, clicando no botão "Efeitos" (ícone de raio) ao lado da arma.
+- **Resistências**: Se o alvo possuir uma armadura com resistência à condição que a arma causa (conforme a regra de Resistência de Armadura), o sistema calculará e anulará o efeito de acordo com o nível da armadura.

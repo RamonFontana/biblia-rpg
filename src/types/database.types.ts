@@ -18,26 +18,32 @@ export type Database = {
         Row: {
           character_id: string
           created_at: string | null
+          custom_condition_resistances: string[] | null
           id: string
           item_id: string
           level: number
           quantity: number | null
+          weapon_effects: Json | null
         }
         Insert: {
           character_id: string
           created_at?: string | null
+          custom_condition_resistances?: string[] | null
           id?: string
           item_id: string
           level?: number
           quantity?: number | null
+          weapon_effects?: Json | null
         }
         Update: {
           character_id?: string
           created_at?: string | null
+          custom_condition_resistances?: string[] | null
           id?: string
           item_id?: string
           level?: number
           quantity?: number | null
+          weapon_effects?: Json | null
         }
         Relationships: [
           {
@@ -564,6 +570,7 @@ export type Database = {
       trade_items: {
         Row: {
           created_at: string
+          custom_condition_resistances: string[] | null
           id: string
           item_id: string
           level: number
@@ -573,6 +580,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_condition_resistances?: string[] | null
           id?: string
           item_id: string
           level?: number
@@ -582,6 +590,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_condition_resistances?: string[] | null
           id?: string
           item_id?: string
           level?: number
