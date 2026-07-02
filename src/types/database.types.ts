@@ -80,8 +80,10 @@ export type Database = {
           is_npc: boolean | null
           is_stable: boolean
           is_visible: boolean
+          level: number
           name: string
           narrative: Json | null
+          proficiencies: Json | null
           skills: Json | null
           stats: Json
           temptation: string | null
@@ -107,8 +109,10 @@ export type Database = {
           is_npc?: boolean | null
           is_stable?: boolean
           is_visible?: boolean
+          level?: number
           name: string
           narrative?: Json | null
+          proficiencies?: Json | null
           skills?: Json | null
           stats: Json
           temptation?: string | null
@@ -134,8 +138,10 @@ export type Database = {
           is_npc?: boolean | null
           is_stable?: boolean
           is_visible?: boolean
+          level?: number
           name?: string
           narrative?: Json | null
+          proficiencies?: Json | null
           skills?: Json | null
           stats?: Json
           temptation?: string | null

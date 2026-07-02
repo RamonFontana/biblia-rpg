@@ -20,13 +20,13 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 [P] Create Supabase migration to add `level` and `proficiencies` columns in `supabase/migrations/`
-- [ ] T003 [P] Update `src/types/database.types.ts` to include `level` and `proficiencies`
-- [ ] T004 Update `src/features/character-management/types/index.ts` to include `level` and `proficiencies` on `Character` and `DraftCharacter`
-- [ ] T005 [P] Create/Update `src/features/character-management/utils/characterMath.ts` to include standard 5e skills list and proficiency calculation `Math.floor((level - 1) / 4) + 2`
-- [ ] T006 [P] Create/Update `src/features/character-management/utils/rules/vocations.ts` to map eligible skills and saving throws by vocation
-- [ ] T006a [P] Implement unit tests for `characterMath.ts` in `src/features/character-management/utils/characterMath.test.ts`
-- [ ] T006b [P] Implement unit tests for `vocations.ts` in `src/features/character-management/utils/rules/vocations.test.ts`
+- [x] T002 [P] Create Supabase migration to add `level` and `proficiencies` columns in `supabase/migrations/`
+- [x] T003 [P] Update `src/types/database.types.ts` to include `level` and `proficiencies`
+- [x] T004 Update `src/features/character-management/types/index.ts` to include `level` and `proficiencies` on `Character` and `DraftCharacter`
+- [x] T005 [P] Create/Update `src/features/character-management/utils/characterMath.ts` to include standard 5e skills list and proficiency calculation `Math.floor((level - 1) / 4) + 2`
+- [x] T006 [P] Create/Update `src/features/character-management/utils/rules/vocations.ts` to map eligible skills and saving throws by vocation
+- [x] T006a [P] Implement unit tests for `characterMath.ts` in `src/features/character-management/utils/characterMath.test.ts`
+- [x] T006b [P] Implement unit tests for `vocations.ts` in `src/features/character-management/utils/vocations.test.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

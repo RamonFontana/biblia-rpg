@@ -49,7 +49,12 @@ export interface CharacterSkills {
   ability_uses?: Record<string, number>;
 }
 
+export interface CharacterProficiencies {
+  skill_proficiencies: string[];
+}
+
 export interface DraftCharacter {
+  level?: number;
   name?: string;
   tribe?: string;
   vocation?: string;
@@ -61,4 +66,5 @@ export interface DraftCharacter {
   coins?: number;
   narrative?: CharacterNarrative;
   skills?: CharacterSkills | EnemySkill[];
+  proficiencies?: CharacterProficiencies;
 }
