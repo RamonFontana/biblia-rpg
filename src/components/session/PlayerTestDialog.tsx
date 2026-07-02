@@ -61,7 +61,7 @@ export function PlayerTestDialog({
         const { supabase } = await import('@/lib/supabase')
         const { data: cData } = await supabase
           .from('characters')
-          .select('stats, equipment, level, proficiencies, attributes')
+          .select('stats, equipment, level, proficiencies, attributes, vocation')
           .eq('id', testResult.character_id)
           .single()
 
