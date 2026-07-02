@@ -389,17 +389,26 @@ export function PlayerTestDialog({
                   const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
                   const totalBonus = attrMod + profBonus;
                   return (
-                    <div className="w-full bg-stone-800 border border-stone-700 px-4 py-3 rounded-lg flex justify-between items-center text-sm font-mono mt-2 animate-in fade-in zoom-in duration-200">
+                    <div className="w-full bg-stone-800 border border-stone-700 px-3 py-3 rounded-lg flex justify-between items-center text-sm font-mono mt-2 animate-in fade-in zoom-in duration-200 overflow-x-auto">
                       <div className="flex flex-col items-center">
                         <span className="text-stone-500 text-[10px] uppercase">Dado</span>
                         <span className="text-stone-300">{resultValue}</span>
                       </div>
-                      <span className="text-stone-600">+</span>
+                      <span className="text-stone-600 mx-1">+</span>
                       <div className="flex flex-col items-center">
-                        <span className="text-stone-500 text-[10px] uppercase">Bônus</span>
-                        <span className="text-amber-500">{totalBonus >= 0 ? `+${totalBonus}` : totalBonus}</span>
+                        <span className="text-stone-500 text-[10px] uppercase">Mod</span>
+                        <span className="text-amber-500">{attrMod >= 0 ? `+${attrMod}` : attrMod}</span>
                       </div>
-                      <span className="text-stone-600">=</span>
+                      {profBonus > 0 && (
+                        <>
+                          <span className="text-stone-600 mx-1">+</span>
+                          <div className="flex flex-col items-center">
+                            <span className="text-stone-500 text-[10px] uppercase">Prof</span>
+                            <span className="text-emerald-500">+{profBonus}</span>
+                          </div>
+                        </>
+                      )}
+                      <span className="text-stone-600 mx-1">=</span>
                       <div className="flex flex-col items-center">
                         <span className="text-stone-500 text-[10px] uppercase">Total</span>
                         <span className="text-white font-bold text-lg">{Number(resultValue) + totalBonus}</span>
