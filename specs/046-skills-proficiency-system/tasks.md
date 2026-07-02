@@ -58,10 +58,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012a [US2] Create `CharacterSkillsList.tsx` and `CharacterSavingThrows.tsx` components to avoid bloating `CharacterSheetView.tsx`
-- [ ] T012 [US2] Update `src/components/character/CharacterSheetView.tsx` and its new child components to render the 18 standard 5e skills
-- [ ] T013 [US2] Calculate total skill modifier (`attribute modifier + proficiency bonus`) for each skill
-- [ ] T014 [US2] Add visual indicator (filled icon/badge) and tooltip for skills with proficiency in `CharacterSheetView.tsx`
+- [x] T012a [US2] Create `CharacterSkillsList.tsx` and `CharacterSavingThrows.tsx` components to avoid bloating `CharacterSheetView.tsx`
+- [x] T012 [US2] Update `src/components/character/CharacterSheetView.tsx` and its new child components to render the 18 standard 5e skills
+- [x] T013 [US2] Calculate total skill modifier (`attribute modifier + proficiency bonus`) for each skill
+- [x] T014 [US2] Add visual indicator (filled icon/badge) and tooltip for skills with proficiency in `CharacterSheetView.tsx`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -75,9 +75,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Update `src/components/character/CharacterSheetView.tsx` saving throws section
-- [ ] T016 [US3] Add visual proficiency indicator for saving throws mapped to the character's vocation
-- [ ] T017 [US3] Ensure saving throws without proficiency render correctly (+ mod only)
+- [x] T015 [US3] Update `src/components/character/CharacterSheetView.tsx` saving throws section
+- [x] T016 [US3] Add visual proficiency indicator for saving throws mapped to the character's vocation
+- [x] T017 [US3] Ensure saving throws without proficiency render correctly (+ mod only)
 
 **Checkpoint**: All user stories up to P2 should now be independently functional
 

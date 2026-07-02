@@ -13,6 +13,8 @@ import { calculateModifier, calculateProficiency, formatModifier } from '@/featu
 import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { AbilityCard } from '../combat/AbilityCard';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
+import { CharacterSkillsList } from './CharacterSkillsList';
+import { CharacterSavingThrows } from './CharacterSavingThrows';
 import { updateCharacter } from '@/features/character-management/api/characterApi';
 import { updateWeaponEffects } from '@/services/characterItemService';
 interface CharacterSheetViewProps {
@@ -445,6 +447,20 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             ))}
           </div>
         </div>
+
+        {/* Saving Throws */}
+        <CharacterSavingThrows 
+          attributes={attributes} 
+          level={(character as any).level || 1} 
+          vocation={vocation || ''} 
+        />
+
+        {/* Perícias */}
+        <CharacterSkillsList 
+          attributes={attributes} 
+          level={(character as any).level || 1} 
+          proficiencies={(character.proficiencies as any)?.skill_proficiencies || []}
+        />
 
         {/* Habilidades */}
         {character && !Array.isArray(character.skills) && getAbilitiesForCharacter(
