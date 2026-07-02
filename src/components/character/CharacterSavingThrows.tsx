@@ -39,17 +39,22 @@ export function CharacterSavingThrows({ attributes, level, vocation }: Character
           return (
             <div 
               key={attr.id} 
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border ${isProficient ? 'border-amber-500/50 bg-amber-500/10 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : 'border-stone-800 bg-stone-900'} `}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border ${isProficient ? 'border-amber-500/50 bg-amber-500/10 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : 'border-stone-800 bg-stone-900/50 opacity-70 hover:opacity-100 transition-opacity'} `}
             >
               <div className="flex items-center gap-1 mb-1">
-                <div className={`w-2 h-2 rounded-full border ${isProficient ? 'bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-transparent border-stone-600'}`} />
-                <span className={`text-[10px] font-bold uppercase ${isProficient ? 'text-amber-200' : 'text-stone-400'}`}>
+                <div className={`w-2 h-2 rounded-full border ${isProficient ? 'bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-transparent border-stone-700'}`} />
+                <span className={`text-[10px] font-bold uppercase ${isProficient ? 'text-amber-200' : 'text-stone-500'}`}>
                   {attr.name}
                 </span>
               </div>
-              <span className={`text-xl font-bold ${isProficient ? 'text-amber-400 drop-shadow-md' : 'text-stone-300'}`}>
-                {formatModifier(totalMod)}
-              </span>
+              <div className="flex flex-col items-center">
+                <span className={`text-xl font-bold leading-none ${isProficient ? 'text-amber-400 drop-shadow-md' : 'text-stone-400'}`}>
+                  {formatModifier(totalMod)}
+                </span>
+                <span className={`text-[8px] mt-1 uppercase tracking-wider ${isProficient ? 'text-amber-500/70' : 'text-stone-600'}`}>
+                  {isProficient ? 'Mod + Prof' : 'Apenas Mod'}
+                </span>
+              </div>
             </div>
           );
         })}
