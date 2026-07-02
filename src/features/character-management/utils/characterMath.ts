@@ -56,9 +56,7 @@ export function getTestModifiers(testType: string, charData: any): { attrMod: nu
 
   const skillInfo = SKILLS_LIST.find(s => s.name === testType);
   if (skillInfo) {
-    const attributeMap: Record<string, string> = { for: 'forca', des: 'destreza', vig: 'vigor', int: 'inteligencia', von: 'vontade', car: 'carisma', sab: 'vontade' };
-    const attrKey = attributeMap[skillInfo.attribute];
-    const attrValue = (charData.stats as any)?.[attrKey];
+    const attrValue = (charData.attributes as any)?.[skillInfo.attribute];
     attrMod = calculateModifier(attrValue);
     
     const proficiencies = (charData.proficiencies as any)?.skill_proficiencies || [];
@@ -67,11 +65,11 @@ export function getTestModifiers(testType: string, charData: any): { attrMod: nu
     }
   } else {
     const attrNameMap: Record<string, string> = {
-      'Força': 'forca', 'Destreza': 'destreza', 'Vigor': 'vigor', 'Inteligência': 'inteligencia', 'Vontade': 'vontade', 'Carisma': 'carisma'
+      'Força': 'for', 'Destreza': 'des', 'Constituição': 'con', 'Vigor': 'con', 'Inteligência': 'int', 'Sabedoria': 'sab', 'Vontade': 'sab', 'Carisma': 'car'
     };
     const mappedKey = attrNameMap[testType];
     if (mappedKey) {
-      const attrValue = (charData.stats as any)?.[mappedKey];
+      const attrValue = (charData.attributes as any)?.[mappedKey];
       attrMod = calculateModifier(attrValue);
     }
   }
