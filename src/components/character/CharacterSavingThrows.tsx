@@ -37,9 +37,9 @@ export function CharacterSavingThrows({ attributes, level, vocation }: Character
           const totalMod = isProficient ? attrMod + profBonus : attrMod;
 
           return (
-            <div 
-              key={attr.id} 
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border ${isProficient ? 'border-amber-500/50 bg-amber-500/10 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : 'border-stone-800 bg-stone-900/50 opacity-70 hover:opacity-100 transition-opacity'} `}
+            <div
+              key={attr.id}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border ${isProficient ? 'border-amber-500/50 bg-amber-500/10 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : 'border-stone-800 bg-stone-900/50'} `}
             >
               <div className="flex items-center gap-1 mb-1">
                 <div className={`w-2 h-2 rounded-full border ${isProficient ? 'bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-transparent border-stone-700'}`} />

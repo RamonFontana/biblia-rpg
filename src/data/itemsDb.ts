@@ -16,8 +16,8 @@ export const ITEMS_DB: ShopItem[] = [
   { id: 'lorica', name: 'Lorica de Escamas Pesada', type: 'Armadura', cost: 75, armorClass: 16, category: 'Pesada', description: 'CA: 16. Desvantagem em Furtividade, Requer For 13', properties: ['stealth_disadvantage', 'heavy'], slot: 'body', level: 4, conditionResistances: ['bleeding', 'stunned'] },
   
   // Elmos
-  { id: 'chapeu_couro', name: 'Chapéu de Couro Fervido', type: 'Armadura', cost: 2, armorClass: 0, category: 'Leve', description: 'Proteção básica para a cabeça.', slot: 'head', level: 1, conditionResistances: ['blinded'] },
-  { id: 'elmo_bronze', name: 'Elmo de Bronze Fechado', type: 'Armadura', cost: 15, armorClass: 0, category: 'Pesada', description: 'Proteção total do rosto. Desvantagem em Percepção.', properties: ['perception_disadvantage'], slot: 'head', level: 3, conditionResistances: ['stunned', 'blinded'] },
+  { id: 'chapeu_couro', name: 'Chapéu de Couro Fervido', type: 'Armadura', cost: 2, armorClass: 11, category: 'Leve', description: 'Proteção básica para a cabeça. CA +1', slot: 'head', level: 1, conditionResistances: ['blinded'] },
+  { id: 'elmo_bronze', name: 'Elmo de Bronze Fechado', type: 'Armadura', cost: 15, armorClass: 12, category: 'Pesada', description: 'Proteção total do rosto. CA +2. Desvantagem em Percepção.', properties: ['perception_disadvantage'], slot: 'head', level: 3, conditionResistances: ['stunned', 'blinded'] },
 
   { id: 'escudo', name: 'Escudo (Madeira/Bronze)', type: 'Escudo', cost: 10, armorClass: 2, category: 'Escudo', description: '+2 CA. Ocupa uma mão', slot: 'offHand', level: 2, conditionResistances: ['restrained'] },
 

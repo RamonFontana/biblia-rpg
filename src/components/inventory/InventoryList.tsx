@@ -56,11 +56,10 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
             <div className="space-y-2">
               {(items as any[]).map((item: any) => {
                 const itemEffects = item.items?.effects || {};
-                let itemSlot = itemEffects.slot;
-                
                 const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
                 const itemType = dbItem?.type || item.items?.category;
-
+                let itemSlot = itemEffects.slot || dbItem?.slot;
+                
                 // Infer slot from category if missing
                 if (!itemSlot) {
                   const category = item.items?.category?.toUpperCase() || '';
@@ -72,6 +71,8 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                     itemSlot = '2h';
                   } else if (type === 'ARMA' || category.includes('SIMPLES') || category.includes('MARCIAL')) {
                     itemSlot = '1h'; // Default to 1h
+                  } else if (item.items?.name?.toUpperCase().includes('CHAPÉU') || item.items?.name?.toUpperCase().includes('ELMO') || item.items?.name?.toUpperCase().includes('CAPUZ') || type === 'ELMO') {
+                    itemSlot = 'head';
                   } else if (type === 'ARMADURA' || category.includes('LEVE') || category.includes('MÉDI') || category.includes('PESAD') || category.includes('ARMADURA')) {
                     itemSlot = 'body';
                   } else if (type === 'ESCUDO' || category.includes('ESCUDO')) {

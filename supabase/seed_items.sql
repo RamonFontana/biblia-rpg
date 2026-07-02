@@ -104,7 +104,7 @@ ON CONFLICT (id) DO UPDATE SET
   condition_resistances = EXCLUDED.condition_resistances;
 
 INSERT INTO items (id, name, category, description, is_consumable, price, level, armor_class, damage, condition_resistances)
-VALUES ('chapeu_couro', 'Chapéu de Couro Fervido', 'Armadura', 'Proteção básica para a cabeça.', false, 2, 1, 0, NULL, ARRAY['blinded']::text[])
+VALUES ('chapeu_couro', 'Chapéu de Couro Fervido', 'Armadura', 'Proteção básica para a cabeça. CA +1', false, 2, 1, 11, NULL, ARRAY['blinded']::text[])
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   category = EXCLUDED.category,
@@ -117,7 +117,7 @@ ON CONFLICT (id) DO UPDATE SET
   condition_resistances = EXCLUDED.condition_resistances;
 
 INSERT INTO items (id, name, category, description, is_consumable, price, level, armor_class, damage, condition_resistances)
-VALUES ('elmo_bronze', 'Elmo de Bronze Fechado', 'Armadura', 'Proteção total do rosto. Desvantagem em Percepção.', false, 15, 3, 0, NULL, ARRAY['stunned','blinded']::text[])
+VALUES ('elmo_bronze', 'Elmo de Bronze Fechado', 'Armadura', 'Proteção total do rosto. CA +2. Desvantagem em Percepção.', false, 15, 3, 12, NULL, ARRAY['stunned','blinded']::text[])
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   category = EXCLUDED.category,
