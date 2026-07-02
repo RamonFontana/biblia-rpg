@@ -25,6 +25,8 @@
 - [ ] T004 Update `src/features/character-management/types/index.ts` to include `level` and `proficiencies` on `Character` and `DraftCharacter`
 - [ ] T005 [P] Create/Update `src/features/character-management/utils/characterMath.ts` to include standard 5e skills list and proficiency calculation `Math.floor((level - 1) / 4) + 2`
 - [ ] T006 [P] Create/Update `src/features/character-management/utils/rules/vocations.ts` to map eligible skills and saving throws by vocation
+- [ ] T006a [P] Implement unit tests for `characterMath.ts` in `src/features/character-management/utils/characterMath.test.ts`
+- [ ] T006b [P] Implement unit tests for `vocations.ts` in `src/features/character-management/utils/rules/vocations.test.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -56,7 +58,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Update `src/components/character/CharacterSheetView.tsx` to render the 18 standard 5e skills
+- [ ] T012a [US2] Create `CharacterSkillsList.tsx` and `CharacterSavingThrows.tsx` components to avoid bloating `CharacterSheetView.tsx`
+- [ ] T012 [US2] Update `src/components/character/CharacterSheetView.tsx` and its new child components to render the 18 standard 5e skills
 - [ ] T013 [US2] Calculate total skill modifier (`attribute modifier + proficiency bonus`) for each skill
 - [ ] T014 [US2] Add visual indicator (filled icon/badge) and tooltip for skills with proficiency in `CharacterSheetView.tsx`
 

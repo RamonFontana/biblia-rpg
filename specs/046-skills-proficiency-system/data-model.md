@@ -27,10 +27,6 @@ interface CharacterProficiencies {
   // Lista de nomes das perícias em que o personagem possui proficiência.
   // Ex: ["Atletismo", "Percepção"]
   skill_proficiencies: string[];
-  
-  // Lista de atributos para os testes de resistência (saving throws) em que o personagem possui proficiência.
-  // Baseado na vocação. Ex: ["FOR", "CON"]
-  saving_throws: string[];
 }
 ```
 
@@ -79,7 +75,6 @@ export interface Character extends DraftCharacter {
   level: number;
   proficiencies?: {
     skill_proficiencies: string[];
-    saving_throws: string[];
   } | null;
 }
 ```
@@ -92,7 +87,6 @@ export interface DraftCharacter {
   level?: number;
   proficiencies?: {
     skill_proficiencies: string[];
-    saving_throws: string[];
   };
 }
 ```

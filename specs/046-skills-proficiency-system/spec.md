@@ -125,7 +125,7 @@ Como jogador, quero que ao realizar uma rolagem de perícia ou teste de resistê
   - Caçador / Nômade: FOR e DES
   - Sacerdote / Sábio: SAB e CAR
 - **FR-007**: O sistema DEVE exibir tooltips ao interagir com uma perícia ou teste de resistência, detalhando a composição do bônus (modificador do atributo ± proficiência = total).
-- **FR-008**: O sistema DEVE persistir as perícias selecionadas em uma nova coluna `proficiencies` (JSON) na tabela `characters`, separada do campo `skills` existente (que armazena `path_choices` e `ability_uses`). O formato será: `{ "skill_proficiencies": string[], "saving_throws": string[] }`.
+- **FR-008**: O sistema DEVE persistir as perícias selecionadas em uma nova coluna `proficiencies` (JSON) na tabela `characters`, separada do campo `skills` existente (que armazena `path_choices` e `ability_uses`). O formato será: `{ "skill_proficiencies": string[] }`.
 - **FR-009**: O sistema DEVE permitir edição das perícias selecionadas na tela de edição do personagem, mantendo as mesmas regras de limite da vocação.
 - **FR-013**: O sistema DEVE resetar as perícias selecionadas automaticamente se a vocação do personagem for alterada durante a edição, redirecionando o jogador para a etapa de perícias com a lista elegível da nova vocação.
 - **FR-010**: O sistema DEVE ser retrocompatível com personagens criados antes da feature, tratando-os como sem perícias selecionadas (todos os valores exibidos sem bônus de proficiência).
