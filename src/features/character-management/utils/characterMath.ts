@@ -22,7 +22,11 @@ export const SKILLS_LIST = [
 export const TEST_GROUPS = [
   {
     label: 'Atributos',
-    options: ['Força', 'Destreza', 'Vigor', 'Inteligência', 'Vontade', 'Carisma']
+    options: ['Força', 'Destreza', 'Constituição', 'Inteligência', 'Sabedoria', 'Carisma']
+  },
+  {
+    label: 'Testes de Resistência',
+    options: ['Resistência (Força)', 'Resistência (Destreza)', 'Resistência (Constituição)', 'Resistência (Inteligência)', 'Resistência (Sabedoria)', 'Resistência (Carisma)']
   },
   {
     label: 'Perícias',
@@ -49,10 +53,33 @@ export function formatModifier(modifier: number): string {
   return modifier >= 0 ? `+${modifier}` : `${modifier}`;
 }
 
+import { getVocationRules } from './rules/vocations';
+
 export function getTestModifiers(testType: string, charData: any): { attrMod: number, profBonus: number } {
   let attrMod = 0;
   let profBonus = 0;
   if (!charData) return { attrMod, profBonus };
+
+  const isSavingThrow = testType.startsWith('Resistência');
+  
+  if (isSavingThrow) {
+    const attrName = testType.replace('Resistência (', '').replace(')', '');
+    const attrNameMap: Record<string, string> = {
+      'Força': 'for', 'Destreza': 'des', 'Constituição': 'con', 'Inteligência': 'int', 'Sabedoria': 'sab', 'Carisma': 'car'
+    };
+    const mappedKey = attrNameMap[attrName];
+    if (mappedKey) {
+      const attrValue = (charData.attributes as any)?.[mappedKey];
+      attrMod = calculateModifier(attrValue);
+      
+      const rules = getVocationRules(charData.vocation);
+      const savingThrows = rules?.savingThrows || [];
+      if (savingThrows.includes(mappedKey)) {
+        profBonus = calculateProficiency(charData.level || 1);
+      }
+    }
+    return { attrMod, profBonus };
+  }
 
   const skillInfo = SKILLS_LIST.find(s => s.name === testType);
   if (skillInfo) {
