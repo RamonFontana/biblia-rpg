@@ -11,7 +11,7 @@ interface MasterTestDialogProps {
   playerCharacters: { character: Character; profile: any | null }[]
 }
 
-const TEST_TYPES = ['Percepção', 'Fé', 'Sobrevivência', 'Vigor', 'Vontade', 'Destreza', 'Força', 'Carisma']
+import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath'
 
 export function MasterTestDialog({
   sessionId,
@@ -21,7 +21,7 @@ export function MasterTestDialog({
   testResults,
   playerCharacters
 }: MasterTestDialogProps) {
-  const [testType, setTestType] = useState(TEST_TYPES[0])
+  const [testType, setTestType] = useState(TEST_GROUPS[0].options[0])
   const [difficulty, setDifficulty] = useState(10)
   const [faithModifierType, setFaithModifierType] = useState<'mercy' | 'punishment'>('mercy')
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
@@ -152,13 +152,16 @@ export function MasterTestDialog({
                     {result.status === 'pending' ? (
                       <span className="text-stone-500 italic text-sm animate-pulse">Aguardando...</span>
                     ) : (
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-mono bg-stone-900 px-2 py-1 rounded">{result.result_value}</span>
-                        {result.is_approved ? (
-                          <span className="text-emerald-500 font-bold px-2 py-1 bg-emerald-500/10 rounded">Aprovado</span>
-                        ) : (
-                          <span className="text-red-500 font-bold px-2 py-1 bg-red-500/10 rounded">Reprovado</span>
-                        )}
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-4">
+                          <span className="text-lg font-mono bg-stone-900 px-2 py-1 rounded">{result.result_value}</span>
+                          {result.is_approved ? (
+                            <span className="text-emerald-500 font-bold px-2 py-1 bg-emerald-500/10 rounded">Aprovado</span>
+                          ) : (
+                            <span className="text-red-500 font-bold px-2 py-1 bg-red-500/10 rounded">Reprovado</span>
+                          )}
+                        </div>
+                        <span className="text-xs font-mono text-stone-500">{getTestBreakdown(currentActiveTest.test_type, result.result_value, pc?.character)}</span>
                       </div>
                     )}
                   </div>
@@ -207,8 +210,12 @@ export function MasterTestDialog({
                 onChange={(e) => setTestType(e.target.value)}
                 className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-500"
               >
-                {TEST_TYPES.map(t => (
-                  <option key={t} value={t}>{t}</option>
+                {TEST_GROUPS.map(group => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

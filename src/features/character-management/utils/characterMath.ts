@@ -19,6 +19,21 @@ export const SKILLS_LIST = [
   { id: 'sobrevivencia', name: 'Sobrevivência', attribute: 'sab' },
 ] as const;
 
+export const TEST_GROUPS = [
+  {
+    label: 'Atributos',
+    options: ['Força', 'Destreza', 'Vigor', 'Inteligência', 'Vontade', 'Carisma']
+  },
+  {
+    label: 'Perícias',
+    options: SKILLS_LIST.map(s => s.name)
+  },
+  {
+    label: 'Fé',
+    options: ['Fé']
+  }
+];
+
 export type SkillId = typeof SKILLS_LIST[number]['id'];
 
 export function calculateModifier(attributeValue: number | undefined | null): number {
@@ -32,4 +47,49 @@ export function calculateProficiency(level: number = 1): number {
 
 export function formatModifier(modifier: number): string {
   return modifier >= 0 ? `+${modifier}` : `${modifier}`;
+}
+
+export function getTestModifiers(testType: string, charData: any): { attrMod: number, profBonus: number } {
+  let attrMod = 0;
+  let profBonus = 0;
+  if (!charData) return { attrMod, profBonus };
+
+  const skillInfo = SKILLS_LIST.find(s => s.name === testType);
+  if (skillInfo) {
+    const attributeMap: Record<string, string> = { for: 'forca', des: 'destreza', vig: 'vigor', int: 'inteligencia', von: 'vontade', car: 'carisma', sab: 'vontade' };
+    const attrKey = attributeMap[skillInfo.attribute];
+    const attrValue = (charData.stats as any)?.[attrKey];
+    attrMod = calculateModifier(attrValue);
+    
+    const proficiencies = (charData.proficiencies as any)?.skill_proficiencies || [];
+    if (proficiencies.includes(skillInfo.id)) {
+      profBonus = calculateProficiency(charData.level || 1);
+    }
+  } else {
+    const attrNameMap: Record<string, string> = {
+      'Força': 'forca', 'Destreza': 'destreza', 'Vigor': 'vigor', 'Inteligência': 'inteligencia', 'Vontade': 'vontade', 'Carisma': 'carisma'
+    };
+    const mappedKey = attrNameMap[testType];
+    if (mappedKey) {
+      const attrValue = (charData.stats as any)?.[mappedKey];
+      attrMod = calculateModifier(attrValue);
+    }
+  }
+
+  return { attrMod, profBonus };
+}
+
+export function getTestBreakdown(testType: string, resultValue: number | null, charData: any): string {
+  if (resultValue === null) return '';
+  if (testType === 'Fé') return `1d100 (${resultValue})`;
+
+  const { attrMod, profBonus } = getTestModifiers(testType, charData);
+  const totalModifiers = attrMod + profBonus;
+  const d20 = resultValue - totalModifiers;
+
+  if (attrMod === 0 && profBonus === 0) {
+    return `1d20 (${d20})`;
+  }
+  
+  return `1d20 (${d20}) + Mod (${attrMod})${profBonus > 0 ? ` + Prof (${profBonus})` : ''} = ${resultValue}`;
 }

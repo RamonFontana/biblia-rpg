@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { type SessionTest, type SessionTestResult, sessionTestService } from '@/services/sessionTestService'
+import { getTestModifiers, getTestBreakdown } from '@/features/character-management/utils/characterMath'
 
 interface PlayerTestDialogProps {
   isOpen: boolean
@@ -25,6 +26,7 @@ export function PlayerTestDialog({
   // Equipment and passive effects
   const [hasStealthDisadvantage, setHasStealthDisadvantage] = useState(false)
   const [faithPenalty, setFaithPenalty] = useState(0)
+  const [charData, setCharData] = useState<any>(null)
   
   // Faith test penalty state
   const [showPenaltyScreen, setShowPenaltyScreen] = useState(false)
@@ -57,9 +59,9 @@ export function PlayerTestDialog({
       // Fetch character stats, equipment, and items
       const fetchCharContext = async () => {
         const { supabase } = await import('@/lib/supabase')
-        const { data: charData } = await supabase
+        const { data: cData } = await supabase
           .from('characters')
-          .select('stats, equipment')
+          .select('stats, equipment, level, proficiencies')
           .eq('id', testResult.character_id)
           .single()
 
@@ -71,8 +73,8 @@ export function PlayerTestDialog({
         let stealthDis = false;
         let penaltyF = 0;
 
-        if (charData && charItems) {
-          const equipmentIds = Object.values(charData.equipment || {}).filter(Boolean) as string[];
+        if (cData && charItems) {
+          const equipmentIds = Object.values(cData.equipment || {}).filter(Boolean) as string[];
           for (const cItem of charItems) {
             const effects = (cItem.items as any)?.effects || {};
             // Check passive penalty regardless of being equipped
@@ -90,6 +92,7 @@ export function PlayerTestDialog({
         if (isMounted.current) {
           setHasStealthDisadvantage(stealthDis);
           setFaithPenalty(penaltyF);
+          setCharData(cData);
         }
       }
       fetchCharContext();
@@ -120,15 +123,16 @@ export function PlayerTestDialog({
           
           <div className="p-4 bg-stone-800 rounded mb-4">
             <p className="text-stone-400 text-sm mb-1">Seu Resultado</p>
-            <div className="flex justify-center items-center gap-4">
-              <span className="text-3xl font-mono bg-stone-950 px-4 py-2 rounded-lg border border-stone-700">{testResult.result_value}</span>
-              {testResult.is_approved ? (
-                <span className="text-emerald-500 font-bold px-4 py-2 bg-emerald-500/10 rounded-lg text-xl border border-emerald-500/20">Aprovado!</span>
-              ) : (
-                <div className="flex flex-col items-center">
+            <div className="flex flex-col justify-center items-center gap-2">
+              <div className="flex justify-center items-center gap-4">
+                <span className="text-3xl font-mono bg-stone-950 px-4 py-2 rounded-lg border border-stone-700">{testResult.result_value}</span>
+                {testResult.is_approved ? (
+                  <span className="text-emerald-500 font-bold px-4 py-2 bg-emerald-500/10 rounded-lg text-xl border border-emerald-500/20">Aprovado!</span>
+                ) : (
                   <span className="text-red-500 font-bold px-4 py-2 bg-red-500/10 rounded-lg text-xl border border-red-500/20">Reprovado</span>
-                </div>
-              )}
+                )}
+              </div>
+              <p className="text-stone-400 font-mono text-sm mt-2">{getTestBreakdown(activeTest.test_type, testResult.result_value, charData)}</p>
             </div>
             
             {!testResult.is_approved && activeTest.test_type === 'Fé' && (
@@ -283,7 +287,14 @@ export function PlayerTestDialog({
       if (elapsed >= duration) {
         // Final result
         const maxDice = activeTest.test_type === 'Fé' ? 100 : 20;
-        const finalResult = Math.floor(Math.random() * maxDice) + 1
+        const baseResult = Math.floor(Math.random() * maxDice) + 1
+        
+        let finalResult = baseResult;
+        if (activeTest.test_type !== 'Fé') {
+          const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
+          finalResult = baseResult + attrMod + profBonus;
+        }
+
         setResultValue(finalResult)
         // Automatically submit after a tiny delay so the user sees the final number
         setTimeout(() => {

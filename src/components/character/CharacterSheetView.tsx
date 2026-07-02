@@ -367,7 +367,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           </span>
           <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm flex items-center gap-1">
             <Zap className="w-3 h-3 text-blue-400" />
-            Proficiência: <span className="text-stone-200 font-medium">+{calculateProficiency(1)}</span>
+            Proficiência: <span className="text-stone-200 font-medium">+{calculateProficiency((character as any).level || 1)}</span>
           </span>
         </div>
         </div>

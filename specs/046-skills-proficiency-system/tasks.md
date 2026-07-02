@@ -91,8 +91,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T018 [US4] Ensure the proficiency bonus is dynamically calculated in the Character Sheet header using the character's `level` field
-- [ ] T019 [US4] Verify that level scaling cascades correctly into all skill and saving throw components in `CharacterSheetView.tsx`
+- [x] T018 [US4] Ensure the proficiency bonus is dynamically calculated in the Character Sheet header using the character's `level` field
+- [x] T019 [US4] Verify that level scaling cascades correctly into all skill and saving throw components in `CharacterSheetView.tsx`
 
 ---
 
@@ -104,22 +104,18 @@
 
 ### Implementation for User Story 5
 
-- [ ] T020 [P] [US5] Refactor `TEST_TYPES` in `src/components/session/PlayerTestDialog.tsx` into 3 groups: Attributes, Skills, Faith
-- [ ] T021 [P] [US5] Refactor `TEST_TYPES` in `src/components/session/MasterTestDialog.tsx` into 3 groups
-- [ ] T022 [US5] Update the dice rolling logic to append proficiency bonus when a skill test is rolled and the character is proficient
-- [ ] T023 [US5] Format the chat output message to explicitly show `1d20 + AttrMod + ProfBonus = Total`
-- [ ] T024 [US5] Ensure Faith rolls (d100) explicitly bypass any proficiency logic
+- [x] T020 [P] [US5] Refactor `TEST_TYPES` in `src/components/session/PlayerTestDialog.tsx` into 3 groups: Attributes, Skills, Faith
+- [x] T021 [P] [US5] Refactor `TEST_TYPES` in `src/components/session/MasterTestDialog.tsx` into 3 groups
+- [x] T022 [US5] Update the dice rolling logic to append proficiency bonus when a skill test is rolled and the character is proficient
+- [x] T023 [US5] Format the chat output message to explicitly show `1d20 + AttrMod + ProfBonus = Total`
+- [x] T024 [US5] Ensure Faith rolls (d100) explicitly bypass any proficiency logic
 
 **Checkpoint**: All user stories should now be independently functional
 
----
+## Phase 8: Final Review & Quality Checks
 
-## Phase 8: Polish & Cross-Cutting Concerns
-
-**Purpose**: Improvements that affect multiple user stories
-
-- [ ] T025 [P] Run linter and formatting checks
-- [ ] T026 Verify retrocompatibility handling for characters without `level` or `proficiencies`
+- [x] T025 [P] Run linter and formatting checks
+- [x] T026 Verify retrocompatibility handling for characters without `level` or `proficiencies`
 
 ---
 
