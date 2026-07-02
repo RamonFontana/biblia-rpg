@@ -40,11 +40,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Update `src/features/character-creation/store/useCharacterCreationStore.ts` to handle `proficiencies` state and reset logic on vocation change
-- [ ] T008 [US1] Create `src/features/character-creation/components/steps/SkillsStep.tsx` UI step
-- [ ] T009 [US1] Update wizard layout to include the new `SkillsStep`
-- [ ] T010 [US1] Add logic to limit maximum selectable skills based on vocation in `SkillsStep.tsx`
-- [ ] T011 [US1] Implement edge case handling: Reset skills automatically when vocation changes during edit mode
+- [x] T007 [P] [US1] Update `src/features/character-creation/store/useCharacterCreationStore.ts` to handle `proficiencies` state and reset logic on vocation change
+- [x] T008 [US1] Create `src/features/character-creation/components/steps/SkillsStep.tsx` UI step
+- [x] T009 [US1] Update wizard layout to include the new `SkillsStep`
+- [x] T010 [US1] Add logic to limit maximum selectable skills based on vocation in `SkillsStep.tsx`
+- [x] T011 [US1] Implement edge case handling: Reset skills automatically when vocation changes during edit mode
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 

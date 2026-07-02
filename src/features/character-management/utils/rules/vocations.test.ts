@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getVocationRules, VOCATION_RULES } from './vocations';
+import { getVocationRules } from './vocations';
 
 describe('vocations rules', () => {
   describe('getVocationRules', () => {

@@ -1,4 +1,4 @@
-import { SkillId } from '../characterMath';
+import type { SkillId } from '../characterMath';
 
 export interface VocationRules {
   id: string;

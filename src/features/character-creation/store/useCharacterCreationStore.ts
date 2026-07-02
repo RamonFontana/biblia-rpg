@@ -20,6 +20,7 @@ interface CharacterCreationState {
   setStats: (stats: CharacterStats) => void;
   setEquipment: (equipment: EquipmentItem[], remainingCoins: number) => void;
   setNarrative: (narrative: CharacterNarrative) => void;
+  setProficiencies: (proficiencies: { skill_proficiencies: string[] }) => void;
 }
 
 const initialState: DraftCharacter = {
@@ -45,10 +46,24 @@ export const useCharacterCreationStore = create<CharacterCreationState>((set) =>
 
   setName: (name) => set((state) => ({ draft: { ...state.draft, name } })),
   setTribe: (tribe) => set((state) => ({ draft: { ...state.draft, tribe } })),
-  setVocation: (vocation) => set((state) => ({ draft: { ...state.draft, vocation } })),
+  setVocation: (vocation) => set((state) => {
+    const isVocationChanged = state.draft.vocation !== vocation;
+    const newProficiencies = isVocationChanged 
+      ? { skill_proficiencies: [] } 
+      : state.draft.proficiencies;
+      
+    return { 
+      draft: { 
+        ...state.draft, 
+        vocation,
+        proficiencies: newProficiencies
+      } 
+    };
+  }),
   setAttributes: (attributes) => set((state) => ({ draft: { ...state.draft, attributes } })),
   setFaithAspects: (fortress, temptation) => set((state) => ({ draft: { ...state.draft, fortress, temptation } })),
   setStats: (stats) => set((state) => ({ draft: { ...state.draft, stats } })),
   setEquipment: (equipment, remainingCoins) => set((state) => ({ draft: { ...state.draft, equipment, coins: remainingCoins } })),
   setNarrative: (narrative) => set((state) => ({ draft: { ...state.draft, narrative } })),
+  setProficiencies: (proficiencies) => set((state) => ({ draft: { ...state.draft, proficiencies } })),
 }));

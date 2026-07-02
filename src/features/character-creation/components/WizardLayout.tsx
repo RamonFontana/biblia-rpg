@@ -8,6 +8,7 @@ import { InitialStats } from './steps/InitialStats';
 import { EquipmentMerchant } from './steps/EquipmentMerchant';
 import { NarrativeDetails } from './steps/NarrativeDetails';
 import { Summary } from './steps/Summary';
+import { SkillsStep } from './steps/SkillsStep';
 
 interface WizardLayoutProps {
   children?: React.ReactNode;
@@ -25,21 +26,23 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
       case 3:
         return <AttributeGeneration />;
       case 4:
-        return <FaithAspects />;
+        return <SkillsStep />;
       case 5:
-        return <InitialStats />;
+        return <FaithAspects />;
       case 6:
-        return <EquipmentMerchant />;
+        return <InitialStats />;
       case 7:
-        return <NarrativeDetails />;
+        return <EquipmentMerchant />;
       case 8:
+        return <NarrativeDetails />;
+      case 9:
         return <Summary />;
       default:
         return <div>Passo Desconhecido</div>;
     }
   };
 
-  const stepsLabels = ['Tribo', 'Vocação', 'Atributos', 'Fé', 'Status', 'Equipamento', 'Narrativa', 'Resumo'];
+  const stepsLabels = ['Tribo', 'Vocação', 'Atributos', 'Perícias', 'Fé', 'Status', 'Equipamento', 'Narrativa', 'Resumo'];
 
   return (
     <div className="min-h-screen bg-stone-900 text-stone-100 p-0 sm:p-4 md:p-8">
@@ -48,11 +51,11 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
           <h1 className="text-3xl font-serif text-amber-500">
             {editingId ? 'Edição de Personagem' : 'Criação de Personagem'}
           </h1>
-          <p className="text-stone-400 mt-2">Passo {currentStep} de 8</p>
+          <p className="text-stone-400 mt-2">Passo {currentStep} de 9</p>
           <div className="w-full bg-stone-700 h-2 mt-4 rounded-full overflow-hidden">
             <div 
               className="bg-amber-500 h-full transition-all duration-300" 
-              style={{ width: `${(currentStep / 8) * 100}%` }}
+              style={{ width: `${(currentStep / 9) * 100}%` }}
             />
           </div>
           {editingId && (
