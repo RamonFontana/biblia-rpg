@@ -58,24 +58,28 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                 const itemEffects = item.items?.effects || {};
                 let itemSlot = itemEffects.slot;
                 
+                const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
+                const itemType = dbItem?.type || item.items?.category;
+
                 // Infer slot from category if missing
                 if (!itemSlot) {
                   const category = item.items?.category?.toUpperCase() || '';
+                  const type = itemType?.toUpperCase() || '';
                   const properties = item.items?.effects?.properties || [];
-                  if (properties.includes('two-handed')) {
+                  const description = item.items?.description?.toUpperCase() || dbItem?.description?.toUpperCase() || '';
+                  
+                  if (properties.includes('two-handed') || description.includes('DUAS MÃOS')) {
                     itemSlot = '2h';
-                  } else if (category.includes('SIMPLES') || category.includes('MARCIAL')) {
+                  } else if (type === 'ARMA' || category.includes('SIMPLES') || category.includes('MARCIAL')) {
                     itemSlot = '1h'; // Default to 1h
-                  } else if (category.includes('LEVE') || category.includes('MÉDI') || category.includes('PESAD') || category.includes('ARMADURA')) {
+                  } else if (type === 'ARMADURA' || category.includes('LEVE') || category.includes('MÉDI') || category.includes('PESAD') || category.includes('ARMADURA')) {
                     itemSlot = 'body';
-                  } else if (category.includes('ESCUDO')) {
+                  } else if (type === 'ESCUDO' || category.includes('ESCUDO')) {
                     itemSlot = 'shield';
                   }
                 }
                 
                 const normalizedEffects = { ...itemEffects, slot: itemSlot };
-
-                const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
                 
                 // Fallback and scaling logic for healing
                 let healDice = normalizedEffects.heal_dice;
@@ -155,7 +159,7 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                               >+</button>
                             </div>
                             
-                            {item.items?.type !== 'Arma' && item.items?.type !== 'Consumível' && item.items?.type !== 'Utilidade' && (
+                            {itemType !== 'Arma' && itemType !== 'Consumível' && itemType !== 'Utilidade' && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button 
@@ -190,7 +194,7 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                               </DropdownMenu>
                             )}
 
-                            {item.items?.type === 'Arma' && (
+                            {itemType === 'Arma' && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button 

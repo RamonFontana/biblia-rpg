@@ -77,11 +77,11 @@ export function Step5Summary() {
         </div>
       )}
 
-      <div className="flex justify-between pt-4 border-t">
-        <Button type="button" variant="outline" onClick={store.prevStep} disabled={isSubmitting}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={store.prevStep} disabled={isSubmitting} className="w-full sm:w-auto">
           Voltar
         </Button>
-        <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+        <Button type="button" onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
           {isSubmitting ? 'Iniciando Sessão...' : 'Iniciar Sessão'}
         </Button>
       </div>

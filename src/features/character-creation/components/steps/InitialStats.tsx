@@ -59,17 +59,17 @@ export function InitialStats() {
 
       </div>
 
-      <div className="flex justify-between mt-8 pt-4 border-t border-stone-700">
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
         <button 
           type="button"
           onClick={prevStep}
-          className="px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors"
+          className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
         >
           Voltar
         </button>
         <button 
           onClick={nextStep}
-          className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors"
+          className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
         >
           Avançar
         </button>

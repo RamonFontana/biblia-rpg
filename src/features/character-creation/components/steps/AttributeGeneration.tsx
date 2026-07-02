@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { attributesSchema } from '../../schemas/characterSchema';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
+import { useQuickSave } from '../../hooks/useQuickSave';
 import { Dices, List } from 'lucide-react';
 import type { CharacterAttributes } from '../../types';
 
@@ -19,13 +20,14 @@ const LABELS: Record<keyof CharacterAttributes, string> = {
 };
 
 export function AttributeGeneration() {
-  const { draft, setAttributes, nextStep, prevStep } = useCharacterCreationStore();
+  const { draft, setAttributes, nextStep, prevStep, isLocked } = useCharacterCreationStore();
+  const { quickSave, saving, message, isEditing } = useQuickSave();
   
   const [method, setMethod] = useState<'array' | 'dice' | null>(null);
   const [availableValues, setAvailableValues] = useState<number[]>(STANDARD_ARRAY);
   const [rolls, setRolls] = useState<number[]>([]);
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, getValues, watch, formState: { errors } } = useForm({
     resolver: zodResolver(attributesSchema),
     defaultValues: {
       attributes: draft.attributes || { for: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 }
@@ -33,6 +35,13 @@ export function AttributeGeneration() {
   });
 
   const currentAttributes = watch('attributes');
+
+  React.useEffect(() => {
+    if (isLocked) {
+      setMethod('array');
+      setAvailableValues(Object.values(currentAttributes || {}));
+    }
+  }, [isLocked, currentAttributes]);
 
   const handleRollDice = () => {
     const newRolls = Array.from({ length: 6 }, () => {
@@ -69,9 +78,14 @@ export function AttributeGeneration() {
     nextStep();
   };
 
+  const handleQuickSave = () => {
+    const data = getValues();
+    quickSave({ attributes: data.attributes });
+  };
+
   return (
     <div className="space-y-6">
-      {!method ? (
+      {!method && !isLocked ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <button 
             onClick={handleSelectArray}
@@ -94,6 +108,11 @@ export function AttributeGeneration() {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="bg-stone-800 p-4 rounded border border-stone-700">
+            {isLocked && (
+              <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200 mb-4">
+                <strong>Atenção:</strong> Personagem já está participando de uma sessão. Os atributos não podem ser alterados.
+              </div>
+            )}
             <h4 className="text-stone-300 mb-2">Valores Gerados ({method === 'array' ? 'Array' : 'Dados'}):</h4>
             <div className="flex gap-2 flex-wrap">
               {availableValues.map((v, i) => {
@@ -132,7 +151,7 @@ export function AttributeGeneration() {
                   <label className="text-stone-300 font-semibold mb-1">{LABELS[attr]}</label>
                   <select 
                     {...register(`attributes.${attr}`, { valueAsNumber: true })}
-                    disabled={method === 'dice'}
+                    disabled={isLocked || method === 'dice'}
                     className="bg-stone-900 border border-stone-700 text-stone-100 p-2 rounded focus:border-amber-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {method === 'dice' ? (
@@ -161,17 +180,32 @@ export function AttributeGeneration() {
             })}
           </div>
 
-          <div className="flex justify-between mt-8">
-            <button 
-              type="button"
-              onClick={() => { setMethod(null); prevStep(); }}
-              className="px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors"
-            >
-              Voltar
-            </button>
+          <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <button 
+                type="button"
+                onClick={() => { setMethod(null); prevStep(); }}
+                className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
+              >
+                Voltar
+              </button>
+              {isEditing && method && (
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={handleQuickSave}
+                    disabled={saving || isLocked}
+                    className="w-full sm:w-auto px-6 py-2 bg-stone-700 hover:bg-stone-600 text-amber-500 border border-stone-600 rounded transition-colors flex justify-center items-center disabled:opacity-50"
+                  >
+                    {saving ? 'Salvando...' : 'Salvar'}
+                  </button>
+                  {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+                </div>
+              )}
+            </div>
             <button 
               type="submit"
-              className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors"
+              className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
             >
               Avançar
             </button>

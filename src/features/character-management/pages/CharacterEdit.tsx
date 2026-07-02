@@ -23,12 +23,6 @@ export function CharacterEdit() {
           return;
         }
 
-        // Block edit if already participated
-        if (data.has_participated_in_session) {
-          navigate(`/characters/${id}`);
-          return;
-        }
-
         const draft: DraftCharacter = {
           name: data.name,
           tribe: data.tribe,
@@ -42,7 +36,7 @@ export function CharacterEdit() {
           narrative: data.narrative as any
         };
 
-        loadDraft(draft, id);
+        loadDraft(draft, id, data.has_participated_in_session || false);
       } catch (err: any) {
         setError(err.message || 'Erro ao carregar personagem');
       } finally {

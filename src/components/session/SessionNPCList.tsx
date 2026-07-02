@@ -93,7 +93,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
 
   return (
     <>
-      <div className="bg-stone-800 p-4 rounded-lg border border-stone-700 shadow-md">
+      <div className="bg-stone-800 p-3 md:p-4 rounded-lg border border-stone-700 shadow-md">
         <h3 className="text-xl font-bold text-stone-200 mb-4 border-b border-stone-600 pb-2 flex items-center gap-2">
           NPCs da Sessão ({npcs.length})
         </h3>

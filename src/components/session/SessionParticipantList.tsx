@@ -154,7 +154,7 @@ export function SessionParticipantList({
 
   return (
     <>
-      <div className="bg-stone-800 p-4 rounded-lg border border-stone-700 shadow-md">
+      <div className="bg-stone-800 p-3 md:p-4 rounded-lg border border-stone-700 shadow-md">
         <h3 className="text-xl font-bold text-stone-200 mb-4 border-b border-stone-600 pb-2 flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(34,197,94,0.8)]"></div>
           Participantes Online ({onlineUsers.length})

@@ -5,6 +5,7 @@ import { tribeSchema } from '../../schemas/characterSchema';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
+import { useQuickSave } from '../../hooks/useQuickSave';
 import { HelpCircle } from 'lucide-react';
 import {
   Sheet,
@@ -43,11 +44,12 @@ const getTribeMarkdown = (tribeId: string) => {
 };
 
 export function TribeSelection() {
-  const { draft, setTribe, nextStep } = useCharacterCreationStore();
+  const { draft, setTribe, nextStep, isLocked } = useCharacterCreationStore();
+  const { quickSave, saving, message, isEditing } = useQuickSave();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeTribe, setActiveTribe] = useState<typeof TRIBES[0] | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, getValues, formState: { errors } } = useForm({
     resolver: zodResolver(tribeSchema),
     defaultValues: {
       tribe: draft.tribe || '',
@@ -61,6 +63,11 @@ export function TribeSelection() {
     nextStep();
   };
 
+  const handleQuickSave = () => {
+    const data = getValues();
+    quickSave({ tribe: data.tribe });
+  };
+
   const handleOpenSheet = (e: React.MouseEvent, tribe: typeof TRIBES[0]) => {
     e.preventDefault();
     e.stopPropagation();
@@ -71,20 +78,25 @@ export function TribeSelection() {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {isLocked && (
+          <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
+            <strong>Atenção:</strong> Personagem já está participando de uma sessão. A tribo não pode ser alterada.
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {TRIBES.map((tribe) => (
             <label
               key={tribe.id}
-              className={`relative cursor-pointer p-4 rounded-lg border-2 transition-all flex items-center space-x-4
-                ${selectedTribe === tribe.id
-                  ? 'border-amber-500 bg-amber-500/10'
-                  : 'border-stone-700 bg-stone-800 hover:border-amber-500/50 hover:bg-stone-700/50'}`}
+              className={`relative p-4 rounded-lg border-2 transition-all flex items-center space-x-4
+                ${isLocked && selectedTribe !== tribe.id ? 'opacity-50 cursor-not-allowed border-stone-800' : (isLocked ? 'border-amber-500 bg-amber-500/10 cursor-not-allowed' : 'cursor-pointer hover:border-amber-500/50 hover:bg-stone-700/50')}
+                ${selectedTribe === tribe.id && !isLocked ? 'border-amber-500 bg-amber-500/10' : (!isLocked ? 'border-stone-700 bg-stone-800' : '')}`}
             >
               <input
                 type="radio"
                 value={tribe.id}
                 {...register('tribe')}
                 className="hidden"
+                disabled={isLocked}
               />
 
               <button
@@ -107,10 +119,25 @@ export function TribeSelection() {
 
         {errors.tribe && <p className="text-red-400">{errors.tribe.message}</p>}
 
-        <div className="flex justify-end mt-8 pt-4 border-t border-stone-700">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            {isEditing && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleQuickSave}
+                  disabled={saving || isLocked}
+                  className="w-full sm:w-auto px-6 py-2 bg-stone-700 hover:bg-stone-600 text-amber-500 border border-stone-600 rounded transition-colors flex justify-center items-center disabled:opacity-50"
+                >
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </button>
+                {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+              </div>
+            )}
+          </div>
           <button
             type="submit"
-            className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors"
+            className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
           >
             Avançar
           </button>

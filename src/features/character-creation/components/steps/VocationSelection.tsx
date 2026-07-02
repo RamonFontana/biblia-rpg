@@ -5,6 +5,7 @@ import { vocationSchema } from '../../schemas/characterSchema';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
+import { useQuickSave } from '../../hooks/useQuickSave';
 import { HelpCircle } from 'lucide-react';
 import {
   Sheet,
@@ -34,12 +35,13 @@ const getVocationMarkdown = (vocationId: string) => {
 };
 
 export function VocationSelection() {
-  const { draft, setVocation, nextStep, prevStep } = useCharacterCreationStore();
+  const { draft, setVocation, nextStep, prevStep, isLocked } = useCharacterCreationStore();
+  const { quickSave, saving, message, isEditing } = useQuickSave();
   const isLevi = draft.tribe === 'Levi';
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeVocation, setActiveVocation] = useState<typeof VOCATIONS[0] | null>(null);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm({
     resolver: zodResolver(vocationSchema),
     defaultValues: {
       vocation: draft.vocation || '',
@@ -60,6 +62,11 @@ export function VocationSelection() {
     nextStep();
   };
 
+  const handleQuickSave = () => {
+    const data = getValues();
+    quickSave({ vocation: data.vocation });
+  };
+
   const handleOpenSheet = (e: React.MouseEvent, vocation: typeof VOCATIONS[0]) => {
     e.preventDefault();
     e.stopPropagation();
@@ -70,7 +77,12 @@ export function VocationSelection() {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {isLevi && (
+        {isLocked && (
+          <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
+            <strong>Atenção:</strong> Personagem já está participando de uma sessão. Vocação não pode ser alterada.
+          </div>
+        )}
+        {isLevi && !isLocked && (
           <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
             <strong>A Regra de Levi:</strong> Como membro da tribo de Levi, você foi chamado para o serviço sagrado. Sua vocação deve ser Sacerdote/Sábio.
           </div>
@@ -78,7 +90,7 @@ export function VocationSelection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {VOCATIONS.map((vocation) => {
-            const disabled = isLevi && vocation.id !== 'Sacerdote';
+            const disabled = isLocked || (isLevi && vocation.id !== 'Sacerdote');
             const isSelected = selectedVocation === vocation.id;
             
             return (
@@ -118,17 +130,32 @@ export function VocationSelection() {
         
         {errors.vocation && <p className="text-red-400">{errors.vocation.message}</p>}
 
-        <div className="flex justify-between mt-8 pt-4 border-t border-stone-700">
-          <button 
-            type="button"
-            onClick={prevStep}
-            className="px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors"
-          >
-            Voltar
-          </button>
+        <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <button 
+              type="button"
+              onClick={prevStep}
+              className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
+            >
+              Voltar
+            </button>
+            {isEditing && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleQuickSave}
+                  disabled={saving || isLocked}
+                  className="w-full sm:w-auto px-6 py-2 bg-stone-700 hover:bg-stone-600 text-amber-500 border border-stone-600 rounded transition-colors flex justify-center items-center disabled:opacity-50"
+                >
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </button>
+                {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+              </div>
+            )}
+          </div>
           <button 
             type="submit"
-            className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors"
+            className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
           >
             Avançar
           </button>

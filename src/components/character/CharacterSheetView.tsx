@@ -343,7 +343,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   return (
     <div className="flex flex-col bg-stone-950 text-stone-200 overflow-y-auto custom-scrollbar">
       {/* Header Profile */}
-      <div className="relative p-6 border-b border-stone-800 bg-gradient-to-b from-stone-900 to-stone-950 flex gap-6 items-center">
+      <div className="relative p-4 md:p-6 border-b border-stone-800 bg-gradient-to-b from-stone-900 to-stone-950 flex gap-4 md:gap-6 items-center">
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -z-10"></div>
         
         <CharacterAvatar 
@@ -371,7 +371,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
         </div>
       </div>
 
-      <div className="p-6 space-y-8">
+      <div className="p-3 sm:p-4 md:p-6 space-y-6 md:space-y-8">
         {/* Vitals / Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">

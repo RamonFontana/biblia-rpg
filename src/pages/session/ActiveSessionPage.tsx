@@ -405,8 +405,8 @@ export function ActiveSessionPage() {
   const isSpectator = myCharacter && myCharacter.is_deleted;
 
   return (
-    <div className="container mx-auto py-4 md:py-8 px-2 md:px-4 overflow-x-hidden">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-stone-800 pb-4">
+    <div className="container mx-auto py-2 md:py-8 px-1 sm:px-2 md:px-4 overflow-x-hidden">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 md:mb-6 border-b border-stone-800 pb-4">
         <div className="w-full lg:w-auto">
           <h1 className="text-2xl md:text-3xl font-extrabold text-stone-100">{sessionData.name} {isSpectator && <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">Modo Espectador</span>}</h1>
           <p className="text-stone-400 mt-1">{sessionData.description}</p>
@@ -473,10 +473,10 @@ export function ActiveSessionPage() {
         </div>
       </div>
 
-      <div className="bg-stone-900 border border-stone-800 rounded-lg p-6 min-h-[60vh]">
+      <div className="bg-stone-900 border border-stone-800 rounded-lg p-2 sm:p-3 md:p-6 min-h-[60vh]">
         {isGM ? (
-          <div className="space-y-6">
-            <div className="p-4 bg-amber-900/20 border border-amber-700/50 rounded-md mb-6">
+          <div className="space-y-4 md:space-y-6">
+            <div className="p-3 md:p-4 bg-amber-900/20 border border-amber-700/50 rounded-md mb-4 md:mb-6">
               <h2 className="text-amber-500 font-bold flex items-center gap-2">
                 <span className="text-xl">👑</span> Visão do Mestre
               </h2>
@@ -519,7 +519,7 @@ export function ActiveSessionPage() {
           </div>
         ) : isSpectator ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-6 max-w-md w-full text-center">
+            <div className="p-3 md:p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
               <h2 className="text-stone-300 font-bold flex items-center justify-center gap-2 text-xl">
                 <span>👻</span> Modo Espectador
               </h2>
@@ -534,7 +534,7 @@ export function ActiveSessionPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-md mb-6 max-w-md w-full text-center">
+            <div className="p-3 md:p-4 bg-blue-900/20 border border-blue-700/50 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
               <h2 className="text-blue-500 font-bold flex items-center justify-center gap-2">
                 <span className="text-xl">⚔️</span> Visão do Jogador
               </h2>
@@ -556,11 +556,11 @@ export function ActiveSessionPage() {
             )}
 
             <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 w-full max-w-6xl mt-4">
-              <div className="border border-stone-800 rounded-lg p-2 md:p-4 bg-stone-950 lg:col-span-2 w-full overflow-hidden">
+              <div className="border border-stone-800 rounded-lg bg-stone-950 lg:col-span-2 w-full overflow-hidden">
                 <CharacterSheetView userId={user.id} sessionId={id} />
               </div>
 
-              <div className="border border-stone-800 rounded-lg p-4 bg-stone-950 w-full overflow-hidden">
+              <div className="border border-stone-800 rounded-lg p-3 md:p-4 bg-stone-950 w-full overflow-hidden">
                 <h3 className="text-lg md:text-xl font-semibold mb-4 text-stone-200 text-center">Personagens na Sessão</h3>
                 <SessionParticipantList
                   onlineUsers={onlineUsers}

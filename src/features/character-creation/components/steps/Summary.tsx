@@ -60,13 +60,13 @@ export function Summary() {
 
         <div className="mt-6 border-t border-stone-700 pt-4">
           <h3 className="font-bold text-amber-400 mb-2">Atributos</h3>
-          <div className="flex gap-4">
-            <span>FOR: {draft.attributes?.for}</span>
-            <span>DES: {draft.attributes?.des}</span>
-            <span>CON: {draft.attributes?.con}</span>
-            <span>INT: {draft.attributes?.int}</span>
-            <span>SAB: {draft.attributes?.sab}</span>
-            <span>CAR: {draft.attributes?.car}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <span className="whitespace-nowrap">FOR: {draft.attributes?.for}</span>
+            <span className="whitespace-nowrap">DES: {draft.attributes?.des}</span>
+            <span className="whitespace-nowrap">CON: {draft.attributes?.con}</span>
+            <span className="whitespace-nowrap">INT: {draft.attributes?.int}</span>
+            <span className="whitespace-nowrap">SAB: {draft.attributes?.sab}</span>
+            <span className="whitespace-nowrap">CAR: {draft.attributes?.car}</span>
           </div>
         </div>
 
@@ -74,19 +74,19 @@ export function Summary() {
 
       {error && <p className="text-red-400 text-center">{error}</p>}
 
-      <div className="flex justify-between mt-8 pt-4 border-t border-stone-700">
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
         <button 
           type="button"
           onClick={prevStep}
           disabled={saving}
-          className="px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors disabled:opacity-50"
         >
           Voltar e Editar
         </button>
         <button 
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors disabled:opacity-50 flex justify-center text-center"
         >
           {saving ? 'Salvando...' : 'Confirmar e Salvar'}
         </button>

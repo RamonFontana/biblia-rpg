@@ -76,9 +76,9 @@ export function Step2Enemies() {
         )}
       </div>
 
-      <div className="flex justify-between pt-4 border-t border-stone-800 mt-8">
-        <Button type="button" variant="outline" onClick={prevStep}>Voltar</Button>
-        <Button type="button" onClick={nextStep}>Próximo: NPCs</Button>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t border-stone-800 mt-8">
+        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">Voltar</Button>
+        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">Próximo: NPCs</Button>
       </div>
     </div>
   );

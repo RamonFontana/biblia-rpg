@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { nameSchema, narrativeSchema } from '../../schemas/characterSchema';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
+import { useQuickSave } from '../../hooks/useQuickSave';
 import { z } from 'zod';
 
 const combinedSchema = z.object({
@@ -14,8 +15,9 @@ type NarrativeFormData = z.infer<typeof combinedSchema>;
 
 export function NarrativeDetails() {
   const { draft, setName, setNarrative, nextStep, prevStep } = useCharacterCreationStore();
+  const { quickSave, saving, message, isEditing } = useQuickSave();
   
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<NarrativeFormData>({
+  const { register, handleSubmit, setValue, getValues, watch, formState: { errors } } = useForm<NarrativeFormData>({
     resolver: zodResolver(combinedSchema),
     defaultValues: {
       name: draft.name || '',
@@ -82,6 +84,11 @@ export function NarrativeDetails() {
     setName(data.name);
     setNarrative(data.narrative);
     nextStep();
+  };
+
+  const handleQuickSave = () => {
+    const data = getValues();
+    quickSave({ name: data.name, narrative: data.narrative });
   };
 
   return (
@@ -164,17 +171,32 @@ export function NarrativeDetails() {
         />
       </div>
 
-      <div className="flex justify-between mt-8 pt-4 border-t border-stone-700">
-        <button 
-          type="button"
-          onClick={prevStep}
-          className="px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors"
-        >
-          Voltar
-        </button>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <button 
+            type="button"
+            onClick={prevStep}
+            className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
+          >
+            Voltar
+          </button>
+          {isEditing && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleQuickSave}
+                disabled={saving}
+                className="w-full sm:w-auto px-6 py-2 bg-stone-700 hover:bg-stone-600 text-amber-500 border border-stone-600 rounded transition-colors flex justify-center items-center disabled:opacity-50"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
+              {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+            </div>
+          )}
+        </div>
         <button 
           type="submit"
-          className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors"
+          className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
         >
           Avançar para Resumo
         </button>

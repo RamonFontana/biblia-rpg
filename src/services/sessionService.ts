@@ -121,5 +121,16 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
     throw error;
   }
 
+  if (finalParticipantIds.length > 0) {
+    const { error: updateErr } = await supabase
+      .from('characters')
+      .update({ has_participated_in_session: true })
+      .in('id', finalParticipantIds);
+      
+    if (updateErr) {
+      console.error('Error updating characters participated in session:', updateErr);
+    }
+  }
+
   return data;
 };

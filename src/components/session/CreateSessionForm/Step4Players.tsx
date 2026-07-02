@@ -83,9 +83,9 @@ export function Step4Players() {
         )}
       </div>
 
-      <div className="flex justify-between pt-4 border-t">
-        <Button type="button" variant="outline" onClick={prevStep}>Voltar</Button>
-        <Button type="button" onClick={nextStep}>Próximo: Resumo</Button>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">Voltar</Button>
+        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">Próximo: Resumo</Button>
       </div>
     </div>
   );

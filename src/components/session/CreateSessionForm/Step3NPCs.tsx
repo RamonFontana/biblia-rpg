@@ -66,11 +66,11 @@ export function Step3NPCs() {
         </p>
       </div>
 
-      <div className="flex items-center gap-4 bg-muted/30 p-3 rounded-md border">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-muted/30 p-4 rounded-md border">
         <Label htmlFor="preset-select" className="whitespace-nowrap font-medium">Usar Preset:</Label>
         <select 
           id="preset-select"
-          className="flex h-10 w-full max-w-sm items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
           onChange={handlePresetSelect}
           defaultValue=""
         >
@@ -84,9 +84,9 @@ export function Step3NPCs() {
       </div>
 
       <form onSubmit={handleSubmit(onAddSimpleNPC)} className="p-4 border rounded-lg bg-muted/10 space-y-4 relative">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h3 className="font-medium text-lg">Adicionar NPC Simples</h3>
-          <Button type="button" variant="outline" onClick={() => {
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => {
             setPresetModalData({ name: '', description: '' });
             setIsModalOpen(true);
           }}>
@@ -107,7 +107,7 @@ export function Step3NPCs() {
             {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
           </div>
         </div>
-        <Button type="submit" variant="secondary">Adicionar NPC Simples</Button>
+        <Button type="submit" variant="secondary" className="w-full sm:w-auto mt-2">Adicionar NPC Simples</Button>
       </form>
 
       <div className="space-y-2">
@@ -136,9 +136,9 @@ export function Step3NPCs() {
         )}
       </div>
 
-      <div className="flex justify-between pt-4 border-t">
-        <Button type="button" variant="outline" onClick={prevStep}>Voltar</Button>
-        <Button type="button" onClick={nextStep}>Próximo: Jogadores</Button>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">Voltar</Button>
+        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">Próximo: Jogadores</Button>
       </div>
 
       <NPCCharacterSheetModal 

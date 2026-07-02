@@ -42,8 +42,8 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
   const stepsLabels = ['Tribo', 'Vocação', 'Atributos', 'Fé', 'Status', 'Equipamento', 'Narrativa', 'Resumo'];
 
   return (
-    <div className="min-h-screen bg-stone-900 text-stone-100 p-8">
-      <div className="max-w-4xl mx-auto bg-stone-800 p-6 rounded-xl shadow-lg border border-stone-700">
+    <div className="min-h-screen bg-stone-900 text-stone-100 p-0 sm:p-4 md:p-8">
+      <div className="max-w-4xl mx-auto bg-stone-800 p-4 sm:p-6 rounded-none sm:rounded-xl shadow-none sm:shadow-lg border-0 sm:border border-stone-700 min-h-screen sm:min-h-0">
         <header className="mb-8 border-b border-stone-700 pb-4">
           <h1 className="text-3xl font-serif text-amber-500">
             {editingId ? 'Edição de Personagem' : 'Criação de Personagem'}

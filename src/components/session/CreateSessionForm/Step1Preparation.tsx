@@ -70,8 +70,8 @@ export function Step1Preparation() {
           )}
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button type="submit">Próximo: Inimigos</Button>
+        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+          <Button type="submit" className="w-full sm:w-auto">Próximo: Inimigos</Button>
         </div>
       </form>
     </div>

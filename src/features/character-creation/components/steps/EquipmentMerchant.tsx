@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { equipmentSchema } from '../../schemas/characterSchema';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
+import { useQuickSave } from '../../hooks/useQuickSave';
 import type { EquipmentItem } from '../../types';
 import { Coins, Package, Shield, Sword, HelpCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -21,7 +22,8 @@ import { ITEMS_DB, KITS_DB, VOCATION_PROFICIENCIES } from '@/data/itemsDb';
 const INITIAL_COINS = 50;
 
 export function EquipmentMerchant() {
-  const { draft, setEquipment, nextStep, prevStep } = useCharacterCreationStore();
+  const { draft, setEquipment, nextStep, prevStep, isLocked } = useCharacterCreationStore();
+  const { quickSave, saving, message, isEditing } = useQuickSave();
   
   const [wallet, setWallet] = useState<number>(draft.coins || INITIAL_COINS);
   const [cart, setCart] = useState<EquipmentItem[]>(Array.isArray(draft.equipment) ? draft.equipment : []);
@@ -86,8 +88,17 @@ export function EquipmentMerchant() {
     nextStep();
   };
 
+  const handleQuickSave = () => {
+    quickSave({ equipment: cart, coins: wallet });
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {isLocked && (
+        <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
+          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Os equipamentos não podem ser alterados nesta tela.
+        </div>
+      )}
       
       <div className="flex items-center justify-between bg-stone-800 p-4 rounded-xl border-2 border-amber-500/30">
         <div>
@@ -162,7 +173,7 @@ export function EquipmentMerchant() {
                   <button 
                     type="button"
                     onClick={handleBuyKit}
-                    disabled={wallet < INITIAL_COINS}
+                    disabled={isLocked || wallet < INITIAL_COINS}
                     className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-stone-900 font-bold rounded-lg transition-colors w-full sm:w-auto text-center"
                   >
                     Pegar Pacote
@@ -203,7 +214,7 @@ export function EquipmentMerchant() {
                     <button 
                       type="button"
                       onClick={() => handleBuy(item)}
-                      disabled={wallet < (item.cost || 0) || cart.some(c => c.id === 'kit_basico')}
+                      disabled={isLocked || wallet < (item.cost || 0) || cart.some(c => c.id === 'kit_basico')}
                       className="px-4 py-2 bg-stone-800 hover:bg-stone-700 disabled:opacity-50 disabled:hover:bg-stone-800 border border-stone-600 rounded-lg text-amber-500 font-bold transition-colors shrink-0 whitespace-nowrap"
                     >
                       {item.cost} SP
@@ -242,7 +253,8 @@ export function EquipmentMerchant() {
                     <button 
                       type="button"
                       onClick={() => handleSell(item, index)}
-                      className="text-xs text-red-400 opacity-80 group-hover:opacity-100 hover:text-red-300 px-2 py-1 bg-red-400/10 rounded transition-all"
+                      disabled={isLocked}
+                      className="text-xs text-red-400 opacity-80 group-hover:opacity-100 disabled:opacity-50 hover:text-red-300 px-2 py-1 bg-red-400/10 rounded transition-all"
                     >
                       Vender (+{item.id === 'kit_basico' ? INITIAL_COINS : item.cost} SP)
                     </button>
@@ -254,17 +266,32 @@ export function EquipmentMerchant() {
         </div>
       </div>
 
-      <div className="flex justify-between mt-8 pt-4 border-t border-stone-700">
-        <button 
-          type="button"
-          onClick={prevStep}
-          className="px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors"
-        >
-          Voltar
-        </button>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <button 
+            type="button"
+            onClick={prevStep}
+            className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
+          >
+            Voltar
+          </button>
+          {isEditing && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleQuickSave}
+                disabled={saving || isLocked}
+                className="w-full sm:w-auto px-6 py-2 bg-stone-700 hover:bg-stone-600 text-amber-500 border border-stone-600 rounded transition-colors flex justify-center items-center disabled:opacity-50"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
+              {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+            </div>
+          )}
+        </div>
         <button 
           type="submit"
-          className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors"
+          className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
         >
           Avançar
         </button>
