@@ -463,7 +463,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
         />
 
         {/* Habilidades */}
-        {character && !Array.isArray(character.skills) && getAbilitiesForCharacter(
+        {character && (!Array.isArray(character.skills) || character.skills.length === 0) && getAbilitiesForCharacter(
           character.tribe || '', 
           character.vocation || '', 
           (character as any).level || 1, 
