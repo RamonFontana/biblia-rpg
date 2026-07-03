@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { TradeItemSelector, type SelectableItem } from './TradeItemSelector';
 import type { TradeItemWithDetails, TradeSide as TradeSideType } from '@/types/trade';
 import { tradeService } from '@/services/tradeService';
-import { ShieldPlus } from 'lucide-react';
+import { ShieldPlus, Zap } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { CONDITIONS } from '@/data/conditions';
+import type { WeaponEffect } from '@/types/combat';
 
 const AVAILABLE_RESISTANCES = [
   'Corte', 'Perfuração', 'Impacto', 
@@ -292,6 +294,43 @@ export function TradeSide({
                       })}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  {ti.items?.category === 'Arma' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button 
+                          className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-amber-400 transition-colors flex items-center justify-center"
+                          title="Adicionar Efeito de Arma (Natural 18+)"
+                        >
+                          <Zap className="w-3 h-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                        <div className="px-2 py-1.5 text-xs font-semibold text-amber-500/80">Efeitos Ofensivos (Nat 18+)</div>
+                        {Object.values(CONDITIONS).map(cond => {
+                          const isChecked = (ti.weapon_effects || []).some((e: WeaponEffect) => e.conditionId === cond.id);
+                          return (
+                            <DropdownMenuCheckboxItem
+                              key={cond.id}
+                              checked={isChecked}
+                              onCheckedChange={async (checked) => {
+                                let current = [...(ti.weapon_effects || [])];
+                                if (checked) {
+                                  current.push({ conditionId: cond.id, trigger: 'natural_18_plus' });
+                                } else {
+                                  current = current.filter((e: WeaponEffect) => e.conditionId !== cond.id);
+                                }
+                                await tradeService.updateTradeItemWeaponEffects(ti.id, current);
+                                onItemsChanged();
+                              }}
+                              className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                            >
+                              {cond.name}
+                            </DropdownMenuCheckboxItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                   </>
                 )}
                 {ti.custom_condition_resistances && ti.custom_condition_resistances.length > 0 && (
@@ -301,6 +340,19 @@ export function TradeSide({
                         {res}
                       </span>
                     ))}
+                  </div>
+                )}
+                {ti.weapon_effects && ti.weapon_effects.length > 0 && (
+                  <div className="flex flex-wrap gap-1 ml-2">
+                    {ti.weapon_effects.map((effect: WeaponEffect) => {
+                      const conditionName = CONDITIONS[effect.conditionId]?.name || effect.conditionId;
+                      return (
+                        <span key={effect.conditionId} className="text-[9px] px-1 bg-amber-900/40 text-amber-400 rounded border border-amber-900/50 flex items-center gap-0.5">
+                          <Zap className="w-2.5 h-2.5" />
+                          {conditionName}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </li>

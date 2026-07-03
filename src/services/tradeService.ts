@@ -15,6 +15,7 @@ const TRADE_ITEM_SELECT = `
   quantity,
   level,
   custom_condition_resistances,
+  weapon_effects,
   created_at,
   items (
     id,
@@ -224,6 +225,24 @@ export const tradeService = {
     const { error } = await (supabase as any)
       .from('trade_items')
       .update({ custom_condition_resistances: resistances })
+      .eq('id', tradeItemId);
+
+    if (error) throw error;
+    await resetReadyFlags(tradeItem.trade_id);
+  },
+
+  async updateTradeItemWeaponEffects(tradeItemId: string, effects: any[]): Promise<void> {
+    const { data: tradeItem, error: fetchError } = await (supabase as any)
+      .from('trade_items')
+      .select('trade_id')
+      .eq('id', tradeItemId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const { error } = await (supabase as any)
+      .from('trade_items')
+      .update({ weapon_effects: effects })
       .eq('id', tradeItemId);
 
     if (error) throw error;

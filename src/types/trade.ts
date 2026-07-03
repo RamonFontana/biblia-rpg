@@ -1,3 +1,5 @@
+import type { WeaponEffect } from './combat';
+
 export type TradeType = 'player_trade' | 'shop' | 'npc_trade';
 
 export type TradeStatus = 'pending' | 'active' | 'completed' | 'cancelled';
@@ -29,6 +31,7 @@ export interface TradeItemRecord {
   quantity: number;
   level: number;
   custom_condition_resistances?: string[];
+  weapon_effects?: WeaponEffect[] | null;
   created_at: string;
 }
 
