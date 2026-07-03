@@ -41,8 +41,8 @@ export const ITEMS_DB: ShopItem[] = [
   { id: 'tocha', name: 'Tocha', type: 'Consumível', cost: 0.5, description: 'Ilumina 6m. Queima por 1h', category: 'Todas' },
   { id: 'balsamo', name: 'Bálsamo Curativo / Óleo', type: 'Consumível', cost: 5, description: 'Cura 1d4 HP em Descanso', category: 'Todas' },
   { id: 'racao', name: 'Ração de Viagem', type: 'Consumível', cost: 1, description: 'Cura 1d4 PV. 1 dia de nutrição', category: 'Todas' },
-  { id: 'pedras_funda', name: 'Saco de Pedras para Funda', type: 'Consumível', cost: 0.5, description: '20 pedras', category: 'Todas' },
-  { id: 'flechas', name: 'Flechas', type: 'Consumível', cost: 1, description: '20 flechas para arcos', category: 'Todas' },
+  { id: 'pedras_funda', name: 'Pedra para Funda', type: 'Consumível', cost: 0.025, description: 'Munição para funda (0.5 SP = 20 un)', category: 'Todas' },
+  { id: 'flechas', name: 'Flecha', type: 'Consumível', cost: 0.05, description: 'Munição para arcos (1 SP = 20 un)', category: 'Todas' },
 
   // Utilizáveis
   { id: 'corda', name: 'Corda de Cânhamo (15m)', type: 'Utilidade', cost: 1, description: 'Escalada, amarras', category: 'Todas' },
@@ -63,7 +63,7 @@ export const KITS_DB: Record<string, { name: string; cost: number; leftover: num
     name: 'Kit Básico de Caçador/Nômade',
     cost: 50,
     leftover: 10,
-    markdown: `### Caçador/Nômade\n- Arco curto (1d6 perfurante) com aljava e 20 flechas OU Funda (1d4 concussão) com 20 pedras.\n- Adaga de bronze (1d4 perfurante).\n- Armadura de couro leve (CA 11 + Mod Des).\n- Um kit de armadilhas, corda de cânhamo (15m), e 10 Shekels de prata.`
+    markdown: `### Caçador/Nômade\n- Arco curto (1d6 perfurante) com aljava e Flechas para arcos OU Funda (1d4 concussão) com Pedras para funda.\n- Adaga de bronze (1d4 perfurante).\n- Armadura de couro leve (CA 11 + Mod Des).\n- Um kit de armadilhas, corda de cânhamo (15m), e 10 Shekels de prata.`
   },
   'Batedor': {
     name: 'Kit Básico de Batedor',

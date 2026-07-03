@@ -30,6 +30,7 @@ export function TradeItemSelector({
   disabled = false,
 }: TradeItemSelectorProps) {
   const [search, setSearch] = useState('');
+  const [pendingQuantities, setPendingQuantities] = useState<Record<string, number>>({});
 
   const filteredItems = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -96,31 +97,61 @@ export function TradeItemSelector({
                         if (selectedQty <= 1) onRemoveItem(item.id);
                         else onUpdateQuantity(item.id, selectedQty - 1);
                       }}
-                      className="w-6 h-6 bg-stone-700 hover:bg-stone-600 rounded text-stone-300 text-sm disabled:opacity-50"
+                      className="w-6 h-6 bg-stone-700 hover:bg-stone-600 rounded text-stone-300 text-sm flex items-center justify-center disabled:opacity-50"
                     >
                       -
                     </button>
-                    <span className="w-6 text-center text-sm text-stone-300 font-mono">{selectedQty}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={maxQty}
+                      value={selectedQty}
+                      disabled={disabled}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        if (val <= 0) onRemoveItem(item.id);
+                        else onUpdateQuantity(item.id, Math.min(val, maxQty));
+                      }}
+                      className="w-12 text-center text-sm bg-stone-800 border border-stone-700 text-stone-300 rounded focus:outline-none focus:border-amber-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
                     <button
                       type="button"
                       disabled={disabled || !canAdd}
                       onClick={() => onUpdateQuantity(item.id, selectedQty + 1)}
-                      className="w-6 h-6 bg-stone-700 hover:bg-stone-600 rounded text-stone-300 text-sm disabled:opacity-50"
+                      className="w-6 h-6 bg-stone-700 hover:bg-stone-600 rounded text-stone-300 text-sm flex items-center justify-center disabled:opacity-50"
                     >
                       +
                     </button>
                   </div>
                 ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={disabled || !canAdd}
-                    onClick={() => onAddItem(item.id, 1)}
-                    className="h-7 text-xs border-stone-600 text-stone-300 hover:bg-stone-700 shrink-0"
-                  >
-                    Adicionar
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <input
+                      type="number"
+                      min={1}
+                      max={maxQty}
+                      value={pendingQuantities[item.id] || 1}
+                      disabled={disabled}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setPendingQuantities(prev => ({ ...prev, [item.id]: val }));
+                      }}
+                      className="w-12 h-7 text-center text-sm bg-stone-800 border border-stone-700 text-stone-300 rounded focus:outline-none focus:border-amber-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={disabled || !canAdd}
+                      onClick={() => {
+                        const qty = pendingQuantities[item.id] || 1;
+                        onAddItem(item.id, qty);
+                        setPendingQuantities(prev => ({ ...prev, [item.id]: 1 }));
+                      }}
+                      className="h-7 text-xs border-stone-600 text-stone-300 hover:bg-stone-700 shrink-0"
+                    >
+                      Adicionar
+                    </Button>
+                  </div>
                 )}
               </div>
             );

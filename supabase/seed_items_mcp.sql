@@ -414,12 +414,12 @@ BEGIN
 
   IF NOT FOUND THEN
     INSERT INTO items (name, category, description, is_consumable, price, level, armor_class, damage, condition_resistances)
-    VALUES ('Saco de Pedras para Funda', 'Consumível', '20 pedras', true, 1, 1, 0, NULL, ARRAY[]::text[]);
+    VALUES ('Saco de Pedras para Funda', 'Consumível', 'Pedras para funda', true, 1, 1, 0, NULL, ARRAY[]::text[]);
   END IF;
 
   UPDATE items SET 
     category = 'Consumível',
-    description = '20 flechas para arcos',
+    description = 'Flechas para arcos',
     is_consumable = true,
     price = 1,
     level = 1,
@@ -430,7 +430,7 @@ BEGIN
 
   IF NOT FOUND THEN
     INSERT INTO items (name, category, description, is_consumable, price, level, armor_class, damage, condition_resistances)
-    VALUES ('Flechas', 'Consumível', '20 flechas para arcos', true, 1, 1, 0, NULL, ARRAY[]::text[]);
+    VALUES ('Flechas', 'Consumível', 'Flechas para arcos', true, 1, 1, 0, NULL, ARRAY[]::text[]);
   END IF;
 
   UPDATE items SET 

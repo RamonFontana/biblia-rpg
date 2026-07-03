@@ -31,7 +31,7 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { useItem, isUpdating } = useUpdateNPCInventory();
+  const { useItem, removeItem, isUpdating } = useUpdateNPCInventory();
   const [isEquipping, setIsEquipping] = useState(false);
   const { consume, recover, addCharges } = useAmmunition();
 
@@ -607,7 +607,8 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               onChangeWeaponEffects={handleUpdateWeaponEffects}
               onConsumeAmmunition={handleConsumeAmmunition}
               onRecoverAmmunition={handleRecoverAmmunition}
-              onAddCharges={handleAddAmmunitionCharges}
+              onAddCharges={isGM ? handleAddAmmunitionCharges : undefined}
+              onRemoveItem={removeItem}
             />
           </div>
         </div>

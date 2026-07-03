@@ -325,7 +325,7 @@ ON CONFLICT (id) DO UPDATE SET
   condition_resistances = EXCLUDED.condition_resistances;
 
 INSERT INTO items (id, name, category, description, is_consumable, price, level, armor_class, damage, condition_resistances)
-VALUES ('pedras_funda', 'Saco de Pedras para Funda', 'Consumível', '20 pedras', true, 0.5, 1, 0, NULL, ARRAY[]::text[])
+VALUES ('pedras_funda', 'Pedra para Funda', 'Consumível', 'Munição para funda (0.5 SP = 20 un)', true, 0.025, 1, 0, NULL, ARRAY[]::text[])
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   category = EXCLUDED.category,
@@ -338,7 +338,7 @@ ON CONFLICT (id) DO UPDATE SET
   condition_resistances = EXCLUDED.condition_resistances;
 
 INSERT INTO items (id, name, category, description, is_consumable, price, level, armor_class, damage, condition_resistances)
-VALUES ('flechas', 'Flechas', 'Consumível', '20 flechas para arcos', true, 1, 1, 0, NULL, ARRAY[]::text[])
+VALUES ('flechas', 'Flecha', 'Consumível', 'Munição para arcos (1 SP = 20 un)', true, 0.05, 1, 0, NULL, ARRAY[]::text[])
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   category = EXCLUDED.category,

@@ -18,6 +18,7 @@ interface InventoryListProps {
   onConsumeAmmunition?: (characterItemId: string) => void;
   onRecoverAmmunition?: (characterItemId: string, spentAmount: number, maxCapacity: number) => void;
   onAddCharges?: (characterItemId: string, amount: number) => void;
+  onRemoveItem?: (characterItemId: string) => void;
 }
 
 const AVAILABLE_RESISTANCES = [
@@ -25,7 +26,7 @@ const AVAILABLE_RESISTANCES = [
   'Fogo', 'Frio', 'Ácido', 'Veneno'
 ];
 
-export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances, onChangeWeaponEffects, onConsumeAmmunition, onRecoverAmmunition, onAddCharges }: InventoryListProps) {
+export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances, onChangeWeaponEffects, onConsumeAmmunition, onRecoverAmmunition, onAddCharges, onRemoveItem }: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
       <div>
@@ -342,13 +343,22 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                               >
                                 Gastar 1
                               </button>
-                              {item.items?.name?.includes('Flecha') && item.quantity < 20 && (
+                              {item.items?.name?.includes('Flecha') && item.quantity < 20 && item.quantity > 0 && (
                                 <button
                                   onClick={() => onRecoverAmmunition && onRecoverAmmunition(item.id, 20 - item.quantity, 20)}
                                   disabled={isUpdating}
                                   className="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 text-stone-200 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
                                 >
                                   Recuperar
+                                </button>
+                              )}
+                              {item.quantity <= 0 && (
+                                <button
+                                  onClick={() => onRemoveItem && onRemoveItem(item.id)}
+                                  disabled={isUpdating}
+                                  className="text-xs px-2 py-1 bg-red-900/50 hover:bg-red-800 text-red-200 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
+                                >
+                                  Descartar
                                 </button>
                               )}
                             </>
