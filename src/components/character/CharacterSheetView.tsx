@@ -17,6 +17,8 @@ import { CharacterSkillsList } from './CharacterSkillsList';
 import { CharacterSavingThrows } from './CharacterSavingThrows';
 import { updateCharacter } from '@/features/character-management/api/characterApi';
 import { updateWeaponEffects } from '@/services/characterItemService';
+import { useAmmunition } from '@/features/character-management/api/useAmmunition';
+
 interface CharacterSheetViewProps {
   userId?: string;
   sessionId?: string;
@@ -31,6 +33,40 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   const [error, setError] = useState<string | null>(null);
   const { useItem, isUpdating } = useUpdateNPCInventory();
   const [isEquipping, setIsEquipping] = useState(false);
+  const { consume, recover, addCharges } = useAmmunition();
+
+  const handleConsumeAmmunition = async (characterItemId: string) => {
+    setIsEquipping(true);
+    try {
+      await consume(characterItemId, 1);
+    } catch (err) {
+      console.error('Error consuming ammunition:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
+
+  const handleRecoverAmmunition = async (characterItemId: string, spentAmount: number, maxCapacity: number) => {
+    setIsEquipping(true);
+    try {
+      await recover(characterItemId, spentAmount, maxCapacity);
+    } catch (err) {
+      console.error('Error recovering ammunition:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
+
+  const handleAddAmmunitionCharges = async (characterItemId: string, amount: number) => {
+    setIsEquipping(true);
+    try {
+      await addCharges(characterItemId, amount);
+    } catch (err) {
+      console.error('Error adding charges:', err);
+    } finally {
+      setIsEquipping(false);
+    }
+  };
 
   const handleEquip = async (characterItemId: string, itemEffects: any, targetHand?: 'mainHand' | 'offHand') => {
     if (!character) return;
@@ -569,6 +605,9 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               onChangeLevel={handleUpdateItemLevel}
               onChangeResistances={handleUpdateItemResistances}
               onChangeWeaponEffects={handleUpdateWeaponEffects}
+              onConsumeAmmunition={handleConsumeAmmunition}
+              onRecoverAmmunition={handleRecoverAmmunition}
+              onAddCharges={handleAddAmmunitionCharges}
             />
           </div>
         </div>

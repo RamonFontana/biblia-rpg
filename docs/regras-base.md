@@ -148,6 +148,11 @@ O turno é encerrado pelo próprio jogador, passando automaticamente para o pró
 - **Fim de Sessão**: Após uma partida encerrada pelo Mestre, o personagem absorve seu XP.
 - **Início de Partida**: O personagem entra na nova sessão totalmente "Descansado", com PV Máximo e usos de habilidades restaurados.
 - **Persistência da Fé**: A Fé **NÃO reseta**. O valor atual de Fé se mantém entre as sessões. A única forma de restaurá-la é via atos heróicos ou descansos devocionais narrativos na partida.
+
+### 6.4 Consumíveis e Munição
+- **Gastar Munição**: Munições (como Flechas e Pedras para Funda) são tratadas como itens consumíveis com cargas. Ao atacar com armas à distância, o jogador pode consumir a munição respectiva reduzindo sua quantidade.
+- **Recuperar Munição**: Após o combate, munições recuperáveis (como Flechas) podem ser recuperadas. O jogador testa sua sorte tentando recuperá-las; há uma chance automática de 50% de sucesso de recuperação por cada flecha gasta.
+- **Munição Não-Recuperável**: Munições mais simples, como Pedras para Funda, não possuem mecânica de chance de recuperação automática, devendo o mestre repor manualmente as cargas caso o jogador reabasteça coletando do ambiente.
 - **Descanso Curto (1 hora na partida)**: Permite gastar Dados de Vida para recuperar HP. Algumas habilidades de vocação se recarregam (se especificado).
 - **Descanso Longo (8 horas na partida)**: Recupera todo HP e metade dos Dados de Vida gastos. Recupera **1d4 de Fé** para o grupo inteiro (ou 1d4+2 se o ensinamento for conduzido por um Sacerdote).
 

@@ -15,6 +15,9 @@ interface InventoryListProps {
   onChangeLevel?: (characterItemId: string, newLevel: number) => void;
   onChangeResistances?: (characterItemId: string, newResistances: string[]) => void;
   onChangeWeaponEffects?: (characterItemId: string, effects: WeaponEffect[]) => void;
+  onConsumeAmmunition?: (characterItemId: string) => void;
+  onRecoverAmmunition?: (characterItemId: string, spentAmount: number, maxCapacity: number) => void;
+  onAddCharges?: (characterItemId: string, amount: number) => void;
 }
 
 const AVAILABLE_RESISTANCES = [
@@ -22,7 +25,7 @@ const AVAILABLE_RESISTANCES = [
   'Fogo', 'Frio', 'Ácido', 'Veneno'
 ];
 
-export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances, onChangeWeaponEffects }: InventoryListProps) {
+export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances, onChangeWeaponEffects, onConsumeAmmunition, onRecoverAmmunition, onAddCharges }: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
       <div>
@@ -232,6 +235,26 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
+                            
+                            {itemType === 'Consumível' && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button 
+                                    className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-green-400 transition-colors flex items-center justify-center"
+                                    title="Adicionar Cargas"
+                                  >
+                                    <Target className="w-3 h-3" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-40 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-green-500/80">Adicionar Cargas</div>
+                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 1)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+1 Unidade</DropdownMenuCheckboxItem>
+                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 5)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+5 Unidades</DropdownMenuCheckboxItem>
+                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 10)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+10 Unidades</DropdownMenuCheckboxItem>
+                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 20)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+20 Unidades</DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </>
                         ) : (
                           (item.level > 1) && (
@@ -309,13 +332,35 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                       {item.items?.is_consumable && (
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
-                          <button
-                            onClick={() => onUseConsumable({ ...item, items: { ...item.items, effects: normalizedEffects } })}
-                            disabled={isUpdating}
-                            className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50"
-                          >
-                            Usar
-                          </button>
+                          
+                          {(item.items?.name?.includes('Flecha') || item.items?.name?.includes('Pedra')) ? (
+                            <>
+                              <button
+                                onClick={() => onConsumeAmmunition && onConsumeAmmunition(item.id)}
+                                disabled={isUpdating || item.quantity <= 0}
+                                className="text-xs px-2 py-1 bg-stone-700 hover:bg-stone-600 text-stone-200 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
+                              >
+                                Gastar 1
+                              </button>
+                              {item.items?.name?.includes('Flecha') && item.quantity < 20 && (
+                                <button
+                                  onClick={() => onRecoverAmmunition && onRecoverAmmunition(item.id, 20 - item.quantity, 20)}
+                                  disabled={isUpdating}
+                                  className="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 text-stone-200 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
+                                >
+                                  Recuperar
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => onUseConsumable({ ...item, items: { ...item.items, effects: normalizedEffects } })}
+                              disabled={isUpdating || item.quantity <= 0}
+                              className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
+                            >
+                              Usar
+                            </button>
+                          )}
                         </div>
                       )}
                       

@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at:
-specs/046-skills-proficiency-system/plan.md
+specs/047-consumiveis-armas/plan.md
 <!-- SPECKIT END -->
 
 ## RPG Bíblico — Documentação do Sistema
