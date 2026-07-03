@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { useSessionNPCs } from '@/hooks/useSessionNPCs';
+import { useSessionCharacters } from '@/hooks/useSessionCharacters';
 import { SessionNPCList } from '../SessionNPCList';
 import { AddNPCModal } from '../AddNPCModal';
 import { useSessionTests } from '@/hooks/useSessionTests';
@@ -16,7 +16,7 @@ export function ActiveSession() {
   const navigate = useNavigate();
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { npcs, isLoading: _isNpcsLoading } = useSessionNPCs(id);
+  const { npcs, isLoading: _isNpcsLoading } = useSessionCharacters(id);
   const { activeTests, testResults } = useSessionTests(id!);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);

@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { useCombatStore } from '../../store/combatStore';
-import { useSessionEnemies } from '../../hooks/useSessionEnemies';
 import { EnemyCard } from './EnemyCard';
 import { EnemySheet } from './EnemySheet';
 import type { Character } from '@/features/character-management/types';
 
 interface EnemyCombatListProps {
-  sessionId: string;
+  enemies: Character[];
+  isLoading: boolean;
 }
 
-export function EnemyCombatList({ sessionId }: EnemyCombatListProps) {
+export function EnemyCombatList({ enemies, isLoading }: EnemyCombatListProps) {
   const { participants, activeCombat } = useCombatStore();
-  const { enemies, isLoading } = useSessionEnemies(sessionId);
   
   const [selectedEnemy, setSelectedEnemy] = useState<Character | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);

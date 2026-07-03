@@ -3,14 +3,14 @@ import { SessionParticipantList } from '@/components/session/SessionParticipantL
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { useAuthStore } from '@/store/authStore';
 import { useSupabasePresence, type PresenceState } from '@/hooks/useSupabasePresence';
-import { useSessionNPCs } from '@/hooks/useSessionNPCs';
+
 import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { SessionEnemyList } from '@/components/session/SessionEnemyList';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { useSessionTests } from '@/hooks/useSessionTests';
-import { useSessionPlayerCharacters } from '@/hooks/useSessionPlayerCharacters';
+import { useSessionCharacters } from '@/hooks/useSessionCharacters';
 import { useSessionTrades } from '@/hooks/useSessionTrades';
 import { tradeService } from '@/services/tradeService';
 import { TradeDialog } from '@/components/session/TradeDialog';
@@ -21,7 +21,6 @@ import { NewDayDialog } from '@/components/session/NewDayDialog';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
 import type { TradeWithItems } from '@/types/trade';
-import { useSessionEnemies } from '@/hooks/useSessionEnemies';
 import { CombatSetupModal } from '@/components/combat/CombatSetupModal';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
@@ -47,11 +46,17 @@ export function ActiveSessionPage() {
   const { activeTests, testResults } = useSessionTests(id!);
   const {
     playerCharacters,
+    npcs,
+    enemies,
+    refresh: refreshPlayerCharacters,
     updateLocalPlayerCharacter,
     updateLocalPlayerData,
-    refresh: refreshPlayerCharacters,
-  } = useSessionPlayerCharacters(id!);
-  const { npcs, updateLocalNPC, updateLocalNPCData } = useSessionNPCs(id);
+    updateLocalNPC,
+    updateLocalNPCData,
+    updateLocalEnemy,
+    isLoading: isCharactersLoading,
+  } = useSessionCharacters(id);
+  
   const { activeTrades, isCharacterTrading, refresh: refreshTrades } = useSessionTrades(id);
 
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
@@ -70,7 +75,6 @@ export function ActiveSessionPage() {
     return () => window.removeEventListener('combat-toast', handleToast);
   }, []);
 
-  const { enemies } = useSessionEnemies(id);
   const { activeCombat, initSubscriptions, cleanupSubscriptions } = useCombatStore();
 
   useEffect(() => {
@@ -505,8 +509,10 @@ export function ActiveSessionPage() {
                 onShop={handleShop}
                 onAcceptTrade={handleAcceptTrade}
                 onRejectTrade={handleRejectTrade}
+                activeTests={activeTests}
+                testResults={testResults}
               />
-              <SessionEnemyList sessionId={id} />
+              <SessionEnemyList sessionId={id} enemies={enemies} isLoading={isCharactersLoading} updateLocalEnemy={updateLocalEnemy} />
 
               <SessionNPCList
                 npcs={npcs}
@@ -551,7 +557,7 @@ export function ActiveSessionPage() {
 
             {activeCombat && (
               <div className="w-full max-w-6xl mt-4 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-                <PlayerCombatView sessionId={id!} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} />
+                <PlayerCombatView sessionId={id!} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} enemies={enemies} isLoading={isCharactersLoading} />
               </div>
             )}
 
@@ -576,6 +582,8 @@ export function ActiveSessionPage() {
                   onNPCNegotiate={handleNPCNegotiate}
                   onAcceptTrade={handleAcceptTrade}
                   onRejectTrade={handleRejectTrade}
+                  activeTests={activeTests}
+                  testResults={testResults}
                 />
               </div>
             </div>

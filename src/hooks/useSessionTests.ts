@@ -34,50 +34,25 @@ export function useSessionTests(sessionId: string) {
     fetchActiveTests()
   }, [fetchActiveTests])
 
-  // Subscribe to changes
   useEffect(() => {
     if (!sessionId) return
-    // Generate unique channel names per effect execution to avoid StrictMode conflicts
-    const channelId = crypto.randomUUID()
-    
-    const testsSubscription = supabase
-      .channel(`session_tests_${sessionId}_${channelId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_tests',
-          filter: `session_id=eq.${sessionId}`
-        },
-        (payload) => {
-          console.log('Test change received!', payload)
-          // For simplicity, refetch when a test is added/updated/deleted
-          // Realistically, you could update the state manually here
-          fetchActiveTests()
-        }
-      )
-      .subscribe()
 
-    const resultsSubscription = supabase
-      .channel(`session_test_results_${sessionId}_${channelId}`)
+    const channel = supabase
+      .channel(`session_tests_realtime_${sessionId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_test_results'
-        },
-        (payload) => {
-          console.log('Result change received!', payload)
-          fetchActiveTests()
-        }
+        { event: '*', schema: 'public', table: 'session_tests', filter: `session_id=eq.${sessionId}` },
+        fetchActiveTests
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'session_test_results' },
+        fetchActiveTests
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(testsSubscription)
-      supabase.removeChannel(resultsSubscription)
+      supabase.removeChannel(channel)
     }
   }, [sessionId, fetchActiveTests])
 

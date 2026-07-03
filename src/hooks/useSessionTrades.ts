@@ -28,42 +28,22 @@ export function useSessionTrades(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) return;
 
-    const channelId = crypto.randomUUID();
-
-    const tradesChannel = supabase
-      .channel(`session_trades_${sessionId}_${channelId}`)
+    const channel = supabase
+      .channel(`session_trades_realtime_${sessionId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'trades',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          fetchTrades();
-        }
+        { event: '*', schema: 'public', table: 'trades', filter: `session_id=eq.${sessionId}` },
+        fetchTrades
       )
-      .subscribe();
-
-    const itemsChannel = supabase
-      .channel(`session_trade_items_${sessionId}_${channelId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'trade_items',
-        },
-        () => {
-          fetchTrades();
-        }
+        { event: '*', schema: 'public', table: 'trade_items' },
+        fetchTrades
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(tradesChannel);
-      supabase.removeChannel(itemsChannel);
+      supabase.removeChannel(channel);
     };
   }, [sessionId, fetchTrades]);
 

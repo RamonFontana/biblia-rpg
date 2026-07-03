@@ -11,12 +11,16 @@ import { EnemyCombatList } from './EnemyCombatList';
 import { getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '../../data/abilities';
+import type { Character } from '../../features/character-management/types';
+
 interface PlayerCombatViewProps {
   sessionId: string;
   character: any; // The current player character data
+  enemies: Character[];
+  isLoading: boolean;
 }
 
-export function PlayerCombatView({ sessionId: _sessionId, character }: PlayerCombatViewProps) {
+export function PlayerCombatView({ sessionId: _sessionId, character, enemies, isLoading }: PlayerCombatViewProps) {
   const playerId = character?.id;
   const [isUpdating, setIsUpdating] = useState(false);
   const {
@@ -122,7 +126,7 @@ export function PlayerCombatView({ sessionId: _sessionId, character }: PlayerCom
       {activeCombat && (
         <>
           {/* Render the Enemy List */}
-          <EnemyCombatList sessionId={character?.session_id || _sessionId} />
+          <EnemyCombatList enemies={enemies} isLoading={isLoading} />
 
           {isDying && (
             <DeathSavesModal character={character} participantId={participant.id} />

@@ -3,17 +3,18 @@ import type { Character } from '@/features/character-management/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { supabase } from '@/lib/supabase';
-import { useSessionEnemies } from '@/hooks/useSessionEnemies';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 interface SessionEnemyListProps {
   sessionId: string;
+  enemies: Character[];
+  isLoading: boolean;
+  updateLocalEnemy: (enemyId: string, updates: Partial<Character>) => void;
 }
 
-export function SessionEnemyList({ sessionId }: SessionEnemyListProps) {
-  const { enemies, isLoading, updateLocalEnemy } = useSessionEnemies(sessionId);
+export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEnemy }: SessionEnemyListProps) {
   const [selectedEnemy, setSelectedEnemy] = useState<Character | null>(null);
 
   const handleEnemyClick = (enemy: Character) => {

@@ -6,7 +6,6 @@ import { CharacterSheetView } from '../character/CharacterSheetView';
 import { TokenContextMenu } from './TokenContextMenu';
 import { TradeRequestNotification } from './TradeRequestNotification';
 import { useAuthStore } from '@/store/authStore';
-import { useSessionTests } from '@/hooks/useSessionTests';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
@@ -33,6 +32,8 @@ interface SessionParticipantListProps {
   onNPCNegotiate?: (npc: Character & { is_playable?: boolean }) => void;
   onAcceptTrade?: (tradeId: string) => void;
   onRejectTrade?: (tradeId: string) => void;
+  activeTests: any[];
+  testResults: Record<string, any[]>;
 }
 
 export function SessionParticipantList({
@@ -51,12 +52,13 @@ export function SessionParticipantList({
   onNPCNegotiate,
   onAcceptTrade,
   onRejectTrade,
+  activeTests,
+  testResults,
 }: SessionParticipantListProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { user } = useAuthStore();
-  const { activeTests, testResults } = useSessionTests(sessionId || '');
 
   const isCharacterTrading = (characterId: string | undefined) => {
     if (!characterId) return false;
