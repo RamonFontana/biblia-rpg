@@ -2,9 +2,11 @@
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
 import { getVocationRules } from '../../../character-management/utils/rules/vocations';
 import { SKILLS_LIST } from '../../../character-management/utils/characterMath';
+import { useQuickSave } from '../../hooks/useQuickSave';
 
 export function SkillsStep() {
-  const { draft, setProficiencies, nextStep, prevStep } = useCharacterCreationStore();
+  const { draft, setProficiencies, nextStep, prevStep, isLocked } = useCharacterCreationStore();
+  const { quickSave, saving, message, isEditing } = useQuickSave();
   
   const rules = getVocationRules(draft.vocation);
   const maxSkills = rules?.maxSkills || 0;
@@ -13,6 +15,7 @@ export function SkillsStep() {
   const selectedSkills = draft.proficiencies?.skill_proficiencies || [];
 
   const toggleSkill = (skillId: string) => {
+    if (isLocked) return;
     if (selectedSkills.includes(skillId)) {
       setProficiencies({
         skill_proficiencies: selectedSkills.filter(s => s !== skillId)
@@ -30,6 +33,12 @@ export function SkillsStep() {
 
   return (
     <div className="space-y-6">
+      {isLocked && (
+        <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
+          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Perícias não podem ser alteradas.
+        </div>
+      )}
+
       <div className="text-center">
         <h2 className="text-2xl font-serif text-stone-100 mb-2">Treinamento e Perícias</h2>
         <p className="text-stone-400">
@@ -51,7 +60,7 @@ export function SkillsStep() {
           if (!skillDef) return null;
           
           const isSelected = selectedSkills.includes(skillId);
-          const isDisabled = !isSelected && selectedSkills.length >= maxSkills;
+          const isDisabled = isLocked || (!isSelected && selectedSkills.length >= maxSkills);
           
           return (
             <button
@@ -81,13 +90,28 @@ export function SkillsStep() {
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
-        <button 
-          type="button"
-          onClick={prevStep}
-          className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
-        >
-          Voltar
-        </button>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <button 
+            type="button"
+            onClick={prevStep}
+            className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
+          >
+            Voltar
+          </button>
+          {isEditing && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => quickSave()}
+                disabled={saving || isLocked}
+                className="w-full sm:w-auto px-6 py-2 bg-stone-700 hover:bg-stone-600 text-amber-500 border border-stone-600 rounded transition-colors flex justify-center items-center disabled:opacity-50"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
+              {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+            </div>
+          )}
+        </div>
         <button 
           onClick={nextStep}
           disabled={!isComplete && maxSkills > 0}

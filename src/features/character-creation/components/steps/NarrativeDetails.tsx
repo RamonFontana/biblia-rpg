@@ -14,7 +14,7 @@ const combinedSchema = z.object({
 type NarrativeFormData = z.infer<typeof combinedSchema>;
 
 export function NarrativeDetails() {
-  const { draft, setName, setNarrative, nextStep, prevStep } = useCharacterCreationStore();
+  const { draft, setName, setNarrative, nextStep, prevStep, isLocked } = useCharacterCreationStore();
   const { quickSave, saving, message, isEditing } = useQuickSave();
   
   const { register, handleSubmit, setValue, getValues, watch, formState: { errors } } = useForm<NarrativeFormData>({
@@ -81,26 +81,37 @@ export function NarrativeDetails() {
   };
 
   const onSubmit = (data: NarrativeFormData) => {
-    setName(data.name);
+    if (!isLocked) {
+      setName(data.name);
+    }
     setNarrative(data.narrative);
     nextStep();
   };
 
   const handleQuickSave = () => {
     const data = getValues();
-    quickSave({ name: data.name, narrative: data.narrative });
+    const payload = isLocked ? { narrative: data.narrative } : { name: data.name, narrative: data.narrative };
+    quickSave(payload);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      
+      {isLocked && (
+        <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
+          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Apenas o retrato e a história podem ser alterados.
+        </div>
+      )}
+
       <div>
         <label className="block text-stone-300 font-bold mb-2">Nome do Personagem *</label>
         <input 
           type="text"
+          disabled={isLocked}
           {...register('name')}
           placeholder="Ex: Davi, Eliabe, Rute..."
-          className="w-full bg-stone-900 border border-stone-700 text-stone-100 p-3 rounded focus:border-amber-500 outline-none"
+          className={`w-full bg-stone-900 border text-stone-100 p-3 rounded outline-none transition-colors ${
+            isLocked ? 'border-stone-800 opacity-50 cursor-not-allowed' : 'border-stone-700 focus:border-amber-500'
+          }`}
         />
         {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
       </div>

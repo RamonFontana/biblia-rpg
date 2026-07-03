@@ -39,8 +39,17 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
     );
   }
 
+  // Sort items to maintain stable order (alphabetically by name, fallback to id)
+  const sortedItems = [...inventoryItems].sort((a, b) => {
+    const nameA = a.items?.name || '';
+    const nameB = b.items?.name || '';
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+    return a.id.localeCompare(b.id);
+  });
+
   // Group items by category
-  const groupedItems = inventoryItems.reduce((acc, curr) => {
+  const groupedItems = sortedItems.reduce((acc, curr) => {
     const category = curr.items?.category || 'Outros';
     if (!acc[category]) acc[category] = [];
     acc[category].push(curr);
