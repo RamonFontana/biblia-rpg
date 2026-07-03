@@ -26,6 +26,7 @@ export async function saveCharacter(draft: DraftCharacter) {
       fortress: draft.fortress || null,
       temptation: draft.temptation || null,
       stats: draft.stats as any, // jsonb
+      proficiencies: draft.proficiencies as any || null, // jsonb
       equipment: draft.equipment as any || [], // jsonb
       coins: draft.coins || 0,
       narrative: draft.narrative as any || null, // jsonb
