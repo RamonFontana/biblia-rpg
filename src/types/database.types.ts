@@ -583,6 +583,7 @@ export type Database = {
           quantity: number
           side: string
           trade_id: string
+          weapon_effects: Json | null
         }
         Insert: {
           created_at?: string
@@ -593,6 +594,7 @@ export type Database = {
           quantity?: number
           side: string
           trade_id: string
+          weapon_effects?: Json | null
         }
         Update: {
           created_at?: string
@@ -603,6 +605,7 @@ export type Database = {
           quantity?: number
           side?: string
           trade_id?: string
+          weapon_effects?: Json | null
         }
         Relationships: [
           {
