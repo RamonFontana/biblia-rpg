@@ -262,38 +262,40 @@ export function TradeSide({
                       disabled={(ti.level || 1) >= 5}
                     >+</button>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button 
-                        className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
-                        title="Adicionar Resistências"
-                      >
-                        <ShieldPlus className="w-3 h-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                      <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
-                      {AVAILABLE_RESISTANCES.map(res => {
-                        const isChecked = (ti.custom_condition_resistances || []).includes(res);
-                        return (
-                          <DropdownMenuCheckboxItem
-                            key={res}
-                            checked={isChecked}
-                            onCheckedChange={async (checked) => {
-                              let current = [...(ti.custom_condition_resistances || [])];
-                              if (checked) current.push(res);
-                              else current = current.filter(r => r !== res);
-                              await tradeService.updateTradeItemResistances(ti.id, current);
-                              onItemsChanged();
-                            }}
-                            className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
-                          >
-                            {res}
-                          </DropdownMenuCheckboxItem>
-                        );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {ti.items?.category !== 'Arma' && ti.items?.category !== 'Consumível' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button 
+                          className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                          title="Adicionar Resistências"
+                        >
+                          <ShieldPlus className="w-3 h-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
+                        <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
+                        {AVAILABLE_RESISTANCES.map(res => {
+                          const isChecked = (ti.custom_condition_resistances || []).includes(res);
+                          return (
+                            <DropdownMenuCheckboxItem
+                              key={res}
+                              checked={isChecked}
+                              onCheckedChange={async (checked) => {
+                                let current = [...(ti.custom_condition_resistances || [])];
+                                if (checked) current.push(res);
+                                else current = current.filter(r => r !== res);
+                                await tradeService.updateTradeItemResistances(ti.id, current);
+                                onItemsChanged();
+                              }}
+                              className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                            >
+                              {res}
+                            </DropdownMenuCheckboxItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                   {ti.items?.category === 'Arma' && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
