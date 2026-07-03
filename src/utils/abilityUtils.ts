@@ -4,7 +4,10 @@ export function getAbilitiesForCharacter(
   tribe: string,
   vocation: string,
   level: number,
-  pathChoices?: { tribe?: 'A' | 'B'; vocation?: 'A' | 'B' }
+  pathChoices?: { 
+    tribe?: Record<number, 'A' | 'B'> | 'A' | 'B'; 
+    vocation?: Record<number, 'A' | 'B'> | 'A' | 'B';
+  }
 ): AbilityDefinition[] {
   return ABILITIES.filter(ability => {
     // Check level requirement
@@ -20,10 +23,18 @@ export function getAbilitiesForCharacter(
 
     // Filter by path choice if applicable
     if (ability.path) {
-      const chosenPath = ability.sourceType === 'tribe' 
+      const chosenPathData = ability.sourceType === 'tribe' 
         ? pathChoices?.tribe 
         : pathChoices?.vocation;
       
+      let chosenPath: 'A' | 'B' | undefined;
+      
+      if (typeof chosenPathData === 'object' && chosenPathData !== null) {
+        chosenPath = chosenPathData[ability.minLevel];
+      } else if (typeof chosenPathData === 'string') {
+        chosenPath = chosenPathData as 'A' | 'B';
+      }
+
       // If a path is required but hasn't been chosen yet or chose a different one
       if (chosenPath && chosenPath !== ability.path) {
         return false;

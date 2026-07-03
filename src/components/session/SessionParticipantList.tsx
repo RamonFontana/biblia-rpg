@@ -265,7 +265,7 @@ export function SessionParticipantList({
                           )}
                         </div>
                         <p className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
-                          {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
+                          {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'} (Nível ${npc.level || (npc.stats as any)?.level || 1})` : npc.vocation}
                         </p>
                       </div>
                     </div>

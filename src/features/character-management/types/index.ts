@@ -10,6 +10,7 @@ export interface Character extends DraftCharacter {
   is_playable?: boolean;
   is_dead?: boolean;
   is_stable?: boolean;
+  pending_level_up?: boolean;
   death_saves_successes?: number;
   death_saves_failures?: number;
   created_at: string;

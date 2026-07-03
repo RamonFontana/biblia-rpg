@@ -43,8 +43,8 @@ export interface EnemySkill {
 
 export interface CharacterSkills {
   path_choices?: {
-    tribe?: 'A' | 'B';
-    vocation?: 'A' | 'B';
+    tribe?: Record<number, 'A' | 'B'> | 'A' | 'B';
+    vocation?: Record<number, 'A' | 'B'> | 'A' | 'B';
   };
   ability_uses?: Record<string, number>;
 }

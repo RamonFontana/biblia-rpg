@@ -99,7 +99,7 @@ export function PlayerCard({
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="min-w-0 truncate block max-w-[200px] sm:max-w-full text-lg font-medium text-stone-200">
-              {character ? character.name : (user.name || 'Jogador')}
+              {character ? `${character.name} (Nível ${character.level || (character.stats as any)?.level || 1})` : (user.name || 'Jogador')}
             </span>
             {isSessionGM && (
               <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">

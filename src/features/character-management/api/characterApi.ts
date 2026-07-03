@@ -83,3 +83,21 @@ export const updateCharacter = async (id: string, updates: Partial<Character>): 
 
   return data as unknown as Character;
 };
+
+export const getActiveSessionCharacterIds = async (): Promise<Set<string>> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return new Set();
+
+  const { data, error } = await supabase
+    .from('session_participants')
+    .select('character_id, game_sessions!inner(status)')
+    .eq('game_sessions.status', 'active')
+    .eq('user_id', session.user.id);
+
+  if (error) {
+    console.error('Error fetching active session characters:', error);
+    return new Set();
+  }
+
+  return new Set(data.map(d => d.character_id));
+};

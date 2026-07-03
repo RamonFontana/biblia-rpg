@@ -83,6 +83,7 @@ export type Database = {
           level: number
           name: string
           narrative: Json | null
+          pending_level_up: boolean
           proficiencies: Json | null
           skills: Json | null
           stats: Json
@@ -112,6 +113,7 @@ export type Database = {
           level?: number
           name: string
           narrative?: Json | null
+          pending_level_up?: boolean
           proficiencies?: Json | null
           skills?: Json | null
           stats: Json
@@ -141,6 +143,7 @@ export type Database = {
           level?: number
           name?: string
           narrative?: Json | null
+          pending_level_up?: boolean
           proficiencies?: Json | null
           skills?: Json | null
           stats?: Json

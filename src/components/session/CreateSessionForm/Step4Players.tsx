@@ -56,25 +56,33 @@ export function Step4Players() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {characters.map((char) => {
               const isSelected = participantCharacterIds.includes(char.id);
+              const isLevelUpPending = char.pending_level_up;
+              
               return (
                 <div 
                   key={char.id} 
-                  className={`flex items-start space-x-3 p-3 border rounded-md cursor-pointer transition-colors ${isSelected ? 'bg-primary/5 border-primary/30' : 'bg-card hover:bg-muted/50'}`}
-                  onClick={() => handleToggle(char.id)}
+                  className={`flex items-start space-x-3 p-3 border rounded-md transition-colors ${isLevelUpPending ? 'bg-muted/50 opacity-60 cursor-not-allowed' : isSelected ? 'bg-primary/5 border-primary/30 cursor-pointer' : 'bg-card hover:bg-muted/50 cursor-pointer'}`}
+                  onClick={() => !isLevelUpPending && handleToggle(char.id)}
                 >
                   <Checkbox 
                     id={`char-${char.id}`} 
                     checked={isSelected}
-                    onCheckedChange={() => handleToggle(char.id)}
+                    disabled={isLevelUpPending}
+                    onCheckedChange={() => !isLevelUpPending && handleToggle(char.id)}
                     className="mt-1"
                   />
                   <div className="grid gap-1.5 leading-none flex-1">
-                    <Label htmlFor={`char-${char.id}`} className="font-semibold cursor-pointer">
+                    <Label htmlFor={`char-${char.id}`} className={`font-semibold ${isLevelUpPending ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer'}`}>
                       {char.name}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      {char.tribe} • {char.vocation}
+                      {char.tribe} • {char.vocation} {char.level ? `(Nível ${char.level})` : ''}
                     </p>
+                    {isLevelUpPending && (
+                      <span className="text-xs text-amber-500 font-medium mt-1 block">
+                        Este personagem possui um Aumento de Nível pendente. Complete a evolução antes de iniciar a sessão.
+                      </span>
+                    )}
                   </div>
                 </div>
               );

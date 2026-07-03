@@ -18,6 +18,7 @@ import { MasterTestDialog } from '@/components/session/MasterTestDialog';
 import { PlayerTestDialog } from '@/components/session/PlayerTestDialog';
 import { DiceRollerDialog } from '@/components/session/DiceRollerDialog';
 import { NewDayDialog } from '@/components/session/NewDayDialog';
+import { EndSessionDialog } from '@/components/session/EndSessionDialog';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
 import type { TradeWithItems } from '@/types/trade';
@@ -62,6 +63,7 @@ export function ActiveSessionPage() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [isNewDayDialogOpen, setIsNewDayDialogOpen] = useState(false);
+  const [isEndSessionDialogOpen, setIsEndSessionDialogOpen] = useState(false);
   const [isCombatSetupOpen, setIsCombatSetupOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -266,7 +268,7 @@ export function ActiveSessionPage() {
     refreshPlayerCharacters();
   }, [refreshTrades, refreshPlayerCharacters]);
 
-  const endSession = async () => {
+  const endSession = async (levelUpCharacterIds: string[]) => {
     if (!id) return;
     try {
       await tradeService.cancelSessionTrades(id);
@@ -300,6 +302,17 @@ export function ActiveSessionPage() {
       }
     } catch (e) {
       console.error('Erro ao deletar NPCs/Inimigos da sessão:', e);
+    }
+
+    try {
+      if (levelUpCharacterIds.length > 0) {
+        await supabase
+          .from('characters')
+          .update({ pending_level_up: true })
+          .in('id', levelUpCharacterIds);
+      }
+    } catch (e) {
+      console.error('Erro ao conceder level up:', e);
     }
 
     const { error } = await supabase
@@ -445,7 +458,7 @@ export function ActiveSessionPage() {
                 <Button onClick={() => setIsCombatSetupOpen(true)} variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2">
                   <span>⚔️</span> Iniciar Combate
                 </Button>
-                <Button variant="destructive" onClick={endSession}>
+                <Button variant="destructive" onClick={() => setIsEndSessionDialogOpen(true)}>
                   Finalizar Sessão
                 </Button>
               </div>
@@ -466,7 +479,7 @@ export function ActiveSessionPage() {
                     <DropdownMenuItem onClick={() => setIsCombatSetupOpen(true)} className="hover:bg-stone-800 cursor-pointer text-red-400">
                       <span className="mr-2">⚔️</span> Iniciar Combate
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={endSession} className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium">
+                    <DropdownMenuItem onClick={() => setIsEndSessionDialogOpen(true)} className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium">
                       Finalizar Sessão
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -629,6 +642,13 @@ export function ActiveSessionPage() {
         isOpen={isNewDayDialogOpen}
         onClose={() => setIsNewDayDialogOpen(false)}
         day={sessionData.current_day || 1}
+      />
+
+      <EndSessionDialog
+        isOpen={isEndSessionDialogOpen}
+        onClose={() => setIsEndSessionDialogOpen(false)}
+        onConfirm={endSession}
+        playerCharacters={playerCharacters}
       />
 
       {isCombatSetupOpen && (

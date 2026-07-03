@@ -1,28 +1,35 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyCharacters } from '../api/characterApi';
+import { getMyCharacters, getActiveSessionCharacterIds } from '../api/characterApi';
 import type { Character } from '../types';
 import { CharacterCard } from '../components/CharacterCard';
+import { LevelUpWizard } from '../components/LevelUpWizard';
 
 export function CharacterList() {
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [activeSessionIds, setActiveSessionIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [levelUpCharacter, setLevelUpCharacter] = useState<Character | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCharacters = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getMyCharacters();
-        setCharacters(data);
+        const [charData, activeIds] = await Promise.all([
+          getMyCharacters(),
+          getActiveSessionCharacterIds()
+        ]);
+        setCharacters(charData);
+        setActiveSessionIds(activeIds);
       } catch (err: any) {
-        setError(err.message || 'Erro ao carregar personagens');
+        setError(err.message || 'Erro ao carregar dados');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCharacters();
+    fetchData();
   }, []);
 
   const handleCharacterClick = (character: Character) => {
@@ -74,11 +81,24 @@ export function CharacterList() {
               key={character.id}
               character={character}
               onClick={handleCharacterClick}
+              isInActiveSession={activeSessionIds.has(character.id)}
+              onLevelUpClick={setLevelUpCharacter}
             />
           ))}
         </div>
       )}
       </div>
+      
+      {levelUpCharacter && (
+        <LevelUpWizard 
+          character={levelUpCharacter}
+          onComplete={() => {
+            setLevelUpCharacter(null);
+            window.location.reload(); // simple reload for now
+          }}
+          onCancel={() => setLevelUpCharacter(null)}
+        />
+      )}
     </div>
   );
 }
