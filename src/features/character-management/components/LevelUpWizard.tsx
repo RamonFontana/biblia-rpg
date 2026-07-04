@@ -47,8 +47,26 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const hpGained = Math.max(1, hpAverage + conMod);
 
   // Steps calculation
-  const hasTribeChoice = [4, 8, 12, 16, 20].includes(newLevel);
-  const hasVocationChoice = [2, 6, 10, 14, 18].includes(newLevel);
+  const tribeOptions = useMemo(() => {
+    return ABILITIES.filter(
+      a => a.sourceType === 'tribe' &&
+        normalizeString(a.sourceId) === normalizeString(character.tribe || '') &&
+        a.minLevel === newLevel &&
+        a.path
+    );
+  }, [character.tribe, newLevel]);
+
+  const vocationOptions = useMemo(() => {
+    return ABILITIES.filter(
+      a => a.sourceType === 'vocation' &&
+        normalizeString(a.sourceId) === normalizedVocation &&
+        a.minLevel === newLevel &&
+        a.path
+    );
+  }, [normalizedVocation, newLevel]);
+
+  const hasTribeChoice = tribeOptions.length > 0;
+  const hasVocationChoice = vocationOptions.length > 0;
   const hasAsi = [4, 8, 12, 16, 19].includes(newLevel);
 
   const steps = useMemo(() => {
@@ -61,27 +79,6 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   }, [hasTribeChoice, hasVocationChoice, hasAsi]);
 
   const currentStepId = steps[currentStepIndex];
-
-  // Options for Tribe / Vocation
-  const tribeOptions = useMemo(() => {
-    if (!hasTribeChoice) return [];
-    return ABILITIES.filter(
-      a => a.sourceType === 'tribe' &&
-        normalizeString(a.sourceId) === normalizeString(character.tribe || '') &&
-        a.minLevel === newLevel &&
-        a.path
-    );
-  }, [hasTribeChoice, character.tribe, newLevel]);
-
-  const vocationOptions = useMemo(() => {
-    if (!hasVocationChoice) return [];
-    return ABILITIES.filter(
-      a => a.sourceType === 'vocation' &&
-        normalizeString(a.sourceId) === normalizedVocation &&
-        a.minLevel === newLevel &&
-        a.path
-    );
-  }, [hasVocationChoice, normalizedVocation, newLevel]);
 
   // Derived ASI changes
   const newCon = currentCon + (asiChoices.attr1 === 'con' ? 1 : 0) + (asiChoices.attr2 === 'con' ? 1 : 0);

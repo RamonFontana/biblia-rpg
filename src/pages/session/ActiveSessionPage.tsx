@@ -119,7 +119,7 @@ export function ActiveSessionPage() {
     fetchSession();
 
     const channel = supabase
-      .channel(`session-${id}`)
+      .channel(`session-${id}-${Math.random()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${id}` },

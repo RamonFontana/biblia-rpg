@@ -38,7 +38,7 @@ export function useSessionTests(sessionId: string) {
     if (!sessionId) return
 
     const channel = supabase
-      .channel(`session_tests_realtime_${sessionId}`)
+      .channel(`session_tests_realtime_${sessionId}_${Math.random()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'session_tests', filter: `session_id=eq.${sessionId}` },

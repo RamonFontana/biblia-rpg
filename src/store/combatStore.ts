@@ -29,6 +29,9 @@ interface CombatStore extends PlayerCombatState {
   // Computed
   currentTurnParticipant: CombatParticipant | null;
   
+  // Channels
+  combatChannel: any | null;
+
   // Subscriptions
   initSubscriptions: (sessionId: string) => void;
   cleanupSubscriptions: () => void;
@@ -47,6 +50,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   activeCombat: null,
   participants: [],
   currentTurnParticipant: null,
+  combatChannel: null,
 
   // Player local state
   hasUsedMovement: false,
@@ -146,6 +150,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   initSubscriptions: (sessionId: string) => {
+    // Clean up existing channel if any
+    const existingChannel = get().combatChannel;
+    if (existingChannel) {
+      supabase.removeChannel(existingChannel);
+    }
+
     // Initial fetch
     supabase.from('combats').select('*').eq('session_id', sessionId).eq('status', 'active').maybeSingle().then(async ({ data: combat }) => {
       if (combat) {
@@ -224,11 +234,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     );
 
     channel.subscribe();
+    set({ combatChannel: channel });
   },
 
   cleanupSubscriptions: () => {
-    supabase.removeAllChannels();
-    set({ activeCombat: null, participants: [], currentTurnParticipant: null });
+    const { combatChannel } = get();
+    if (combatChannel) {
+      supabase.removeChannel(combatChannel);
+    }
+    set({ activeCombat: null, participants: [], currentTurnParticipant: null, combatChannel: null });
   },
 
   nextTurn: async () => {
@@ -271,34 +285,44 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const { activeCombat, participants } = get();
     if (!activeCombat) return;
 
-    // 1. Mark combat as finished
-    const { error: combatError } = await supabase
-      .from('combats')
-      .update({ status: 'finished' })
-      .eq('id', activeCombat.id);
-
-    if (combatError) {
-      console.error('Failed to end combat', combatError);
-      throw combatError;
-    }
-
-    // 2. Sync final HP to characters and perform soft delete for dead characters
+    // 1. Sync final HP to characters and perform soft delete for dead characters BEFORE ending combat
+    // This ensures that realtime listeners for 'combats' UPDATE will fetch the correctly updated characters.
     if (participants.length > 0) {
       const charIds = participants.map(p => p.entity_id);
       
       const { data: chars } = await supabase
         .from('characters')
-        .select('id, stats, is_dead')
+        .select('id, stats, is_dead, is_enemy')
         .in('id', charIds);
         
       if (chars) {
         const deadCharIds: string[] = [];
+        const deadEnemyIds: string[] = [];
 
         for (const char of chars) {
           const participant = participants.find(p => p.entity_id === char.id);
           if (participant) {
             const currentStats = (char.stats as any) || {};
-            const newStats = { ...currentStats, current_pv: participant.hp_current };
+            const newHp = participant.hp_current;
+            
+            // Fix: Actually update status to 'Morto' if HP is 0
+            let newStatus = currentStats.status;
+            let isDead = char.is_dead;
+            
+            if (newHp <= 0) {
+               newStatus = 'Morto';
+               isDead = true;
+               
+               if (char.is_enemy) {
+                 deadEnemyIds.push(char.id);
+               } else {
+                 deadCharIds.push(char.id);
+               }
+            } else if (newStatus === 'Morto') {
+               newStatus = 'Vivo';
+            }
+
+            const newStats = { ...currentStats, current_pv: newHp, status: newStatus };
             
             // Clean temporary conditions and keep permanent ones
             const currentConditions = ((participant as any).conditions as unknown as ConditionEntry[]) || [];
@@ -307,28 +331,35 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             // Sync HP and conditions
             await supabase.from('characters').update({ 
               stats: newStats,
-              conditions: permanentConditions as any
+              conditions: permanentConditions as any,
+              is_dead: isDead
             }).eq('id', char.id);
-
-            // Check if dead
-            if (char.is_dead || participant.hp_current <= 0 && currentStats.status === 'Morto') {
-               deadCharIds.push(char.id);
-            }
           }
         }
         
-        // Soft delete dead characters
-        if (deadCharIds.length > 0) {
+        // Soft delete dead enemies
+        if (deadEnemyIds.length > 0) {
           const { error: deleteError } = await supabase
             .from('characters')
             .update({ is_deleted: true })
-            .in('id', deadCharIds);
+            .in('id', deadEnemyIds);
             
           if (deleteError) {
-            console.error('Failed to soft delete dead characters', deleteError);
+            console.error('Failed to soft delete dead enemies', deleteError);
           }
         }
       }
+    }
+    
+    // 2. Mark combat as finished
+    const { error: combatError } = await supabase
+      .from('combats')
+      .update({ status: 'finished' })
+      .eq('id', activeCombat.id);
+
+    if (combatError) {
+      console.error('Failed to end combat', combatError);
+      throw combatError;
     }
     
     get().cleanupSubscriptions();

@@ -71,7 +71,7 @@ export function useSessionCharacters(sessionId: string | undefined) {
     if (!sessionId) return;
 
     const channel = supabase
-      .channel(`session_characters_${sessionId}`)
+      .channel(`session_characters_${sessionId}_${Math.random()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_participants', filter: `session_id=eq.${sessionId}` }, fetchCharacters)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'character_items' }, fetchCharacters)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'characters' }, fetchCharacters)

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface PresenceState {
   user_id: string;
@@ -16,51 +15,52 @@ export const useSupabasePresence = (
   const [onlineUsers, setOnlineUsers] = useState<PresenceState[]>([]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !userPayload) return;
 
-    let channel: RealtimeChannel;
+    let isMounted = true;
+    const channelName = `presence_session_${sessionId}`;
 
-    const setupPresence = () => {
-      channel = supabase.channel(`session_${sessionId}`, {
-        config: {
-          presence: {
-            key: userPayload?.user_id || 'anonymous',
-          },
+    const channel = supabase.channel(channelName, {
+      config: {
+        presence: {
+          key: userPayload.user_id,
         },
+      },
+    });
+
+    const updatePresence = () => {
+      if (!isMounted) return;
+      const newState = channel.presenceState();
+
+      const users: PresenceState[] = [];
+      Object.values(newState).forEach((presences) => {
+        if (Array.isArray(presences)) {
+          users.push(...(presences as unknown as PresenceState[]));
+        }
       });
 
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          const newState = channel.presenceState();
-          const users: PresenceState[] = [];
-          
-          Object.values(newState).forEach((presences) => {
-            if (Array.isArray(presences)) {
-              users.push(...(presences as unknown as PresenceState[]));
-            }
-          });
-          
-          // Deduplicate by user_id
-          const uniqueUsers = Array.from(
-            new Map(users.map((item) => [item.user_id, item])).values()
-          );
-          
-          setOnlineUsers(uniqueUsers);
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED' && userPayload) {
-            await channel.track(userPayload);
-          }
-        });
+      const uniqueUsers = Array.from(
+        new Map(users.map((item) => [item.user_id, item])).values()
+      );
+
+      setOnlineUsers(uniqueUsers);
     };
 
-    setupPresence();
+    channel
+      .on('presence', { event: 'sync' }, updatePresence)
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED' && isMounted) {
+          try {
+            await channel.track(userPayload);
+          } catch (err) {
+            console.error('[Presence] Error tracking presence:', err);
+          }
+        }
+      });
 
     return () => {
-      if (channel) {
-        // Automatically untracks when leaving channel
-        supabase.removeChannel(channel);
-      }
+      isMounted = false;
+      supabase.removeChannel(channel);
     };
   }, [sessionId, userPayload?.user_id, userPayload?.character_id, userPayload?.name]);
 

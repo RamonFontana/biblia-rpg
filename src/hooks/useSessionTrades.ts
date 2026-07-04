@@ -29,7 +29,7 @@ export function useSessionTrades(sessionId: string | undefined) {
     if (!sessionId) return;
 
     const channel = supabase
-      .channel(`session_trades_realtime_${sessionId}`)
+      .channel(`session_trades_realtime_${sessionId}_${Math.random()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'trades', filter: `session_id=eq.${sessionId}` },
