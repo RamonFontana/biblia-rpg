@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface TokenContextMenuProps {
@@ -13,6 +13,23 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
   const menuRef = useRef<HTMLDivElement>(null);
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [position, setPosition] = useState({ top: y, left: x });
+
+  // Mantém o menu dentro da viewport (evita cortar em telas de celular perto das bordas)
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    const margin = 8;
+    const rect = menu.getBoundingClientRect();
+    const maxLeft = window.innerWidth - rect.width - margin;
+    const maxTop = window.innerHeight - rect.height - margin;
+
+    setPosition({
+      left: Math.max(margin, Math.min(x, maxLeft)),
+      top: Math.max(margin, Math.min(y, maxTop)),
+    });
+  }, [x, y, isLoading, inventoryItems.length]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -106,8 +123,8 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl overflow-hidden"
-      style={{ top: y, left: x }}
+      className="fixed z-50 min-w-48 max-w-[calc(100vw-1rem)] bg-stone-900 border border-stone-700 rounded-lg shadow-xl overflow-hidden"
+      style={position}
     >
       <div className="bg-stone-800 px-3 py-2 border-b border-stone-700 font-semibold text-stone-200 text-sm flex justify-between items-center">
         Ações

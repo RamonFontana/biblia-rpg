@@ -5,6 +5,7 @@ import { CharacterSheetView } from '../character/CharacterSheetView';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { AddNPCModal } from './AddNPCModal';
 
 interface SessionNPC extends Character {
   is_playable?: boolean;
@@ -94,9 +95,12 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
   return (
     <>
       <div className="bg-stone-800 p-3 md:p-4 rounded-lg border border-stone-700 shadow-md">
-        <h3 className="text-xl font-bold text-stone-200 mb-4 border-b border-stone-600 pb-2 flex items-center gap-2">
-          NPCs da Sessão ({npcs.length})
-        </h3>
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-stone-600 pb-2">
+          <h3 className="text-xl font-bold text-stone-200 flex items-center gap-2">
+            NPCs da Sessão ({npcs.length})
+          </h3>
+          <AddNPCModal sessionId={sessionId} />
+        </div>
         {npcs.length === 0 ? (
           <p className="text-stone-400 text-sm">Nenhum NPC inserido nesta sessão.</p>
         ) : (
@@ -108,11 +112,16 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                   onClick={() => handleNPCClick(npc)}
                 >
                     <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
-                    <div className="flex items-center gap-2 min-w-0 max-w-[70%] sm:max-w-none">
+                    <div className="flex items-center gap-2 min-w-0 max-w-[70%] sm:max-w-none flex-wrap">
                       <p className="font-semibold text-stone-200 truncate" title={npc.name}>{npc.name}</p>
                       {npc.is_playable && (
                         <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-500 border border-amber-500/30">
                           Ficha Completa
+                        </span>
+                      )}
+                      {npc.stats?.status === 'Morto' && (
+                        <span className="shrink-0 px-2 py-0.5 bg-red-900/50 text-red-400 text-[10px] font-bold rounded uppercase border border-red-500/30">
+                          Morto
                         </span>
                       )}
                     </div>
@@ -182,11 +191,6 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                           <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_faith', 1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">+</button>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  {npc.stats?.status === 'Morto' && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-red-900/50 text-red-400 text-[10px] font-bold rounded uppercase border border-red-500/30">
-                      Morto
                     </div>
                   )}
                 </div>

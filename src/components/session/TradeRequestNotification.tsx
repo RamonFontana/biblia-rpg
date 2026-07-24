@@ -42,7 +42,7 @@ export function TradeRequestNotification({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm bg-stone-900 border border-amber-500/30 rounded-lg shadow-xl p-4 animate-in slide-in-from-bottom-4">
+    <div className="w-full max-w-sm bg-stone-900 border border-amber-500/30 rounded-lg shadow-xl p-4 animate-in slide-in-from-bottom-4 pointer-events-auto">
       <div className="flex items-start gap-3">
         <span className="text-2xl">⚖️</span>
         <div className="flex-1">

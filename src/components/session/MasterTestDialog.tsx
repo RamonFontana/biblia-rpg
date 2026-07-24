@@ -115,7 +115,7 @@ export function MasterTestDialog({
   // Determine if we are showing the creation form or the active dashboard
   if (currentActiveTest) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
         <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-serif text-amber-500">Teste em Andamento</h2>
@@ -194,7 +194,7 @@ export function MasterTestDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-serif text-amber-500">Solicitar Teste aos Jogadores</h2>
@@ -202,7 +202,7 @@ export function MasterTestDialog({
         </div>
 
         <div className="space-y-5">
-          <div className={`grid ${testType === 'Fé' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
+          <div className={`grid grid-cols-1 ${testType === 'Fé' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
             <div>
               <label className="block text-sm font-medium text-stone-400 mb-1">Tipo de Teste</label>
               <select

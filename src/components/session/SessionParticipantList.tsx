@@ -302,23 +302,27 @@ export function SessionParticipantList({
         )}
       </div>
 
-      {pendingTradesForUser.map((trade) => {
-        const npcName = trade.target_npc_id
-          ? npcs.find((n) => n.id === trade.target_npc_id)?.name
-          : trade.target_character_id
-            ? npcs.find((n) => n.id === trade.target_character_id)?.name
-            : undefined;
-        return (
-        <TradeRequestNotification
-          key={trade.id}
-          trade={trade}
-          playerCharacters={playerCharacters}
-          npcName={npcName}
-          onAccept={(id) => onAcceptTrade?.(id)}
-          onReject={(id) => onRejectTrade?.(id)}
-        />
-        );
-      })}
+      {pendingTradesForUser.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col-reverse items-end gap-3 max-w-[calc(100vw-2rem)]">
+          {pendingTradesForUser.map((trade) => {
+            const npcName = trade.target_npc_id
+              ? npcs.find((n) => n.id === trade.target_npc_id)?.name
+              : trade.target_character_id
+                ? npcs.find((n) => n.id === trade.target_character_id)?.name
+                : undefined;
+            return (
+              <TradeRequestNotification
+                key={trade.id}
+                trade={trade}
+                playerCharacters={playerCharacters}
+                npcName={npcName}
+                onAccept={(id) => onAcceptTrade?.(id)}
+                onReject={(id) => onRejectTrade?.(id)}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <Dialog open={!!selectedUserId} onOpenChange={(open: boolean) => !open && closeSheet()}>
         <DialogContent className="w-full sm:max-w-4xl bg-stone-950 border border-stone-800 p-0 text-stone-200 overflow-hidden flex flex-col gap-0">

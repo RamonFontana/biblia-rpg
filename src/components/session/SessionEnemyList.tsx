@@ -84,9 +84,14 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
                       className="w-10 h-10 border border-stone-700 shrink-0" 
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
                           <p className="font-semibold text-stone-200 truncate">{enemy.name}</p>
+                          {enemy.stats?.status === 'Morto' && (
+                            <span className="shrink-0 px-2 py-0.5 bg-red-900/50 text-red-400 text-[10px] font-bold rounded uppercase border border-red-500/30">
+                              Morto
+                            </span>
+                          )}
                         </div>
                       </div>
                       {enemy.vocation && (
@@ -111,11 +116,6 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
                         <span className="text-blue-400">⛨</span>
                         <span className="font-mono">CA {getCombatStats(enemy).totalAc}</span>
                       </div>
-                    </div>
-                  )}
-                  {enemy.stats?.status === 'Morto' && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-red-900/50 text-red-400 text-[10px] font-bold rounded uppercase border border-red-500/30">
-                      Morto
                     </div>
                   )}
                 </div>
