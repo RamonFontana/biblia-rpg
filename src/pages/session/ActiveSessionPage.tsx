@@ -13,6 +13,7 @@ import { useSessionTests } from '@/hooks/useSessionTests';
 import { useSessionCharacters } from '@/hooks/useSessionCharacters';
 import { useSessionTrades } from '@/hooks/useSessionTrades';
 import { tradeService } from '@/services/tradeService';
+import { endSession as endSessionService } from '@/services/sessionService';
 import { TradeDialog } from '@/components/session/TradeDialog';
 import { MasterTestDialog } from '@/components/session/MasterTestDialog';
 import { PlayerTestDialog } from '@/components/session/PlayerTestDialog';
@@ -21,13 +22,14 @@ import { NewDayDialog } from '@/components/session/NewDayDialog';
 import { EndSessionDialog } from '@/components/session/EndSessionDialog';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
-import type { TradeWithItems } from '@/types/trade';
+import type { CreateTradeParams, TradeWithItems } from '@/types/trade';
 import { CombatSetupModal } from '@/components/combat/CombatSetupModal';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
 import { useCombatStore } from '@/store/combatStore';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { getCurrentPv } from '@/lib/vitalsUtils';
 import { Menu } from 'lucide-react';
 import {
   DropdownMenu,
@@ -50,11 +52,7 @@ export function ActiveSessionPage() {
     npcs,
     enemies,
     refresh: refreshPlayerCharacters,
-    updateLocalPlayerCharacter,
-    updateLocalPlayerData,
-    updateLocalNPC,
-    updateLocalNPCData,
-    updateLocalEnemy,
+    updateLocal,
     isLoading: isCharactersLoading,
   } = useSessionCharacters(id);
   
@@ -155,6 +153,18 @@ export function ActiveSessionPage() {
     });
   }, [activeTrades, user, isGM, playerCharacters]);
 
+  const createTradeAndRefresh = useCallback(
+    async (params: CreateTradeParams, errorMessage: string) => {
+      try {
+        await tradeService.createTrade(params);
+        refreshTrades();
+      } catch (e) {
+        console.error(errorMessage, e);
+      }
+    },
+    [refreshTrades]
+  );
+
   const handleNegotiate = useCallback(
     async (targetUserId: string) => {
       if (!user || !id) return;
@@ -163,21 +173,19 @@ export function ActiveSessionPage() {
       if (!myChar || !targetChar) return;
       if (isCharacterTrading(myChar.id) || isCharacterTrading(targetChar.id)) return;
 
-      try {
-        await tradeService.createTrade({
+      await createTradeAndRefresh(
+        {
           sessionId: id,
           type: 'player_trade',
           initiatorUserId: user.id,
           initiatorCharacterId: myChar.id,
           targetCharacterId: targetChar.id,
           status: 'pending',
-        });
-        refreshTrades();
-      } catch (e) {
-        console.error('Erro ao criar negociação:', e);
-      }
+        },
+        'Erro ao criar negociação:'
+      );
     },
-    [user, id, playerCharacters, isCharacterTrading, refreshTrades]
+    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh]
   );
 
   const handleShop = useCallback(
@@ -187,21 +195,19 @@ export function ActiveSessionPage() {
       if (!targetChar) return;
       if (isCharacterTrading(targetChar.id)) return;
 
-      try {
-        await tradeService.createTrade({
+      await createTradeAndRefresh(
+        {
           sessionId: id,
           type: 'shop',
           initiatorUserId: user.id,
           initiatorCharacterId: null,
           targetCharacterId: targetChar.id,
           status: 'active',
-        });
-        refreshTrades();
-      } catch (e) {
-        console.error('Erro ao abrir lojinha:', e);
-      }
+        },
+        'Erro ao abrir lojinha:'
+      );
     },
-    [user, id, isGM, playerCharacters, isCharacterTrading, refreshTrades]
+    [user, id, isGM, playerCharacters, isCharacterTrading, createTradeAndRefresh]
   );
 
   const handleNPCNegotiate = useCallback(
@@ -211,32 +217,19 @@ export function ActiveSessionPage() {
       if (!myChar) return;
       if (isCharacterTrading(myChar.id)) return;
 
-      try {
-        if (npc.is_playable) {
-          await tradeService.createTrade({
-            sessionId: id,
-            type: 'npc_trade',
-            initiatorUserId: user.id,
-            initiatorCharacterId: myChar.id,
-            targetCharacterId: npc.id,
-            status: 'pending',
-          });
-        } else {
-          await tradeService.createTrade({
-            sessionId: id,
-            type: 'npc_trade',
-            initiatorUserId: user.id,
-            initiatorCharacterId: myChar.id,
-            targetNpcId: npc.id,
-            status: 'pending',
-          });
-        }
-        refreshTrades();
-      } catch (e) {
-        console.error('Erro ao solicitar negociação com NPC:', e);
-      }
+      await createTradeAndRefresh(
+        {
+          sessionId: id,
+          type: 'npc_trade',
+          initiatorUserId: user.id,
+          initiatorCharacterId: myChar.id,
+          status: 'pending',
+          ...(npc.is_playable ? { targetCharacterId: npc.id } : { targetNpcId: npc.id }),
+        },
+        'Erro ao solicitar negociação com NPC:'
+      );
     },
-    [user, id, playerCharacters, isCharacterTrading, refreshTrades]
+    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh]
   );
 
   const handleAcceptTrade = useCallback(
@@ -270,57 +263,8 @@ export function ActiveSessionPage() {
 
   const endSession = async (levelUpCharacterIds: string[]) => {
     if (!id) return;
-    try {
-      await tradeService.cancelSessionTrades(id);
-    } catch (e) {
-      console.error('Erro ao cancelar negociações:', e);
-    }
-
-    try {
-      // Deletar personagens (NPCs e inimigos) que foram criados para esta sessão
-      const { data: participants } = await supabase
-        .from('session_participants')
-        .select('character_id')
-        .eq('session_id', id);
-
-      if (participants && participants.length > 0) {
-        const charIds = participants.map(p => p.character_id).filter(Boolean);
-        
-        if (charIds.length > 0) {
-          // Apenas exclui os que são NPCs ou Inimigos
-          const { data: charsToDelete } = await supabase
-            .from('characters')
-            .select('id')
-            .in('id', charIds)
-            .or('is_npc.eq.true,is_enemy.eq.true');
-
-          if (charsToDelete && charsToDelete.length > 0) {
-            const deleteIds = charsToDelete.map(c => c.id);
-            await supabase.from('characters').delete().in('id', deleteIds);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Erro ao deletar NPCs/Inimigos da sessão:', e);
-    }
-
-    try {
-      if (levelUpCharacterIds.length > 0) {
-        await supabase
-          .from('characters')
-          .update({ pending_level_up: true })
-          .in('id', levelUpCharacterIds);
-      }
-    } catch (e) {
-      console.error('Erro ao conceder level up:', e);
-    }
-
-    const { error } = await supabase
-      .from('game_sessions')
-      .update({ status: 'finished' })
-      .eq('id', id);
-
-    if (!error) {
+    const success = await endSessionService(id, levelUpCharacterIds);
+    if (success) {
       navigate('/');
     }
   };
@@ -384,21 +328,21 @@ export function ActiveSessionPage() {
       id: pc.character.id,
       name: pc.character.name || 'Jogador',
       type: 'player' as const,
-      hpCurrent: pc.character.stats?.current_pv ?? (pc.character.stats as any)?.current_hp ?? pc.character.stats?.pv ?? (pc.character.stats as any)?.max_pv ?? (pc.character.stats as any)?.max_hp ?? 0,
+      hpCurrent: getCurrentPv(pc.character.stats),
       ...getCombatStats(pc.character)
     })),
     ...npcs.filter(npc => !npc.is_deleted && npc.is_playable).map(npc => ({
       id: npc.id,
       name: npc.name || 'NPC',
       type: 'npc' as const,
-      hpCurrent: (npc.stats as any)?.current_pv ?? (npc.stats as any)?.current_hp ?? (npc.stats as any)?.pv ?? (npc.stats as any)?.max_pv ?? (npc.stats as any)?.max_hp ?? 0,
+      hpCurrent: getCurrentPv(npc.stats as any),
       ...getCombatStats(npc)
     })),
     ...enemies.filter(enemy => !enemy.is_deleted).map(enemy => ({
       id: enemy.id,
       name: enemy.name || 'Inimigo',
       type: 'enemy' as const,
-      hpCurrent: enemy.stats?.current_pv ?? (enemy.stats as any)?.current_hp ?? (enemy.stats as any)?.pv ?? (enemy.stats as any)?.max_pv ?? (enemy.stats as any)?.max_hp ?? 0,
+      hpCurrent: getCurrentPv(enemy.stats),
       ...getCombatStats(enemy)
     }))
   ], [playerCharacters, npcs, enemies]);
@@ -438,7 +382,7 @@ export function ActiveSessionPage() {
             </span>
           </div>
 
-          <div className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-gray-100/20 text-gray-400'}`}>
+          <div className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-stone-700 text-stone-300'}`}>
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
           {sessionData.status === 'active' && !isSpectator && (
@@ -516,22 +460,20 @@ export function ActiveSessionPage() {
                 gmId={sessionData.gm_id}
                 playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
                 activeTrades={activeTrades}
-                onUpdatePlayerStat={updateLocalPlayerCharacter}
-                onUpdatePlayerData={updateLocalPlayerData}
-                onUpdateNPCData={updateLocalNPCData}
+                onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
+                onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
                 onShop={handleShop}
                 onAcceptTrade={handleAcceptTrade}
                 onRejectTrade={handleRejectTrade}
                 activeTests={activeTests}
                 testResults={testResults}
               />
-              <SessionEnemyList sessionId={id} enemies={enemies} isLoading={isCharactersLoading} updateLocalEnemy={updateLocalEnemy} />
+              <SessionEnemyList sessionId={id} enemies={enemies} isLoading={isCharactersLoading} updateLocalEnemy={(enemyId, patch) => updateLocal('enemy', enemyId, patch)} />
 
               <SessionNPCList
                 npcs={npcs}
                 sessionId={id}
-                onUpdateNPCStat={updateLocalNPC}
-                onUpdateNPCData={updateLocalNPCData}
+                onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
                 onNPCNegotiate={handleNPCNegotiate}
               />
             </div>
@@ -562,7 +504,7 @@ export function ActiveSessionPage() {
 
             <PlayerRestIndicator sessionData={sessionData} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} />
 
-            {myCharacter && (myCharacter.stats?.current_pv ?? myCharacter.stats?.pv) <= 0 && !myCharacter.is_dead && !activeCombat && (
+            {myCharacter && getCurrentPv(myCharacter.stats) <= 0 && !myCharacter.is_dead && !activeCombat && (
               <div className="w-full max-w-4xl mt-4">
                 <DeathSavesModal character={myCharacter} />
               </div>
@@ -589,8 +531,8 @@ export function ActiveSessionPage() {
                   playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
                   npcs={npcs.filter((n) => (n as unknown as { is_visible?: boolean }).is_visible)}
                   activeTrades={activeTrades}
-                  onUpdatePlayerData={updateLocalPlayerData}
-                  onUpdateNPCData={updateLocalNPCData}
+                  onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
+                  onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
                   onNegotiate={handleNegotiate}
                   onNPCNegotiate={handleNPCNegotiate}
                   onAcceptTrade={handleAcceptTrade}

@@ -14,6 +14,8 @@ import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
 import { conditionsService } from '@/services/conditionsService';
+import { characterVitalsService } from '@/services/characterVitalsService';
+import { getCurrentPv } from '@/lib/vitalsUtils';
 import type { ConditionEntry } from '@/types/combat';
 
 interface SessionParticipantListProps {
@@ -24,7 +26,6 @@ interface SessionParticipantListProps {
   playerCharacters?: { user_id: string; character: Character }[];
   npcs?: Character[];
   activeTrades?: TradeWithItems[];
-  onUpdatePlayerStat?: (characterId: string, stats: any) => void;
   onUpdatePlayerData?: (characterId: string, data: any) => void;
   onUpdateNPCData?: (npcId: string, data: any) => void;
   onNegotiate?: (targetUserId: string) => void;
@@ -44,7 +45,6 @@ export function SessionParticipantList({
   playerCharacters = [],
   npcs = [],
   activeTrades = [],
-  onUpdatePlayerStat,
   onUpdatePlayerData,
   onUpdateNPCData,
   onNegotiate,
@@ -103,16 +103,23 @@ export function SessionParticipantList({
   const updatePlayerStat = async (character: Character, statKey: 'current_pv' | 'current_faith', delta: number) => {
     if (!character.stats) return;
 
-    const baseKey = statKey === 'current_pv' ? 'pv' : 'faith';
-    const maxValue = statKey === 'current_pv'
-      ? (character.stats[baseKey] || 10)
-      : 100;
-    const currentValue = character.stats[statKey] ?? character.stats[baseKey] ?? (statKey === 'current_pv' ? 10 : 0);
+    if (statKey === 'current_pv') {
+      try {
+        const newStats = await characterVitalsService.adjustCurrentPv(character.id, character.stats, delta);
+        if (onUpdatePlayerData) onUpdatePlayerData(character.id, { stats: newStats });
+      } catch (e) {
+        console.error('Erro ao atualizar status do Jogador:', e);
+      }
+      return;
+    }
+
+    const maxValue = 100;
+    const currentValue = character.stats.current_faith ?? character.stats.faith ?? 0;
 
     let newValue = Math.max(0, currentValue + delta);
     if (newValue > maxValue) newValue = maxValue;
 
-    const newStats = { ...character.stats, [statKey]: newValue };
+    const newStats = { ...character.stats, current_faith: newValue };
 
     try {
       await supabase
@@ -120,8 +127,8 @@ export function SessionParticipantList({
         .update({ stats: newStats })
         .eq('id', character.id);
 
-      if (onUpdatePlayerStat) {
-        onUpdatePlayerStat(character.id, newStats);
+      if (onUpdatePlayerData) {
+        onUpdatePlayerData(character.id, { stats: newStats });
       }
     } catch (e) {
       console.error('Erro ao atualizar status do Jogador:', e);
@@ -273,7 +280,7 @@ export function SessionParticipantList({
                       <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
                         <div className="flex items-center gap-1">
                           <span className="text-red-400">♥</span>
-                          <span>{npc.stats.current_pv ?? npc.stats.pv}/{npc.stats.pv}</span>
+                          <span>{getCurrentPv(npc.stats)}/{npc.stats.pv}</span>
                         </div>
                       </div>
                     )}

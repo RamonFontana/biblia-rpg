@@ -5,6 +5,8 @@ import { CharacterSheetView } from '../character/CharacterSheetView';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
+import { characterVitalsService } from '@/services/characterVitalsService';
 import { AddNPCModal } from './AddNPCModal';
 
 interface SessionNPC extends Character {
@@ -15,13 +17,12 @@ interface SessionNPC extends Character {
 interface SessionNPCListProps {
   npcs: SessionNPC[];
   sessionId: string;
-  onUpdateNPCStat?: (npcId: string, stats: any) => void;
   onUpdateNPCData?: (npcId: string, data: Partial<SessionNPC>) => void;
   onNPCNegotiate?: (npc: SessionNPC) => void;
   showNegotiateButton?: boolean;
 }
 
-export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCData, onNPCNegotiate, showNegotiateButton = false }: SessionNPCListProps) {
+export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiate, showNegotiateButton = false }: SessionNPCListProps) {
   const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
 
   const handleNPCClick = (npc: SessionNPC) => {
@@ -35,23 +36,23 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
   const updateNPCStat = async (npc: SessionNPC, statKey: 'current_pv' | 'current_faith', delta: number) => {
     if (!npc.stats) return;
 
-    const baseKey = statKey === 'current_pv' ? 'pv' : 'faith';
-    const maxValue = npc.stats[baseKey] || (statKey === 'current_pv' ? 10 : 100);
-    const currentValue = npc.stats[statKey] ?? npc.stats[baseKey] ?? (statKey === 'current_pv' ? 10 : 0);
+    if (statKey === 'current_pv') {
+      try {
+        const newStats = await characterVitalsService.adjustCurrentPvWithStatus(npc.id, npc.stats, delta);
+        if (onUpdateNPCData) onUpdateNPCData(npc.id, { stats: newStats as any });
+      } catch (e) {
+        console.error('Erro ao atualizar status do NPC:', e);
+      }
+      return;
+    }
+
+    const maxValue = npc.stats.faith || 100;
+    const currentValue = npc.stats.current_faith ?? npc.stats.faith ?? 0;
 
     let newValue = Math.max(0, currentValue + delta);
     if (newValue > maxValue) newValue = maxValue;
 
-    const newStats = { ...npc.stats, [statKey]: newValue };
-
-    // NPC death rule: 0 PV = Morto (only if we actually have PV to lose)
-    if (statKey === 'current_pv') {
-      if (newValue === 0 && maxValue > 0) {
-        newStats.status = 'Morto';
-      } else if (newValue > 0 && newStats.status === 'Morto') {
-        newStats.status = 'Vivo';
-      }
-    }
+    const newStats = { ...npc.stats, current_faith: newValue };
 
     try {
       await supabase
@@ -59,8 +60,8 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
         .update({ stats: newStats })
         .eq('id', npc.id);
 
-      if (onUpdateNPCStat) {
-        onUpdateNPCStat(npc.id, newStats);
+      if (onUpdateNPCData) {
+        onUpdateNPCData(npc.id, { stats: newStats });
       }
     } catch (e) {
       console.error('Erro ao atualizar status do NPC:', e);
@@ -170,7 +171,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCStat, onUpdateNPCDa
                         <div className="flex items-center gap-1">
                           <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_pv', -1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">-</button>
                           <span className="w-8 text-center font-mono">
-                            {npc.stats.current_pv ?? npc.stats.pv ?? 10}/{npc.stats.pv ?? 10}
+                            {getCurrentPv(npc.stats, 10)}/{getMaxPv(npc.stats, 10)}
                           </span>
                           <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_pv', 1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">+</button>
                         </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { Character } from '../types';
 import { updateCharacter } from '../api/characterApi';
+import { applyMaxPvIncrease } from '@/lib/vitalsUtils';
 import { ABILITIES } from '../../../data/abilities';
 
 interface LevelUpWizardProps {
@@ -129,13 +130,12 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
       const currentAttributes: any = character.attributes || {};
       const currentSkills: any = character.skills || {};
 
+      const { pv, current_pv } = applyMaxPvIncrease(currentStats, totalHpGained);
       const newStats = {
         ...currentStats,
         level: newLevel,
-        max_hp: (currentStats.max_hp || currentStats.pv || 0) + totalHpGained,
-        current_hp: (currentStats.current_hp || currentStats.current_pv || 0) + totalHpGained,
-        pv: (currentStats.pv || 0) + totalHpGained,
-        current_pv: (currentStats.current_pv || 0) + totalHpGained,
+        pv,
+        current_pv,
       };
 
       const newAttributes = { ...currentAttributes };

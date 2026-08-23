@@ -35,6 +35,21 @@ async function resetReadyFlags(tradeId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Every trade-item mutation follows the same shape: look up the parent trade,
+// mutate the item, then reset both sides' ready flags since the trade changed.
+async function withTradeItem(tradeItemId: string, mutate: () => Promise<void>): Promise<void> {
+  const { data: tradeItem, error: fetchError } = await (supabase as any)
+    .from('trade_items')
+    .select('trade_id')
+    .eq('id', tradeItemId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  await mutate();
+  await resetReadyFlags(tradeItem.trade_id);
+}
+
 export const tradeService = {
   async createTrade(params: CreateTradeParams): Promise<Trade> {
     const { data, error } = await (supabase as any)
@@ -151,102 +166,44 @@ export const tradeService = {
   },
 
   async updateTradeItemQuantity(tradeItemId: string, quantity: number): Promise<void> {
-    const { data: tradeItem, error: fetchError } = await (supabase as any)
-      .from('trade_items')
-      .select('trade_id')
-      .eq('id', tradeItemId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    if (quantity <= 0) {
-      const { error } = await (supabase as any)
-        .from('trade_items')
-        .delete()
-        .eq('id', tradeItemId);
-      if (error) throw error;
-    } else {
-      const { error } = await (supabase as any)
-        .from('trade_items')
-        .update({ quantity })
-        .eq('id', tradeItemId);
-      if (error) throw error;
-    }
-
-    await resetReadyFlags(tradeItem.trade_id);
+    await withTradeItem(tradeItemId, async () => {
+      if (quantity <= 0) {
+        const { error } = await (supabase as any).from('trade_items').delete().eq('id', tradeItemId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from('trade_items').update({ quantity }).eq('id', tradeItemId);
+        if (error) throw error;
+      }
+    });
   },
 
   async removeTradeItem(tradeItemId: string): Promise<void> {
-    const { data: tradeItem, error: fetchError } = await (supabase as any)
-      .from('trade_items')
-      .select('trade_id')
-      .eq('id', tradeItemId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const { error } = await (supabase as any)
-      .from('trade_items')
-      .delete()
-      .eq('id', tradeItemId);
-
-    if (error) throw error;
-    await resetReadyFlags(tradeItem.trade_id);
+    await withTradeItem(tradeItemId, async () => {
+      const { error } = await (supabase as any).from('trade_items').delete().eq('id', tradeItemId);
+      if (error) throw error;
+    });
   },
 
   async updateTradeItemLevel(tradeItemId: string, level: number): Promise<void> {
-    const { data: tradeItem, error: fetchError } = await (supabase as any)
-      .from('trade_items')
-      .select('trade_id')
-      .eq('id', tradeItemId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
     const clampedLevel = Math.max(1, Math.min(5, level));
-    const { error } = await (supabase as any)
-      .from('trade_items')
-      .update({ level: clampedLevel })
-      .eq('id', tradeItemId);
-
-    if (error) throw error;
-    await resetReadyFlags(tradeItem.trade_id);
+    await withTradeItem(tradeItemId, async () => {
+      const { error } = await (supabase as any).from('trade_items').update({ level: clampedLevel }).eq('id', tradeItemId);
+      if (error) throw error;
+    });
   },
 
   async updateTradeItemResistances(tradeItemId: string, resistances: string[]): Promise<void> {
-    const { data: tradeItem, error: fetchError } = await (supabase as any)
-      .from('trade_items')
-      .select('trade_id')
-      .eq('id', tradeItemId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const { error } = await (supabase as any)
-      .from('trade_items')
-      .update({ custom_condition_resistances: resistances })
-      .eq('id', tradeItemId);
-
-    if (error) throw error;
-    await resetReadyFlags(tradeItem.trade_id);
+    await withTradeItem(tradeItemId, async () => {
+      const { error } = await (supabase as any).from('trade_items').update({ custom_condition_resistances: resistances }).eq('id', tradeItemId);
+      if (error) throw error;
+    });
   },
 
   async updateTradeItemWeaponEffects(tradeItemId: string, effects: any[]): Promise<void> {
-    const { data: tradeItem, error: fetchError } = await (supabase as any)
-      .from('trade_items')
-      .select('trade_id')
-      .eq('id', tradeItemId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const { error } = await (supabase as any)
-      .from('trade_items')
-      .update({ weapon_effects: effects })
-      .eq('id', tradeItemId);
-
-    if (error) throw error;
-    await resetReadyFlags(tradeItem.trade_id);
+    await withTradeItem(tradeItemId, async () => {
+      const { error } = await (supabase as any).from('trade_items').update({ weapon_effects: effects }).eq('id', tradeItemId);
+      if (error) throw error;
+    });
   },
 
   async getActiveTradesForSession(sessionId: string): Promise<TradeWithItems[]> {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { subscribeToTables } from '@/lib/realtimeSubscriptions';
 import { tradeService } from '@/services/tradeService';
 import type { TradeWithItems } from '@/types/trade';
 
@@ -28,23 +28,10 @@ export function useSessionTrades(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) return;
 
-    const channel = supabase
-      .channel(`session_trades_realtime_${sessionId}_${Math.random()}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'trades', filter: `session_id=eq.${sessionId}` },
-        fetchTrades
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'trade_items' },
-        fetchTrades
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeToTables(`session_trades_realtime_${sessionId}_${Math.random()}`, [
+      { table: 'trades', filter: `session_id=eq.${sessionId}`, onChange: fetchTrades },
+      { table: 'trade_items', onChange: fetchTrades },
+    ]);
   }, [sessionId, fetchTrades]);
 
   const tradingCharacterIds = useMemo(() => {

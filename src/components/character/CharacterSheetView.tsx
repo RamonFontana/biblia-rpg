@@ -9,6 +9,7 @@ import { InventoryList } from '../inventory/InventoryList';
 import { updateCharacterEquipment } from '@/lib/supabase';
 import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
 import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
 import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { AbilityCard } from '../combat/AbilityCard';
@@ -416,8 +417,8 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             <div className="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
             <Heart className="w-8 h-8 text-red-500 mb-2" />
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-stone-100">{stats?.current_pv ?? stats?.pv ?? 10}</span>
-              <span className="text-sm text-stone-500 font-medium">/{stats?.pv ?? 10}</span>
+              <span className="text-3xl font-bold text-stone-100">{getCurrentPv(stats, 10)}</span>
+              <span className="text-sm text-stone-500 font-medium">/{getMaxPv(stats, 10)}</span>
             </div>
             <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">PV</span>
           </div>

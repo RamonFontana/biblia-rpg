@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { tradeService } from '@/services/tradeService';
 import type { SessionEnemyDraft, SessionNPCDraft } from '@/store/createSessionStore';
 
 export interface CreateSessionPayload {
@@ -39,8 +40,8 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
       stats: {
         level: npc.characterData.level || 1,
         armor_class: npc.characterData.ca || 10,
-        current_hp: 10,
-        max_hp: 10,
+        pv: 10,
+        current_pv: 10,
         current_faith: 100,
         max_faith: 100,
         experience: 0
@@ -133,4 +134,62 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
   }
 
   return data;
+};
+
+// Cancels open trades, hard-deletes the NPCs/enemies created for this session, grants
+// pending level-ups to the chosen characters, and marks the session finished. Returns
+// whether the final status update succeeded, so the caller can decide whether to
+// navigate away (matching the prior page-level behavior exactly).
+export const endSession = async (sessionId: string, levelUpCharacterIds: string[]): Promise<boolean> => {
+  try {
+    await tradeService.cancelSessionTrades(sessionId);
+  } catch (e) {
+    console.error('Erro ao cancelar negociações:', e);
+  }
+
+  try {
+    // Deletar personagens (NPCs e inimigos) que foram criados para esta sessão
+    const { data: participants } = await supabase
+      .from('session_participants')
+      .select('character_id')
+      .eq('session_id', sessionId);
+
+    if (participants && participants.length > 0) {
+      const charIds = participants.map(p => p.character_id).filter(Boolean);
+
+      if (charIds.length > 0) {
+        // Apenas exclui os que são NPCs ou Inimigos
+        const { data: charsToDelete } = await supabase
+          .from('characters')
+          .select('id')
+          .in('id', charIds)
+          .or('is_npc.eq.true,is_enemy.eq.true');
+
+        if (charsToDelete && charsToDelete.length > 0) {
+          const deleteIds = charsToDelete.map(c => c.id);
+          await supabase.from('characters').delete().in('id', deleteIds);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao deletar NPCs/Inimigos da sessão:', e);
+  }
+
+  try {
+    if (levelUpCharacterIds.length > 0) {
+      await supabase
+        .from('characters')
+        .update({ pending_level_up: true })
+        .in('id', levelUpCharacterIds);
+    }
+  } catch (e) {
+    console.error('Erro ao conceder level up:', e);
+  }
+
+  const { error } = await supabase
+    .from('game_sessions')
+    .update({ status: 'finished' })
+    .eq('id', sessionId);
+
+  return !error;
 };

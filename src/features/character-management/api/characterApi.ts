@@ -2,15 +2,21 @@ import { supabase } from '@/lib/supabase';
 import type { Character } from '../types';
 import { syncInventoryItems } from './syncInventory';
 
-export const getCharacters = async (): Promise<Character[]> => {
-  const { data, error } = await supabase
-    .from('characters')
-    .select('*')
+// Shared by every "active, playable characters" query — excludes NPCs, enemies,
+// soft-deleted, and dead rows. `.is_npc.is.null` etc. cover legacy rows where the
+// boolean flag was never explicitly set to false.
+function withActiveCharacterFilters<T extends { or: (filters: string) => T }>(query: T): T {
+  return query
     .or('is_npc.eq.false,is_npc.is.null')
     .or('is_enemy.eq.false,is_enemy.is.null')
     .or('is_deleted.eq.false,is_deleted.is.null')
-    .or('is_dead.eq.false,is_dead.is.null')
-    .order('created_at', { ascending: false });
+    .or('is_dead.eq.false,is_dead.is.null');
+}
+
+export const getCharacters = async (): Promise<Character[]> => {
+  const { data, error } = await withActiveCharacterFilters(
+    supabase.from('characters').select('*')
+  ).order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching characters:', error);
@@ -22,20 +28,14 @@ export const getCharacters = async (): Promise<Character[]> => {
 
 export const getMyCharacters = async (): Promise<Character[]> => {
   const { data: { session } } = await supabase.auth.getSession();
-  
+
   if (!session?.user) {
     throw new Error('Usuário não autenticado');
   }
 
-  const { data, error } = await supabase
-    .from('characters')
-    .select('*')
-    .eq('user_id', session.user.id)
-    .or('is_npc.eq.false,is_npc.is.null')
-    .or('is_enemy.eq.false,is_enemy.is.null')
-    .or('is_deleted.eq.false,is_deleted.is.null')
-    .or('is_dead.eq.false,is_dead.is.null')
-    .order('created_at', { ascending: false });
+  const { data, error } = await withActiveCharacterFilters(
+    supabase.from('characters').select('*').eq('user_id', session.user.id)
+  ).order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching my characters:', error);

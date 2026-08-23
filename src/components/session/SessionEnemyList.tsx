@@ -5,6 +5,8 @@ import { CharacterSheetView } from '../character/CharacterSheetView';
 import { supabase } from '@/lib/supabase';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
+import { characterVitalsService } from '@/services/characterVitalsService';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 
 interface SessionEnemyListProps {
@@ -26,22 +28,23 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
   const updateEnemyStat = async (enemy: Character, statKey: 'current_pv' | 'current_faith', delta: number) => {
     if (!enemy.stats) return;
 
-    const baseKey = statKey === 'current_pv' ? 'pv' : 'faith';
-    const maxValue = enemy.stats[baseKey] || (statKey === 'current_pv' ? 10 : 100);
-    const currentValue = enemy.stats[statKey] ?? enemy.stats[baseKey] ?? (statKey === 'current_pv' ? 10 : 0);
+    if (statKey === 'current_pv') {
+      try {
+        const newStats = await characterVitalsService.adjustCurrentPvWithStatus(enemy.id, enemy.stats, delta);
+        updateLocalEnemy(enemy.id, { stats: newStats as any });
+      } catch (e) {
+        console.error('Erro ao atualizar status do inimigo:', e);
+      }
+      return;
+    }
+
+    const maxValue = enemy.stats.faith || 100;
+    const currentValue = enemy.stats.current_faith ?? enemy.stats.faith ?? 0;
 
     let newValue = Math.max(0, currentValue + delta);
     if (newValue > maxValue) newValue = maxValue;
 
-    const newStats = { ...enemy.stats, [statKey]: newValue };
-
-    if (statKey === 'current_pv') {
-      if (newValue === 0 && maxValue > 0) {
-        newStats.status = 'Morto';
-      } else if (newValue > 0 && newStats.status === 'Morto') {
-        newStats.status = 'Vivo';
-      }
-    }
+    const newStats = { ...enemy.stats, current_faith: newValue };
 
     try {
       await supabase
@@ -106,7 +109,7 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
                         <div className="flex items-center gap-1">
                           <button onClick={(e) => { e.stopPropagation(); updateEnemyStat(enemy, 'current_pv', -1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">-</button>
                           <span className="w-8 text-center font-mono">
-                            {enemy.stats.current_pv ?? enemy.stats.pv ?? 10}/{enemy.stats.pv ?? 10}
+                            {getCurrentPv(enemy.stats, 10)}/{getMaxPv(enemy.stats, 10)}
                           </span>
                           <button onClick={(e) => { e.stopPropagation(); updateEnemyStat(enemy, 'current_pv', 1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">+</button>
                         </div>

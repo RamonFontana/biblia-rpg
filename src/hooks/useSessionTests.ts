@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { subscribeToTables } from '@/lib/realtimeSubscriptions'
 import { type SessionTest, type SessionTestResult, sessionTestService } from '@/services/sessionTestService'
 
 export function useSessionTests(sessionId: string) {
@@ -37,23 +37,10 @@ export function useSessionTests(sessionId: string) {
   useEffect(() => {
     if (!sessionId) return
 
-    const channel = supabase
-      .channel(`session_tests_realtime_${sessionId}_${Math.random()}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'session_tests', filter: `session_id=eq.${sessionId}` },
-        fetchActiveTests
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'session_test_results' },
-        fetchActiveTests
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return subscribeToTables(`session_tests_realtime_${sessionId}_${Math.random()}`, [
+      { table: 'session_tests', filter: `session_id=eq.${sessionId}`, onChange: fetchActiveTests },
+      { table: 'session_test_results', onChange: fetchActiveTests },
+    ])
   }, [sessionId, fetchActiveTests])
 
   return {

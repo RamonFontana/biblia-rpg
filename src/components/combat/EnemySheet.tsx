@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import type { Character } from '@/features/character-management/types';
 import { Shield, Heart } from 'lucide-react';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
+import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
 
 interface EnemySheetProps {
   enemy: Character | null;
@@ -13,8 +14,8 @@ interface EnemySheetProps {
 export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySheetProps) {
   if (!enemy) return null;
 
-  const hpCurrent = participant?.hp_current ?? enemy.stats?.current_pv ?? 0;
-  const hpMax = enemy.stats?.pv ?? 0;
+  const hpCurrent = participant?.hp_current ?? getCurrentPv(enemy.stats);
+  const hpMax = getMaxPv(enemy.stats, 0);
   const ca = enemy.stats?.ca ?? 10;
   const isDead = hpCurrent <= 0;
 

@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Coffee, Moon, Loader2 } from 'lucide-react';
 import { calculateRechargedAbilities } from '@/utils/abilityUtils';
+import { getMaxPv } from '@/lib/vitalsUtils';
+import { characterVitalsService } from '@/services/characterVitalsService';
 
 interface SessionRestControlsProps {
   sessionId: string;
@@ -56,31 +58,18 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
 
         const updates = allCharacters.map(char => {
           const currentStats = char.stats || {};
-          const maxPv = currentStats.pv || 10;
-          const currentPv = currentStats.current_pv ?? maxPv;
-          
-          const newPv = Math.min(maxPv, currentPv + amount);
 
           // Calculate recharged abilities
           const currentSkills = char.skills || {};
           const abilityUses = currentSkills.ability_uses || {};
           const newAbilityUses = calculateRechargedAbilities(abilityUses, 'short_rest');
-          
+
           const newSkills = {
             ...currentSkills,
             ability_uses: newAbilityUses
           };
 
-          return supabase
-            .from('characters')
-            .update({
-              stats: {
-                ...currentStats,
-                current_pv: newPv,
-              },
-              skills: newSkills
-            })
-            .eq('id', char.id);
+          return characterVitalsService.healCurrentPv('characters', char.id, currentStats, amount, { skills: newSkills });
         });
 
         await Promise.all(updates);
@@ -128,7 +117,7 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
 
       const updates = allCharacters.map(char => {
         const currentStats = char.stats || {};
-        const maxPv = currentStats.pv || 10;
+        const maxPv = getMaxPv(currentStats);
         const maxFaith = 100;
         const currentFaith = currentStats.current_faith ?? currentStats.faith ?? 0;
 

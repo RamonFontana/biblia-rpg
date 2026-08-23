@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';
 import { MasterDeathControls } from '../combat/MasterDeathControls';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { getCurrentPv } from '@/lib/vitalsUtils';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
@@ -172,7 +173,7 @@ export function PlayerCard({
                   <Minus className="h-3 w-3" />
                 </button>
                 <span className="min-w-[3.25rem] text-center font-mono tabular-nums">
-                  {character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}
+                  {getCurrentPv(character.stats, 0)}/{character.stats.pv}
                 </span>
                 <button
                   type="button"
@@ -184,7 +185,7 @@ export function PlayerCard({
                 </button>
               </div>
             ) : (
-              <span className="font-mono tabular-nums">{character.stats.current_pv ?? character.stats.pv}/{character.stats.pv}</span>
+              <span className="font-mono tabular-nums">{getCurrentPv(character.stats, 0)}/{character.stats.pv}</span>
             )}
           </div>
           <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
@@ -240,7 +241,7 @@ export function PlayerCard({
         </div>
       )}
 
-      {viewerIsGM && character && (((character.stats?.current_pv ?? character.stats?.pv ?? 1) <= 0) || character.is_dead || character.is_stable) && (
+      {viewerIsGM && character && ((getCurrentPv(character.stats, 1) <= 0) || character.is_dead || character.is_stable) && (
         <div className="mt-3 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
           <MasterDeathControls characterId={character.id} />
         </div>

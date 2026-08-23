@@ -2,6 +2,7 @@ import { Card, CardContent } from '../ui/card';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { Shield, Heart } from 'lucide-react';
 import type { Character } from '@/features/character-management/types';
+import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
 
 interface EnemyCardProps {
   enemy: Character;
@@ -10,8 +11,8 @@ interface EnemyCardProps {
 }
 
 export function EnemyCard({ enemy, participant, onClick }: EnemyCardProps) {
-  const hpCurrent = participant?.hp_current ?? enemy.stats?.current_pv ?? 0;
-  const hpMax = enemy.stats?.pv ?? 0;
+  const hpCurrent = participant?.hp_current ?? getCurrentPv(enemy.stats);
+  const hpMax = getMaxPv(enemy.stats, 0);
   const ca = enemy.stats?.ca ?? 10;
   const isDead = hpCurrent <= 0;
 

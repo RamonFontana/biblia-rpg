@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getCurrentPv, getMaxPv, applyHpDelta } from '@/lib/vitalsUtils';
 
 export function useUpdateNPCInventory() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -98,9 +99,9 @@ export function useUpdateNPCInventory() {
         let hasChanges = false;
 
         if (itemEffects.heal) {
-          const maxHp = newStats.pv || 10;
-          const currentHp = newStats.current_pv ?? maxHp;
-          newStats.current_pv = Math.min(currentHp + itemEffects.heal, maxHp);
+          const maxHp = getMaxPv(newStats);
+          const currentHp = getCurrentPv(newStats, maxHp);
+          newStats.current_pv = applyHpDelta(currentHp, maxHp, itemEffects.heal);
           hasChanges = true;
         }
         

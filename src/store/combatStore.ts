@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
 import { resetCombatAbilities } from '../utils/abilityUtils';
 import { conditionsService } from '../services/conditionsService';
+import { characterVitalsService } from '../services/characterVitalsService';
+import { subscribeToTables } from '../lib/realtimeSubscriptions';
 import type { ConditionEntry } from '../types/combat';
 
 export type Combat = Database['public']['Tables']['combats']['Row'];
@@ -30,7 +32,7 @@ interface CombatStore extends PlayerCombatState {
   currentTurnParticipant: CombatParticipant | null;
   
   // Channels
-  combatChannel: any | null;
+  combatUnsubscribe: (() => void) | null;
 
   // Subscriptions
   initSubscriptions: (sessionId: string) => void;
@@ -50,7 +52,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   activeCombat: null,
   participants: [],
   currentTurnParticipant: null,
-  combatChannel: null,
+  combatUnsubscribe: null,
 
   // Player local state
   hasUsedMovement: false,
@@ -150,11 +152,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   initSubscriptions: (sessionId: string) => {
-    // Clean up existing channel if any
-    const existingChannel = get().combatChannel;
-    if (existingChannel) {
-      supabase.removeChannel(existingChannel);
-    }
+    // Clean up existing subscription if any
+    get().combatUnsubscribe?.();
 
     // Initial fetch
     supabase.from('combats').select('*').eq('session_id', sessionId).eq('status', 'active').maybeSingle().then(async ({ data: combat }) => {
@@ -171,78 +170,60 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     });
 
-    // Setup channel
     const channelId = Math.random().toString(36).substring(7);
-    const channel = supabase.channel(`combat:session-${sessionId}-${channelId}`);
-
-    // Listen to combats
-    channel.on(
-      'postgres_changes',
+    const unsubscribe = subscribeToTables(`combat:session-${sessionId}-${channelId}`, [
       {
-        event: '*',
-        schema: 'public',
         table: 'combats',
-        filter: `session_id=eq.${sessionId}`
-      },
-      (payload) => {
-        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-          const newCombat = payload.new as Combat;
-          const { activeCombat, participants } = get();
-          
-          if (activeCombat && activeCombat.current_turn_index !== newCombat.current_turn_index) {
-             get().resetTurnChecklist();
-          }
+        filter: `session_id=eq.${sessionId}`,
+        onChange: (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const newCombat = payload.new as Combat;
+            const { activeCombat, participants } = get();
 
-          if (newCombat.status === 'finished') {
+            if (activeCombat && activeCombat.current_turn_index !== newCombat.current_turn_index) {
+               get().resetTurnChecklist();
+            }
+
+            if (newCombat.status === 'finished') {
+              get().setCombatState(null, []);
+            } else {
+              get().setCombatState(newCombat, participants);
+            }
+          } else if (payload.eventType === 'DELETE') {
             get().setCombatState(null, []);
-          } else {
-            get().setCombatState(newCombat, participants);
           }
-        } else if (payload.eventType === 'DELETE') {
-          get().setCombatState(null, []);
-        }
-      }
-    );
-
-    // Listen to combat_participants
-    channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'combat_participants',
+        },
       },
-      (payload) => {
-        const { activeCombat, participants } = get();
-        if (!activeCombat) return;
+      {
+        table: 'combat_participants',
+        onChange: (payload) => {
+          const { activeCombat, participants } = get();
+          if (!activeCombat) return;
 
-        let newParticipants = [...participants];
-        if (payload.eventType === 'INSERT') {
-          if (payload.new.combat_id === activeCombat.id) {
-            newParticipants.push(payload.new as CombatParticipant);
+          let newParticipants = [...participants];
+          if (payload.eventType === 'INSERT') {
+            if (payload.new.combat_id === activeCombat.id) {
+              newParticipants.push(payload.new as CombatParticipant);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            newParticipants = newParticipants.map(p =>
+              p.id === payload.new.id ? payload.new as CombatParticipant : p
+            );
+          } else if (payload.eventType === 'DELETE') {
+            newParticipants = newParticipants.filter(p => p.id !== payload.old.id);
           }
-        } else if (payload.eventType === 'UPDATE') {
-          newParticipants = newParticipants.map(p => 
-            p.id === payload.new.id ? payload.new as CombatParticipant : p
-          );
-        } else if (payload.eventType === 'DELETE') {
-          newParticipants = newParticipants.filter(p => p.id !== payload.old.id);
-        }
 
-        get().setCombatState(activeCombat, newParticipants);
-      }
-    );
+          get().setCombatState(activeCombat, newParticipants);
+        },
+      },
+    ]);
 
-    channel.subscribe();
-    set({ combatChannel: channel });
+    set({ combatUnsubscribe: unsubscribe });
   },
 
   cleanupSubscriptions: () => {
-    const { combatChannel } = get();
-    if (combatChannel) {
-      supabase.removeChannel(combatChannel);
-    }
-    set({ activeCombat: null, participants: [], currentTurnParticipant: null, combatChannel: null });
+    get().combatUnsubscribe?.();
+    set({ activeCombat: null, participants: [], currentTurnParticipant: null, combatUnsubscribe: null });
   },
 
   nextTurn: async () => {
@@ -303,37 +284,29 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           const participant = participants.find(p => p.entity_id === char.id);
           if (participant) {
             const currentStats = (char.stats as any) || {};
-            const newHp = participant.hp_current;
-            
-            // Fix: Actually update status to 'Morto' if HP is 0
-            let newStatus = currentStats.status;
-            let isDead = char.is_dead;
-            
-            if (newHp <= 0) {
-               newStatus = 'Morto';
-               isDead = true;
-               
-               if (char.is_enemy) {
-                 deadEnemyIds.push(char.id);
-               } else {
-                 deadCharIds.push(char.id);
-               }
-            } else if (newStatus === 'Morto') {
-               newStatus = 'Vivo';
-            }
 
-            const newStats = { ...currentStats, current_pv: newHp, status: newStatus };
-            
             // Clean temporary conditions and keep permanent ones
             const currentConditions = ((participant as any).conditions as unknown as ConditionEntry[]) || [];
             const permanentConditions = conditionsService.cleanTemporaryConditions(currentConditions);
-            
-            // Sync HP and conditions
-            await supabase.from('characters').update({ 
-              stats: newStats,
-              conditions: permanentConditions as any,
-              is_dead: isDead
-            }).eq('id', char.id);
+
+            await characterVitalsService.syncFromCombatEnd(
+              char.id,
+              currentStats,
+              participant.hp_current,
+              char.is_dead,
+              permanentConditions
+            );
+
+            // Soft-delete list is driven by "died in this combat" (hp <= 0 now),
+            // not by the sticky is_dead result — a character already dead before
+            // this combat but currently above 0 HP should not be swept up here.
+            if (participant.hp_current <= 0) {
+              if (char.is_enemy) {
+                deadEnemyIds.push(char.id);
+              } else {
+                deadCharIds.push(char.id);
+              }
+            }
           }
         }
         
@@ -370,22 +343,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const participant = participants.find(p => p.id === participantId);
     if (!participant) return;
 
-    let newHp = participant.hp_current;
-    if (type === 'damage') {
-      newHp = Math.max(0, newHp - amount);
-    } else {
-      newHp += amount; 
-    }
-
-    const { error } = await supabase
-      .from('combat_participants')
-      .update({ hp_current: newHp })
-      .eq('id', participantId);
-
-    if (error) {
-      console.error('Failed to apply damage/healing', error);
-      throw error;
-    }
+    await characterVitalsService.applyDamageOrHealing(participant, amount, type);
   },
 
   updateConditions: async (participantId: string, conditions: ConditionEntry[]) => {
