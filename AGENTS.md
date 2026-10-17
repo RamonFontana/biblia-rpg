@@ -60,3 +60,17 @@ Feature ou mudança de regra: `/grill-with-docs` (atualiza `CONTEXT.md` e os ADR
 Commits seguem Conventional Commits em inglês (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`), um commit por mudança. Dependência nova só com aprovação do autor.
 
 Schema do banco muda só por migration versionada em `supabase/migrations/`, sempre com `enable row level security` para tabela nova.
+
+## Agent skills
+
+### Issue tracker
+
+Issues e specs são arquivos markdown em `.scratch/<feature>/` (versionados no repo). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Os cinco papéis padrão (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), gravados na linha `Status:` de cada issue. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` na raiz, criados sob demanda pelo `/grill-with-docs`. See `docs/agents/domain.md`.
