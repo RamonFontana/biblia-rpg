@@ -279,3 +279,33 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 - Os hooks disparam num commit e num push de teste.
 - Abrir um PR (com sua confirmação antes do push) e ver o job `ci` verde.
 - `grep -ri speckit` sem resultados fora do ROADMAP e da tag.
+
+---
+
+## Dívida congelada pelos gates
+Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
+
+### Lint: `eslint-suppressions.json` (298 em 2026-10-17)
+| Regra | Qtde |
+|---|---|
+| `@typescript-eslint/no-explicit-any` | 223 |
+| `no-restricted-imports` (Supabase fora da camada de dados) | 29 |
+| `@typescript-eslint/no-unused-vars` | 22 |
+| `react-hooks/set-state-in-effect` | 8 |
+| `prefer-const` | 6 |
+| `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |
+| `react-refresh/only-export-components` | 3 |
+| `react-hooks/rules-of-hooks` (**possível bug real, ver na Onda 4**) | 1 |
+| `react-hooks/immutability` | 1 |
+
+Ao corrigir uma violação, rode `npm run lint:prune`; o lint falha enquanto houver supressão órfã.
+
+### Typecheck: arquivos com `// @ts-nocheck`
+O `tsc` passa com `strict`, mas estes arquivos não são checados (todos da criação de personagem, tratados na Onda 4):
+- `src/pages/CharacterCreationPage.tsx`
+- `src/features/character-creation/components/steps/AttributeGeneration.tsx`
+- `src/features/character-creation/components/steps/EquipmentMerchant.tsx`
+- `src/features/character-creation/components/steps/InitialStats.tsx`
+- `src/features/character-creation/components/steps/Summary.tsx`
+
+`scripts/*.ts` não entram em nenhum tsconfig (só no lint).

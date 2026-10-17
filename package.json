@@ -12,7 +12,8 @@
     "test:ui": "vitest --ui",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:prune": "eslint . --prune-suppressions"
+    "lint:prune": "eslint . --prune-suppressions",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
