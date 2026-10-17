@@ -7,3 +7,4 @@ src/types/database.types.ts
 supabase/*.sql
 *.md
 .impeccable
+eslint-suppressions.json
