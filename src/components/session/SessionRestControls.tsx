@@ -14,7 +14,13 @@ interface SessionRestControlsProps {
   onRestCompleted?: () => void;
 }
 
-export function SessionRestControls({ sessionId, sessionData, playerCharacters, npcs = [], onRestCompleted }: SessionRestControlsProps) {
+export function SessionRestControls({
+  sessionId,
+  sessionData,
+  playerCharacters,
+  npcs = [],
+  onRestCompleted,
+}: SessionRestControlsProps) {
   const [isResting, setIsResting] = useState(false);
 
   if (!sessionData) return null;
@@ -24,17 +30,19 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
   const lastLongRestDay = sessionData.last_long_rest_day || 1;
 
   const canShortRest = shortRestsTaken < 2;
-  const canLongRest = (currentDay - lastLongRestDay) >= 2;
+  const canLongRest = currentDay - lastLongRestDay >= 2;
 
   const handleShortRest = async () => {
     if (!canShortRest || isResting) return;
 
-    const amountStr = window.prompt("Quantidade de PV recuperada para todos os personagens no Descanso Curto (deixe em branco para 0):");
+    const amountStr = window.prompt(
+      'Quantidade de PV recuperada para todos os personagens no Descanso Curto (deixe em branco para 0):',
+    );
     if (amountStr === null) return; // User cancelled
 
     const amount = parseInt(amountStr || '0', 10);
     if (isNaN(amount) || amount < 0) {
-      alert("Valor inválido.");
+      alert('Valor inválido.');
       return;
     }
 
@@ -48,15 +56,17 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
         .eq('id', sessionId);
 
       if (sessionError) throw sessionError;
-      
+
       // 2. Update characters if amount > 0
       if (amount > 0) {
         const allCharacters = [
-          ...playerCharacters.filter(pc => pc.character && !pc.character.is_enemy).map(pc => pc.character),
-          ...npcs.filter(npc => !npc.is_enemy)
+          ...playerCharacters
+            .filter((pc) => pc.character && !pc.character.is_enemy)
+            .map((pc) => pc.character),
+          ...npcs.filter((npc) => !npc.is_enemy),
         ];
 
-        const updates = allCharacters.map(char => {
+        const updates = allCharacters.map((char) => {
           const currentStats = char.stats || {};
 
           // Calculate recharged abilities
@@ -66,10 +76,12 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
 
           const newSkills = {
             ...currentSkills,
-            ability_uses: newAbilityUses
+            ability_uses: newAbilityUses,
           };
 
-          return characterVitalsService.healCurrentPv('characters', char.id, currentStats, amount, { skills: newSkills });
+          return characterVitalsService.healCurrentPv('characters', char.id, currentStats, amount, {
+            skills: newSkills,
+          });
         });
 
         await Promise.all(updates);
@@ -93,29 +105,33 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
       // 1. Update session tracking
       const { error: sessionError } = await supabase
         .from('game_sessions')
-        .update({ 
+        .update({
           last_long_rest_day: currentDay,
-          short_rests_today: 0 // Reset short rests just in case
+          short_rests_today: 0, // Reset short rests just in case
         })
         .eq('id', sessionId);
 
       if (sessionError) throw sessionError;
 
       // 2. Check if there's a Priest for the Faith bonus
-      const hasPriest = playerCharacters.some(pc => 
-        pc.character?.vocation?.includes('Sacerdote') || pc.character?.vocation?.includes('Sábio')
+      const hasPriest = playerCharacters.some(
+        (pc) =>
+          pc.character?.vocation?.includes('Sacerdote') ||
+          pc.character?.vocation?.includes('Sábio'),
       );
-      
+
       const baseFaithRoll = Math.floor(Math.random() * 4) + 1; // 1d4
       const faithRecovered = hasPriest ? baseFaithRoll + 2 : baseFaithRoll;
 
       // 3. Update all characters (players and npcs)
       const allCharacters = [
-        ...playerCharacters.filter(pc => pc.character && !pc.character.is_enemy).map(pc => pc.character),
-        ...npcs.filter(npc => !npc.is_enemy)
+        ...playerCharacters
+          .filter((pc) => pc.character && !pc.character.is_enemy)
+          .map((pc) => pc.character),
+        ...npcs.filter((npc) => !npc.is_enemy),
       ];
 
-      const updates = allCharacters.map(char => {
+      const updates = allCharacters.map((char) => {
         const currentStats = char.stats || {};
         const maxPv = getMaxPv(currentStats);
         const maxFaith = 100;
@@ -127,10 +143,10 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
         const currentSkills = char.skills || {};
         const abilityUses = currentSkills.ability_uses || {};
         const newAbilityUses = calculateRechargedAbilities(abilityUses, 'long_rest');
-        
+
         const newSkills = {
           ...currentSkills,
-          ability_uses: newAbilityUses
+          ability_uses: newAbilityUses,
         };
 
         return supabase
@@ -141,7 +157,7 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
               current_pv: maxPv,
               current_faith: newFaith,
             },
-            skills: newSkills
+            skills: newSkills,
           })
           .eq('id', char.id);
       });
@@ -149,7 +165,9 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
       await Promise.all(updates);
       if (onRestCompleted) onRestCompleted();
 
-      alert(`Descanso Longo concluído! Todos os personagens recuperaram toda a vida, habilidades e fé. O grupo recuperou ${faithRecovered} de Fé.`);
+      alert(
+        `Descanso Longo concluído! Todos os personagens recuperaram toda a vida, habilidades e fé. O grupo recuperou ${faithRecovered} de Fé.`,
+      );
     } catch (error) {
       console.error('Erro ao acionar descanso longo:', error);
       alert('Erro ao realizar descanso longo.');
@@ -160,7 +178,9 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
 
   return (
     <div className="bg-stone-900 border border-stone-800 rounded-lg p-4 mb-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-stone-200 mb-3 border-b border-stone-800 pb-2">Controles de Descanso</h3>
+      <h3 className="text-lg font-semibold text-stone-200 mb-3 border-b border-stone-800 pb-2">
+        Controles de Descanso
+      </h3>
       <div className="flex flex-wrap gap-4">
         <Button
           onClick={handleShortRest}
@@ -168,7 +188,11 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
           variant="outline"
           className="bg-emerald-900/20 text-emerald-500 border-emerald-800 hover:bg-emerald-900/40 hover:text-emerald-400"
         >
-          {isResting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Coffee className="w-4 h-4 mr-2" />}
+          {isResting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Coffee className="w-4 h-4 mr-2" />
+          )}
           Descanso Curto ({2 - shortRestsTaken} restantes)
         </Button>
 
@@ -177,10 +201,14 @@ export function SessionRestControls({ sessionId, sessionData, playerCharacters, 
           disabled={!canLongRest || isResting}
           variant="outline"
           className="bg-indigo-900/20 text-indigo-400 border-indigo-800 hover:bg-indigo-900/40 hover:text-indigo-300"
-          title={!canLongRest ? "Necessário aguardar 2 dias de jogo." : ""}
+          title={!canLongRest ? 'Necessário aguardar 2 dias de jogo.' : ''}
         >
-          {isResting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Moon className="w-4 h-4 mr-2" />}
-          Descanso Longo {canLongRest ? "(Disponível)" : "(Indisponível)"}
+          {isResting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Moon className="w-4 h-4 mr-2" />
+          )}
+          Descanso Longo {canLongRest ? '(Disponível)' : '(Indisponível)'}
         </Button>
       </div>
       {!canLongRest && (

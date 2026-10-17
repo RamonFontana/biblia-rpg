@@ -8,7 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 const step1Schema = z.object({
-  name: z.string().min(3, 'O nome deve ter no mínimo 3 caracteres').max(100, 'Máximo de 100 caracteres'),
+  name: z
+    .string()
+    .min(3, 'O nome deve ter no mínimo 3 caracteres')
+    .max(100, 'Máximo de 100 caracteres'),
   description: z.string().max(1000, 'Máximo de 1000 caracteres').optional(),
 });
 
@@ -52,9 +55,7 @@ export function Step1Preparation() {
             {...register('name')}
             className={errors.name ? 'border-red-500' : ''}
           />
-          {errors.name && (
-            <p className="text-sm text-red-500">{errors.name.message}</p>
-          )}
+          {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
         </div>
 
         <div className="space-y-2">
@@ -71,7 +72,9 @@ export function Step1Preparation() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
-          <Button type="submit" className="w-full sm:w-auto">Próximo: Inimigos</Button>
+          <Button type="submit" className="w-full sm:w-auto">
+            Próximo: Inimigos
+          </Button>
         </div>
       </form>
     </div>

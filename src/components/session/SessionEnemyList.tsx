@@ -16,7 +16,12 @@ interface SessionEnemyListProps {
   updateLocalEnemy: (enemyId: string, updates: Partial<Character>) => void;
 }
 
-export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEnemy }: SessionEnemyListProps) {
+export function SessionEnemyList({
+  sessionId,
+  enemies,
+  isLoading,
+  updateLocalEnemy,
+}: SessionEnemyListProps) {
   const [selectedEnemy, setSelectedEnemy] = useState<Character | null>(null);
 
   const handleEnemyClick = (enemy: Character) => {
@@ -25,12 +30,20 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
 
   const closeSheet = () => setSelectedEnemy(null);
 
-  const updateEnemyStat = async (enemy: Character, statKey: 'current_pv' | 'current_faith', delta: number) => {
+  const updateEnemyStat = async (
+    enemy: Character,
+    statKey: 'current_pv' | 'current_faith',
+    delta: number,
+  ) => {
     if (!enemy.stats) return;
 
     if (statKey === 'current_pv') {
       try {
-        const newStats = await characterVitalsService.adjustCurrentPvWithStatus(enemy.id, enemy.stats, delta);
+        const newStats = await characterVitalsService.adjustCurrentPvWithStatus(
+          enemy.id,
+          enemy.stats,
+          delta,
+        );
         updateLocalEnemy(enemy.id, { stats: newStats as any });
       } catch (e) {
         console.error('Erro ao atualizar status do inimigo:', e);
@@ -47,10 +60,7 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
     const newStats = { ...enemy.stats, current_faith: newValue };
 
     try {
-      await supabase
-        .from('characters')
-        .update({ stats: newStats })
-        .eq('id', enemy.id);
+      await supabase.from('characters').update({ stats: newStats }).eq('id', enemy.id);
 
       updateLocalEnemy(enemy.id, { stats: newStats });
     } catch (e) {
@@ -81,10 +91,10 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
                   onClick={() => handleEnemyClick(enemy)}
                 >
                   <div className="flex items-start gap-3">
-                    <CharacterAvatar 
-                      imageUrl={enemy.narrative?.imageUrl} 
-                      name={enemy.name || 'Inimigo'} 
-                      className="w-10 h-10 border border-stone-700 shrink-0" 
+                    <CharacterAvatar
+                      imageUrl={enemy.narrative?.imageUrl}
+                      name={enemy.name || 'Inimigo'}
+                      className="w-10 h-10 border border-stone-700 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">
@@ -107,11 +117,27 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-red-400">♥</span>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.stopPropagation(); updateEnemyStat(enemy, 'current_pv', -1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">-</button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateEnemyStat(enemy, 'current_pv', -1);
+                            }}
+                            className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center"
+                          >
+                            -
+                          </button>
                           <span className="w-8 text-center font-mono">
                             {getCurrentPv(enemy.stats, 10)}/{getMaxPv(enemy.stats, 10)}
                           </span>
-                          <button onClick={(e) => { e.stopPropagation(); updateEnemyStat(enemy, 'current_pv', 1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">+</button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateEnemyStat(enemy, 'current_pv', 1);
+                            }}
+                            className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
 
@@ -135,7 +161,11 @@ export function SessionEnemyList({ sessionId, enemies, isLoading, updateLocalEne
           </DialogHeader>
           <div className="overflow-y-auto max-h-[calc(100vh-150px)]">
             {selectedEnemy && (
-              <CharacterSheetView characterId={selectedEnemy.id} sessionId={sessionId} isGM={true} />
+              <CharacterSheetView
+                characterId={selectedEnemy.id}
+                sessionId={sessionId}
+                isGM={true}
+              />
             )}
           </div>
         </DialogContent>

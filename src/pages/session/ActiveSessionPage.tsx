@@ -36,7 +36,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,7 +55,7 @@ export function ActiveSessionPage() {
     updateLocal,
     isLoading: isCharactersLoading,
   } = useSessionCharacters(id);
-  
+
   const { activeTrades, isCharacterTrading, refresh: refreshTrades } = useSessionTrades(id);
 
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
@@ -88,7 +88,11 @@ export function ActiveSessionPage() {
     if (user) {
       setPayload({
         user_id: user.id,
-        name: user.user_metadata?.name || user.user_metadata?.username || user.email?.split('@')[0] || 'Jogador',
+        name:
+          user.user_metadata?.name ||
+          user.user_metadata?.username ||
+          user.email?.split('@')[0] ||
+          'Jogador',
         online_at: new Date().toISOString(),
       });
     }
@@ -124,12 +128,16 @@ export function ActiveSessionPage() {
         (payload) => {
           setSessionData((current: any) => {
             const newSession = payload.new as any;
-            if (current && current.current_period === 'Noite' && newSession.current_period === 'Manhã') {
+            if (
+              current &&
+              current.current_period === 'Noite' &&
+              newSession.current_period === 'Manhã'
+            ) {
               setIsNewDayDialogOpen(true);
             }
             return payload.new;
           });
-        }
+        },
       )
       .subscribe();
 
@@ -162,7 +170,7 @@ export function ActiveSessionPage() {
         console.error(errorMessage, e);
       }
     },
-    [refreshTrades]
+    [refreshTrades],
   );
 
   const handleNegotiate = useCallback(
@@ -182,10 +190,10 @@ export function ActiveSessionPage() {
           targetCharacterId: targetChar.id,
           status: 'pending',
         },
-        'Erro ao criar negociação:'
+        'Erro ao criar negociação:',
       );
     },
-    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh]
+    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh],
   );
 
   const handleShop = useCallback(
@@ -204,10 +212,10 @@ export function ActiveSessionPage() {
           targetCharacterId: targetChar.id,
           status: 'active',
         },
-        'Erro ao abrir lojinha:'
+        'Erro ao abrir lojinha:',
       );
     },
-    [user, id, isGM, playerCharacters, isCharacterTrading, createTradeAndRefresh]
+    [user, id, isGM, playerCharacters, isCharacterTrading, createTradeAndRefresh],
   );
 
   const handleNPCNegotiate = useCallback(
@@ -226,10 +234,10 @@ export function ActiveSessionPage() {
           status: 'pending',
           ...(npc.is_playable ? { targetCharacterId: npc.id } : { targetNpcId: npc.id }),
         },
-        'Erro ao solicitar negociação com NPC:'
+        'Erro ao solicitar negociação com NPC:',
       );
     },
-    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh]
+    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh],
   );
 
   const handleAcceptTrade = useCallback(
@@ -241,7 +249,7 @@ export function ActiveSessionPage() {
         console.error('Erro ao aceitar negociação:', e);
       }
     },
-    [refreshTrades]
+    [refreshTrades],
   );
 
   const handleRejectTrade = useCallback(
@@ -253,7 +261,7 @@ export function ActiveSessionPage() {
         console.error('Erro ao recusar negociação:', e);
       }
     },
-    [refreshTrades]
+    [refreshTrades],
   );
 
   const refreshTradeState = useCallback(() => {
@@ -277,7 +285,7 @@ export function ActiveSessionPage() {
           (t.status === 'active' || t.status === 'pending') &&
           (t.initiator_user_id === user.id ||
             playerCharacters.find((pc) => pc.user_id === user.id)?.character?.id ===
-              t.target_character_id)
+              t.target_character_id),
       );
       for (const trade of myTrades) {
         tradeService.cancelTrade(trade.id).catch(console.error);
@@ -316,40 +324,54 @@ export function ActiveSessionPage() {
 
   const getPeriodIcon = (period: string) => {
     switch (period) {
-      case 'Manhã': return '🌅';
-      case 'Tarde': return '☀️';
-      case 'Noite': return '🌙';
-      default: return '🌅';
+      case 'Manhã':
+        return '🌅';
+      case 'Tarde':
+        return '☀️';
+      case 'Noite':
+        return '🌙';
+      default:
+        return '🌅';
     }
   };
 
-  const availableEntities = useMemo(() => [
-    ...playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy).map(pc => ({
-      id: pc.character.id,
-      name: pc.character.name || 'Jogador',
-      type: 'player' as const,
-      hpCurrent: getCurrentPv(pc.character.stats),
-      ...getCombatStats(pc.character)
-    })),
-    ...npcs.filter(npc => !npc.is_deleted && npc.is_playable).map(npc => ({
-      id: npc.id,
-      name: npc.name || 'NPC',
-      type: 'npc' as const,
-      hpCurrent: getCurrentPv(npc.stats as any),
-      ...getCombatStats(npc)
-    })),
-    ...enemies.filter(enemy => !enemy.is_deleted).map(enemy => ({
-      id: enemy.id,
-      name: enemy.name || 'Inimigo',
-      type: 'enemy' as const,
-      hpCurrent: getCurrentPv(enemy.stats),
-      ...getCombatStats(enemy)
-    }))
-  ], [playerCharacters, npcs, enemies]);
+  const availableEntities = useMemo(
+    () => [
+      ...playerCharacters
+        .filter((pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)
+        .map((pc) => ({
+          id: pc.character.id,
+          name: pc.character.name || 'Jogador',
+          type: 'player' as const,
+          hpCurrent: getCurrentPv(pc.character.stats),
+          ...getCombatStats(pc.character),
+        })),
+      ...npcs
+        .filter((npc) => !npc.is_deleted && npc.is_playable)
+        .map((npc) => ({
+          id: npc.id,
+          name: npc.name || 'NPC',
+          type: 'npc' as const,
+          hpCurrent: getCurrentPv(npc.stats as any),
+          ...getCombatStats(npc),
+        })),
+      ...enemies
+        .filter((enemy) => !enemy.is_deleted)
+        .map((enemy) => ({
+          id: enemy.id,
+          name: enemy.name || 'Inimigo',
+          type: 'enemy' as const,
+          hpCurrent: getCurrentPv(enemy.stats),
+          ...getCombatStats(enemy),
+        })),
+    ],
+    [playerCharacters, npcs, enemies],
+  );
 
   if (isLoading) return <div className="p-8 text-center text-stone-300">Carregando sessão...</div>;
   if (!user) return <div className="p-8 text-center text-stone-300">Autenticação necessária.</div>;
-  if (!sessionData || !id) return <div className="p-8 text-center text-stone-300">Sessão não encontrada.</div>;
+  if (!sessionData || !id)
+    return <div className="p-8 text-center text-stone-300">Sessão não encontrada.</div>;
 
   const currentActiveTest = activeTests.find((t) => t.status === 'active');
   const myResult =
@@ -369,7 +391,14 @@ export function ActiveSessionPage() {
     <div className="container mx-auto py-2 md:py-8 px-1 sm:px-2 md:px-4 overflow-x-hidden">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 md:mb-6 border-b border-stone-800 pb-4">
         <div className="w-full lg:w-auto">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-100">{sessionData.name} {isSpectator && <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">Modo Espectador</span>}</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-100">
+            {sessionData.name}{' '}
+            {isSpectator && (
+              <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">
+                Modo Espectador
+              </span>
+            )}
+          </h1>
           <p className="text-stone-400 mt-1">{sessionData.description}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full lg:w-auto">
@@ -378,28 +407,48 @@ export function ActiveSessionPage() {
               DIA {sessionData.current_day || 1}
             </span>
             <span className="text-amber-400 text-xs md:text-sm font-semibold flex items-center gap-1">
-              {getPeriodIcon(sessionData.current_period || 'Manhã')} {sessionData.current_period || 'Manhã'}
+              {getPeriodIcon(sessionData.current_period || 'Manhã')}{' '}
+              {sessionData.current_period || 'Manhã'}
             </span>
           </div>
 
-          <div className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-stone-700 text-stone-300'}`}>
+          <div
+            className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-stone-700 text-stone-300'}`}
+          >
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
           {sessionData.status === 'active' && !isSpectator && (
-            <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2 h-8 md:h-10 px-2 md:px-4">
+            <Button
+              onClick={() => setIsDiceRollerOpen(true)}
+              variant="outline"
+              className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2 h-8 md:h-10 px-2 md:px-4"
+            >
               <span>🎲</span> <span className="hidden md:inline">Dados</span>
             </Button>
           )}
           {isGM && sessionData.status === 'active' && (
             <>
               <div className="hidden lg:flex items-center gap-2">
-                <Button onClick={advanceTime} variant="outline" className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2" title="Avançar Tempo">
+                <Button
+                  onClick={advanceTime}
+                  variant="outline"
+                  className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2"
+                  title="Avançar Tempo"
+                >
                   <span>⏳</span> Avançar
                 </Button>
-                <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
+                <Button
+                  onClick={() => setIsTestDialogOpen(true)}
+                  variant="outline"
+                  className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white"
+                >
                   Solicitar Teste
                 </Button>
-                <Button onClick={() => setIsCombatSetupOpen(true)} variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2">
+                <Button
+                  onClick={() => setIsCombatSetupOpen(true)}
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2"
+                >
                   <span>⚔️</span> Iniciar Combate
                 </Button>
                 <Button variant="destructive" onClick={() => setIsEndSessionDialogOpen(true)}>
@@ -409,21 +458,39 @@ export function ActiveSessionPage() {
               <div className="lg:hidden ml-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="border-stone-600 bg-stone-800 h-8 px-2 md:h-10 md:px-4">
+                    <Button
+                      variant="outline"
+                      className="border-stone-600 bg-stone-800 h-8 px-2 md:h-10 md:px-4"
+                    >
                       <Menu className="h-4 w-4 md:h-5 md:w-5 text-stone-300" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-stone-900 border-stone-800 text-stone-300">
-                    <DropdownMenuItem onClick={advanceTime} className="hover:bg-stone-800 cursor-pointer">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 bg-stone-900 border-stone-800 text-stone-300"
+                  >
+                    <DropdownMenuItem
+                      onClick={advanceTime}
+                      className="hover:bg-stone-800 cursor-pointer"
+                    >
                       <span className="mr-2">⏳</span> Avançar Tempo
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsTestDialogOpen(true)} className="hover:bg-stone-800 cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={() => setIsTestDialogOpen(true)}
+                      className="hover:bg-stone-800 cursor-pointer"
+                    >
                       <span className="mr-2">🎲</span> Solicitar Teste
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsCombatSetupOpen(true)} className="hover:bg-stone-800 cursor-pointer text-red-400">
+                    <DropdownMenuItem
+                      onClick={() => setIsCombatSetupOpen(true)}
+                      className="hover:bg-stone-800 cursor-pointer text-red-400"
+                    >
                       <span className="mr-2">⚔️</span> Iniciar Combate
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEndSessionDialogOpen(true)} className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium">
+                    <DropdownMenuItem
+                      onClick={() => setIsEndSessionDialogOpen(true)}
+                      className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium"
+                    >
                       Finalizar Sessão
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -441,10 +508,17 @@ export function ActiveSessionPage() {
               <h2 className="text-amber-500 font-bold flex items-center gap-2">
                 <span className="text-xl">👑</span> Visão do Mestre
               </h2>
-              <p className="text-amber-200/70 text-sm mt-1">Você é o mestre desta sessão. Aqui você gerencia os inimigos, NPCs e a narrativa.</p>
+              <p className="text-amber-200/70 text-sm mt-1">
+                Você é o mestre desta sessão. Aqui você gerencia os inimigos, NPCs e a narrativa.
+              </p>
             </div>
 
-            <SessionRestControls sessionId={id} sessionData={sessionData} playerCharacters={playerCharacters} npcs={npcs} />
+            <SessionRestControls
+              sessionId={id}
+              sessionData={sessionData}
+              playerCharacters={playerCharacters}
+              npcs={npcs}
+            />
 
             {activeCombat && (
               <div className="mb-6 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
@@ -458,9 +532,14 @@ export function ActiveSessionPage() {
                 isGM={isGM}
                 sessionId={id}
                 gmId={sessionData.gm_id}
-                playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
+                playerCharacters={playerCharacters.filter(
+                  (pc) =>
+                    !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
+                )}
                 activeTrades={activeTrades}
-                onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
+                onUpdatePlayerData={(characterId, patch) =>
+                  updateLocal('player', characterId, patch)
+                }
                 onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
                 onShop={handleShop}
                 onAcceptTrade={handleAcceptTrade}
@@ -468,7 +547,12 @@ export function ActiveSessionPage() {
                 activeTests={activeTests}
                 testResults={testResults}
               />
-              <SessionEnemyList sessionId={id} enemies={enemies} isLoading={isCharactersLoading} updateLocalEnemy={(enemyId, patch) => updateLocal('enemy', enemyId, patch)} />
+              <SessionEnemyList
+                sessionId={id}
+                enemies={enemies}
+                isLoading={isCharactersLoading}
+                updateLocalEnemy={(enemyId, patch) => updateLocal('enemy', enemyId, patch)}
+              />
 
               <SessionNPCList
                 npcs={npcs}
@@ -485,7 +569,8 @@ export function ActiveSessionPage() {
                 <span>👻</span> Modo Espectador
               </h2>
               <p className="text-stone-400 text-sm mt-2">
-                Seu personagem não está mais entre os vivos nesta jornada. Você ainda pode acompanhar a sessão e as rolagens no chat ou na tela da sala.
+                Seu personagem não está mais entre os vivos nesta jornada. Você ainda pode
+                acompanhar a sessão e as rolagens no chat ou na tela da sala.
               </p>
             </div>
 
@@ -499,20 +584,33 @@ export function ActiveSessionPage() {
               <h2 className="text-blue-500 font-bold flex items-center justify-center gap-2">
                 <span className="text-xl">⚔️</span> Visão do Jogador
               </h2>
-              <p className="text-blue-200/70 text-sm mt-1">Você está conectado como jogador. Aguarde as instruções do Mestre.</p>
+              <p className="text-blue-200/70 text-sm mt-1">
+                Você está conectado como jogador. Aguarde as instruções do Mestre.
+              </p>
             </div>
 
-            <PlayerRestIndicator sessionData={sessionData} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} />
+            <PlayerRestIndicator
+              sessionData={sessionData}
+              character={playerCharacters.find((pc) => pc.user_id === user.id)?.character}
+            />
 
-            {myCharacter && getCurrentPv(myCharacter.stats) <= 0 && !myCharacter.is_dead && !activeCombat && (
-              <div className="w-full max-w-4xl mt-4">
-                <DeathSavesModal character={myCharacter} />
-              </div>
-            )}
+            {myCharacter &&
+              getCurrentPv(myCharacter.stats) <= 0 &&
+              !myCharacter.is_dead &&
+              !activeCombat && (
+                <div className="w-full max-w-4xl mt-4">
+                  <DeathSavesModal character={myCharacter} />
+                </div>
+              )}
 
             {activeCombat && (
               <div className="w-full max-w-6xl mt-4 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-                <PlayerCombatView sessionId={id!} character={playerCharacters.find((pc) => pc.user_id === user.id)?.character} enemies={enemies} isLoading={isCharactersLoading} />
+                <PlayerCombatView
+                  sessionId={id!}
+                  character={playerCharacters.find((pc) => pc.user_id === user.id)?.character}
+                  enemies={enemies}
+                  isLoading={isCharactersLoading}
+                />
               </div>
             )}
 
@@ -522,16 +620,23 @@ export function ActiveSessionPage() {
               </div>
 
               <div className="border border-stone-800 rounded-lg p-3 md:p-4 bg-stone-950 w-full overflow-hidden">
-                <h3 className="text-lg md:text-xl font-semibold mb-4 text-stone-200 text-center">Personagens na Sessão</h3>
+                <h3 className="text-lg md:text-xl font-semibold mb-4 text-stone-200 text-center">
+                  Personagens na Sessão
+                </h3>
                 <SessionParticipantList
                   onlineUsers={onlineUsers}
                   isGM={false}
                   sessionId={id}
                   gmId={sessionData.gm_id}
-                  playerCharacters={playerCharacters.filter(pc => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)}
+                  playerCharacters={playerCharacters.filter(
+                    (pc) =>
+                      !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
+                  )}
                   npcs={npcs.filter((n) => (n as unknown as { is_visible?: boolean }).is_visible)}
                   activeTrades={activeTrades}
-                  onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
+                  onUpdatePlayerData={(characterId, patch) =>
+                    updateLocal('player', characterId, patch)
+                  }
                   onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
                   onNegotiate={handleNegotiate}
                   onNPCNegotiate={handleNPCNegotiate}
@@ -575,10 +680,7 @@ export function ActiveSessionPage() {
         playerCharacters={playerCharacters}
       />
 
-      <DiceRollerDialog
-        isOpen={isDiceRollerOpen}
-        onClose={() => setIsDiceRollerOpen(false)}
-      />
+      <DiceRollerDialog isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />
 
       <NewDayDialog
         isOpen={isNewDayDialogOpen}

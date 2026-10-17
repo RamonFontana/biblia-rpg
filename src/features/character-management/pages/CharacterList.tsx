@@ -18,7 +18,7 @@ export function CharacterList() {
       try {
         const [charData, activeIds] = await Promise.all([
           getMyCharacters(),
-          getActiveSessionCharacterIds()
+          getActiveSessionCharacterIds(),
         ]);
         setCharacters(charData);
         setActiveSessionIds(activeIds);
@@ -69,28 +69,30 @@ export function CharacterList() {
           </button>
         </div>
 
-      {characters.length === 0 ? (
-        <div className="text-center py-12 bg-stone-900 rounded-lg border border-dashed border-stone-800">
-          <h3 className="mt-2 text-sm font-semibold text-stone-200">Nenhum personagem</h3>
-          <p className="mt-1 text-sm text-stone-400">Comece criando um novo personagem para sua jornada.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {characters.map((character) => (
-            <CharacterCard
-              key={character.id}
-              character={character}
-              onClick={handleCharacterClick}
-              isInActiveSession={activeSessionIds.has(character.id)}
-              onLevelUpClick={setLevelUpCharacter}
-            />
-          ))}
-        </div>
-      )}
+        {characters.length === 0 ? (
+          <div className="text-center py-12 bg-stone-900 rounded-lg border border-dashed border-stone-800">
+            <h3 className="mt-2 text-sm font-semibold text-stone-200">Nenhum personagem</h3>
+            <p className="mt-1 text-sm text-stone-400">
+              Comece criando um novo personagem para sua jornada.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {characters.map((character) => (
+              <CharacterCard
+                key={character.id}
+                character={character}
+                onClick={handleCharacterClick}
+                isInActiveSession={activeSessionIds.has(character.id)}
+                onLevelUpClick={setLevelUpCharacter}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      
+
       {levelUpCharacter && (
-        <LevelUpWizard 
+        <LevelUpWizard
           character={levelUpCharacter}
           onComplete={() => {
             setLevelUpCharacter(null);

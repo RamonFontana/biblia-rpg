@@ -6,8 +6,11 @@ export const conditionsService = {
    * Helper to merge a new condition into an existing array of conditions.
    * If the condition already exists, it is overwritten (duration resets).
    */
-  mergeCondition(currentConditions: ConditionEntry[], newCondition: ConditionEntry): ConditionEntry[] {
-    const filtered = currentConditions.filter(c => c.conditionId !== newCondition.conditionId);
+  mergeCondition(
+    currentConditions: ConditionEntry[],
+    newCondition: ConditionEntry,
+  ): ConditionEntry[] {
+    const filtered = currentConditions.filter((c) => c.conditionId !== newCondition.conditionId);
     return [...filtered, newCondition];
   },
 
@@ -15,13 +18,17 @@ export const conditionsService = {
    * Helper to remove a condition from an array of conditions.
    */
   removeCondition(currentConditions: ConditionEntry[], conditionId: string): ConditionEntry[] {
-    return currentConditions.filter(c => c.conditionId !== conditionId);
+    return currentConditions.filter((c) => c.conditionId !== conditionId);
   },
 
   /**
    * Apply a condition to a character outside of combat (global).
    */
-  async applyToCharacter(characterId: string, currentConditions: ConditionEntry[], newCondition: ConditionEntry): Promise<ConditionEntry[]> {
+  async applyToCharacter(
+    characterId: string,
+    currentConditions: ConditionEntry[],
+    newCondition: ConditionEntry,
+  ): Promise<ConditionEntry[]> {
     const updated = this.mergeCondition(currentConditions, newCondition);
     const { error } = await supabase
       .from('characters')
@@ -38,7 +45,11 @@ export const conditionsService = {
   /**
    * Remove a condition from a character outside of combat (global).
    */
-  async removeFromCharacter(characterId: string, currentConditions: ConditionEntry[], conditionId: string): Promise<ConditionEntry[]> {
+  async removeFromCharacter(
+    characterId: string,
+    currentConditions: ConditionEntry[],
+    conditionId: string,
+  ): Promise<ConditionEntry[]> {
     const updated = this.removeCondition(currentConditions, conditionId);
     const { error } = await supabase
       .from('characters')
@@ -55,7 +66,11 @@ export const conditionsService = {
   /**
    * Apply a condition to a combat participant.
    */
-  async applyToCombatParticipant(participantId: string, currentConditions: ConditionEntry[], newCondition: ConditionEntry): Promise<ConditionEntry[]> {
+  async applyToCombatParticipant(
+    participantId: string,
+    currentConditions: ConditionEntry[],
+    newCondition: ConditionEntry,
+  ): Promise<ConditionEntry[]> {
     const updated = this.mergeCondition(currentConditions, newCondition);
     const { error } = await supabase
       .from('combat_participants')
@@ -72,7 +87,11 @@ export const conditionsService = {
   /**
    * Remove a condition from a combat participant.
    */
-  async removeFromCombatParticipant(participantId: string, currentConditions: ConditionEntry[], conditionId: string): Promise<ConditionEntry[]> {
+  async removeFromCombatParticipant(
+    participantId: string,
+    currentConditions: ConditionEntry[],
+    conditionId: string,
+  ): Promise<ConditionEntry[]> {
     const updated = this.removeCondition(currentConditions, conditionId);
     const { error } = await supabase
       .from('combat_participants')
@@ -93,11 +112,11 @@ export const conditionsService = {
    */
   tickConditions(currentConditions: ConditionEntry[]): ConditionEntry[] {
     return currentConditions
-      .map(c => {
+      .map((c) => {
         if (c.duration === null) return c; // permanent
         return { ...c, duration: c.duration - 1 };
       })
-      .filter(c => c.duration === null || c.duration > 0);
+      .filter((c) => c.duration === null || c.duration > 0);
   },
 
   /**
@@ -105,6 +124,6 @@ export const conditionsService = {
    * Keeps only permanent conditions (duration === null).
    */
   cleanTemporaryConditions(currentConditions: ConditionEntry[]): ConditionEntry[] {
-    return currentConditions.filter(c => c.duration === null);
-  }
+    return currentConditions.filter((c) => c.duration === null);
+  },
 };

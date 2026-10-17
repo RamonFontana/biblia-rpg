@@ -22,25 +22,30 @@ interface CombatSetupModalProps {
   availableEntities: AvailableEntity[];
 }
 
-export function CombatSetupModal({ isOpen, onClose, sessionId, availableEntities }: CombatSetupModalProps) {
-  const startCombat = useCombatStore(state => state.startCombat);
+export function CombatSetupModal({
+  isOpen,
+  onClose,
+  sessionId,
+  availableEntities,
+}: CombatSetupModalProps) {
+  const startCombat = useCombatStore((state) => state.startCombat);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CombatSetupFormValues>({
     resolver: zodResolver(CombatSetupSchema),
     defaultValues: {
-      participants: availableEntities.map(e => ({
+      participants: availableEntities.map((e) => ({
         entityId: e.id,
         entityType: e.type,
         initiative: 0,
-        hpCurrent: e.hpCurrent
-      }))
-    }
+        hpCurrent: e.hpCurrent,
+      })),
+    },
   });
 
   const { fields, remove } = useFieldArray({
     control: form.control,
-    name: "participants"
+    name: 'participants',
   });
 
   const onSubmit = async (values: CombatSetupFormValues) => {
@@ -66,11 +71,13 @@ export function CombatSetupModal({ isOpen, onClose, sessionId, availableEntities
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {fields.map((field, index) => {
-              const entity = availableEntities.find(e => e.id === field.entityId);
+              const entity = availableEntities.find((e) => e.id === field.entityId);
               return (
                 <div key={field.id} className="flex items-center gap-4 border p-4 rounded-md">
                   <div className="flex-1">
-                    <p className="font-semibold">{entity?.name || 'Desconhecido'} ({field.entityType})</p>
+                    <p className="font-semibold">
+                      {entity?.name || 'Desconhecido'} ({field.entityType})
+                    </p>
                   </div>
                   <FormField
                     control={form.control}
@@ -79,7 +86,13 @@ export function CombatSetupModal({ isOpen, onClose, sessionId, availableEntities
                       <FormItem>
                         <FormLabel>Iniciativa</FormLabel>
                         <FormControl>
-                          <Input type="number" {...f} onChange={e => f.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} />
+                          <Input
+                            type="number"
+                            {...f}
+                            onChange={(e) =>
+                              f.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -92,7 +105,13 @@ export function CombatSetupModal({ isOpen, onClose, sessionId, availableEntities
                       <FormItem>
                         <FormLabel>HP Atual</FormLabel>
                         <FormControl>
-                          <Input type="number" {...f} onChange={e => f.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} />
+                          <Input
+                            type="number"
+                            {...f}
+                            onChange={(e) =>
+                              f.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

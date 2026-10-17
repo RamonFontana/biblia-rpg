@@ -16,8 +16,13 @@ interface HealthModificationModalProps {
   participantName: string;
 }
 
-export function HealthModificationModal({ isOpen, onClose, participantId, participantName }: HealthModificationModalProps) {
-  const applyDamageOrHealing = useCombatStore(state => state.applyDamageOrHealing);
+export function HealthModificationModal({
+  isOpen,
+  onClose,
+  participantId,
+  participantName,
+}: HealthModificationModalProps) {
+  const applyDamageOrHealing = useCombatStore((state) => state.applyDamageOrHealing);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<HealthModificationFormValues>({
@@ -25,8 +30,8 @@ export function HealthModificationModal({ isOpen, onClose, participantId, partic
     defaultValues: {
       amount: 0,
       type: 'damage',
-      participantId
-    }
+      participantId,
+    },
   });
 
   const onSubmit = async (values: HealthModificationFormValues) => {
@@ -50,7 +55,6 @@ export function HealthModificationModal({ isOpen, onClose, participantId, partic
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-
             <FormField
               control={form.control}
               name="type"
@@ -80,7 +84,13 @@ export function HealthModificationModal({ isOpen, onClose, participantId, partic
                 <FormItem>
                   <FormLabel>Valor</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} />
+                    <Input
+                      type="number"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

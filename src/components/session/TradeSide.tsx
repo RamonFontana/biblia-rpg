@@ -4,14 +4,16 @@ import { TradeItemSelector, type SelectableItem } from './TradeItemSelector';
 import type { TradeItemWithDetails, TradeSide as TradeSideType } from '@/types/trade';
 import { tradeService } from '@/services/tradeService';
 import { ShieldPlus, Zap } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CONDITIONS } from '@/data/conditions';
 import type { WeaponEffect } from '@/types/combat';
 
-const AVAILABLE_RESISTANCES = [
-  'Corte', 'Perfuração', 'Impacto', 
-  'Fogo', 'Frio', 'Ácido', 'Veneno'
-];
+const AVAILABLE_RESISTANCES = ['Corte', 'Perfuração', 'Impacto', 'Fogo', 'Frio', 'Ácido', 'Veneno'];
 
 interface TradeSideProps {
   label: string;
@@ -68,7 +70,7 @@ export function TradeSide({
           (items as SelectableItem[]).map((i) => ({
             ...i,
             availableQuantity: 999,
-          }))
+          })),
         );
       });
     } else if (characterId) {
@@ -81,7 +83,7 @@ export function TradeSide({
             category: row.items.category,
             price: row.items.price,
             availableQuantity: row.quantity,
-          }))
+          })),
         );
       });
     }
@@ -233,7 +235,9 @@ export function TradeSide({
           <ul className="mb-3 space-y-1">
             {sideItems.map((ti) => (
               <li key={ti.id} className="text-sm text-stone-300 flex items-center gap-2">
-                <span>{ti.items?.name ?? 'Item'} × {ti.quantity}</span>
+                <span>
+                  {ti.items?.name ?? 'Item'} × {ti.quantity}
+                </span>
                 <span className="text-[10px] px-1 py-0.5 rounded bg-stone-700 text-stone-400">
                   {ti.items?.price != null ? `${ti.items.price} SP` : '—'}
                 </span>
@@ -241,104 +245,137 @@ export function TradeSide({
                   <>
                     <div className="flex items-center gap-0.5 bg-stone-800 rounded border border-stone-700 h-5">
                       <button
-                      type="button"
-                      onClick={async () => {
-                        await tradeService.updateTradeItemLevel(ti.id, Math.max(1, (ti.level || 1) - 1));
-                        onItemsChanged();
-                      }}
-                      className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
-                      disabled={(ti.level || 1) <= 1}
-                    >-</button>
-                    <span className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none" title="Nível do Item">
-                      Nv.{ti.level || 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await tradeService.updateTradeItemLevel(ti.id, Math.min(5, (ti.level || 1) + 1));
-                        onItemsChanged();
-                      }}
-                      className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
-                      disabled={(ti.level || 1) >= 5}
-                    >+</button>
-                  </div>
-                  {ti.items?.category !== 'Arma' && ti.items?.category !== 'Consumível' && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button 
-                          className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
-                          title="Adicionar Resistências"
-                        >
-                          <ShieldPlus className="w-3 h-3" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                        <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
-                        {AVAILABLE_RESISTANCES.map(res => {
-                          const isChecked = (ti.custom_condition_resistances || []).includes(res);
-                          return (
-                            <DropdownMenuCheckboxItem
-                              key={res}
-                              checked={isChecked}
-                              onCheckedChange={async (checked) => {
-                                let current = [...(ti.custom_condition_resistances || [])];
-                                if (checked) current.push(res);
-                                else current = current.filter(r => r !== res);
-                                await tradeService.updateTradeItemResistances(ti.id, current);
-                                onItemsChanged();
-                              }}
-                              className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
-                            >
-                              {res}
-                            </DropdownMenuCheckboxItem>
+                        type="button"
+                        onClick={async () => {
+                          await tradeService.updateTradeItemLevel(
+                            ti.id,
+                            Math.max(1, (ti.level || 1) - 1),
                           );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  {ti.items?.category === 'Arma' && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button 
-                          className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-amber-400 transition-colors flex items-center justify-center"
-                          title="Adicionar Efeito de Arma (Natural 18+)"
-                        >
-                          <Zap className="w-3 h-3" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                        <div className="px-2 py-1.5 text-xs font-semibold text-amber-500/80">Efeitos Ofensivos (Nat 18+)</div>
-                        {Object.values(CONDITIONS).map(cond => {
-                          const isChecked = (ti.weapon_effects || []).some((e: WeaponEffect) => e.conditionId === cond.id);
-                          return (
-                            <DropdownMenuCheckboxItem
-                              key={cond.id}
-                              checked={isChecked}
-                              onCheckedChange={async (checked) => {
-                                let current = [...(ti.weapon_effects || [])];
-                                if (checked) {
-                                  current.push({ conditionId: cond.id, trigger: 'natural_18_plus' });
-                                } else {
-                                  current = current.filter((e: WeaponEffect) => e.conditionId !== cond.id);
-                                }
-                                await tradeService.updateTradeItemWeaponEffects(ti.id, current);
-                                onItemsChanged();
-                              }}
-                              className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
-                            >
-                              {cond.name}
-                            </DropdownMenuCheckboxItem>
+                          onItemsChanged();
+                        }}
+                        className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
+                        disabled={(ti.level || 1) <= 1}
+                      >
+                        -
+                      </button>
+                      <span
+                        className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none"
+                        title="Nível do Item"
+                      >
+                        Nv.{ti.level || 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await tradeService.updateTradeItemLevel(
+                            ti.id,
+                            Math.min(5, (ti.level || 1) + 1),
                           );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                          onItemsChanged();
+                        }}
+                        className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
+                        disabled={(ti.level || 1) >= 5}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {ti.items?.category !== 'Arma' && ti.items?.category !== 'Consumível' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                            title="Adicionar Resistências"
+                          >
+                            <ShieldPlus className="w-3 h-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-48 bg-stone-900 border-stone-800 text-stone-200"
+                          align="start"
+                        >
+                          <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">
+                            Resistências Customizadas
+                          </div>
+                          {AVAILABLE_RESISTANCES.map((res) => {
+                            const isChecked = (ti.custom_condition_resistances || []).includes(res);
+                            return (
+                              <DropdownMenuCheckboxItem
+                                key={res}
+                                checked={isChecked}
+                                onCheckedChange={async (checked) => {
+                                  let current = [...(ti.custom_condition_resistances || [])];
+                                  if (checked) current.push(res);
+                                  else current = current.filter((r) => r !== res);
+                                  await tradeService.updateTradeItemResistances(ti.id, current);
+                                  onItemsChanged();
+                                }}
+                                className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                              >
+                                {res}
+                              </DropdownMenuCheckboxItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                    {ti.items?.category === 'Arma' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-amber-400 transition-colors flex items-center justify-center"
+                            title="Adicionar Efeito de Arma (Natural 18+)"
+                          >
+                            <Zap className="w-3 h-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-56 bg-stone-900 border-stone-800 text-stone-200"
+                          align="start"
+                        >
+                          <div className="px-2 py-1.5 text-xs font-semibold text-amber-500/80">
+                            Efeitos Ofensivos (Nat 18+)
+                          </div>
+                          {Object.values(CONDITIONS).map((cond) => {
+                            const isChecked = (ti.weapon_effects || []).some(
+                              (e: WeaponEffect) => e.conditionId === cond.id,
+                            );
+                            return (
+                              <DropdownMenuCheckboxItem
+                                key={cond.id}
+                                checked={isChecked}
+                                onCheckedChange={async (checked) => {
+                                  let current = [...(ti.weapon_effects || [])];
+                                  if (checked) {
+                                    current.push({
+                                      conditionId: cond.id,
+                                      trigger: 'natural_18_plus',
+                                    });
+                                  } else {
+                                    current = current.filter(
+                                      (e: WeaponEffect) => e.conditionId !== cond.id,
+                                    );
+                                  }
+                                  await tradeService.updateTradeItemWeaponEffects(ti.id, current);
+                                  onItemsChanged();
+                                }}
+                                className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                              >
+                                {cond.name}
+                              </DropdownMenuCheckboxItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </>
                 )}
                 {ti.custom_condition_resistances && ti.custom_condition_resistances.length > 0 && (
                   <div className="flex flex-wrap gap-1 ml-2">
                     {ti.custom_condition_resistances.map((res: string) => (
-                      <span key={res} className="text-[9px] px-1 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50">
+                      <span
+                        key={res}
+                        className="text-[9px] px-1 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50"
+                      >
                         {res}
                       </span>
                     ))}
@@ -347,9 +384,13 @@ export function TradeSide({
                 {ti.weapon_effects && ti.weapon_effects.length > 0 && (
                   <div className="flex flex-wrap gap-1 ml-2">
                     {ti.weapon_effects.map((effect: WeaponEffect) => {
-                      const conditionName = CONDITIONS[effect.conditionId]?.name || effect.conditionId;
+                      const conditionName =
+                        CONDITIONS[effect.conditionId]?.name || effect.conditionId;
                       return (
-                        <span key={effect.conditionId} className="text-[9px] px-1 bg-amber-900/40 text-amber-400 rounded border border-amber-900/50 flex items-center gap-0.5">
+                        <span
+                          key={effect.conditionId}
+                          className="text-[9px] px-1 bg-amber-900/40 text-amber-400 rounded border border-amber-900/50 flex items-center gap-0.5"
+                        >
                           <Zap className="w-2.5 h-2.5" />
                           {conditionName}
                         </span>

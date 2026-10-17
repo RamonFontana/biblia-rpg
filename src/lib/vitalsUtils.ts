@@ -11,7 +11,14 @@ export interface VitalsLike {
 }
 
 export function getCurrentPv(stats: VitalsLike | null | undefined, fallback = 0): number {
-  return stats?.current_pv ?? stats?.current_hp ?? stats?.pv ?? stats?.max_pv ?? stats?.max_hp ?? fallback;
+  return (
+    stats?.current_pv ??
+    stats?.current_hp ??
+    stats?.pv ??
+    stats?.max_pv ??
+    stats?.max_hp ??
+    fallback
+  );
 }
 
 export function getMaxPv(stats: VitalsLike | null | undefined, fallback = 10): number {
@@ -27,7 +34,12 @@ export function applyHpDelta(current: number, max: number, delta: number): numbe
   return clampHp(current + delta, max);
 }
 
-export function applyDamageOrHealing(current: number, max: number, amount: number, type: 'damage' | 'healing'): number {
+export function applyDamageOrHealing(
+  current: number,
+  max: number,
+  amount: number,
+  type: 'damage' | 'healing',
+): number {
   return applyHpDelta(current, max, type === 'damage' ? -amount : amount);
 }
 
@@ -40,7 +52,10 @@ export function deriveStatusLabel(hp: number): 'Vivo' | 'Morto' {
 // Sticky: once dead, only an explicit revival (reviveWithHp) clears is_dead. Prevents an
 // unrelated PV adjustment after a narrative kill (killInstant) from silently reviving
 // a character just because their tracked HP happens to be above 0.
-export function deriveDeathState(hp: number, previousIsDead: boolean): { isDead: boolean; status: 'Vivo' | 'Morto' } {
+export function deriveDeathState(
+  hp: number,
+  previousIsDead: boolean,
+): { isDead: boolean; status: 'Vivo' | 'Morto' } {
   const isDead = previousIsDead || hp <= 0;
   return { isDead, status: isDead ? 'Morto' : 'Vivo' };
 }
@@ -48,6 +63,9 @@ export function deriveDeathState(hp: number, previousIsDead: boolean): { isDead:
 // Distinct semantics from damage/heal: raises max and current together (retroactive
 // level-up HP gain). Reads through the full fallback chain, so a character record that
 // only ever had legacy max_hp/current_hp keys gets normalized onto canonical keys here.
-export function applyMaxPvIncrease(stats: VitalsLike, amount: number): { pv: number; current_pv: number } {
+export function applyMaxPvIncrease(
+  stats: VitalsLike,
+  amount: number,
+): { pv: number; current_pv: number } {
   return { pv: getMaxPv(stats, 0) + amount, current_pv: getCurrentPv(stats, 0) + amount };
 }

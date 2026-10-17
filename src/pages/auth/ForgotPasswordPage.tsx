@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -13,46 +13,53 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
 
 const formSchema = z.object({
   email: z.string().email('Email inválido'),
-})
+});
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 export function ForgotPasswordPage() {
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
     },
-  })
+  });
 
   async function onSubmit(values: FormData) {
-    setLoading(true)
-    setError(null)
-    setSuccess(false)
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
         redirectTo: `${window.location.origin}/reset-password`,
-      })
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
 
-      setSuccess(true)
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao solicitar a redefinição de senha.')
+      setError(err.message || 'Ocorreu um erro ao solicitar a redefinição de senha.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -69,7 +76,9 @@ export function ForgotPasswordPage() {
           {success ? (
             <div className="text-center space-y-4">
               <p className="text-green-600 font-medium">Link enviado com sucesso!</p>
-              <p className="text-sm text-muted-foreground">Verifique sua caixa de entrada e clique no link para redefinir sua senha.</p>
+              <p className="text-sm text-muted-foreground">
+                Verifique sua caixa de entrada e clique no link para redefinir sua senha.
+              </p>
             </div>
           ) : (
             <Form {...form}>
@@ -87,9 +96,7 @@ export function ForgotPasswordPage() {
                     </FormItem>
                   )}
                 />
-                {error && (
-                  <div className="text-sm text-destructive font-medium">{error}</div>
-                )}
+                {error && <div className="text-sm text-destructive font-medium">{error}</div>}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Enviando...' : 'Enviar Link'}
                 </Button>
@@ -104,5 +111,5 @@ export function ForgotPasswordPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

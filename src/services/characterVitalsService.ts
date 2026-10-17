@@ -21,14 +21,26 @@ type CombatParticipantRow = Database['public']['Tables']['combat_participants'][
 // back to the default max PV if neither resolves rather than failing the operation.
 async function resolveMaxPvForEntity(entityId: string, entityType: string): Promise<number> {
   if (entityType !== 'npc') {
-    const { data } = await supabase.from('characters').select('stats').eq('id', entityId).maybeSingle();
+    const { data } = await supabase
+      .from('characters')
+      .select('stats')
+      .eq('id', entityId)
+      .maybeSingle();
     return getMaxPv(data?.stats as VitalsLike | null | undefined);
   }
 
-  const { data: charData } = await supabase.from('characters').select('stats').eq('id', entityId).maybeSingle();
+  const { data: charData } = await supabase
+    .from('characters')
+    .select('stats')
+    .eq('id', entityId)
+    .maybeSingle();
   if (charData) return getMaxPv(charData.stats as VitalsLike);
 
-  const { data: npcData } = await supabase.from('session_npcs').select('stats').eq('id', entityId).maybeSingle();
+  const { data: npcData } = await supabase
+    .from('session_npcs')
+    .select('stats')
+    .eq('id', entityId)
+    .maybeSingle();
   return getMaxPv(npcData?.stats as VitalsLike | null | undefined);
 }
 
@@ -39,7 +51,7 @@ export const characterVitalsService = {
   async applyDamageOrHealing(
     participant: Pick<CombatParticipantRow, 'id' | 'entity_id' | 'entity_type' | 'hp_current'>,
     amount: number,
-    type: 'damage' | 'healing'
+    type: 'damage' | 'healing',
   ): Promise<number> {
     const maxPv = await resolveMaxPvForEntity(participant.entity_id, participant.entity_type);
     const newHp = computeDamageOrHealing(participant.hp_current, maxPv, amount, type);
@@ -64,7 +76,7 @@ export const characterVitalsService = {
     currentStats: VitalsLike,
     finalHp: number,
     previousIsDead: boolean,
-    permanentConditions: ConditionEntry[]
+    permanentConditions: ConditionEntry[],
   ): Promise<{ isDead: boolean }> {
     const { isDead, status } = deriveDeathState(finalHp, previousIsDead);
     const newStats = { ...currentStats, current_pv: finalHp, status };
@@ -83,13 +95,20 @@ export const characterVitalsService = {
 
   // Session +/- PV button for players. Only touches current_pv — does not set
   // is_dead/status, preserving this call site's exact prior behavior.
-  async adjustCurrentPv(characterId: string, currentStats: VitalsLike, delta: number): Promise<Record<string, unknown>> {
+  async adjustCurrentPv(
+    characterId: string,
+    currentStats: VitalsLike,
+    delta: number,
+  ): Promise<Record<string, unknown>> {
     const max = getMaxPv(currentStats);
     const current = getCurrentPv(currentStats, max);
     const newPv = applyHpDelta(current, max, delta);
     const newStats = { ...currentStats, current_pv: newPv };
 
-    const { error } = await supabase.from('characters').update({ stats: newStats as any }).eq('id', characterId);
+    const { error } = await supabase
+      .from('characters')
+      .update({ stats: newStats as any })
+      .eq('id', characterId);
     if (error) {
       console.error('Failed to adjust current PV', error);
       throw error;
@@ -100,13 +119,20 @@ export const characterVitalsService = {
   // Session +/- PV button for enemies/NPCs. Also updates the free-text stats.status
   // label, matching what these two call sites already did — still does not touch
   // is_dead (they didn't before either).
-  async adjustCurrentPvWithStatus(characterId: string, currentStats: VitalsLike, delta: number): Promise<Record<string, unknown>> {
+  async adjustCurrentPvWithStatus(
+    characterId: string,
+    currentStats: VitalsLike,
+    delta: number,
+  ): Promise<Record<string, unknown>> {
     const max = getMaxPv(currentStats);
     const current = getCurrentPv(currentStats, max);
     const newPv = applyHpDelta(current, max, delta);
     const newStats = { ...currentStats, current_pv: newPv, status: deriveStatusLabel(newPv) };
 
-    const { error } = await supabase.from('characters').update({ stats: newStats as any }).eq('id', characterId);
+    const { error } = await supabase
+      .from('characters')
+      .update({ stats: newStats as any })
+      .eq('id', characterId);
     if (error) {
       console.error('Failed to adjust current PV', error);
       throw error;
@@ -124,7 +150,7 @@ export const characterVitalsService = {
     characterId: string,
     currentStats: VitalsLike,
     amount: number,
-    extra?: Record<string, unknown>
+    extra?: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const max = getMaxPv(currentStats);
     const current = getCurrentPv(currentStats, max);
@@ -150,7 +176,7 @@ export const characterVitalsService = {
     characterId: string,
     currentStats: VitalsLike,
     amount: number,
-    extra?: Record<string, unknown>
+    extra?: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const { pv, current_pv } = applyMaxPvIncrease(currentStats, amount);
     const newStats = { ...currentStats, pv, current_pv };
@@ -176,7 +202,7 @@ export const characterVitalsService = {
     characterId: string,
     newHp: number,
     extra?: Record<string, unknown>,
-    participantId?: string
+    participantId?: string,
   ): Promise<Record<string, unknown>> {
     const { data: char, error: fetchError } = await supabase
       .from('characters')

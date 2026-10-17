@@ -7,7 +7,12 @@ interface CharacterCardProps {
   onLevelUpClick?: (character: Character) => void;
 }
 
-export function CharacterCard({ character, onClick, isInActiveSession, onLevelUpClick }: CharacterCardProps) {
+export function CharacterCard({
+  character,
+  onClick,
+  isInActiveSession,
+  onLevelUpClick,
+}: CharacterCardProps) {
   return (
     <div
       className="p-4 border rounded-lg shadow-sm cursor-pointer bg-stone-900 border-amber-700/50 hover:-translate-y-1 hover:border-amber-500 hover:shadow-lg hover:shadow-amber-900/20 transition-all duration-300 ease-in-out"
@@ -37,15 +42,21 @@ export function CharacterCard({ character, onClick, isInActiveSession, onLevelUp
 
       <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
         <div className="text-center p-2 bg-stone-950 border border-stone-800/50 rounded-md shadow-inner">
-          <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">PV</span>
+          <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
+            PV
+          </span>
           <span className="font-bold text-stone-200">{character.stats?.pv || 0}</span>
         </div>
         <div className="text-center p-2 bg-stone-950 border border-stone-800/50 rounded-md shadow-inner">
-          <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">CA</span>
+          <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
+            CA
+          </span>
           <span className="font-bold text-stone-200">{character.stats?.ca || 0}</span>
         </div>
         <div className="text-center p-2 bg-stone-950 border border-stone-800/50 rounded-md shadow-inner">
-          <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Fé</span>
+          <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
+            Fé
+          </span>
           <span className="font-bold text-stone-200">{character.stats?.faith || 0}</span>
         </div>
       </div>
@@ -60,14 +71,16 @@ export function CharacterCard({ character, onClick, isInActiveSession, onLevelUp
               }
             }}
             disabled={isInActiveSession}
-            title={isInActiveSession ? "Complete a sessão atual primeiro" : "Iniciar Progressão de Nível"}
+            title={
+              isInActiveSession ? 'Complete a sessão atual primeiro' : 'Iniciar Progressão de Nível'
+            }
             className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-all duration-300 ${
               isInActiveSession
-                ? "bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700"
-                : "bg-green-700 text-green-50 hover:bg-green-600 hover:shadow-md hover:shadow-green-900/30"
+                ? 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
+                : 'bg-green-700 text-green-50 hover:bg-green-600 hover:shadow-md hover:shadow-green-900/30'
             }`}
           >
-            {isInActiveSession ? "Sessão Ativa: Level Up Bloqueado" : "Subir de Nível"}
+            {isInActiveSession ? 'Sessão Ativa: Level Up Bloqueado' : 'Subir de Nível'}
           </button>
         </div>
       )}

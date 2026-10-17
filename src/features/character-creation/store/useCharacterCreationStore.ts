@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import type { DraftCharacter, CharacterAttributes, EquipmentItem, CharacterStats, CharacterNarrative } from '../types';
+import type {
+  DraftCharacter,
+  CharacterAttributes,
+  EquipmentItem,
+  CharacterStats,
+  CharacterNarrative,
+} from '../types';
 
 interface CharacterCreationState {
   currentStep: number;
@@ -11,7 +17,7 @@ interface CharacterCreationState {
   prevStep: () => void;
   loadDraft: (draft: DraftCharacter, editingId: string, isLocked?: boolean) => void;
   reset: () => void;
-  
+
   setName: (name: string) => void;
   setTribe: (tribe: string) => void;
   setVocation: (vocation: string) => void;
@@ -40,30 +46,35 @@ export const useCharacterCreationStore = create<CharacterCreationState>((set) =>
   setStep: (step) => set({ currentStep: step }),
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 9) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
-  
-  loadDraft: (draft, editingId, isLocked = false) => set({ draft, editingId, currentStep: 1, isLocked }),
+
+  loadDraft: (draft, editingId, isLocked = false) =>
+    set({ draft, editingId, currentStep: 1, isLocked }),
   reset: () => set({ draft: initialState, editingId: undefined, currentStep: 1, isLocked: false }),
 
   setName: (name) => set((state) => ({ draft: { ...state.draft, name } })),
   setTribe: (tribe) => set((state) => ({ draft: { ...state.draft, tribe } })),
-  setVocation: (vocation) => set((state) => {
-    const isVocationChanged = state.draft.vocation !== vocation;
-    const newProficiencies = isVocationChanged 
-      ? { skill_proficiencies: [] } 
-      : state.draft.proficiencies;
-      
-    return { 
-      draft: { 
-        ...state.draft, 
-        vocation,
-        proficiencies: newProficiencies
-      } 
-    };
-  }),
+  setVocation: (vocation) =>
+    set((state) => {
+      const isVocationChanged = state.draft.vocation !== vocation;
+      const newProficiencies = isVocationChanged
+        ? { skill_proficiencies: [] }
+        : state.draft.proficiencies;
+
+      return {
+        draft: {
+          ...state.draft,
+          vocation,
+          proficiencies: newProficiencies,
+        },
+      };
+    }),
   setAttributes: (attributes) => set((state) => ({ draft: { ...state.draft, attributes } })),
-  setFaithAspects: (fortress, temptation) => set((state) => ({ draft: { ...state.draft, fortress, temptation } })),
+  setFaithAspects: (fortress, temptation) =>
+    set((state) => ({ draft: { ...state.draft, fortress, temptation } })),
   setStats: (stats) => set((state) => ({ draft: { ...state.draft, stats } })),
-  setEquipment: (equipment, remainingCoins) => set((state) => ({ draft: { ...state.draft, equipment, coins: remainingCoins } })),
+  setEquipment: (equipment, remainingCoins) =>
+    set((state) => ({ draft: { ...state.draft, equipment, coins: remainingCoins } })),
   setNarrative: (narrative) => set((state) => ({ draft: { ...state.draft, narrative } })),
-  setProficiencies: (proficiencies) => set((state) => ({ draft: { ...state.draft, proficiencies } })),
+  setProficiencies: (proficiencies) =>
+    set((state) => ({ draft: { ...state.draft, proficiencies } })),
 }));

@@ -14,11 +14,15 @@ export const enemyFormSchema = z.object({
     sab: z.number().min(0),
     car: z.number().min(0),
   }),
-  skills: z.array(z.object({
-    name: z.string().min(1, 'Nome da habilidade é obrigatório'),
-    description: z.string()
-  })).optional(),
-  imageBase64: z.string().optional()
+  skills: z
+    .array(
+      z.object({
+        name: z.string().min(1, 'Nome da habilidade é obrigatório'),
+        description: z.string(),
+      }),
+    )
+    .optional(),
+  imageBase64: z.string().optional(),
 });
 
 export type EnemyFormValues = z.infer<typeof enemyFormSchema>;

@@ -8,10 +8,7 @@ export interface PresenceState {
   name?: string;
 }
 
-export const useSupabasePresence = (
-  sessionId: string | undefined,
-  userPayload?: PresenceState
-) => {
+export const useSupabasePresence = (sessionId: string | undefined, userPayload?: PresenceState) => {
   const [onlineUsers, setOnlineUsers] = useState<PresenceState[]>([]);
 
   useEffect(() => {
@@ -39,24 +36,20 @@ export const useSupabasePresence = (
         }
       });
 
-      const uniqueUsers = Array.from(
-        new Map(users.map((item) => [item.user_id, item])).values()
-      );
+      const uniqueUsers = Array.from(new Map(users.map((item) => [item.user_id, item])).values());
 
       setOnlineUsers(uniqueUsers);
     };
 
-    channel
-      .on('presence', { event: 'sync' }, updatePresence)
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED' && isMounted) {
-          try {
-            await channel.track(userPayload);
-          } catch (err) {
-            console.error('[Presence] Error tracking presence:', err);
-          }
+    channel.on('presence', { event: 'sync' }, updatePresence).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED' && isMounted) {
+        try {
+          await channel.track(userPayload);
+        } catch (err) {
+          console.error('[Presence] Error tracking presence:', err);
         }
-      });
+      }
+    });
 
     return () => {
       isMounted = false;

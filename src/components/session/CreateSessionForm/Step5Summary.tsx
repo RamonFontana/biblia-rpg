@@ -33,55 +33,78 @@ export function Step5Summary() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold mb-1">Resumo da Sessão</h2>
-        <p className="text-muted-foreground">
-          Revise os dados antes de iniciar a sessão.
-        </p>
+        <p className="text-muted-foreground">Revise os dados antes de iniciar a sessão.</p>
       </div>
 
       <div className="border rounded-lg p-4 bg-card space-y-4">
         <div>
           <h3 className="font-semibold text-lg text-primary">Informações Básicas</h3>
-          <p><strong>Nome:</strong> {store.name}</p>
-          <p><strong>Descrição:</strong> {store.description || 'Sem descrição'}</p>
+          <p>
+            <strong>Nome:</strong> {store.name}
+          </p>
+          <p>
+            <strong>Descrição:</strong> {store.description || 'Sem descrição'}
+          </p>
         </div>
-        
+
         <div>
           <h3 className="font-semibold text-lg text-primary">Inimigos ({store.enemies.length})</h3>
           {store.enemies.length > 0 ? (
             <ul className="list-disc list-inside">
-              {store.enemies.map(e => <li key={e.id}>{e.name} (HP: {e.hpCurrent}/{e.hpMax})</li>)}
+              {store.enemies.map((e) => (
+                <li key={e.id}>
+                  {e.name} (HP: {e.hpCurrent}/{e.hpMax})
+                </li>
+              ))}
             </ul>
-          ) : <p className="text-muted-foreground italic">Nenhum inimigo adicionado.</p>}
+          ) : (
+            <p className="text-muted-foreground italic">Nenhum inimigo adicionado.</p>
+          )}
         </div>
 
         <div>
           <h3 className="font-semibold text-lg text-primary">NPCs ({store.npcs.length})</h3>
           {store.npcs.length > 0 ? (
             <ul className="list-disc list-inside">
-              {store.npcs.map(n => <li key={n.id}>{n.name}</li>)}
+              {store.npcs.map((n) => (
+                <li key={n.id}>{n.name}</li>
+              ))}
             </ul>
-          ) : <p className="text-muted-foreground italic">Nenhum NPC adicionado.</p>}
+          ) : (
+            <p className="text-muted-foreground italic">Nenhum NPC adicionado.</p>
+          )}
         </div>
 
         <div>
-          <h3 className="font-semibold text-lg text-primary">Jogadores ({store.participantCharacterIds.length})</h3>
+          <h3 className="font-semibold text-lg text-primary">
+            Jogadores ({store.participantCharacterIds.length})
+          </h3>
           {store.participantCharacterIds.length > 0 ? (
             <p>{store.participantCharacterIds.length} personagens selecionados.</p>
-          ) : <p className="text-muted-foreground italic">Nenhum jogador selecionado.</p>}
+          ) : (
+            <p className="text-muted-foreground italic">Nenhum jogador selecionado.</p>
+          )}
         </div>
       </div>
 
-      {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md">
-          {error}
-        </div>
-      )}
+      {error && <div className="p-3 bg-red-100 text-red-700 rounded-md">{error}</div>}
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t">
-        <Button type="button" variant="outline" onClick={store.prevStep} disabled={isSubmitting} className="w-full sm:w-auto">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={store.prevStep}
+          disabled={isSubmitting}
+          className="w-full sm:w-auto"
+        >
           Voltar
         </Button>
-        <Button type="button" onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="w-full sm:w-auto"
+        >
           {isSubmitting ? 'Iniciando Sessão...' : 'Iniciar Sessão'}
         </Button>
       </div>

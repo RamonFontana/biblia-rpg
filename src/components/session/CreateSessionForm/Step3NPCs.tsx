@@ -20,14 +20,23 @@ type NPCFormValues = z.infer<typeof npcSchema>;
 export function Step3NPCs() {
   const { npcs, addNPC, removeNPC, nextStep, prevStep } = useSessionDraftStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [presetModalData, setPresetModalData] = useState<{name: string, description: string}>({ name: '', description: '' });
+  const [presetModalData, setPresetModalData] = useState<{ name: string; description: string }>({
+    name: '',
+    description: '',
+  });
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<NPCFormValues>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<NPCFormValues>({
     resolver: zodResolver(npcSchema),
     defaultValues: {
       name: '',
       description: '',
-    }
+    },
   });
 
   const onAddSimpleNPC = (data: NPCFormValues) => {
@@ -35,7 +44,7 @@ export function Step3NPCs() {
       id: crypto.randomUUID(),
       name: data.name,
       description: data.description || '',
-      isPlayable: false
+      isPlayable: false,
     });
     reset();
   };
@@ -44,7 +53,7 @@ export function Step3NPCs() {
     const presetId = e.target.value;
     if (!presetId) return;
 
-    const preset = npcPresets.find(p => p.id === presetId);
+    const preset = npcPresets.find((p) => p.id === presetId);
     if (preset) {
       if (preset.isPlayable) {
         setPresetModalData({ name: preset.name, description: preset.description });
@@ -54,7 +63,7 @@ export function Step3NPCs() {
         setValue('description', preset.description);
       }
     }
-    e.target.value = ""; // Reset dropdown
+    e.target.value = ''; // Reset dropdown
   };
 
   return (
@@ -62,52 +71,73 @@ export function Step3NPCs() {
       <div>
         <h2 className="text-2xl font-semibold mb-1">NPCs da Sessão</h2>
         <p className="text-muted-foreground">
-          Crie Personagens Não-Jogáveis que terão um papel importante ou auxiliarão os jogadores nesta sessão.
+          Crie Personagens Não-Jogáveis que terão um papel importante ou auxiliarão os jogadores
+          nesta sessão.
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-muted/30 p-4 rounded-md border">
-        <Label htmlFor="preset-select" className="whitespace-nowrap font-medium">Usar Preset:</Label>
-        <select 
+        <Label htmlFor="preset-select" className="whitespace-nowrap font-medium">
+          Usar Preset:
+        </Label>
+        <select
           id="preset-select"
           className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
           onChange={handlePresetSelect}
           defaultValue=""
         >
-          <option value="" disabled>Selecione um NPC predefinido...</option>
-          {npcPresets.map(preset => (
+          <option value="" disabled>
+            Selecione um NPC predefinido...
+          </option>
+          {npcPresets.map((preset) => (
             <option key={preset.id} value={preset.id}>
-              {preset.name} {preset.isPlayable ? "(Jogável)" : ""}
+              {preset.name} {preset.isPlayable ? '(Jogável)' : ''}
             </option>
           ))}
         </select>
       </div>
 
-      <form onSubmit={handleSubmit(onAddSimpleNPC)} className="p-4 border rounded-lg bg-muted/10 space-y-4 relative">
+      <form
+        onSubmit={handleSubmit(onAddSimpleNPC)}
+        className="p-4 border rounded-lg bg-muted/10 space-y-4 relative"
+      >
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h3 className="font-medium text-lg">Adicionar NPC Simples</h3>
-          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => {
-            setPresetModalData({ name: '', description: '' });
-            setIsModalOpen(true);
-          }}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              setPresetModalData({ name: '', description: '' });
+              setIsModalOpen(true);
+            }}
+          >
             Criar NPC Jogável (Ficha Completa)
           </Button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="npc_name">Nome do NPC</Label>
-            <Input id="npc_name" {...register('name')} className={errors.name ? 'border-red-500' : ''} />
+            <Input
+              id="npc_name"
+              {...register('name')}
+              className={errors.name ? 'border-red-500' : ''}
+            />
             {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="npc_desc">Descrição / Papel</Label>
             <Textarea id="npc_desc" {...register('description')} className="min-h-[80px]" />
-            {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
+            {errors.description && (
+              <p className="text-xs text-red-500">{errors.description.message}</p>
+            )}
           </div>
         </div>
-        <Button type="submit" variant="secondary" className="w-full sm:w-auto mt-2">Adicionar NPC Simples</Button>
+        <Button type="submit" variant="secondary" className="w-full sm:w-auto mt-2">
+          Adicionar NPC Simples
+        </Button>
       </form>
 
       <div className="space-y-2">
@@ -117,17 +147,31 @@ export function Step3NPCs() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {npcs.map((npc) => (
-              <div key={npc.id} className="p-3 border rounded-md flex justify-between items-start bg-card">
+              <div
+                key={npc.id}
+                className="p-3 border rounded-md flex justify-between items-start bg-card"
+              >
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-semibold">{npc.name}</p>
                     {npc.isPlayable && (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">Jogável</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">
+                        Jogável
+                      </span>
                     )}
                   </div>
-                  {npc.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{npc.description}</p>}
+                  {npc.description && (
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {npc.description}
+                    </p>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => removeNPC(npc.id)} className="text-red-500 hover:text-red-700 hover:bg-red-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeNPC(npc.id)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                >
                   X
                 </Button>
               </div>
@@ -137,13 +181,17 @@ export function Step3NPCs() {
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t">
-        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">Voltar</Button>
-        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">Próximo: Jogadores</Button>
+        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">
+          Voltar
+        </Button>
+        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">
+          Próximo: Jogadores
+        </Button>
       </div>
 
-      <NPCCharacterSheetModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <NPCCharacterSheetModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         initialName={presetModalData.name}
         initialDescription={presetModalData.description}
         onSave={(data) => {
@@ -152,9 +200,9 @@ export function Step3NPCs() {
             name: data.name,
             description: data.description || '',
             isPlayable: true,
-            characterData: data
+            characterData: data,
           });
-        }} 
+        }}
       />
     </div>
   );

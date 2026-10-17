@@ -33,7 +33,7 @@ export function CharacterEdit() {
           stats: data.stats as any,
           fortress: data.fortress || '',
           temptation: data.temptation || '',
-          narrative: data.narrative as any
+          narrative: data.narrative as any,
         };
 
         loadDraft(draft, id, data.has_participated_in_session || false);
@@ -63,7 +63,9 @@ export function CharacterEdit() {
     return (
       <div className="p-4 bg-red-50 text-red-700 rounded-md max-w-2xl mx-auto mt-8">
         <p>{error}</p>
-        <button onClick={() => navigate('/characters')} className="mt-4 underline">Voltar para a lista</button>
+        <button onClick={() => navigate('/characters')} className="mt-4 underline">
+          Voltar para a lista
+        </button>
       </div>
     );
   }

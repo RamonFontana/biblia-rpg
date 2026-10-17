@@ -22,16 +22,23 @@ const LABELS: Record<keyof CharacterAttributes, string> = {
 export function AttributeGeneration() {
   const { draft, setAttributes, nextStep, prevStep, isLocked } = useCharacterCreationStore();
   const { quickSave, saving, message, isEditing } = useQuickSave();
-  
+
   const [method, setMethod] = useState<'array' | 'dice' | null>(null);
   const [availableValues, setAvailableValues] = useState<number[]>(STANDARD_ARRAY);
   const [rolls, setRolls] = useState<number[]>([]);
 
-  const { register, handleSubmit, setValue, getValues, watch, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    getValues,
+    watch,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(attributesSchema),
     defaultValues: {
-      attributes: draft.attributes || { for: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 }
-    }
+      attributes: draft.attributes || { for: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 },
+    },
   });
 
   const currentAttributes = watch('attributes');
@@ -87,22 +94,26 @@ export function AttributeGeneration() {
     <div className="space-y-6">
       {!method && !isLocked ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <button 
+          <button
             onClick={handleSelectArray}
             className="flex flex-col items-center justify-center p-8 rounded-xl border-2 border-stone-700 bg-stone-800 hover:border-amber-500 hover:bg-stone-700 transition-all group"
           >
             <List className="w-16 h-16 text-stone-400 group-hover:text-amber-500 mb-4" />
             <h3 className="font-serif text-xl text-stone-100">Standard Array</h3>
-            <p className="text-stone-400 text-center mt-2">Valores fixos (15, 14, 13, 12, 10, 8) para distribuir estrategicamente.</p>
+            <p className="text-stone-400 text-center mt-2">
+              Valores fixos (15, 14, 13, 12, 10, 8) para distribuir estrategicamente.
+            </p>
           </button>
-          
-          <button 
+
+          <button
             onClick={handleRollDice}
             className="flex flex-col items-center justify-center p-8 rounded-xl border-2 border-stone-700 bg-stone-800 hover:border-amber-500 hover:bg-stone-700 transition-all group"
           >
             <Dices className="w-16 h-16 text-stone-400 group-hover:text-amber-500 mb-4" />
             <h3 className="font-serif text-xl text-stone-100">Rolar Dados</h3>
-            <p className="text-stone-400 text-center mt-2">Sorte divina. Rola 4d6 e descarta o menor, 6 vezes.</p>
+            <p className="text-stone-400 text-center mt-2">
+              Sorte divina. Rola 4d6 e descarta o menor, 6 vezes.
+            </p>
           </button>
         </div>
       ) : (
@@ -110,10 +121,13 @@ export function AttributeGeneration() {
           <div className="bg-stone-800 p-4 rounded border border-stone-700">
             {isLocked && (
               <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200 mb-4">
-                <strong>Atenção:</strong> Personagem já está participando de uma sessão. Os atributos não podem ser alterados.
+                <strong>Atenção:</strong> Personagem já está participando de uma sessão. Os
+                atributos não podem ser alterados.
               </div>
             )}
-            <h4 className="text-stone-300 mb-2">Valores Gerados ({method === 'array' ? 'Array' : 'Dados'}):</h4>
+            <h4 className="text-stone-300 mb-2">
+              Valores Gerados ({method === 'array' ? 'Array' : 'Dados'}):
+            </h4>
             <div className="flex gap-2 flex-wrap">
               {availableValues.map((v, i) => {
                 const usedValues = Object.values(currentAttributes || {});
@@ -125,11 +139,11 @@ export function AttributeGeneration() {
                 }
 
                 return (
-                  <span 
-                    key={i} 
+                  <span
+                    key={i}
                     className={`px-3 py-1 border rounded font-bold transition-colors ${
-                      isUsed 
-                        ? 'bg-stone-800 border-stone-700 text-stone-600 line-through opacity-50' 
+                      isUsed
+                        ? 'bg-stone-800 border-stone-700 text-stone-600 line-through opacity-50'
                         : 'bg-stone-900 border-amber-600 text-amber-500'
                     }`}
                   >
@@ -139,7 +153,13 @@ export function AttributeGeneration() {
               })}
             </div>
             {method === 'dice' && (
-              <button type="button" onClick={handleRollDice} className="text-sm text-amber-500 mt-2 underline hover:text-amber-400">Rolar Novamente</button>
+              <button
+                type="button"
+                onClick={handleRollDice}
+                className="text-sm text-amber-500 mt-2 underline hover:text-amber-400"
+              >
+                Rolar Novamente
+              </button>
             )}
           </div>
 
@@ -149,22 +169,27 @@ export function AttributeGeneration() {
               return (
                 <div key={attr} className="flex flex-col">
                   <label className="text-stone-300 font-semibold mb-1">{LABELS[attr]}</label>
-                  <select 
+                  <select
                     {...register(`attributes.${attr}`, { valueAsNumber: true })}
                     disabled={isLocked || method === 'dice'}
                     className="bg-stone-900 border border-stone-700 text-stone-100 p-2 rounded focus:border-amber-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {method === 'dice' ? (
-                      // No modo de dados, renderizamos todos os valores possíveis (3 a 18) para garantir 
+                      // No modo de dados, renderizamos todos os valores possíveis (3 a 18) para garantir
                       // que o setValue ache a option no DOM mesmo antes da próxima renderização
-                      Array.from({ length: 16 }, (_, i) => i + 3).map(val => (
-                        <option key={val} value={val}>{val}</option>
+                      Array.from({ length: 16 }, (_, i) => i + 3).map((val) => (
+                        <option key={val} value={val}>
+                          {val}
+                        </option>
                       ))
                     ) : (
                       <>
                         <option value={0}>Selecione um valor...</option>
                         {availableValues.map((val, i) => {
-                          const isOptionDisabled = method === 'array' && usedValues.includes(val) && currentAttributes?.[attr] !== val;
+                          const isOptionDisabled =
+                            method === 'array' &&
+                            usedValues.includes(val) &&
+                            currentAttributes?.[attr] !== val;
                           return (
                             <option key={`${attr}-${i}`} value={val} disabled={isOptionDisabled}>
                               {val}
@@ -174,7 +199,9 @@ export function AttributeGeneration() {
                       </>
                     )}
                   </select>
-                  {errors.attributes?.[attr] && <p className="text-red-400 text-sm mt-1">{errors.attributes[attr]?.message}</p>}
+                  {errors.attributes?.[attr] && (
+                    <p className="text-red-400 text-sm mt-1">{errors.attributes[attr]?.message}</p>
+                  )}
                 </div>
               );
             })}
@@ -182,9 +209,12 @@ export function AttributeGeneration() {
 
           <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
             <div className="flex items-center gap-4 w-full sm:w-auto">
-              <button 
+              <button
                 type="button"
-                onClick={() => { setMethod(null); prevStep(); }}
+                onClick={() => {
+                  setMethod(null);
+                  prevStep();
+                }}
                 className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
               >
                 Voltar
@@ -199,11 +229,13 @@ export function AttributeGeneration() {
                   >
                     {saving ? 'Salvando...' : 'Salvar'}
                   </button>
-                  {message && <span className="text-amber-500 text-sm font-semibold">{message}</span>}
+                  {message && (
+                    <span className="text-amber-500 text-sm font-semibold">{message}</span>
+                  )}
                 </div>
               )}
             </div>
-            <button 
+            <button
               type="submit"
               className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
             >

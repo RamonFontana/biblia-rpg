@@ -11,7 +11,7 @@ export function Step2Enemies() {
   const onAddEnemy = (data: EnemyFormValues) => {
     addEnemy({
       id: crypto.randomUUID(),
-      ...data
+      ...data,
     });
     setIsAdding(false);
   };
@@ -36,10 +36,10 @@ export function Step2Enemies() {
       {isAdding && (
         <div className="p-4 border border-stone-700 rounded-lg bg-stone-900/50">
           <h3 className="font-medium text-lg mb-4">Novo Inimigo</h3>
-          <UnifiedEnemyForm 
-            onSubmit={onAddEnemy} 
-            onCancel={() => setIsAdding(false)} 
-            submitLabel="Adicionar à Sessão" 
+          <UnifiedEnemyForm
+            onSubmit={onAddEnemy}
+            onCancel={() => setIsAdding(false)}
+            submitLabel="Adicionar à Sessão"
           />
         </div>
       )}
@@ -52,10 +52,17 @@ export function Step2Enemies() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {enemies.map((enemy) => (
-              <div key={enemy.id} className="p-3 border border-stone-800 rounded-md flex justify-between items-start bg-stone-900">
+              <div
+                key={enemy.id}
+                className="p-3 border border-stone-800 rounded-md flex justify-between items-start bg-stone-900"
+              >
                 <div className="flex items-center gap-3">
                   {enemy.imageBase64 ? (
-                    <img src={enemy.imageBase64} alt={enemy.name} className="w-10 h-10 rounded-full object-cover border border-stone-600" />
+                    <img
+                      src={enemy.imageBase64}
+                      alt={enemy.name}
+                      className="w-10 h-10 rounded-full object-cover border border-stone-600"
+                    />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-stone-800 border border-stone-700 flex items-center justify-center text-xs text-stone-500">
                       IMG
@@ -64,10 +71,17 @@ export function Step2Enemies() {
                   <div>
                     <p className="font-semibold text-sm">{enemy.name}</p>
                     <p className="text-xs text-stone-400">{enemy.vocation || 'Sem Vocação'}</p>
-                    <p className="text-xs text-stone-500 mt-1">HP: {enemy.hpCurrent}/{enemy.hpMax} | CA: {enemy.ca}</p>
+                    <p className="text-xs text-stone-500 mt-1">
+                      HP: {enemy.hpCurrent}/{enemy.hpMax} | CA: {enemy.ca}
+                    </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => removeEnemy(enemy.id)} className="h-6 w-6 p-0 text-red-500 hover:text-red-400 hover:bg-stone-800">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeEnemy(enemy.id)}
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-400 hover:bg-stone-800"
+                >
                   X
                 </Button>
               </div>
@@ -77,8 +91,12 @@ export function Step2Enemies() {
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t border-stone-800 mt-8">
-        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">Voltar</Button>
-        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">Próximo: NPCs</Button>
+        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">
+          Voltar
+        </Button>
+        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">
+          Próximo: NPCs
+        </Button>
       </div>
     </div>
   );

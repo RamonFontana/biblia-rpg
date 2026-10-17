@@ -25,7 +25,8 @@ export const useActiveSession = () => {
       try {
         const { data, error } = await supabase
           .from('session_participants')
-          .select(`
+          .select(
+            `
             session_id,
             character_id,
             game_sessions!inner (
@@ -34,7 +35,8 @@ export const useActiveSession = () => {
               status,
               gm_id
             )
-          `)
+          `,
+          )
           .eq('user_id', user.id)
           .eq('game_sessions.status', 'active');
 
@@ -48,7 +50,7 @@ export const useActiveSession = () => {
             gm_id: d.game_sessions?.gm_id || '',
           }));
           const uniqueSessions = Array.from(
-            new Map(sessions.map((item: any) => [item.session_id, item])).values()
+            new Map(sessions.map((item: any) => [item.session_id, item])).values(),
           ) as ActivePlayerSession[];
           setActiveSessions(uniqueSessions);
         }

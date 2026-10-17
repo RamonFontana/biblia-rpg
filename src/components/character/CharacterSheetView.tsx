@@ -10,7 +10,11 @@ import { updateCharacterEquipment } from '@/lib/supabase';
 import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
-import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
+import {
+  calculateModifier,
+  calculateProficiency,
+  formatModifier,
+} from '@/features/character-management/utils/characterMath';
 import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { AbilityCard } from '../combat/AbilityCard';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
@@ -27,7 +31,12 @@ interface CharacterSheetViewProps {
   isGM?: boolean;
 }
 
-export function CharacterSheetView({ userId, sessionId, characterId, isGM }: CharacterSheetViewProps) {
+export function CharacterSheetView({
+  userId,
+  sessionId,
+  characterId,
+  isGM,
+}: CharacterSheetViewProps) {
   const [character, setCharacter] = useState<Character | null>(null);
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +56,11 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
     }
   };
 
-  const handleRecoverAmmunition = async (characterItemId: string, spentAmount: number, maxCapacity: number) => {
+  const handleRecoverAmmunition = async (
+    characterItemId: string,
+    spentAmount: number,
+    maxCapacity: number,
+  ) => {
     setIsEquipping(true);
     try {
       await recover(characterItemId, spentAmount, maxCapacity);
@@ -69,11 +82,20 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
     }
   };
 
-  const handleEquip = async (characterItemId: string, itemEffects: any, targetHand?: 'mainHand' | 'offHand') => {
+  const handleEquip = async (
+    characterItemId: string,
+    itemEffects: any,
+    targetHand?: 'mainHand' | 'offHand',
+  ) => {
     if (!character) return;
     setIsEquipping(true);
     try {
-      const currentEquipment = character.equipment || { head: null, body: null, mainHand: null, offHand: null };
+      const currentEquipment = character.equipment || {
+        head: null,
+        body: null,
+        mainHand: null,
+        offHand: null,
+      };
       const newEquipment = equipItem(characterItemId, itemEffects, currentEquipment, targetHand);
       await updateCharacterEquipment(character.id, newEquipment);
       setCharacter({ ...character, equipment: newEquipment });
@@ -89,7 +111,12 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
     if (!character) return;
     setIsEquipping(true);
     try {
-      const currentEquipment = character.equipment || { head: null, body: null, mainHand: null, offHand: null };
+      const currentEquipment = character.equipment || {
+        head: null,
+        body: null,
+        mainHand: null,
+        offHand: null,
+      };
       const newEquipment = unequipSlot(slot, currentEquipment);
       await updateCharacterEquipment(character.id, newEquipment);
       setCharacter({ ...character, equipment: newEquipment });
@@ -146,36 +173,36 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
 
   const handleUseAbility = async (ability: any) => {
     if (!character || isUpdating) return;
-    
+
     try {
       const skills = (character.skills as any) || {};
       const abilityUses = skills.ability_uses || {};
       const currentUsed = abilityUses[ability.id] || 0;
-      
+
       const newSkills = {
         ...skills,
         ability_uses: {
           ...abilityUses,
-          [ability.id]: currentUsed + 1
-        }
+          [ability.id]: currentUsed + 1,
+        },
       };
-      
+
       const updates: any = { skills: newSkills };
-      
+
       if (ability.faithCost) {
         const stats = (character.stats as any) || {};
         const currentFaith = stats.current_faith ?? stats.faith ?? 0;
-        
+
         if (currentFaith >= ability.faithCost) {
           updates.stats = {
             ...stats,
-            current_faith: currentFaith - ability.faithCost
+            current_faith: currentFaith - ability.faithCost,
           };
         } else {
           return;
         }
       }
-      
+
       await updateCharacter(character.id, updates);
     } catch (error) {
       console.error('Failed to use ability:', error);
@@ -184,19 +211,19 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
 
   const handleRestoreAbility = async (ability: any) => {
     if (!character || !isGM || isUpdating) return;
-    
+
     try {
       const skills = (character.skills as any) || {};
       const abilityUses = skills.ability_uses || {};
-      
+
       const newAbilityUses = { ...abilityUses };
       delete newAbilityUses[ability.id];
-      
+
       const newSkills = {
         ...skills,
-        ability_uses: newAbilityUses
+        ability_uses: newAbilityUses,
       };
-      
+
       await updateCharacter(character.id, { skills: newSkills });
     } catch (error) {
       console.error('Failed to restore ability:', error);
@@ -264,7 +291,8 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           // Fetch inventory items
           const { data: itemsData, error: itemsError } = await supabase
             .from('character_items')
-            .select(`
+            .select(
+              `
               id,
               quantity,
               level,
@@ -280,7 +308,8 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
                 weight,
                 effects
               )
-            `)
+            `,
+            )
             .eq('character_id', charData.id);
 
           if (!itemsError && itemsData) {
@@ -289,7 +318,9 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
         }
       } catch (err: any) {
         console.error('Error fetching character:', err);
-        setError(`Ocorreu um erro ao carregar a ficha. Detalhes: ${err?.message || JSON.stringify(err)}`);
+        setError(
+          `Ocorreu um erro ao carregar a ficha. Detalhes: ${err?.message || JSON.stringify(err)}`,
+        );
       } finally {
         setIsLoading(false);
       }
@@ -309,12 +340,18 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
       .channel(`character_sheet_updates_${character.id}_${channelId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'character_items', filter: `character_id=eq.${character.id}` },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'character_items',
+          filter: `character_id=eq.${character.id}`,
+        },
         async () => {
           // Refetch inventory items
           const { data: itemsData } = await supabase
             .from('character_items')
-            .select(`
+            .select(
+              `
               id,
               quantity,
               level,
@@ -330,21 +367,22 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
                 weight,
                 effects
               )
-            `)
+            `,
+            )
             .eq('character_id', character.id);
 
           if (itemsData) {
             setInventoryItems(itemsData);
           }
-        }
+        },
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'characters', filter: `id=eq.${character.id}` },
         (payload) => {
           // Atualiza a ficha local com as novas alterações do banco
-          setCharacter((prev) => prev ? { ...prev, ...payload.new } as Character : null);
-        }
+          setCharacter((prev) => (prev ? ({ ...prev, ...payload.new } as Character) : null));
+        },
       )
       .subscribe();
 
@@ -374,7 +412,12 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
   const { attributes, stats, narrative, tribe, vocation, name } = character;
 
   // Calculate dynamic AC using getCombatStats to properly include item level bonuses
-  const { totalAc, baseAc, bonusAc, resistances = [] } = getCombatStats({
+  const {
+    totalAc,
+    baseAc,
+    bonusAc,
+    resistances = [],
+  } = getCombatStats({
     ...character,
     character_items: inventoryItems,
   });
@@ -384,29 +427,32 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
       {/* Header Profile */}
       <div className="relative p-4 md:p-6 border-b border-stone-800 bg-gradient-to-b from-stone-900 to-stone-950 flex gap-4 md:gap-6 items-center">
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -z-10"></div>
-        
-        <CharacterAvatar 
-          imageUrl={narrative?.imageUrl} 
-          name={name || 'Desconhecido'} 
-          className="w-24 h-24 border-4 border-stone-800 shadow-xl" 
+
+        <CharacterAvatar
+          imageUrl={narrative?.imageUrl}
+          name={name || 'Desconhecido'}
+          className="w-24 h-24 border-4 border-stone-800 shadow-xl"
         />
-        
+
         <div className="flex-1">
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 mb-2">
             {name || 'Desconhecido'}
           </h2>
           <div className="flex flex-wrap items-center gap-2 text-sm text-stone-400">
-          <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
-            Tribo: <span className="text-stone-200 font-medium">{tribe || 'Nenhuma'}</span>
-          </span>
-          <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
-            Vocação: <span className="text-stone-200 font-medium">{vocation || 'Nenhuma'}</span>
-          </span>
-          <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm flex items-center gap-1">
-            <Zap className="w-3 h-3 text-blue-400" />
-            Proficiência: <span className="text-stone-200 font-medium">+{calculateProficiency((character as any).level || 1)}</span>
-          </span>
-        </div>
+            <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
+              Tribo: <span className="text-stone-200 font-medium">{tribe || 'Nenhuma'}</span>
+            </span>
+            <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
+              Vocação: <span className="text-stone-200 font-medium">{vocation || 'Nenhuma'}</span>
+            </span>
+            <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm flex items-center gap-1">
+              <Zap className="w-3 h-3 text-blue-400" />
+              Proficiência:{' '}
+              <span className="text-stone-200 font-medium">
+                +{calculateProficiency((character as any).level || 1)}
+              </span>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -420,7 +466,9 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               <span className="text-3xl font-bold text-stone-100">{getCurrentPv(stats, 10)}</span>
               <span className="text-sm text-stone-500 font-medium">/{getMaxPv(stats, 10)}</span>
             </div>
-            <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">PV</span>
+            <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">
+              PV
+            </span>
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-stone-500/5 group-hover:bg-stone-500/10 transition-colors"></div>
@@ -428,13 +476,23 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             <div className="flex items-baseline gap-1">
               <span className="text-3xl font-bold text-stone-100">{totalAc}</span>
               {bonusAc > 0 && (
-                <span className="text-sm text-blue-400 font-medium" title={`Base ${baseAc} + Bônus ${bonusAc}`}>(+{bonusAc})</span>
+                <span
+                  className="text-sm text-blue-400 font-medium"
+                  title={`Base ${baseAc} + Bônus ${bonusAc}`}
+                >
+                  (+{bonusAc})
+                </span>
               )}
             </div>
-            <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">CA</span>
+            <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">
+              CA
+            </span>
             {resistances.length > 0 && (
               <div className="absolute bottom-1 w-full text-center">
-                <span className="text-[9px] text-indigo-300 bg-indigo-900/50 px-1 rounded" title={resistances.join(', ')}>
+                <span
+                  className="text-[9px] text-indigo-300 bg-indigo-900/50 px-1 rounded"
+                  title={resistances.join(', ')}
+                >
                   Resistência
                 </span>
               </div>
@@ -444,16 +502,22 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
             <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
             <Sparkles className="w-8 h-8 text-amber-500 mb-2" />
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-amber-100">{stats?.current_faith ?? stats?.faith ?? 0}</span>
+              <span className="text-3xl font-bold text-amber-100">
+                {stats?.current_faith ?? stats?.faith ?? 0}
+              </span>
               <span className="text-sm text-amber-500/50 font-medium">/100</span>
             </div>
-            <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">Fé</span>
+            <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">
+              Fé
+            </span>
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-yellow-900/50 rounded-xl shadow-inner relative overflow-hidden group">
             <div className="absolute inset-0 bg-yellow-500/5 group-hover:bg-yellow-500/10 transition-colors"></div>
             <Coins className="w-8 h-8 text-yellow-500 mb-2" />
             <span className="text-3xl font-bold text-yellow-100">{character.coins ?? 0}</span>
-            <span className="text-xs text-yellow-500/70 uppercase tracking-wider font-semibold mt-1">SP</span>
+            <span className="text-xs text-yellow-500/70 uppercase tracking-wider font-semibold mt-1">
+              SP
+            </span>
           </div>
         </div>
 
@@ -472,7 +536,10 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
               { label: 'SAB', value: attributes?.sab },
               { label: 'CAR', value: attributes?.car },
             ].map((attr) => (
-              <div key={attr.label} className="bg-stone-900 border border-stone-800 rounded-lg p-3 text-center flex flex-col items-center relative">
+              <div
+                key={attr.label}
+                className="bg-stone-900 border border-stone-800 rounded-lg p-3 text-center flex flex-col items-center relative"
+              >
                 <span className="text-stone-500 text-xs font-bold mb-1">{attr.label}</span>
                 <span className="text-2xl font-bold text-stone-100">
                   {formatModifier(calculateModifier(attr.value))}
@@ -486,74 +553,81 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
         </div>
 
         {/* Saving Throws */}
-        <CharacterSavingThrows 
-          attributes={attributes} 
-          level={(character as any).level || 1} 
-          vocation={vocation || ''} 
+        <CharacterSavingThrows
+          attributes={attributes}
+          level={(character as any).level || 1}
+          vocation={vocation || ''}
         />
 
         {/* Perícias */}
-        <CharacterSkillsList 
-          attributes={attributes} 
-          level={(character as any).level || 1} 
+        <CharacterSkillsList
+          attributes={attributes}
+          level={(character as any).level || 1}
           proficiencies={(character.proficiencies as any)?.skill_proficiencies || []}
         />
 
         {/* Habilidades */}
-        {character && (!Array.isArray(character.skills) || character.skills.length === 0) && getAbilitiesForCharacter(
-          character.tribe || '', 
-          character.vocation || '', 
-          (character as any).level || 1, 
-          (character.skills as any)?.path_choices
-        ).length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
-              <Zap className="w-5 h-5 text-amber-500" />
-              Habilidades
-            </h3>
-            <div className="space-y-3">
-              {getAbilitiesForCharacter(
-                character.tribe || '', 
-                character.vocation || '', 
-                (character as any).level || 1, 
-                (character.skills as any)?.path_choices
-              ).map((ability, index) => {
-                const currentUsed = ((character.skills as any)?.ability_uses?.[ability.id]) || 0;
-                const remainingUses = ability.maxUses ? Math.max(0, ability.maxUses - currentUsed) : undefined;
-                let disabled = false;
-                let disabledReason = '';
-                
-                if (ability.faithCost) {
-                  const currentFaith = (character.stats as any)?.current_faith ?? (character.stats as any)?.faith ?? 0;
-                  if (currentFaith < ability.faithCost) {
-                    disabled = true;
-                    disabledReason = 'Fé Insuficiente';
+        {character &&
+          (!Array.isArray(character.skills) || character.skills.length === 0) &&
+          getAbilitiesForCharacter(
+            character.tribe || '',
+            character.vocation || '',
+            (character as any).level || 1,
+            (character.skills as any)?.path_choices,
+          ).length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
+                <Zap className="w-5 h-5 text-amber-500" />
+                Habilidades
+              </h3>
+              <div className="space-y-3">
+                {getAbilitiesForCharacter(
+                  character.tribe || '',
+                  character.vocation || '',
+                  (character as any).level || 1,
+                  (character.skills as any)?.path_choices,
+                ).map((ability, index) => {
+                  const currentUsed = (character.skills as any)?.ability_uses?.[ability.id] || 0;
+                  const remainingUses = ability.maxUses
+                    ? Math.max(0, ability.maxUses - currentUsed)
+                    : undefined;
+                  let disabled = false;
+                  let disabledReason = '';
+
+                  if (ability.faithCost) {
+                    const currentFaith =
+                      (character.stats as any)?.current_faith ??
+                      (character.stats as any)?.faith ??
+                      0;
+                    if (currentFaith < ability.faithCost) {
+                      disabled = true;
+                      disabledReason = 'Fé Insuficiente';
+                    }
                   }
-                }
-                
-                if (!disabled && ability.maxUses) {
-                  if (currentUsed >= ability.maxUses) {
-                    disabled = true;
-                    disabledReason = 'Sem Usos';
+
+                  if (!disabled && ability.maxUses) {
+                    if (currentUsed >= ability.maxUses) {
+                      disabled = true;
+                      disabledReason = 'Sem Usos';
+                    }
                   }
-                }
-                
-                return (
-                  <AbilityCard
-                    key={index}
-                    ability={ability}
-                    currentUses={remainingUses}
-                    onUse={() => handleUseAbility(ability)}
-                    onRestore={() => handleRestoreAbility(ability)}
-                    isGM={isGM}
-                    disabled={disabled && !isGM}
-                    disabledReason={disabled && !isGM ? disabledReason : ''}
-                  />
-                );
-              })}
+
+                  return (
+                    <AbilityCard
+                      key={index}
+                      ability={ability}
+                      currentUses={remainingUses}
+                      onUse={() => handleUseAbility(ability)}
+                      onRestore={() => handleRestoreAbility(ability)}
+                      isGM={isGM}
+                      disabled={disabled && !isGM}
+                      disabledReason={disabled && !isGM ? disabledReason : ''}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Narrative / Description */}
         {narrative && (narrative.history || narrative.physicalDesc || narrative.personality) && (
@@ -588,19 +662,32 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
         {/* Equipment & Inventory */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <EquipmentSlots 
-              equipment={character.equipment || { head: null, body: null, mainHand: null, offHand: null }} 
-              inventoryItems={inventoryItems} 
+            <EquipmentSlots
+              equipment={
+                character.equipment || { head: null, body: null, mainHand: null, offHand: null }
+              }
+              inventoryItems={inventoryItems}
               characterVocation={vocation}
-              onUnequip={handleUnequip} 
+              onUnequip={handleUnequip}
             />
           </div>
           <div className="lg:col-span-2">
             <InventoryList
               inventoryItems={inventoryItems}
-              equipment={character.equipment || { head: null, body: null, mainHand: null, offHand: null }}
+              equipment={
+                character.equipment || { head: null, body: null, mainHand: null, offHand: null }
+              }
               onEquip={handleEquip}
-              onUseConsumable={(item) => useItem(character!.id, item.id, item.quantity, item.items.effects, character!.stats, !(character!.is_npc))}
+              onUseConsumable={(item) =>
+                useItem(
+                  character!.id,
+                  item.id,
+                  item.quantity,
+                  item.items.effects,
+                  character!.stats,
+                  !character!.is_npc,
+                )
+              }
               isUpdating={isUpdating || isEquipping}
               isGM={isGM}
               onChangeLevel={handleUpdateItemLevel}
@@ -614,12 +701,12 @@ export function CharacterSheetView({ userId, sessionId, characterId, isGM }: Cha
           </div>
         </div>
 
-          {isGM && character?.id && (
-            <div className="mt-8 pt-6 border-t border-stone-800">
-              <NPCInventoryManager characterId={character.id} items={inventoryItems} />
-            </div>
-          )}
-        </div>
+        {isGM && character?.id && (
+          <div className="mt-8 pt-6 border-t border-stone-800">
+            <NPCInventoryManager characterId={character.id} items={inventoryItems} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

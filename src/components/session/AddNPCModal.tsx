@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useCampaignNPCs } from '@/hooks/useCampaignNPCs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -20,16 +26,16 @@ export function AddNPCModal({ sessionId, onAdded }: AddNPCModalProps) {
     try {
       // GM's user id isn't strictly required for NPCs in session_participants if they are just linked.
       // We can get the current user (GM) to satisfy the user_id requirement if needed.
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
-        .from('session_participants')
-        .insert({
-          session_id: sessionId,
-          character_id: npcId,
-          user_id: user.id // Using GM's user_id since they control the NPC
-        });
+      const { error } = await supabase.from('session_participants').insert({
+        session_id: sessionId,
+        character_id: npcId,
+        user_id: user.id, // Using GM's user_id since they control the NPC
+      });
 
       if (!error) {
         if (onAdded) onAdded();
@@ -64,13 +70,16 @@ export function AddNPCModal({ sessionId, onAdded }: AddNPCModalProps) {
           ) : (
             <ul className="space-y-2">
               {npcs.map((npc) => (
-                <li key={npc.id} className="flex items-center justify-between p-3 bg-stone-800 border border-stone-700 rounded-lg">
+                <li
+                  key={npc.id}
+                  className="flex items-center justify-between p-3 bg-stone-800 border border-stone-700 rounded-lg"
+                >
                   <div>
                     <p className="font-semibold">{npc.name}</p>
                     <p className="text-sm text-stone-400">{npc.tribe}</p>
                   </div>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="default"
                     disabled={isAdding}
                     onClick={() => handleAddNPC(npc.id)}

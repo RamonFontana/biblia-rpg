@@ -5,26 +5,31 @@ import type { ConditionEntry, CharacterEquipment, WeaponEffect } from '../types/
 import { supabase } from '../lib/supabase';
 import { ITEMS_DB } from '../data/itemsDb';
 
-
 export const combatEngine = {
   /**
    * Verifica efeitos da arma (ex: Sangramento com Natural 18+) e os aplica
    */
-  async checkWeaponEffects(weaponEffects: WeaponEffect[], naturalRoll: number, targetParticipantId: string) {
+  async checkWeaponEffects(
+    weaponEffects: WeaponEffect[],
+    naturalRoll: number,
+    targetParticipantId: string,
+  ) {
     if (naturalRoll < 18 || !weaponEffects || weaponEffects.length === 0) return;
 
-    const applyConditions = weaponEffects.map(eff => ({
+    const applyConditions = weaponEffects.map((eff) => ({
       conditionId: eff.conditionId,
-      duration: 3 // Efeitos de arma padrão duram 3 rodadas se não curados
+      duration: 3, // Efeitos de arma padrão duram 3 rodadas se não curados
     }));
 
     await this.executeAbilityOnTarget({ applyConditions } as any, targetParticipantId);
-    
+
     // Notifica via toast
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('combat-toast', { 
-        detail: { message: `Efeito de Arma Ativado (Nat ${naturalRoll})!` } 
-      }));
+      window.dispatchEvent(
+        new CustomEvent('combat-toast', {
+          detail: { message: `Efeito de Arma Ativado (Nat ${naturalRoll})!` },
+        }),
+      );
     }
   },
 
@@ -38,15 +43,15 @@ export const combatEngine = {
     }
 
     const store = useCombatStore.getState();
-    const target = store.participants.find(p => p.id === targetParticipantId);
-    
+    const target = store.participants.find((p) => p.id === targetParticipantId);
+
     if (!target) {
       console.warn('Target participant not found in active combat');
       return;
     }
 
     let currentConditions = (target.conditions as unknown as ConditionEntry[]) || [];
-    
+
     // Fetch target equipment to check for condition resistances
     let maxResistanceLevel = 0;
     if (target.entity_type !== 'enemy' && target.entity_id) {
@@ -55,42 +60,53 @@ export const combatEngine = {
         .select('equipment, character_items(*)')
         .eq('id', target.entity_id)
         .single();
-        
+
       if (charData) {
         const equipment = charData.equipment as unknown as CharacterEquipment;
         const charItems = (charData.character_items as any[]) || [];
-        
-        const equippedIds = [equipment?.head, equipment?.body, equipment?.mainHand, equipment?.offHand].filter(Boolean);
-        
-        const equippedItemsData = equippedIds.map(slotId => {
-          // It could be a character_item uuid or directly the item id
-          const invItem = charItems.find(i => i.id === slotId || i.item_id === slotId);
-          const itemId = invItem?.item_id || slotId;
-          const dbItem = ITEMS_DB.find(i => i.id === itemId);
-          if (!dbItem) return null;
 
-          const baseResistances = dbItem.conditionResistances || [];
-          const customResistances = invItem?.custom_condition_resistances || [];
-          const allResistances = [...baseResistances, ...customResistances];
+        const equippedIds = [
+          equipment?.head,
+          equipment?.body,
+          equipment?.mainHand,
+          equipment?.offHand,
+        ].filter(Boolean);
 
-          return {
-            ...dbItem,
-            level: invItem?.level || 1,
-            conditionResistances: allResistances
-          };
-        }).filter(Boolean);
-        
+        const equippedItemsData = equippedIds
+          .map((slotId) => {
+            // It could be a character_item uuid or directly the item id
+            const invItem = charItems.find((i) => i.id === slotId || i.item_id === slotId);
+            const itemId = invItem?.item_id || slotId;
+            const dbItem = ITEMS_DB.find((i) => i.id === itemId);
+            if (!dbItem) return null;
+
+            const baseResistances = dbItem.conditionResistances || [];
+            const customResistances = invItem?.custom_condition_resistances || [];
+            const allResistances = [...baseResistances, ...customResistances];
+
+            return {
+              ...dbItem,
+              level: invItem?.level || 1,
+              conditionResistances: allResistances,
+            };
+          })
+          .filter(Boolean);
+
         // Evaluate incoming conditions against resistances
         for (const cond of ability.applyConditions) {
           for (const item of equippedItemsData) {
-            if (item && item.conditionResistances && item.conditionResistances.includes(cond.conditionId)) {
+            if (
+              item &&
+              item.conditionResistances &&
+              item.conditionResistances.includes(cond.conditionId)
+            ) {
               maxResistanceLevel = Math.max(maxResistanceLevel, item.level || 1);
             }
           }
         }
       }
     }
-    
+
     for (const cond of ability.applyConditions) {
       let finalDuration = cond.duration ?? null;
       let isImmune = false;
@@ -109,7 +125,7 @@ export const combatEngine = {
           isImmune = true;
           toastMsg = `Resistência de Armadura Nv4: Imune a ${cond.conditionId}!`;
         }
-        
+
         // Dispatch simple global event for toast notification
         if (typeof window !== 'undefined' && toastMsg) {
           window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message: toastMsg } }));
@@ -117,9 +133,9 @@ export const combatEngine = {
       }
 
       if (!isImmune) {
-        const newCond: ConditionEntry = { 
-          conditionId: cond.conditionId, 
-          duration: finalDuration 
+        const newCond: ConditionEntry = {
+          conditionId: cond.conditionId,
+          duration: finalDuration,
         };
         currentConditions = conditionsService.mergeCondition(currentConditions, newCond);
       }
@@ -133,5 +149,5 @@ export const combatEngine = {
    */
   async executeAbilityOnSelf(ability: AbilityDefinition, selfParticipantId: string) {
     await this.executeAbilityOnTarget(ability, selfParticipantId);
-  }
+  },
 };

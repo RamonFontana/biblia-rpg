@@ -15,7 +15,7 @@ function withActiveCharacterFilters<T extends { or: (filters: string) => T }>(qu
 
 export const getCharacters = async (): Promise<Character[]> => {
   const { data, error } = await withActiveCharacterFilters(
-    supabase.from('characters').select('*')
+    supabase.from('characters').select('*'),
   ).order('created_at', { ascending: false });
 
   if (error) {
@@ -27,14 +27,16 @@ export const getCharacters = async (): Promise<Character[]> => {
 };
 
 export const getMyCharacters = async (): Promise<Character[]> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session?.user) {
     throw new Error('Usuário não autenticado');
   }
 
   const { data, error } = await withActiveCharacterFilters(
-    supabase.from('characters').select('*').eq('user_id', session.user.id)
+    supabase.from('characters').select('*').eq('user_id', session.user.id),
   ).order('created_at', { ascending: false });
 
   if (error) {
@@ -46,11 +48,7 @@ export const getMyCharacters = async (): Promise<Character[]> => {
 };
 
 export const getCharacterById = async (id: string): Promise<Character | null> => {
-  const { data, error } = await supabase
-    .from('characters')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data, error } = await supabase.from('characters').select('*').eq('id', id).single();
 
   if (error) {
     if (error.code === 'PGRST116') return null; // Not found
@@ -61,7 +59,10 @@ export const getCharacterById = async (id: string): Promise<Character | null> =>
   return data as unknown as Character;
 };
 
-export const updateCharacter = async (id: string, updates: Partial<Character>): Promise<Character> => {
+export const updateCharacter = async (
+  id: string,
+  updates: Partial<Character>,
+): Promise<Character> => {
   const { data, error } = await supabase
     .from('characters')
     .update(updates as any)
@@ -85,7 +86,9 @@ export const updateCharacter = async (id: string, updates: Partial<Character>): 
 };
 
 export const getActiveSessionCharacterIds = async (): Promise<Set<string>> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session?.user) return new Set();
 
   const { data, error } = await supabase
@@ -99,5 +102,5 @@ export const getActiveSessionCharacterIds = async (): Promise<Set<string>> => {
     return new Set();
   }
 
-  return new Set(data.map(d => d.character_id));
+  return new Set(data.map((d) => d.character_id));
 };

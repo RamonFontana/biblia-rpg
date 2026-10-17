@@ -11,7 +11,13 @@ import {
 } from '@/components/ui/select';
 import { CONDITIONS } from '@/data/conditions';
 import { Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export interface ConditionSelectorProps {
   onAddCondition: (conditionId: string, duration: number) => void;
@@ -20,7 +26,7 @@ export interface ConditionSelectorProps {
 
 export const ConditionSelector: React.FC<ConditionSelectorProps> = ({
   onAddCondition,
-  trigger
+  trigger,
 }) => {
   const [selectedCondition, setSelectedCondition] = useState<string>('');
   const [duration, setDuration] = useState<number>(0);
@@ -45,8 +51,8 @@ export const ConditionSelector: React.FC<ConditionSelectorProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent 
-        className="sm:max-w-[425px]" 
+      <DialogContent
+        className="sm:max-w-[425px]"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >

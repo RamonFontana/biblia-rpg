@@ -25,13 +25,11 @@ export function useUpdateNPCInventory() {
         if (error) throw error;
       } else {
         // Insert new item
-        const { error } = await supabase
-          .from('character_items')
-          .insert({
-            character_id: characterId,
-            item_id: itemId,
-            quantity: quantity,
-          });
+        const { error } = await supabase.from('character_items').insert({
+          character_id: characterId,
+          item_id: itemId,
+          quantity: quantity,
+        });
         if (error) throw error;
       }
       return { success: true };
@@ -46,10 +44,7 @@ export function useUpdateNPCInventory() {
   const removeItem = async (characterItemId: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await supabase
-        .from('character_items')
-        .delete()
-        .eq('id', characterItemId);
+      const { error } = await supabase.from('character_items').delete().eq('id', characterItemId);
       if (error) throw error;
       return { success: true };
     } catch (error: any) {
@@ -64,7 +59,7 @@ export function useUpdateNPCInventory() {
     if (quantity <= 0) {
       return removeItem(characterItemId);
     }
-    
+
     setIsUpdating(true);
     try {
       const { error } = await supabase
@@ -81,7 +76,14 @@ export function useUpdateNPCInventory() {
     }
   };
 
-  const useItem = async (characterId: string, characterItemId: string, currentQuantity: number, itemEffects: any, currentStats: any, isPlayable: boolean) => {
+  const useItem = async (
+    characterId: string,
+    characterItemId: string,
+    currentQuantity: number,
+    itemEffects: any,
+    currentStats: any,
+    isPlayable: boolean,
+  ) => {
     setIsUpdating(true);
     try {
       // 1. Decrease quantity or remove item
@@ -89,7 +91,10 @@ export function useUpdateNPCInventory() {
         const { error } = await supabase.from('character_items').delete().eq('id', characterItemId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('character_items').update({ quantity: currentQuantity - 1 }).eq('id', characterItemId);
+        const { error } = await supabase
+          .from('character_items')
+          .update({ quantity: currentQuantity - 1 })
+          .eq('id', characterItemId);
         if (error) throw error;
       }
 
@@ -104,7 +109,7 @@ export function useUpdateNPCInventory() {
           newStats.current_pv = applyHpDelta(currentHp, maxHp, itemEffects.heal);
           hasChanges = true;
         }
-        
+
         if (itemEffects.restore_faith) {
           const maxFaith = newStats.faith || 0;
           const currentFaith = newStats.current_faith ?? maxFaith;
@@ -114,7 +119,10 @@ export function useUpdateNPCInventory() {
 
         if (hasChanges) {
           const table = isPlayable ? 'characters' : 'session_npcs';
-          const { error: statsError } = await supabase.from(table).update({ stats: newStats }).eq('id', characterId);
+          const { error: statsError } = await supabase
+            .from(table)
+            .update({ stats: newStats })
+            .eq('id', characterId);
           if (statsError) throw statsError;
         }
       }
@@ -133,6 +141,6 @@ export function useUpdateNPCInventory() {
     removeItem,
     updateQuantity,
     useItem,
-    isUpdating
+    isUpdating,
   };
 }

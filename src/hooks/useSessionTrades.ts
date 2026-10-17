@@ -49,7 +49,7 @@ export function useSessionTrades(sessionId: string | undefined) {
       if (!characterId) return false;
       return tradingCharacterIds.has(characterId);
     },
-    [tradingCharacterIds]
+    [tradingCharacterIds],
   );
 
   return {

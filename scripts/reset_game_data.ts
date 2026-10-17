@@ -10,7 +10,9 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('ERRO: Credenciais do Supabase ausentes.');
-  console.error('Certifique-se de ter NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no seu arquivo .env.local');
+  console.error(
+    'Certifique-se de ter NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no seu arquivo .env.local',
+  );
   process.exit(1);
 }
 
@@ -38,7 +40,7 @@ async function resetGameData() {
 
   for (const table of tablesToDelete) {
     console.log(`Limpando tabela: ${table}...`);
-    // O filtro .neq('id', '00000000-0000-0000-0000-000000000000') é um truque 
+    // O filtro .neq('id', '00000000-0000-0000-0000-000000000000') é um truque
     // para deletar todos os registros na API REST do Supabase.
     // Algumas tabelas podem não ter coluna 'id', caso isso aconteça esse script precisará ser adaptado,
     // mas de acordo com o database.types.ts todas possuem id.

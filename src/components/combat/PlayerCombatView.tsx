@@ -20,7 +20,12 @@ interface PlayerCombatViewProps {
   isLoading: boolean;
 }
 
-export function PlayerCombatView({ sessionId: _sessionId, character, enemies, isLoading }: PlayerCombatViewProps) {
+export function PlayerCombatView({
+  sessionId: _sessionId,
+  character,
+  enemies,
+  isLoading,
+}: PlayerCombatViewProps) {
   const playerId = character?.id;
   const [isUpdating, setIsUpdating] = useState(false);
   const {
@@ -34,39 +39,39 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
     toggleMovement,
     toggleAction,
     toggleBonusAction,
-    toggleReaction
+    toggleReaction,
   } = useCombatStore();
 
   const handleUseAbility = async (ability: AbilityDefinition) => {
     if (!character || isUpdating) return;
-    
-    // Optimistic UI state could be handled here if we tracked it locally, 
+
+    // Optimistic UI state could be handled here if we tracked it locally,
     // but we'll rely on the parent component's real-time subscription or fast refetch.
     setIsUpdating(true);
-    
+
     try {
       const skills = character.skills || {};
       const abilityUses = skills.ability_uses || {};
       const currentUsed = abilityUses[ability.id] || 0;
-      
+
       const newSkills = {
         ...skills,
         ability_uses: {
           ...abilityUses,
-          [ability.id]: currentUsed + 1
-        }
+          [ability.id]: currentUsed + 1,
+        },
       };
-      
+
       const updates: any = { skills: newSkills };
-      
+
       if (ability.faithCost) {
         const stats = character.stats || {};
         const currentFaith = stats.current_faith ?? stats.faith ?? 0;
-        
+
         if (currentFaith >= ability.faithCost) {
           updates.stats = {
             ...stats,
-            current_faith: currentFaith - ability.faithCost
+            current_faith: currentFaith - ability.faithCost,
           };
         } else {
           // Not enough faith
@@ -74,9 +79,8 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
           return;
         }
       }
-      
+
       await updateCharacter(character.id, updates);
-      
     } catch (error) {
       console.error('Failed to use ability:', error);
     } finally {
@@ -86,21 +90,16 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
 
   const characterAbilities = useMemo(() => {
     if (!character || !character.tribe || !character.vocation || !character.level) return [];
-    
+
     // Convert level (could be string if from older DB but should be number)
     const level = Number(character.level) || 1;
     const pathChoices = character.skills?.path_choices;
-    
-    return getAbilitiesForCharacter(
-      character.tribe,
-      character.vocation,
-      level,
-      pathChoices
-    );
+
+    return getAbilitiesForCharacter(character.tribe, character.vocation, level, pathChoices);
   }, [character]);
 
   const isMyTurn = activeCombat && currentTurnParticipant?.entity_id === playerId;
-  const participant = participants.find(p => p.entity_id === playerId);
+  const participant = participants.find((p) => p.entity_id === playerId);
   const isDying = activeCombat && participant && participant.hp_current <= 0;
 
   return (
@@ -128,14 +127,14 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
           {/* Render the Enemy List */}
           <EnemyCombatList enemies={enemies} isLoading={isLoading} />
 
-          {isDying && (
-            <DeathSavesModal character={character} participantId={participant.id} />
-          )}
+          {isDying && <DeathSavesModal character={character} participantId={participant.id} />}
 
           {isMyTurn && !isDying && (
             <div className="bg-primary/20 border-2 border-primary rounded-lg p-6 text-center animate-in fade-in zoom-in flex flex-col items-center gap-4">
               <div>
-                <h2 className="text-3xl font-extrabold text-primary uppercase tracking-widest">É O SEU TURNO!</h2>
+                <h2 className="text-3xl font-extrabold text-primary uppercase tracking-widest">
+                  É O SEU TURNO!
+                </h2>
                 <p className="text-muted-foreground mt-2">Escolha suas ações com sabedoria.</p>
               </div>
             </div>
@@ -148,24 +147,45 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="movement" checked={hasUsedMovement} onCheckedChange={toggleMovement} />
-                  <Label htmlFor="movement" className="text-lg">Movimento</Label>
+                  <Checkbox
+                    id="movement"
+                    checked={hasUsedMovement}
+                    onCheckedChange={toggleMovement}
+                  />
+                  <Label htmlFor="movement" className="text-lg">
+                    Movimento
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox id="action" checked={hasUsedAction} onCheckedChange={toggleAction} />
-                  <Label htmlFor="action" className="text-lg">Ação Principal</Label>
+                  <Label htmlFor="action" className="text-lg">
+                    Ação Principal
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="bonus" checked={hasUsedBonusAction} onCheckedChange={toggleBonusAction} />
-                  <Label htmlFor="bonus" className="text-lg">Ação Bônus</Label>
+                  <Checkbox
+                    id="bonus"
+                    checked={hasUsedBonusAction}
+                    onCheckedChange={toggleBonusAction}
+                  />
+                  <Label htmlFor="bonus" className="text-lg">
+                    Ação Bônus
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="reaction" checked={hasUsedReaction} onCheckedChange={toggleReaction} />
-                  <Label htmlFor="reaction" className="text-lg">Reação</Label>
+                  <Checkbox
+                    id="reaction"
+                    checked={hasUsedReaction}
+                    onCheckedChange={toggleReaction}
+                  />
+                  <Label htmlFor="reaction" className="text-lg">
+                    Reação
+                  </Label>
                 </div>
 
                 <p className="text-xs text-muted-foreground pt-4">
-                  * Este checklist é apenas visual e não impede suas mecânicas in-game. Ele é limpo automaticamente a cada mudança de turno.
+                  * Este checklist é apenas visual e não impede suas mecânicas in-game. Ele é limpo
+                  automaticamente a cada mudança de turno.
                 </p>
               </CardContent>
             </Card>
@@ -179,13 +199,13 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
           <p className="text-muted-foreground text-sm">Nenhuma habilidade disponível.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {characterAbilities.map(ability => {
+            {characterAbilities.map((ability) => {
               const abilityUses = character?.skills?.ability_uses || {};
               const used = abilityUses[ability.id] || 0;
               const currentUses = ability.maxUses ? Math.max(0, ability.maxUses - used) : undefined;
               let disabled = false;
               let disabledReason = '';
-              
+
               if (!activeCombat && ability.usageType === 'combat') {
                 disabled = true;
                 disabledReason = 'Apenas em combate';
@@ -193,13 +213,14 @@ export function PlayerCombatView({ sessionId: _sessionId, character, enemies, is
                 disabled = true;
               } else {
                 if (ability.faithCost) {
-                  const currentFaith = character?.stats?.current_faith ?? character?.stats?.faith ?? 0;
+                  const currentFaith =
+                    character?.stats?.current_faith ?? character?.stats?.faith ?? 0;
                   if (currentFaith < ability.faithCost) {
                     disabled = true;
                     disabledReason = 'Fé Insuficiente';
                   }
                 }
-                
+
                 if (!disabled && ability.maxUses) {
                   if (used >= ability.maxUses) {
                     disabled = true;

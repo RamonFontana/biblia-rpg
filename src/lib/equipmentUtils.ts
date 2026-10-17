@@ -1,7 +1,10 @@
 import type { CharacterEquipment, ItemEffects } from '../types/combat';
 import { ITEMS_DB } from '../data/itemsDb';
 
-export function canEquipItem(itemEffects: ItemEffects, _currentEquipment: CharacterEquipment): boolean {
+export function canEquipItem(
+  itemEffects: ItemEffects,
+  _currentEquipment: CharacterEquipment,
+): boolean {
   if (!itemEffects.slot) return false;
 
   switch (itemEffects.slot) {
@@ -24,7 +27,7 @@ export function equipItem(
   characterItemId: string,
   itemEffects: ItemEffects,
   currentEquipment: CharacterEquipment,
-  targetHand?: 'mainHand' | 'offHand'
+  targetHand?: 'mainHand' | 'offHand',
 ): CharacterEquipment {
   const newEquipment: CharacterEquipment = { ...currentEquipment };
 
@@ -43,19 +46,28 @@ export function equipItem(
       if (targetHand === 'offHand') {
         newEquipment.offHand = characterItemId;
         // If mainHand was a 2h weapon, unequipping offHand also unequips mainHand
-        if (currentEquipment.mainHand === currentEquipment.offHand && currentEquipment.mainHand !== null) {
+        if (
+          currentEquipment.mainHand === currentEquipment.offHand &&
+          currentEquipment.mainHand !== null
+        ) {
           newEquipment.mainHand = null;
         }
       } else {
         newEquipment.mainHand = characterItemId;
-        if (currentEquipment.mainHand === currentEquipment.offHand && currentEquipment.mainHand !== null) {
+        if (
+          currentEquipment.mainHand === currentEquipment.offHand &&
+          currentEquipment.mainHand !== null
+        ) {
           newEquipment.offHand = null;
         }
       }
       break;
     case 'shield':
       newEquipment.offHand = characterItemId;
-      if (currentEquipment.mainHand === currentEquipment.offHand && currentEquipment.mainHand !== null) {
+      if (
+        currentEquipment.mainHand === currentEquipment.offHand &&
+        currentEquipment.mainHand !== null
+      ) {
         newEquipment.mainHand = null;
       }
       break;
@@ -66,12 +78,16 @@ export function equipItem(
 
 export function unequipSlot(
   slot: keyof CharacterEquipment,
-  currentEquipment: CharacterEquipment
+  currentEquipment: CharacterEquipment,
 ): CharacterEquipment {
   const newEquipment = { ...currentEquipment };
 
   // Handle 2h weapon unequipping from either hand
-  if ((slot === 'mainHand' || slot === 'offHand') && currentEquipment.mainHand === currentEquipment.offHand && currentEquipment.mainHand !== null) {
+  if (
+    (slot === 'mainHand' || slot === 'offHand') &&
+    currentEquipment.mainHand === currentEquipment.offHand &&
+    currentEquipment.mainHand !== null
+  ) {
     newEquipment.mainHand = null;
     newEquipment.offHand = null;
   } else {
@@ -83,12 +99,12 @@ export function unequipSlot(
 
 export function checkWeaponProficiency(weapon: any, vocation: string): boolean {
   if (!weapon) return false;
-  
+
   const weaponCategory = weapon.effects?.weaponCategory?.toLowerCase() || '';
   const weaponType = weapon.type?.toLowerCase() || '';
-  
+
   const isMartial = weaponCategory.includes('marcial') || weaponType.includes('marcial');
-  
+
   if (isMartial) {
     const v = vocation?.toLowerCase() || '';
     if (['sacerdote', 'sábio', 'sabio', 'levita'].includes(v)) {
@@ -103,7 +119,7 @@ export function getCombatStats(character: any) {
   const baseAc = Number(stats?.ca) || 10;
   let bonusAc = 0;
   let resistances: string[] = [];
-  let weapon: { name: string, damageDie: string } | undefined = undefined;
+  let weapon: { name: string; damageDie: string } | undefined = undefined;
 
   // Ensure equipment is an object (sometimes JSONB can be stringified)
   let parsedEquipment = equipment;
@@ -119,10 +135,10 @@ export function getCombatStats(character: any) {
     if (!invItem) return 0;
     const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
     let effects = itemData?.effects;
-    
+
     // Fallback for items in DB without effects
     if (!effects || Object.keys(effects).length === 0) {
-      const staticItem = ITEMS_DB.find(i => i.name === itemData?.name);
+      const staticItem = ITEMS_DB.find((i) => i.name === itemData?.name);
       if (staticItem?.armorClass) {
         if (staticItem.type === 'Escudo') return Number(staticItem.armorClass);
         return Math.max(0, Number(staticItem.armorClass) - 10);
@@ -139,7 +155,9 @@ export function getCombatStats(character: any) {
   if (parsedEquipment) {
     const findItem = (slotId: string | null | undefined) => {
       if (!slotId) return undefined;
-      return inventoryItems.find((i: any) => i.id === slotId || (i.item_id && i.item_id === slotId));
+      return inventoryItems.find(
+        (i: any) => i.id === slotId || (i.item_id && i.item_id === slotId),
+      );
     };
 
     const headItem = findItem(parsedEquipment.head);
@@ -154,16 +172,16 @@ export function getCombatStats(character: any) {
         const level = invItem.level || 1;
         return baseModifier + (level - 1);
       }
-      return baseModifier; 
+      return baseModifier;
     };
 
     const getResistances = (invItem: any) => {
       if (!invItem) return [];
       const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
-      
+
       const baseResistances = itemData?.condition_resistances || [];
       const customResistances = invItem.custom_condition_resistances || [];
-      
+
       return [...baseResistances, ...customResistances];
     };
 
@@ -177,7 +195,7 @@ export function getCombatStats(character: any) {
 
     bonusAc += getItemAc(mainHandItem);
     allResistances.push(...getResistances(mainHandItem));
-    
+
     if (parsedEquipment.offHand !== parsedEquipment.mainHand) {
       bonusAc += getItemAc(offHandItem);
       allResistances.push(...getResistances(offHandItem));
@@ -185,11 +203,13 @@ export function getCombatStats(character: any) {
 
     resistances = [...new Set(allResistances)];
 
-    const mainHandData = Array.isArray(mainHandItem?.items) ? mainHandItem.items[0] : mainHandItem?.items;
+    const mainHandData = Array.isArray(mainHandItem?.items)
+      ? mainHandItem.items[0]
+      : mainHandItem?.items;
     if (mainHandData?.effects?.damageDie) {
       weapon = {
         name: mainHandData.name,
-        damageDie: mainHandData.effects.damageDie
+        damageDie: mainHandData.effects.damageDie,
       };
     }
   }
@@ -198,4 +218,3 @@ export function getCombatStats(character: any) {
 
   return { totalAc, baseAc, bonusAc, weapon, resistances };
 }
-

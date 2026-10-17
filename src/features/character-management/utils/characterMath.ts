@@ -22,23 +22,30 @@ export const SKILLS_LIST = [
 export const TEST_GROUPS = [
   {
     label: 'Atributos',
-    options: ['Força', 'Destreza', 'Constituição', 'Inteligência', 'Sabedoria', 'Carisma']
+    options: ['Força', 'Destreza', 'Constituição', 'Inteligência', 'Sabedoria', 'Carisma'],
   },
   {
     label: 'Testes de Resistência',
-    options: ['Resistência (Força)', 'Resistência (Destreza)', 'Resistência (Constituição)', 'Resistência (Inteligência)', 'Resistência (Sabedoria)', 'Resistência (Carisma)']
+    options: [
+      'Resistência (Força)',
+      'Resistência (Destreza)',
+      'Resistência (Constituição)',
+      'Resistência (Inteligência)',
+      'Resistência (Sabedoria)',
+      'Resistência (Carisma)',
+    ],
   },
   {
     label: 'Perícias',
-    options: SKILLS_LIST.map(s => s.name)
+    options: SKILLS_LIST.map((s) => s.name),
   },
   {
     label: 'Fé',
-    options: ['Fé']
-  }
+    options: ['Fé'],
+  },
 ];
 
-export type SkillId = typeof SKILLS_LIST[number]['id'];
+export type SkillId = (typeof SKILLS_LIST)[number]['id'];
 
 export function calculateModifier(attributeValue: number | undefined | null): number {
   if (attributeValue === undefined || attributeValue === null) return 0;
@@ -55,23 +62,31 @@ export function formatModifier(modifier: number): string {
 
 import { getVocationRules } from './rules/vocations';
 
-export function getTestModifiers(testType: string, charData: any): { attrMod: number, profBonus: number } {
+export function getTestModifiers(
+  testType: string,
+  charData: any,
+): { attrMod: number; profBonus: number } {
   let attrMod = 0;
   let profBonus = 0;
   if (!charData) return { attrMod, profBonus };
 
   const isSavingThrow = testType.startsWith('Resistência');
-  
+
   if (isSavingThrow) {
     const attrName = testType.replace('Resistência (', '').replace(')', '');
     const attrNameMap: Record<string, string> = {
-      'Força': 'for', 'Destreza': 'des', 'Constituição': 'con', 'Inteligência': 'int', 'Sabedoria': 'sab', 'Carisma': 'car'
+      Força: 'for',
+      Destreza: 'des',
+      Constituição: 'con',
+      Inteligência: 'int',
+      Sabedoria: 'sab',
+      Carisma: 'car',
     };
     const mappedKey = attrNameMap[attrName];
     if (mappedKey) {
       const attrValue = (charData.attributes as any)?.[mappedKey];
       attrMod = calculateModifier(attrValue);
-      
+
       const rules = getVocationRules(charData.vocation);
       const savingThrows = rules?.savingThrows || [];
       if (savingThrows.includes(mappedKey)) {
@@ -81,18 +96,25 @@ export function getTestModifiers(testType: string, charData: any): { attrMod: nu
     return { attrMod, profBonus };
   }
 
-  const skillInfo = SKILLS_LIST.find(s => s.name === testType);
+  const skillInfo = SKILLS_LIST.find((s) => s.name === testType);
   if (skillInfo) {
     const attrValue = (charData.attributes as any)?.[skillInfo.attribute];
     attrMod = calculateModifier(attrValue);
-    
+
     const proficiencies = (charData.proficiencies as any)?.skill_proficiencies || [];
     if (proficiencies.includes(skillInfo.id)) {
       profBonus = calculateProficiency(charData.level || 1);
     }
   } else {
     const attrNameMap: Record<string, string> = {
-      'Força': 'for', 'Destreza': 'des', 'Constituição': 'con', 'Vigor': 'con', 'Inteligência': 'int', 'Sabedoria': 'sab', 'Vontade': 'sab', 'Carisma': 'car'
+      Força: 'for',
+      Destreza: 'des',
+      Constituição: 'con',
+      Vigor: 'con',
+      Inteligência: 'int',
+      Sabedoria: 'sab',
+      Vontade: 'sab',
+      Carisma: 'car',
     };
     const mappedKey = attrNameMap[testType];
     if (mappedKey) {
@@ -104,7 +126,11 @@ export function getTestModifiers(testType: string, charData: any): { attrMod: nu
   return { attrMod, profBonus };
 }
 
-export function getTestBreakdown(testType: string, resultValue: number | null, charData: any): string {
+export function getTestBreakdown(
+  testType: string,
+  resultValue: number | null,
+  charData: any,
+): string {
   if (resultValue === null) return '';
   if (testType === 'Fé') return `1d100 (${resultValue})`;
 
@@ -115,6 +141,6 @@ export function getTestBreakdown(testType: string, resultValue: number | null, c
   if (attrMod === 0 && profBonus === 0) {
     return `1d20 (${d20})`;
   }
-  
+
   return `1d20 (${d20}) + Mod (${attrMod})${profBonus > 0 ? ` + Prof (${profBonus})` : ''} = ${resultValue}`;
 }

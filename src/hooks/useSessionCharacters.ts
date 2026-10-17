@@ -15,10 +15,12 @@ export function useSessionCharacters(sessionId: string | undefined) {
 
     const { data: participantsData, error: participantsError } = await supabase
       .from('session_participants')
-      .select(`
+      .select(
+        `
         user_id,
         characters (*, character_items(*, items(*)))
-      `)
+      `,
+      )
       .eq('session_id', sessionId);
 
     const { data: simpleNpcsData, error: simpleNpcsError } = await supabase
@@ -51,7 +53,7 @@ export function useSessionCharacters(sessionId: string | undefined) {
         vocation: d.description || '',
         stats: d.stats || { pv: 10, current_pv: 10, ca: 10, faith: 0, current_faith: 0 },
         is_playable: false,
-        is_visible: d.is_visible
+        is_visible: d.is_visible,
       }));
 
       setPlayerCharacters(pChars);
@@ -60,7 +62,7 @@ export function useSessionCharacters(sessionId: string | undefined) {
     } else {
       console.error('Error fetching session characters:', participantsError || simpleNpcsError);
     }
-    
+
     setIsLoading(false);
   }, [sessionId]);
 
@@ -72,7 +74,11 @@ export function useSessionCharacters(sessionId: string | undefined) {
     if (!sessionId) return;
 
     return subscribeToTables(`session_characters_${sessionId}_${Math.random()}`, [
-      { table: 'session_participants', filter: `session_id=eq.${sessionId}`, onChange: fetchCharacters },
+      {
+        table: 'session_participants',
+        filter: `session_id=eq.${sessionId}`,
+        onChange: fetchCharacters,
+      },
       { table: 'character_items', onChange: fetchCharacters },
       { table: 'characters', event: 'UPDATE', onChange: fetchCharacters },
       { table: 'session_npcs', filter: `session_id=eq.${sessionId}`, onChange: fetchCharacters },
@@ -92,27 +98,30 @@ export function useSessionCharacters(sessionId: string | undefined) {
   // Single local-state patcher for all three entity kinds. Players are stored as
   // { user_id, character } wrapper rows, so their patch merges one level deeper
   // (into .character); NPCs and enemies are stored as the entity itself.
-  const updateLocal = useCallback((kind: 'player' | 'npc' | 'enemy', id: string, patch: Record<string, unknown>) => {
-    if (kind === 'player') {
-      setPlayerCharacters(prev => {
-        const index = prev.findIndex(p => p.character?.id === id);
+  const updateLocal = useCallback(
+    (kind: 'player' | 'npc' | 'enemy', id: string, patch: Record<string, unknown>) => {
+      if (kind === 'player') {
+        setPlayerCharacters((prev) => {
+          const index = prev.findIndex((p) => p.character?.id === id);
+          if (index === -1) return prev;
+          const next = [...prev];
+          next[index] = { ...next[index], character: { ...next[index].character, ...patch } };
+          return next;
+        });
+        return;
+      }
+
+      const setEntities = kind === 'npc' ? setNpcs : setEnemies;
+      setEntities((prev) => {
+        const index = prev.findIndex((entity) => entity.id === id);
         if (index === -1) return prev;
         const next = [...prev];
-        next[index] = { ...next[index], character: { ...next[index].character, ...patch } };
+        next[index] = { ...next[index], ...patch };
         return next;
       });
-      return;
-    }
-
-    const setEntities = kind === 'npc' ? setNpcs : setEnemies;
-    setEntities(prev => {
-      const index = prev.findIndex(entity => entity.id === id);
-      if (index === -1) return prev;
-      const next = [...prev];
-      next[index] = { ...next[index], ...patch };
-      return next;
-    });
-  }, []);
+    },
+    [],
+  );
 
   return {
     playerCharacters,

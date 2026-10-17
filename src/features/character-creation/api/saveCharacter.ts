@@ -4,7 +4,10 @@ import { syncInventoryItems } from '../../character-management/api/syncInventory
 
 export async function saveCharacter(draft: DraftCharacter) {
   // O usuário já deve estar logado
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   if (userError || !user) {
     throw new Error('Usuário não autenticado. Faça login para salvar seu personagem.');
@@ -26,10 +29,10 @@ export async function saveCharacter(draft: DraftCharacter) {
       fortress: draft.fortress || null,
       temptation: draft.temptation || null,
       stats: draft.stats as any, // jsonb
-      proficiencies: draft.proficiencies as any || null, // jsonb
-      equipment: draft.equipment as any || [], // jsonb
+      proficiencies: (draft.proficiencies as any) || null, // jsonb
+      equipment: (draft.equipment as any) || [], // jsonb
       coins: draft.coins || 0,
-      narrative: draft.narrative as any || null, // jsonb
+      narrative: (draft.narrative as any) || null, // jsonb
     })
     .select()
     .single();

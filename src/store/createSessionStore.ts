@@ -57,7 +57,7 @@ interface SessionDraftState {
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
-  
+
   // Reset
   resetStore: () => void;
 }
@@ -70,22 +70,26 @@ export const useSessionDraftStore = create<SessionDraftState>((set) => ({
   enemies: [],
   setEnemies: (enemies) => set({ enemies }),
   addEnemy: (enemy) => set((state) => ({ enemies: [...state.enemies, enemy] })),
-  updateEnemy: (id, updates) => set((state) => ({
-    enemies: state.enemies.map(e => e.id === id ? { ...e, ...updates } : e)
-  })),
-  removeEnemy: (id) => set((state) => ({
-    enemies: state.enemies.filter(e => e.id !== id)
-  })),
+  updateEnemy: (id, updates) =>
+    set((state) => ({
+      enemies: state.enemies.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+    })),
+  removeEnemy: (id) =>
+    set((state) => ({
+      enemies: state.enemies.filter((e) => e.id !== id),
+    })),
 
   npcs: [],
   setNPCs: (npcs) => set({ npcs }),
   addNPC: (npc) => set((state) => ({ npcs: [...state.npcs, npc] })),
-  updateNPC: (id, updates) => set((state) => ({
-    npcs: state.npcs.map(n => n.id === id ? { ...n, ...updates } : n)
-  })),
-  removeNPC: (id) => set((state) => ({
-    npcs: state.npcs.filter(n => n.id !== id)
-  })),
+  updateNPC: (id, updates) =>
+    set((state) => ({
+      npcs: state.npcs.map((n) => (n.id === id ? { ...n, ...updates } : n)),
+    })),
+  removeNPC: (id) =>
+    set((state) => ({
+      npcs: state.npcs.filter((n) => n.id !== id),
+    })),
 
   participantCharacterIds: [],
   setParticipantCharacterIds: (ids) => set({ participantCharacterIds: ids }),
@@ -95,12 +99,13 @@ export const useSessionDraftStore = create<SessionDraftState>((set) => ({
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 5) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
 
-  resetStore: () => set({
-    name: '',
-    description: '',
-    enemies: [],
-    npcs: [],
-    participantCharacterIds: [],
-    currentStep: 1,
-  }),
+  resetStore: () =>
+    set({
+      name: '',
+      description: '',
+      enemies: [],
+      npcs: [],
+      participantCharacterIds: [],
+      currentStep: 1,
+    }),
 }));

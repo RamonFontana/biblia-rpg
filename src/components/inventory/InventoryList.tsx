@@ -1,5 +1,10 @@
 import { Target, ShieldPlus, Zap } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { CharacterEquipment, WeaponEffect } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/data/itemsDb';
@@ -21,12 +26,23 @@ interface InventoryListProps {
   onRemoveItem?: (characterItemId: string) => void;
 }
 
-const AVAILABLE_RESISTANCES = [
-  'Corte', 'Perfuração', 'Impacto', 
-  'Fogo', 'Frio', 'Ácido', 'Veneno'
-];
+const AVAILABLE_RESISTANCES = ['Corte', 'Perfuração', 'Impacto', 'Fogo', 'Frio', 'Ácido', 'Veneno'];
 
-export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsumable, isUpdating, isGM, onChangeLevel, onChangeResistances, onChangeWeaponEffects, onConsumeAmmunition, onRecoverAmmunition, onAddCharges, onRemoveItem }: InventoryListProps) {
+export function InventoryList({
+  inventoryItems,
+  equipment,
+  onEquip,
+  onUseConsumable,
+  isUpdating,
+  isGM,
+  onChangeLevel,
+  onChangeResistances,
+  onChangeWeaponEffects,
+  onConsumeAmmunition,
+  onRecoverAmmunition,
+  onAddCharges,
+  onRemoveItem,
+}: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
       <div>
@@ -49,12 +65,15 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
   });
 
   // Group items by category
-  const groupedItems = sortedItems.reduce((acc, curr) => {
-    const category = curr.items?.category || 'Outros';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(curr);
-    return acc;
-  }, {} as Record<string, any[]>);
+  const groupedItems = sortedItems.reduce(
+    (acc, curr) => {
+      const category = curr.items?.category || 'Outros';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(curr);
+      return acc;
+    },
+    {} as Record<string, any[]>,
+  );
 
   return (
     <div>
@@ -65,40 +84,60 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
       <div className="space-y-6">
         {Object.entries(groupedItems).map(([category, items]) => (
           <div key={category} className="space-y-2">
-            <h4 className="text-sm font-bold text-amber-500/80 uppercase tracking-wider mb-2">{category}</h4>
+            <h4 className="text-sm font-bold text-amber-500/80 uppercase tracking-wider mb-2">
+              {category}
+            </h4>
             <div className="space-y-2">
               {(items as any[]).map((item: any) => {
                 const itemEffects = item.items?.effects || {};
-                const dbItem = ITEMS_DB.find(i => i.name === item.items?.name);
+                const dbItem = ITEMS_DB.find((i) => i.name === item.items?.name);
                 const itemType = dbItem?.type || item.items?.category;
                 let itemSlot = itemEffects.slot || dbItem?.slot;
-                
+
                 // Infer slot from category if missing
                 if (!itemSlot) {
                   const category = item.items?.category?.toUpperCase() || '';
                   const type = itemType?.toUpperCase() || '';
                   const properties = item.items?.effects?.properties || [];
-                  const description = item.items?.description?.toUpperCase() || dbItem?.description?.toUpperCase() || '';
-                  
+                  const description =
+                    item.items?.description?.toUpperCase() ||
+                    dbItem?.description?.toUpperCase() ||
+                    '';
+
                   if (properties.includes('two-handed') || description.includes('DUAS MÃOS')) {
                     itemSlot = '2h';
-                  } else if (type === 'ARMA' || category.includes('SIMPLES') || category.includes('MARCIAL')) {
+                  } else if (
+                    type === 'ARMA' ||
+                    category.includes('SIMPLES') ||
+                    category.includes('MARCIAL')
+                  ) {
                     itemSlot = '1h'; // Default to 1h
-                  } else if (item.items?.name?.toUpperCase().includes('CHAPÉU') || item.items?.name?.toUpperCase().includes('ELMO') || item.items?.name?.toUpperCase().includes('CAPUZ') || type === 'ELMO') {
+                  } else if (
+                    item.items?.name?.toUpperCase().includes('CHAPÉU') ||
+                    item.items?.name?.toUpperCase().includes('ELMO') ||
+                    item.items?.name?.toUpperCase().includes('CAPUZ') ||
+                    type === 'ELMO'
+                  ) {
                     itemSlot = 'head';
-                  } else if (type === 'ARMADURA' || category.includes('LEVE') || category.includes('MÉDI') || category.includes('PESAD') || category.includes('ARMADURA')) {
+                  } else if (
+                    type === 'ARMADURA' ||
+                    category.includes('LEVE') ||
+                    category.includes('MÉDI') ||
+                    category.includes('PESAD') ||
+                    category.includes('ARMADURA')
+                  ) {
                     itemSlot = 'body';
                   } else if (type === 'ESCUDO' || category.includes('ESCUDO')) {
                     itemSlot = 'shield';
                   }
                 }
-                
+
                 const normalizedEffects = { ...itemEffects, slot: itemSlot };
-                
+
                 // Fallback and scaling logic for healing
                 let healDice = normalizedEffects.heal_dice;
                 let fixedHeal = normalizedEffects.heal;
-                
+
                 if (!healDice && !fixedHeal && dbItem?.description) {
                   const healDiceMatch = dbItem.description.match(/Cura\s+(\d+d\d+)\s+(HP|PV)/i);
                   if (healDiceMatch) {
@@ -110,10 +149,24 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                     }
                   }
                 }
-                
+
                 const level = item.level || 1;
                 if (healDice) {
-                  const DICE_PROGRESSION = ['1', '1d4', '1d6', '1d8', '1d10', '1d12', '2d6', '2d8', '2d10', '2d12', '3d8', '3d10', '3d12'];
+                  const DICE_PROGRESSION = [
+                    '1',
+                    '1d4',
+                    '1d6',
+                    '1d8',
+                    '1d10',
+                    '1d12',
+                    '2d6',
+                    '2d8',
+                    '2d10',
+                    '2d12',
+                    '3d8',
+                    '3d10',
+                    '3d12',
+                  ];
                   const levelBonus = Math.max(0, level - 1);
                   const baseIndex = DICE_PROGRESSION.indexOf(healDice.toLowerCase().trim());
                   if (baseIndex !== -1) {
@@ -123,105 +176,148 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                   normalizedEffects.heal_dice = healDice;
                 } else if (fixedHeal) {
                   const levelBonus = Math.max(0, level - 1);
-                  fixedHeal = fixedHeal + (levelBonus * 2);
+                  fixedHeal = fixedHeal + levelBonus * 2;
                   normalizedEffects.heal = fixedHeal;
                 }
-                
-                const isEquipped2h = equipment?.mainHand === item.id && equipment?.offHand === item.id;
+
+                const isEquipped2h =
+                  equipment?.mainHand === item.id && equipment?.offHand === item.id;
                 let damageDie = normalizedEffects.damageDie;
                 if (isEquipped2h && normalizedEffects.versatileDamageDie) {
                   damageDie = normalizedEffects.versatileDamageDie;
                 }
 
-                const displayDamage = damageDie 
-                  ? `${damageDie}${normalizedEffects.damageType ? ' ' + normalizedEffects.damageType : ''}` 
+                const displayDamage = damageDie
+                  ? `${damageDie}${normalizedEffects.damageType ? ' ' + normalizedEffects.damageType : ''}`
                   : dbItem?.damage;
 
-                const equippedCount = 
+                const equippedCount =
                   (equipment?.head === item.id ? 1 : 0) +
                   (equipment?.body === item.id ? 1 : 0) +
                   (equipment?.mainHand === item.id && itemSlot !== '2h' ? 1 : 0) +
                   (equipment?.offHand === item.id && itemSlot !== '2h' ? 1 : 0) +
                   // For 2h weapons, they occupy both hands but count as 1 item equipped
-                  (equipment?.mainHand === item.id && equipment?.offHand === item.id && itemSlot === '2h' ? 1 : 0);
+                  (equipment?.mainHand === item.id &&
+                  equipment?.offHand === item.id &&
+                  itemSlot === '2h'
+                    ? 1
+                    : 0);
 
                 const isEquipped = equippedCount > 0;
-                const fullyEquipped = equippedCount >= item.quantity || (itemSlot !== '1h' && equippedCount >= 1);
-                  
-                const isEquippable = !!itemSlot && canEquipItem(normalizedEffects, equipment || { head: null, body: null, mainHand: null, offHand: null });
+                const fullyEquipped =
+                  equippedCount >= item.quantity || (itemSlot !== '1h' && equippedCount >= 1);
+
+                const isEquippable =
+                  !!itemSlot &&
+                  canEquipItem(
+                    normalizedEffects,
+                    equipment || { head: null, body: null, mainHand: null, offHand: null },
+                  );
 
                 return (
-                  <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-900 border border-stone-800 rounded-lg group hover:border-stone-700 transition-colors">
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-900 border border-stone-800 rounded-lg group hover:border-stone-700 transition-colors"
+                  >
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-stone-200 font-medium">{item.items?.name}</span>
                         {isGM ? (
                           <>
                             <div className="flex items-center gap-1 bg-stone-800 rounded border border-stone-700 h-5">
-                              <button 
-                                onClick={() => onChangeLevel?.(item.id, Math.max(1, (item.level || 1) - 1))}
+                              <button
+                                onClick={() =>
+                                  onChangeLevel?.(item.id, Math.max(1, (item.level || 1) - 1))
+                                }
                                 className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
                                 disabled={isUpdating || (item.level || 1) <= 1}
-                              >-</button>
-                              <span className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none" title="Nível do Item">
+                              >
+                                -
+                              </button>
+                              <span
+                                className="text-[10px] text-amber-200 font-bold w-7 text-center leading-none"
+                                title="Nível do Item"
+                              >
                                 Nv.{item.level || 1}
                               </span>
-                              <button 
-                                onClick={() => onChangeLevel?.(item.id, Math.min(5, (item.level || 1) + 1))}
+                              <button
+                                onClick={() =>
+                                  onChangeLevel?.(item.id, Math.min(5, (item.level || 1) + 1))
+                                }
                                 className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
                                 disabled={isUpdating || (item.level || 1) >= 5}
-                              >+</button>
+                              >
+                                +
+                              </button>
                             </div>
-                            
-                            {itemType !== 'Arma' && itemType !== 'Consumível' && itemType !== 'Utilidade' && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <button 
-                                    className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
-                                    title="Adicionar Resistências"
+
+                            {itemType !== 'Arma' &&
+                              itemType !== 'Consumível' &&
+                              itemType !== 'Utilidade' && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                                      title="Adicionar Resistências"
+                                    >
+                                      <ShieldPlus className="w-3 h-3" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    className="w-48 bg-stone-900 border-stone-800 text-stone-200"
+                                    align="start"
                                   >
-                                    <ShieldPlus className="w-3 h-3" />
-                                  </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-48 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">Resistências Customizadas</div>
-                                  {AVAILABLE_RESISTANCES.map(res => {
-                                    const isChecked = (item.custom_condition_resistances || []).includes(res);
-                                    return (
-                                      <DropdownMenuCheckboxItem
-                                        key={res}
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => {
-                                          if (!onChangeResistances) return;
-                                          let current = [...(item.custom_condition_resistances || [])];
-                                          if (checked) current.push(res);
-                                          else current = current.filter(r => r !== res);
-                                          onChangeResistances(item.id, current);
-                                        }}
-                                        className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
-                                      >
-                                        {res}
-                                      </DropdownMenuCheckboxItem>
-                                    );
-                                  })}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
+                                    <div className="px-2 py-1.5 text-xs font-semibold text-stone-400">
+                                      Resistências Customizadas
+                                    </div>
+                                    {AVAILABLE_RESISTANCES.map((res) => {
+                                      const isChecked = (
+                                        item.custom_condition_resistances || []
+                                      ).includes(res);
+                                      return (
+                                        <DropdownMenuCheckboxItem
+                                          key={res}
+                                          checked={isChecked}
+                                          onCheckedChange={(checked) => {
+                                            if (!onChangeResistances) return;
+                                            let current = [
+                                              ...(item.custom_condition_resistances || []),
+                                            ];
+                                            if (checked) current.push(res);
+                                            else current = current.filter((r) => r !== res);
+                                            onChangeResistances(item.id, current);
+                                          }}
+                                          className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                        >
+                                          {res}
+                                        </DropdownMenuCheckboxItem>
+                                      );
+                                    })}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
 
                             {itemType === 'Arma' && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <button 
+                                  <button
                                     className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-amber-400 transition-colors flex items-center justify-center"
                                     title="Adicionar Efeito de Arma (Natural 18+)"
                                   >
                                     <Zap className="w-3 h-3" />
                                   </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-amber-500/80">Efeitos Ofensivos (Nat 18+)</div>
-                                  {Object.values(CONDITIONS).map(cond => {
-                                    const isChecked = (item.weapon_effects || []).some((e: WeaponEffect) => e.conditionId === cond.id);
+                                <DropdownMenuContent
+                                  className="w-56 bg-stone-900 border-stone-800 text-stone-200"
+                                  align="start"
+                                >
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-amber-500/80">
+                                    Efeitos Ofensivos (Nat 18+)
+                                  </div>
+                                  {Object.values(CONDITIONS).map((cond) => {
+                                    const isChecked = (item.weapon_effects || []).some(
+                                      (e: WeaponEffect) => e.conditionId === cond.id,
+                                    );
                                     return (
                                       <DropdownMenuCheckboxItem
                                         key={cond.id}
@@ -230,9 +326,14 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                                           if (!onChangeWeaponEffects) return;
                                           let current = [...(item.weapon_effects || [])];
                                           if (checked) {
-                                            current.push({ conditionId: cond.id, trigger: 'natural_18_plus' });
+                                            current.push({
+                                              conditionId: cond.id,
+                                              trigger: 'natural_18_plus',
+                                            });
                                           } else {
-                                            current = current.filter((e: WeaponEffect) => e.conditionId !== cond.id);
+                                            current = current.filter(
+                                              (e: WeaponEffect) => e.conditionId !== cond.id,
+                                            );
                                           }
                                           onChangeWeaponEffects(item.id, current);
                                         }}
@@ -245,30 +346,66 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
-                            
+
                             {itemType === 'Consumível' && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <button 
+                                  <button
                                     className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-green-400 transition-colors flex items-center justify-center"
                                     title="Adicionar Cargas"
                                   >
                                     <Target className="w-3 h-3" />
                                   </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-40 bg-stone-900 border-stone-800 text-stone-200" align="start">
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-green-500/80">Adicionar Cargas</div>
-                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 1)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+1 Unidade</DropdownMenuCheckboxItem>
-                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 5)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+5 Unidades</DropdownMenuCheckboxItem>
-                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 10)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+10 Unidades</DropdownMenuCheckboxItem>
-                                  <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => onAddCharges && onAddCharges(item.id, 20)} className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer">+20 Unidades</DropdownMenuCheckboxItem>
+                                <DropdownMenuContent
+                                  className="w-40 bg-stone-900 border-stone-800 text-stone-200"
+                                  align="start"
+                                >
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-green-500/80">
+                                    Adicionar Cargas
+                                  </div>
+                                  <DropdownMenuCheckboxItem
+                                    checked={false}
+                                    onCheckedChange={() => onAddCharges && onAddCharges(item.id, 1)}
+                                    className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                  >
+                                    +1 Unidade
+                                  </DropdownMenuCheckboxItem>
+                                  <DropdownMenuCheckboxItem
+                                    checked={false}
+                                    onCheckedChange={() => onAddCharges && onAddCharges(item.id, 5)}
+                                    className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                  >
+                                    +5 Unidades
+                                  </DropdownMenuCheckboxItem>
+                                  <DropdownMenuCheckboxItem
+                                    checked={false}
+                                    onCheckedChange={() =>
+                                      onAddCharges && onAddCharges(item.id, 10)
+                                    }
+                                    className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                  >
+                                    +10 Unidades
+                                  </DropdownMenuCheckboxItem>
+                                  <DropdownMenuCheckboxItem
+                                    checked={false}
+                                    onCheckedChange={() =>
+                                      onAddCharges && onAddCharges(item.id, 20)
+                                    }
+                                    className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
+                                  >
+                                    +20 Unidades
+                                  </DropdownMenuCheckboxItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
                           </>
                         ) : (
-                          (item.level > 1) && (
-                            <span className="text-[10px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold leading-none" title={`Nível ${item.level}`}>
+                          item.level > 1 && (
+                            <span
+                              className="text-[10px] bg-amber-900/80 text-amber-200 px-1 rounded font-bold leading-none"
+                              title={`Nível ${item.level}`}
+                            >
                               Nv.{item.level}
                             </span>
                           )
@@ -284,52 +421,82 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                           </span>
                         )}
                         {normalizedEffects.heal_dice && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded border border-green-900/50 flex items-center gap-1 font-bold" title="Cura Variável">
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded border border-green-900/50 flex items-center gap-1 font-bold"
+                            title="Cura Variável"
+                          >
                             ❤️ {normalizedEffects.heal_dice}
                           </span>
                         )}
                         {!normalizedEffects.heal_dice && normalizedEffects.heal && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded border border-green-900/50 flex items-center gap-1 font-bold" title="Cura Fixa">
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded border border-green-900/50 flex items-center gap-1 font-bold"
+                            title="Cura Fixa"
+                          >
                             ❤️ {normalizedEffects.heal} PV
                           </span>
                         )}
                       </div>
-                      {item.items?.description && <span className="text-xs text-stone-500 block mt-1">{item.items.description}</span>}
+                      {item.items?.description && (
+                        <span className="text-xs text-stone-500 block mt-1">
+                          {item.items.description}
+                        </span>
+                      )}
                       {displayDamage && (
-                        <span className="text-xs text-amber-500 font-bold block mt-1">Dano: {displayDamage}</span>
+                        <span className="text-xs text-amber-500 font-bold block mt-1">
+                          Dano: {displayDamage}
+                        </span>
                       )}
                       {(() => {
                         let bonus = 0;
-                        if (normalizedEffects.acBonus !== undefined) bonus = Number(normalizedEffects.acBonus);
-                        else if (normalizedEffects.ca !== undefined) bonus = Number(normalizedEffects.ca);
-                        else if (normalizedEffects.armorClass !== undefined) bonus = Math.max(0, Number(normalizedEffects.armorClass) - 10);
-                        
+                        if (normalizedEffects.acBonus !== undefined)
+                          bonus = Number(normalizedEffects.acBonus);
+                        else if (normalizedEffects.ca !== undefined)
+                          bonus = Number(normalizedEffects.ca);
+                        else if (normalizedEffects.armorClass !== undefined)
+                          bonus = Math.max(0, Number(normalizedEffects.armorClass) - 10);
+
                         if (bonus > 0) {
                           const levelBonus = (item.level || 1) - 1;
                           const totalBonus = bonus + levelBonus;
                           return (
-                            <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold" title={levelBonus > 0 ? `+${bonus} (base) +${levelBonus} (nível)` : undefined}>
+                            <span
+                              className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold"
+                              title={
+                                levelBonus > 0
+                                  ? `+${bonus} (base) +${levelBonus} (nível)`
+                                  : undefined
+                              }
+                            >
                               CA +{totalBonus}
                             </span>
                           );
                         }
                         return null;
                       })()}
-                      {item.custom_condition_resistances && item.custom_condition_resistances.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.custom_condition_resistances.map((res: string) => (
-                            <span key={res} className="text-[10px] px-1.5 py-0.5 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50">
-                              Resiste: {res}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      {item.custom_condition_resistances &&
+                        item.custom_condition_resistances.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.custom_condition_resistances.map((res: string) => (
+                              <span
+                                key={res}
+                                className="text-[10px] px-1.5 py-0.5 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50"
+                              >
+                                Resiste: {res}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       {item.weapon_effects && item.weapon_effects.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {item.weapon_effects.map((effect: WeaponEffect) => {
                             const cond = CONDITIONS[effect.conditionId as keyof typeof CONDITIONS];
                             return (
-                              <span key={effect.conditionId} className="text-[10px] px-1.5 py-0.5 bg-amber-900/40 text-amber-300 rounded border border-amber-900/50 flex items-center gap-1" title="Aplicado em Natural 18+">
+                              <span
+                                key={effect.conditionId}
+                                className="text-[10px] px-1.5 py-0.5 bg-amber-900/40 text-amber-300 rounded border border-amber-900/50 flex items-center gap-1"
+                                title="Aplicado em Natural 18+"
+                              >
                                 <Zap className="w-2.5 h-2.5" />
                                 {cond?.name || effect.conditionId}
                               </span>
@@ -341,9 +508,12 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                     <div className="flex items-center gap-3 mt-2 sm:mt-0">
                       {item.items?.is_consumable && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">Consumível</span>
-                          
-                          {(item.items?.name?.includes('Flecha') || item.items?.name?.includes('Pedra')) ? (
+                          <span className="text-xs px-2 py-1 bg-amber-900/20 text-amber-400 rounded border border-amber-900/30">
+                            Consumível
+                          </span>
+
+                          {item.items?.name?.includes('Flecha') ||
+                          item.items?.name?.includes('Pedra') ? (
                             <>
                               <button
                                 onClick={() => onConsumeAmmunition && onConsumeAmmunition(item.id)}
@@ -352,15 +522,20 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                               >
                                 Gastar 1
                               </button>
-                              {item.items?.name?.includes('Flecha') && item.quantity < 20 && item.quantity > 0 && (
-                                <button
-                                  onClick={() => onRecoverAmmunition && onRecoverAmmunition(item.id, 20 - item.quantity, 20)}
-                                  disabled={isUpdating}
-                                  className="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 text-stone-200 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
-                                >
-                                  Recuperar
-                                </button>
-                              )}
+                              {item.items?.name?.includes('Flecha') &&
+                                item.quantity < 20 &&
+                                item.quantity > 0 && (
+                                  <button
+                                    onClick={() =>
+                                      onRecoverAmmunition &&
+                                      onRecoverAmmunition(item.id, 20 - item.quantity, 20)
+                                    }
+                                    disabled={isUpdating}
+                                    className="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 text-stone-200 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
+                                  >
+                                    Recuperar
+                                  </button>
+                                )}
                               {item.quantity <= 0 && (
                                 <button
                                   onClick={() => onRemoveItem && onRemoveItem(item.id)}
@@ -373,7 +548,12 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                             </>
                           ) : (
                             <button
-                              onClick={() => onUseConsumable({ ...item, items: { ...item.items, effects: normalizedEffects } })}
+                              onClick={() =>
+                                onUseConsumable({
+                                  ...item,
+                                  items: { ...item.items, effects: normalizedEffects },
+                                })
+                              }
                               disabled={isUpdating || item.quantity <= 0}
                               className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
                             >
@@ -382,7 +562,7 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                           )}
                         </div>
                       )}
-                      
+
                       {isEquippable && !fullyEquipped && (
                         <div className="flex items-center gap-2">
                           {normalizedEffects.slot === '1h' ? (
@@ -405,15 +585,19 @@ export function InventoryList({ inventoryItems, equipment, onEquip, onUseConsuma
                                   Mão Secundária
                                 </button>
                               )}
-                              {normalizedEffects.properties?.includes('versatile') && equipment?.mainHand !== item.id && equipment?.offHand !== item.id && (
-                                <button
-                                  onClick={() => onEquip(item.id, { ...normalizedEffects, slot: '2h' })}
-                                  disabled={isUpdating}
-                                  className="text-[10px] px-2 py-1 bg-amber-900/60 hover:bg-amber-800/80 text-amber-300 font-bold rounded border border-amber-800/50 transition-colors disabled:opacity-50"
-                                >
-                                  Duas Mãos
-                                </button>
-                              )}
+                              {normalizedEffects.properties?.includes('versatile') &&
+                                equipment?.mainHand !== item.id &&
+                                equipment?.offHand !== item.id && (
+                                  <button
+                                    onClick={() =>
+                                      onEquip(item.id, { ...normalizedEffects, slot: '2h' })
+                                    }
+                                    disabled={isUpdating}
+                                    className="text-[10px] px-2 py-1 bg-amber-900/60 hover:bg-amber-800/80 text-amber-300 font-bold rounded border border-amber-800/50 transition-colors disabled:opacity-50"
+                                  >
+                                    Duas Mãos
+                                  </button>
+                                )}
                             </>
                           ) : (
                             <button

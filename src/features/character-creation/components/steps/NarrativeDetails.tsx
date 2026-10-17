@@ -8,16 +8,24 @@ import { z } from 'zod';
 
 const combinedSchema = z.object({
   ...nameSchema.shape,
-  ...narrativeSchema.shape
+  ...narrativeSchema.shape,
 });
 
 type NarrativeFormData = z.infer<typeof combinedSchema>;
 
 export function NarrativeDetails() {
-  const { draft, setName, setNarrative, nextStep, prevStep, isLocked } = useCharacterCreationStore();
+  const { draft, setName, setNarrative, nextStep, prevStep, isLocked } =
+    useCharacterCreationStore();
   const { quickSave, saving, message, isEditing } = useQuickSave();
-  
-  const { register, handleSubmit, setValue, getValues, watch, formState: { errors } } = useForm<NarrativeFormData>({
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    getValues,
+    watch,
+    formState: { errors },
+  } = useForm<NarrativeFormData>({
     resolver: zodResolver(combinedSchema),
     defaultValues: {
       name: draft.name || '',
@@ -26,8 +34,8 @@ export function NarrativeDetails() {
         physicalDesc: draft.narrative?.physicalDesc || '',
         history: draft.narrative?.history || '',
         personality: draft.narrative?.personality || '',
-      }
-    }
+      },
+    },
   });
 
   const [isCompressing, setIsCompressing] = useState(false);
@@ -39,7 +47,7 @@ export function NarrativeDetails() {
     if (!file) return;
 
     setIsCompressing(true);
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -90,7 +98,9 @@ export function NarrativeDetails() {
 
   const handleQuickSave = () => {
     const data = getValues();
-    const payload = isLocked ? { narrative: data.narrative } : { name: data.name, narrative: data.narrative };
+    const payload = isLocked
+      ? { narrative: data.narrative }
+      : { name: data.name, narrative: data.narrative };
     quickSave(payload);
   };
 
@@ -98,29 +108,34 @@ export function NarrativeDetails() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {isLocked && (
         <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
-          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Apenas o retrato e a história podem ser alterados.
+          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Apenas o retrato
+          e a história podem ser alterados.
         </div>
       )}
 
       <div>
         <label className="block text-stone-300 font-bold mb-2">Nome do Personagem *</label>
-        <input 
+        <input
           type="text"
           disabled={isLocked}
           {...register('name')}
           placeholder="Ex: Davi, Eliabe, Rute..."
           className={`w-full bg-stone-900 border text-stone-100 p-3 rounded outline-none transition-colors ${
-            isLocked ? 'border-stone-800 opacity-50 cursor-not-allowed' : 'border-stone-700 focus:border-amber-500'
+            isLocked
+              ? 'border-stone-800 opacity-50 cursor-not-allowed'
+              : 'border-stone-700 focus:border-amber-500'
           }`}
         />
         {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
       </div>
 
       <div>
-        <label className="block text-stone-300 font-bold mb-2">Retrato do Personagem (Opcional)</label>
-        
+        <label className="block text-stone-300 font-bold mb-2">
+          Retrato do Personagem (Opcional)
+        </label>
+
         <div className="flex items-center gap-4">
-          <div 
+          <div
             className="w-24 h-24 bg-stone-800 border-2 border-dashed border-stone-600 rounded-lg flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:border-amber-500 transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -129,19 +144,23 @@ export function NarrativeDetails() {
             ) : previewUrl ? (
               <img src={previewUrl} alt="Retrato" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xs text-stone-500 text-center px-2">Clique para <br/> enviar</span>
+              <span className="text-xs text-stone-500 text-center px-2">
+                Clique para <br /> enviar
+              </span>
             )}
           </div>
-          
+
           <div className="flex-1">
-            <input 
+            <input
               type="file"
               accept="image/*"
               className="hidden"
               ref={fileInputRef}
               onChange={handleImageUpload}
             />
-            <p className="text-sm text-stone-400 mb-2">Envie uma imagem para sua ficha. Ela será automaticamente reduzida e otimizada.</p>
+            <p className="text-sm text-stone-400 mb-2">
+              Envie uma imagem para sua ficha. Ela será automaticamente reduzida e otimizada.
+            </p>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -164,7 +183,7 @@ export function NarrativeDetails() {
 
       <div>
         <label className="block text-stone-300 font-bold mb-2">Aparência Física (Opcional)</label>
-        <textarea 
+        <textarea
           {...register('narrative.physicalDesc')}
           placeholder="Descreva a aparência do personagem..."
           rows={3}
@@ -174,7 +193,7 @@ export function NarrativeDetails() {
 
       <div>
         <label className="block text-stone-300 font-bold mb-2">História e Origem (Opcional)</label>
-        <textarea 
+        <textarea
           {...register('narrative.history')}
           placeholder="De onde veio? O que busca?"
           rows={4}
@@ -184,7 +203,7 @@ export function NarrativeDetails() {
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
         <div className="flex items-center gap-4 w-full sm:w-auto">
-          <button 
+          <button
             type="button"
             onClick={prevStep}
             className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
@@ -205,7 +224,7 @@ export function NarrativeDetails() {
             </div>
           )}
         </div>
-        <button 
+        <button
           type="submit"
           className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
         >

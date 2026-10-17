@@ -77,7 +77,7 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
-            
+
           if (charData) {
             characterIdToFetch = charData.id;
           }
@@ -86,7 +86,8 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
         if (characterIdToFetch) {
           const { data: itemsData } = await supabase
             .from('character_items')
-            .select(`
+            .select(
+              `
               id,
               quantity,
               items (
@@ -95,7 +96,8 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
                 is_consumable,
                 requires_target
               )
-            `)
+            `,
+            )
             .eq('character_id', characterIdToFetch);
 
           if (itemsData) setInventoryItems(itemsData);
@@ -111,10 +113,10 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
 
   const handleUseItem = async (characterItemId: string, isConsumable: boolean) => {
     if (!isConsumable) return;
-    
+
     // Call RPC to use item
     await supabase.rpc('use_consumable_item', {
-      p_character_item_id: characterItemId
+      p_character_item_id: characterItemId,
     });
 
     onClose();
@@ -128,20 +130,24 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
     >
       <div className="bg-stone-800 px-3 py-2 border-b border-stone-700 font-semibold text-stone-200 text-sm flex justify-between items-center">
         Ações
-        <button onClick={onClose} className="text-stone-400 hover:text-stone-200">&times;</button>
+        <button onClick={onClose} className="text-stone-400 hover:text-stone-200">
+          &times;
+        </button>
       </div>
       <div className="p-2 space-y-1">
-        <div className="text-xs text-stone-500 uppercase tracking-wider font-bold mb-1 px-1">Itens</div>
+        <div className="text-xs text-stone-500 uppercase tracking-wider font-bold mb-1 px-1">
+          Itens
+        </div>
         {isLoading ? (
           <div className="px-2 py-1 text-sm text-stone-400">Carregando...</div>
         ) : inventoryItems.length > 0 ? (
-          inventoryItems.map(item => (
+          inventoryItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleUseItem(item.id, item.items?.is_consumable)}
               className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors flex items-center justify-between ${
-                item.items?.is_consumable 
-                  ? 'text-amber-400 hover:bg-stone-800' 
+                item.items?.is_consumable
+                  ? 'text-amber-400 hover:bg-stone-800'
                   : 'text-stone-400 opacity-50 cursor-not-allowed'
               }`}
               disabled={!item.items?.is_consumable}
