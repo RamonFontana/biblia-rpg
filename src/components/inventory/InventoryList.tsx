@@ -9,6 +9,7 @@ import type { CharacterEquipment, WeaponEffect } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/data/itemsDb';
 import { CONDITIONS } from '@/data/conditions';
+import { resolveHealing } from '@/lib/consumables';
 
 interface InventoryListProps {
   inventoryItems: any[];
@@ -135,49 +136,17 @@ export function InventoryList({
                 const normalizedEffects = { ...itemEffects, slot: itemSlot };
 
                 // Fallback and scaling logic for healing
-                let healDice = normalizedEffects.heal_dice;
-                let fixedHeal = normalizedEffects.heal;
-
-                if (!healDice && !fixedHeal && dbItem?.description) {
-                  const healDiceMatch = dbItem.description.match(/Cura\s+(\d+d\d+)\s+(HP|PV)/i);
-                  if (healDiceMatch) {
-                    healDice = healDiceMatch[1];
-                  } else {
-                    const healFixedMatch = dbItem.description.match(/Cura\s+(\d+)\s+(HP|PV)/i);
-                    if (healFixedMatch) {
-                      fixedHeal = Number(healFixedMatch[1]);
-                    }
-                  }
-                }
-
                 const level = item.level || 1;
-                if (healDice) {
-                  const DICE_PROGRESSION = [
-                    '1',
-                    '1d4',
-                    '1d6',
-                    '1d8',
-                    '1d10',
-                    '1d12',
-                    '2d6',
-                    '2d8',
-                    '2d10',
-                    '2d12',
-                    '3d8',
-                    '3d10',
-                    '3d12',
-                  ];
-                  const levelBonus = Math.max(0, level - 1);
-                  const baseIndex = DICE_PROGRESSION.indexOf(healDice.toLowerCase().trim());
-                  if (baseIndex !== -1) {
-                    const newIndex = Math.min(baseIndex + levelBonus, DICE_PROGRESSION.length - 1);
-                    healDice = DICE_PROGRESSION[newIndex];
-                  }
-                  normalizedEffects.heal_dice = healDice;
-                } else if (fixedHeal) {
-                  const levelBonus = Math.max(0, level - 1);
-                  fixedHeal = fixedHeal + levelBonus * 2;
-                  normalizedEffects.heal = fixedHeal;
+                const healing = resolveHealing(
+                  normalizedEffects.heal_dice,
+                  normalizedEffects.heal,
+                  dbItem?.description,
+                  level,
+                );
+                if (healing.healDice) {
+                  normalizedEffects.heal_dice = healing.healDice;
+                } else if (healing.heal) {
+                  normalizedEffects.heal = healing.heal;
                 }
 
                 const isEquipped2h =

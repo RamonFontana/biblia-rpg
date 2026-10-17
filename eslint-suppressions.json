@@ -389,9 +389,6 @@
     },
     "no-restricted-imports": {
       "count": 1
-    },
-    "prefer-const": {
-      "count": 1
     }
   },
   "src/lib/equipmentUtils.ts": {
