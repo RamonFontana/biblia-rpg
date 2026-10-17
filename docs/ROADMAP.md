@@ -6,8 +6,8 @@
 ## Status
 | Onda | Estado |
 |---|---|
-| 1 — Fundação | passos 1–13 feitos (branch `chore/wave-1-foundation`; tracker = markdown local em `.scratch/`). Falta: PR com CI verde e proteção da `main` |
-| 2 — Rede de segurança | pendente |
+| 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub |
+| 2 — Rede de segurança | em andamento (branch `docs/wave-2-domain-model`): grill feito, glossário e ADRs 0001–0002 gravados; faltam as correções de doc (bloco A) e os testes de caracterização |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
@@ -226,13 +226,58 @@ Em cada gate novo, provo que ele **falha** com uma violação temporária (um `a
 **Pronto quando:** `npm run check` passa; cada gate foi visto falhando; o CI está verde no PR; não sobra referência ao Spec Kit; o ROADMAP está commitado.
 
 ### Onda 2: rede de segurança
-- **Objetivo:** testes de caracterização do comportamento ATUAL, inclusive dos bugs, marcados como `// CARACTERIZAÇÃO: comportamento atual, ver ROADMAP#decisão-X`.
-- **Antes, uma sessão de grill-with-docs** cria o `CONTEXT.md` (atributos, vocação, tribo, caminho, Fé, condição, resistência, teste, descanso) e os ADRs, e decide: teste de Fé; +CA por nível de item; vocabulário canônico de condições; Sábio × Sacerdote; Nobre; moedas 50 × 4d4×10; sangramento no início ou no fim do turno; descanso longo a cada 2 dias.
-- **Alvos:** `getTestModifiers`, `getCombatStats` (as duas fórmulas de CA), `combatEngine` (resistências), `abilityUtils` (recarga), a matemática do LevelUpWizard, os descansos, os testes de morte, a munição, o teste de Fé (as duas fórmulas).
-- **Técnica:** onde a lógica está num componente, primeiro extrair uma função pura sem alterar comportamento (refactor mecânico) e testar a função.
-- **Aplicar as decisões já tomadas:** corrigir o doc de proficiência e mudar `endCombat` para "fica morrendo", cada um como `fix:` com teste vermelho → verde.
+**Já feito:** grill-with-docs de 2026-10-17. Vocabulário em `CONTEXT.md`; ADRs em `docs/adr/`. As decisões estão na próxima seção.
+
+**Ordem:**
+1. Correções de doc (bloco A abaixo), um commit por documento.
+2. Testes de caracterização do comportamento ATUAL, inclusive dos bugs, marcados `// CARACTERIZAÇÃO: comportamento atual; decisão: ROADMAP#decisões-do-grill`.
+3. Correções de comportamento (bloco B), cada uma como `fix:` com o teste de caracterização virando vermelho → verde.
+
+- **Alvos dos testes:** `getTestModifiers`, `getCombatStats` (as duas fórmulas de CA), `combatEngine` (resistências), `abilityUtils` (recarga), a matemática do LevelUpWizard, os descansos, os testes de morte, a munição, o teste de Fé (as duas fórmulas).
+- **Técnica:** onde a lógica está num componente, primeiro extrair uma função pura sem alterar comportamento (refactor mecânico) e testar a função. Valores rolados entram como parâmetro (ADR 0001).
 - **Risco:** médio (extrações de componentes grandes).
-- **Pronto quando:** toda regra do mapa §2 tem pelo menos um teste; as divergências estão listadas no ROADMAP com decisão ou pendência.
+- **Pronto quando:** toda regra do mapa §2 tem pelo menos um teste e cada divergência tem a decisão aplicada ou registrada como pendente.
+
+#### Decisões do grill (2026-10-17)
+Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
+
+**A. Correções nos docs de regra** (conteúdo aprovado; um commit por arquivo)
+1. `docs/regras-base.md`
+   - Proficiência no padrão 5e (+1 nos níveis 5, 9, 13 e 17).
+   - "Sem itens +1/+2" passa a proibir bônus *sobrenaturais*; a Qualidade de item é permitida (ADR 0002).
+   - XP sai; entra o Marco. Aumentos de atributo nos níveis 4, 8, 12, 16 e 19.
+   - Iniciativa: o jogador rola na mesa e o Mestre digita; só o Mestre passa o turno.
+   - Morrendo continua depois do combate; a sessão não encerra com alguém Morrendo. Estável volta descansado na sessão seguinte.
+   - Descanso Curto até 2 por dia; Longo 1 por dia, com Sustento (1 Ração + 1 Odre por personagem, senão Exausto).
+   - Sangrando: dano no final do turno.
+   - Fé: Clamor com atalhos 0 / −20 / −50 (sinal corrigido) e Pedido Egoísta marcado antes da rolagem; Vulnerável vira Testemunho.
+2. `docs/fortalezas-tentacoes.md`: Tentação usa Teste de Fé (não de Sabedoria); ceder sem rolar não custa Fé; Fortaleza isenta do Testemunho.
+3. `docs/criacao-de-personagem.md`: 50 siclos fixos; kits iguais ao que o jogador recebe (+20 flechas para o Caçador); Sábio usa o kit do Sacerdote.
+4. `docs/itens/consumiveis.md` e `utilizaveis.md`: Odre e Ração são Sustento (não curam); Bálsamo cura 1d4.
+5. `docs/regras-base.md` §condições (ou arquivo próprio): Amedrontado (no lugar de Assustado), Impedido, Paralisado, Exausto; Encantado removido.
+6. Tribos e vocações: Zebulom nível 8 (vantagem em Testes de Fé de Tentação e contra heresia, no lugar de imune a Encantado); Aser níveis 1 e 12 (a refeição vira habilidade do Descanso Curto, sem consumir ração: +1d4 PV, depois +1d8 e remove Exausto); Sacerdote nível 18 e Endemoniado perdem Encantado.
+7. `docs/vocacoes/*.md`: o Batedor e o Sacerdote seguem como o doc está; só o código muda (bloco B).
+
+**B. Correções de comportamento no código** (sempre depois do teste de caracterização)
+- Teste de Fé numa função única, incluindo a penalidade do Item Profano. Perda de 1d6 só em Tentação, Testemunho e Pedido Egoísta.
+- `endCombat` deixa o personagem Morrendo em vez de matar (`vitalsUtils.ts:43`, `characterVitalsService.ts:69`). O fim da sessão também.
+- Descanso Longo 1 por dia (hoje a cada 2). Descanso Curto recarrega habilidades mesmo sem cura (`SessionRestControls.tsx:53`).
+- `conditionResistances` dos itens usam os IDs em português do catálogo (zera `known-violations.json`). O ID `assustado` vira `amedrontado` com migração de dados (Onda 3). Condições Impedido, Paralisado e Exausto entram no catálogo.
+- Sangrando: descrição passa a dizer final do turno (`conditions.ts:13`).
+- "Sábio" é alias de Sacerdote; Nobre e `tribeSkills.ts` são removidos.
+- Itens: textos de Odre e Ração perdem "Cura"; Caçador recebe 20 flechas.
+- **Precisam de lista de fichas afetadas antes de aplicar:** CA com teto de DES (média +2, pesada sem DES, aviso de FOR em vez de bloqueio) e proficiências de armadura conforme os docs de vocação.
+- Recuperação de munição segue automática (50%); o 1d4 de Fé do Descanso Longo é digitado pelo Mestre; rolagens de jogador são digitadas, com Rolagem Virtual opcional (ADR 0001).
+
+**C. Features novas** (Onda 5, via `/to-spec` → `/to-tickets` → `/tdd`)
+1. Tipos de Teste de Fé no app: Clamor (atalhos + Pedido Egoísta), Tentação e Testemunho.
+2. Sustento no Descanso Longo: tela de confirmação do Mestre (inclui NPCs aliados, desmarcável), aviso no celular de cada jogador e Exausto automático.
+3. Efeitos do Estado de Fé: Inspiração (Inabalável), desvantagem (Abalado), Ruptura.
+4. Dados de Vida nos descansos.
+
+**Pendências (nenhuma decisão ainda)**
+- Efeito exato de Vulnerável além do Testemunho frequente.
+- Definição de Ruptura em termos de app (hoje só texto de doc).
 
 ### Onda 3: motor e dados
 - **`src/domain/`:** motor puro. `rng.ts` com um `Rng` injetável (seed); `dice`, `attributes`, `proficiency`, `armorClass`, `vitals` (reaproveitar `vitalsUtils.ts`), `faith` (`getCurrentFaith`), `conditions`, `rest`, `deathSaves`, `ammo`. Tudo migra de componentes e services para cá, um módulo por PR, com os testes da Onda 2 ficando verdes.
