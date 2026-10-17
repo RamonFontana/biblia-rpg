@@ -6,8 +6,8 @@
 ## Status
 | Onda | Estado |
 |---|---|
-| 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub |
-| 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização da maioria das regras (branch `test/wave-2-characterization`, ver abaixo). Falta: caracterizar consumíveis, perda de Fé e criação de NPC/sessão, e depois as correções de código (bloco B) |
+| 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub (o sistema bloqueou a minha tentativa via `gh api`; o autor configura no GitHub) |
+| 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização das regras (PRs #10 e #11, ver abaixo). Caracterização concluída (faltam só as funções SQL e o tempo real, ver abaixo). Próximo: as correções de código (bloco B) |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
@@ -259,12 +259,24 @@ Cada regra foi extraída sem mudar comportamento (commit `refactor:`) e fixada e
 | Criação de NPC jogável e de inimigo (chaves inconsistentes) | `src/lib/sessionEntities.ts` | `sessionEntities.test.ts` |
 | Sinal do Modificador de Fé, aprovação de Teste comum, perda de Fé | `src/lib/sessionTests.ts` | `sessionTests.test.ts` |
 | Nível do personagem e teto 20 | `utils/levelUp.ts` | `levelUp.test.ts` |
+| Combate: ordem de turnos, tique de Condições por rodada, início e fim do combate | `combatStore` (com Supabase falso, `src/test/fakeSupabase.ts`) | `combatStore.test.ts` |
+| Troca de itens e moedas (não a transferência, que é SQL) | `tradeService` | `tradeService.test.ts` |
+| Criar e encerrar sessão | `sessionService` | `sessionService.test.ts` |
 | Morte por PV ≤ 0 ao fim do combate | `vitalsUtils.deriveDeathState` | já coberto em `vitalsUtils.test.ts` (o teste "marks dead when hp drops to 0" é o comportamento a mudar) |
 
 **Ainda sem teste de caracterização**
-- Tique de condições por rodada e fim de combate no `combatStore` (mistura Supabase, realtime e estado); troca de itens (`tradeService`).
 - O máximo de Fé com 4 valores diferentes e o `current_faith ?? faith ?? 0` repetido 16 vezes (será `getCurrentFaith` na Onda 3).
-- Encerramento da sessão (`sessionService.endSession`): cancela trocas, apaga NPCs e inimigos, concede `pending_level_up` e finaliza. **Não mata ninguém com PV ≤ 0**: a morte por PV ≤ 0 acontece no fim do *combate* (`combatStore.endCombat`, via `deriveDeathState`). A regra "a sessão não encerra com alguém Morrendo" ainda não existe no código.
+- As funções SQL `execute_trade`, `cancel_session_trades` e `create_game_session` (a transferência de itens e moedas e a criação da sessão em si). Os testes do serviço só provam o que o app envia a elas.
+- A assinatura em tempo real do combate (`initSubscriptions`).
+
+**Achados desta etapa (combate, troca e sessão)**
+- O turno é guardado como índice de posição, não como participante: se alguém sai do combate, a vez passa a apontar para outro participante.
+- `nextTurn` desconta a duração das Condições antes de gravar o novo turno, sem transação: se gravar o turno falhar, as Condições já foram descontadas. Ninguém é pulado, nem quem está com 0 PV.
+- `endCombat` junta os personagens mortos numa lista (`deadCharIds`) que nunca é usada: só inimigos com PV 0 saem da lista (`is_deleted`). Jogador com PV 0 vira Morto (BUG conhecido, decisão: Morrendo).
+- `startCombat` não preenche o estado local; quem mostra o combate é a assinatura em tempo real. Inimigos não herdam Condições da ficha.
+- `tradeService` não valida nada: aceita moedas negativas ou fracionadas, quantidade acima do que o personagem tem e Qualidade fracionada. Qualquer validação depende da função SQL.
+- `createGameSession` cria as fichas de NPC e inimigo antes de chamar a função SQL: se ela falhar, as fichas ficam órfãs.
+- `endSession` ignora erros de apagar NPCs e de conceder nível e encerra mesmo assim; não olha PV nem Testes de Morte (a regra do Morrendo ainda não existe).
 
 **Por que a correção do Teste de Fé não entrou agora**: o serviço que grava `is_approved` não conhece a penalidade de Item Profano (quem a calcula é a tela, lendo os itens). Unificar exige que a camada de dados leia os itens do personagem, então a correção nasce junto com `src/domain/faith` na Onda 3. O mesmo vale para a resistência de armadura (depende do vocabulário de condições e de ler `items.condition_resistances` do banco).
 
@@ -360,9 +372,9 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 2. **GitHub:** proteger a branch `main`, exigindo o check `ci` e o deploy da Vercel antes do merge (sem isso o CI não bloqueia de fato). Ativar Dependabot alerts.
 3. **Supabase**
    - ~~Verificar se o projeto está pausado.~~ Estava pausado; reativado em 2026-10-17. O plano gratuito pausa por inatividade, então o app pode cair de novo.
-   - ~~Conferir RLS de `characters` e rodar o Security Advisor.~~ Feito (ver §4). Falta ligar a proteção contra senhas vazadas no dashboard (Auth → Passwords).
+   - ~~Conferir RLS de `characters` e rodar o Security Advisor.~~ Feito (ver §4). A proteção contra senhas vazadas não aparece no menu do plano gratuito (provável recurso do Pro, não confirmado); fica como risco aceito enquanto o projeto for gratuito.
    - Ter a senha do banco à mão para o `supabase db pull` na Onda 3.
-4. **Vercel:** confirmar que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estão em Production e Preview e que **nenhuma** `SUPABASE_SERVICE_ROLE_KEY` está lá (o app não precisa dela).
+4. **Vercel:** confirmar que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estão em Production e Preview e que **nenhuma** `SUPABASE_SERVICE_ROLE_KEY` está lá (o app não precisa dela). Não consegui conferir: o MCP da Vercel deu 403 no time e o CLI não está logado (`vercel login`).
 5. Revisar os 13 itens de conteúdo bíblico do §2.
 6. Preencher a lista de features novas.
 7. Revisar `docs/DESIGN.md` (Onda 1, passo 12) e dizer se falta algo do padrão da criação de personagem que você quer manter.
