@@ -30,8 +30,10 @@ Na criação do personagem, o jogador escolhe entre dois métodos oficiais para 
 A Classe de Armadura (CA) define a dificuldade de atingir o personagem.
 - A CA base sem armadura é **10 + Modificador de Destreza**.
 - Ao usar **armaduras da época** (couro, bronze, ferro), a CA muda conforme o equipamento.
+- Armadura leve soma o Modificador de Destreza inteiro; armadura média soma até **+2**; armadura pesada não soma Destreza.
 - Escudos (de madeira ou bronze) podem adicionar **+2 na CA**.
-- **Regra da Constituição**: Não existem itens mágicos no jogo (+1, +2, etc). A CA máxima provém apenas da armadura natural, física e modificador de Destreza.
+- **Sem bônus sobrenaturais**: Não existem itens mágicos no jogo. Nenhum equipamento concede poder sobrenatural; a CA provém de armadura e escudo físicos e do modificador de Destreza.
+- **Qualidade do item**: Cada item tem Qualidade de 1 a 5, que representa material e artesanato (bronze melhor, ferro temperado), nunca magia. Cada nível de Qualidade acima de 1 soma **+1 na CA** de armaduras e escudos e fortalece a resistência do item a Condições.
 
 ---
 
@@ -64,19 +66,21 @@ A **Fé** substitui a magia mecânica no jogo e mede a comunhão do personagem c
 ### 4.1 Fortalezas e Tentações
 
 Na criação de personagem, definem-se dois traços narrativos com peso mecânico (obrigatoriamente 1 de cada no Nível 1):
-- **1 Fortaleza**: Ação honrosa natural. Atuar de acordo com a Fortaleza pode conceder bônus (Vantagem) na rolagem ou recuperar **1d4 de Fé**.
-- **1 Tentação**: Um defeito de caráter persistente. Se confrontado por um gatilho, o personagem faz um **Teste de Sabedoria (CD do Mestre)**. Em caso de falha, cede ou perde **1d6 pontos de Fé**.
+- **1 Fortaleza**: Ação honrosa natural. Atuar de acordo com a Fortaleza pode conceder bônus (Vantagem) na rolagem ou recuperar **1d4 de Fé**. A Fortaleza também isenta o personagem do Testemunho quando o Mestre julga que ela cobre a situação.
+- **1 Tentação**: Um defeito de caráter persistente. Se confrontado por um gatilho, o personagem pode **ceder** (interpreta as consequências, sem rolar e sem perder Fé) ou **resistir** com um **Teste de Fé** (ver 4.4). Em caso de falha, cede e perde **1d6 pontos de Fé**.
 
 *(Consulte o documento [Fortalezas e Tentações](fortalezas-tentacoes.md) para as regras completas e as listas de opções).*
 
 ### 4.2 Degradação de Fé
+
+O Estado de Fé é definido pela **Fé Atual** (não pela Fé Efetiva, ver 4.4).
 
 | Faixa de Fé | Estado | Efeito Mecânico |
 |---|---|---|
 | **100–70** | 🟢 Inabalável | Nenhuma penalidade. Profunda paz. Recebe **Inspiração 1x/dia**. |
 | **69–31** | 🟡 Comum | Sem penalidades, sem bônus. Estado mundano. |
 | **30–11** | 🟠 Abalado | A "cobertura" divina diminui. **Desvantagem** em testes de resistência de Sabedoria ou Carisma. |
-| **10–1** | 🔴 Vulnerável | Risco de surtos ou possessão demoníaca ao testemunhar atrocidades ou heregias (Testes de Sabedoria constantes). |
+| **10–1** | 🔴 Vulnerável | Risco de surtos ou possessão demoníaca ao testemunhar atrocidades ou heresias: o Mestre exige **Testemunho** (ver 4.4) com frequência. |
 | **0** | ⚫ Ruptura | O personagem **sucumbe**. Sofre tragédia (possessão incontrolável, loucura, morte) a menos que o grupo realize um ato massivo de consagração e jejum liderado por um Sacerdote, até o nascer do sol. Habilidades que exigem Fé falham automaticamente. |
 
 ### 4.3 Recuperação de Fé
@@ -84,40 +88,47 @@ Na criação de personagem, definem-se dois traços narrativos com peso mecânic
 - **Descanso Longo Devocional**: **1d4** de Fé para o grupo inteiro, desde que haja momento de ensino/oração conduzido. Se for por um Sacerdote, recupera **1d4+2**.
 - **Eventos e Ações**: Atos heroicos de fidelidade a Deus rendem recuperação instantânea (ex: resistir a uma grande tentação, destruir um altar de ídolos) a critério do Mestre (ex: +10 a +30 pontos).
 
-### 4.4 Milagres e Intervenção Divina
+### 4.4 Testes de Fé: Clamor, Tentação e Testemunho
 
-Milagres nunca são garantidos por decisão narrativa do Mestre. Quando um personagem clama por um verdadeiro milagre (uma intervenção direta na realidade), a resposta divina é determinada pela sorte (rolagem de dado) e pelo nível de Fé atual do personagem.
+O **Teste de Fé** é a rolagem que mede a firmeza espiritual do personagem. Quem rola é o jogador, com dados físicos na mesa; o app registra o resultado.
 
-1. **Julgamento do Mestre**: O Mestre avalia o pedido e define a Dificuldade do milagre, que se traduz em um redutor na Fé do personagem para o teste.
-   - **Pequena Providência** (Ex: Encontrar água, coincidir um evento menor): Modificador 0.
-   - **Milagre Moderado** (Ex: Curar um veneno mortal instantaneamente): Modificador +20 na Fé.
-   - **Milagre Extraordinário** (Ex: Abrir um rio, chuva de fogo, curas em massa): Modificador +50 na Fé.
-2. **A Rolagem (Vontade Divina)**: O jogador que fez o clamor rola **1d100**.
-3. **Resolução**:
-   - **Sucesso**: O resultado do 1d100 deve ser **menor ou igual** à `(Fé Atual) + (Modificador)`. Se for, o milagre ocorre conforme a vontade de Deus.
-   - **Falha**: A Vontade Divina não atendeu ao pedido ou disse "agora não". A ação é gasta e o milagre não ocorre. Pedidos frívolos, egoístas ou hereges que falham retiram 1d6 ou mais pontos de Fé como punição espiritual.
+- **Fé Efetiva**: a Fé Atual somada às penalidades dos **Itens Profanos** que o personagem carrega (equipados ou não).
+- **Modificador de Fé**: valor com sinal que o Mestre soma à Fé Efetiva. Positivo é Misericórdia; negativo é Punição.
+- **Rolagem**: o jogador rola **1d100**. O teste passa se o resultado for **menor ou igual** à `(Fé Efetiva) + (Modificador de Fé)`.
+
+Há três usos:
+
+**Clamor (milagre)**
+Milagres nunca são garantidos por decisão narrativa do Mestre. Quando um personagem clama por uma intervenção direta na realidade, o Mestre avalia o pedido e define o Modificador de Fé:
+- **Pequena Providência** (Ex: Encontrar água, coincidir um evento menor): Modificador 0.
+- **Milagre Moderado** (Ex: Curar um veneno mortal instantaneamente): Modificador −20.
+- **Milagre Extraordinário** (Ex: Abrir um rio, chuva de fogo, curas em massa): Modificador −50.
+
+O Mestre pode usar outro valor quando a situação pedir.
+- **Sucesso**: o milagre ocorre conforme a vontade de Deus.
+- **Falha**: a Vontade Divina disse "agora não". A ação é gasta e o milagre não ocorre, sem perda de Fé (silêncio divino).
+- **Pedido Egoísta**: antes da rolagem, o Mestre pode marcar o pedido como egoísta, frívolo ou herege. Se um Pedido Egoísta falhar, o personagem perde **1d6** de Fé como punição espiritual.
+
+**Tentação**
+Quando o gatilho da Tentação aparece, o personagem cede ou resiste (ver 4.1). Ao resistir, faz um Teste de Fé com o Modificador de Fé definido pelo Mestre. Falha: cede à Tentação e perde **1d6** de Fé.
+
+**Testemunho**
+Quem presencia algo sobrenatural (um endemoniado, um prodígio, um culto pagão com manifestação) faz um Teste de Fé, a menos que sua **Fortaleza** cubra a situação. Falha: perde **1d6** de Fé, e o Mestre pode deixar o personagem Amedrontado.
 
 ---
 
-## 5. Progressão de Nível e XP
+## 5. Progressão de Nível
 
-Os personagens ganham níveis de 1 a 20 acumulando Pontos de Experiência (XP). O Mestre concede XP no final de cada sessão baseado nos desafios superados (combates, negociações, testes de fé e milestones de história).
+Os personagens vão do nível 1 ao 20. O jogo **não usa XP**: ao encerrar a sessão, o Mestre marca quem sobe de nível (**Marco**), segundo os desafios superados (combates, negociações, testes de fé e marcos de história).
 
-**Tabela Básica de Avanço (XP Acumulado):**
-- Nível 1: 0 XP
-- Nível 2: 300 XP
-- Nível 3: 900 XP
-- Nível 4: 2.700 XP
-- Nível 5: 6.500 XP
-*(A escalada segue a progressão padrão do sistema d20).*
+Quando um personagem sobe de nível, ocorrem os ganhos abaixo, alternando ou combinando a **Tribo (Raça)** e a **Vocação (Classe)**:
 
-Quando um personagem sobe de nível, ocorrem dois ganhos principais de HP e mecânicas, alternando ou combinando a **Tribo (Raça)** e a **Vocação (Classe)**:
-
-1. **Aumento de HP**: Rola-se o dado de vida da Vocação + Modificador de Constituição (ou usa o valor médio + Modificador).
+1. **Aumento de PV**: Rola-se o dado de vida da Vocação + Modificador de Constituição (ou usa o valor médio + Modificador).
 2. **Novas Habilidades**:
    - **Níveis 1, 4, 8, 12, 16, 20**: O personagem ganha habilidades da sua **Tribo** (ver [docs/tribos/](./tribos/README.md)).
    - **Níveis 2, 6, 10, 14, 18**: O personagem ganha habilidades da sua **Vocação**.
-   - **Níveis 3, 5, 7, 9, 11, 13, 15, 17, 19**: Aumentos de Proficiência (quando aplicável pelo D&D 5e), melhorias em dano ou usos por dia de habilidades já aprendidas.
+3. **Aumento de Atributo** (níveis **4, 8, 12, 16 e 19**): 2 pontos de atributo, +1 em cada escolha (+2 em um só atributo ou +1 em dois), com limite de 20.
+4. **Bônus de Proficiência**: +2 nos níveis 1–4, +3 nos níveis 5–8, +4 nos níveis 9–12, +5 nos níveis 13–16 e +6 nos níveis 17–20.
 
 *Multiclasse não é permitida por padrão neste sistema base.*
 
@@ -128,35 +139,37 @@ Quando um personagem sobe de nível, ocorrem dois ganhos principais de HP e mec�
 Adaptado do combate de D&D 5e sem uso de magia arcana. O combate se divide em rodadas de 6 segundos.
 
 ### 6.1 Iniciativa e Turnos
-No começo do combate, o sistema digital rola a **Iniciativa** automaticamente para todos ou o mestre pode determinar a ordem manualmente. A ordem flui do maior para o menor.
+No começo do combate, cada jogador rola a própria **Iniciativa** na mesa e o Mestre registra os valores no app (o Mestre rola pelos NPCs e inimigos). A ordem flui do maior para o menor.
 Em seu turno, um personagem pode:
 - **Movimento**: Até seu deslocamento (geralmente 9 metros).
 - **Ação Principal**: Atacar, Correr (Dash), Desengajar, Esquivar, Ajudar, Esconder, Usar um Item ou Usar habilidade ativa da Tribo/Vocação.
 - **Ação Bônus**: Habilidades específicas podem usar uma ação bônus (como ataques com a segunda mão usando armas leves).
 - **Reação**: Uma vez por rodada, em resposta a um gatilho específico (ex: Ataque de Oportunidade quando um inimigo sai da sua área de alcance).
 
-O turno é encerrado pelo próprio jogador, passando automaticamente para o próximo da lista, mas o Mestre pode forçar a passagem de turno a qualquer momento.
+Quem passa o turno é o Mestre, no app, quando o jogador avisa que terminou.
 
-### 6.2 Dano, HP e Morte
+### 6.2 Dano, PV e Morte
 - **Acertando o Alvo**: Rola-se `1d20 + Modificador de Força (ou Destreza para acuidade/distância) + Proficiência`. Se igualar ou superar a CA do alvo, acerta.
 - **Dano**: Conforme a arma, mais o Modificador de atributo usado.
-- **Ficar a 0 HP**: O personagem cai Inconsciente. Deve fazer **Testes de Morte** (Death Saves) em seus próximos turnos (1d20: 10 ou mais é sucesso, 9 ou menos é falha).
-  - **3 sucessos**: Estabiliza (vivo, mas inconsciente com 0 HP).
+- **Ficar a 0 PV**: O personagem cai Inconsciente e fica **Morrendo**. Deve fazer **Testes de Morte** em seus próximos turnos (1d20: 10 ou mais é sucesso, 9 ou menos é falha; um 1 natural conta como duas falhas e um 20 natural devolve o personagem com 1 PV).
+  - **3 sucessos**: Estabiliza (vivo, mas inconsciente com 0 PV). Um aliado também pode estabilizar o personagem com um teste de Medicina (CD 10) como Ação.
   - **3 falhas**: Morte Permanente. O personagem sofre um **Soft Delete** no sistema, bloqueando o acesso do usuário, mantendo a ficha apenas como um memorial histórico.
+  - **Fim do combate**: o personagem continua Morrendo, e o Mestre pede os Testes de Morte restantes, um por vez, até ele ficar Estável ou Morto.
 
 ### 6.3 Sessões, Descansos e Persistência
-- **Fim de Sessão**: Após uma partida encerrada pelo Mestre, o personagem absorve seu XP.
-- **Início de Partida**: O personagem entra na nova sessão totalmente "Descansado", com PV Máximo e usos de habilidades restaurados.
+- **Fim de Sessão**: Ao encerrar a partida, o Mestre marca quem sobe de nível (Marco). Nenhum personagem pode estar Morrendo nesse momento: o Mestre resolve os Testes de Morte antes de encerrar.
+- **Início de Partida**: O personagem (inclusive o que estava Estável) entra na nova sessão totalmente "Descansado", com PV Máximo e usos de habilidades restaurados.
 - **Persistência da Fé**: A Fé **NÃO reseta**. O valor atual de Fé se mantém entre as sessões. A única forma de restaurá-la é via atos heróicos ou descansos devocionais narrativos na partida.
 
 ### 6.4 Consumíveis e Munição
 - **Gastar Munição**: Munições (como Flechas e Pedras para Funda) são tratadas como itens consumíveis com cargas. Ao atacar com armas à distância, o jogador pode consumir a munição respectiva reduzindo sua quantidade.
 - **Recuperar Munição**: Após o combate, munições recuperáveis (como Flechas) podem ser recuperadas. O jogador testa sua sorte tentando recuperá-las; há uma chance automática de 50% de sucesso de recuperação por cada flecha gasta.
 - **Munição Não-Recuperável**: Munições mais simples, como Pedras para Funda, não possuem mecânica de chance de recuperação automática, devendo o mestre repor manualmente as cargas caso o jogador reabasteça coletando do ambiente.
-- **Descanso Curto (1 hora na partida)**: Permite gastar Dados de Vida para recuperar HP. Algumas habilidades de vocação se recarregam (se especificado).
-- **Descanso Longo (8 horas na partida)**: Recupera todo HP e metade dos Dados de Vida gastos. Recupera **1d4 de Fé** para o grupo inteiro (ou 1d4+2 se o ensinamento for conduzido por um Sacerdote).
+- **Descanso Curto (1 hora na partida)**: Até 2 por dia. Permite gastar Dados de Vida para recuperar PV. Algumas habilidades de vocação se recarregam (se especificado), mesmo que ninguém se cure.
+- **Descanso Longo (8 horas na partida)**: 1 por dia. Recupera todo PV e metade dos Dados de Vida gastos. Recupera **1d4 de Fé** para o grupo inteiro (ou 1d4+2 se o ensinamento for conduzido por um Sacerdote). Exige **Sustento**.
+- **Sustento**: Cada personagem consome **1 Ração e 1 Odre** no Descanso Longo. Quem descansa sem Sustento acorda **Exausto**. O Mestre pode dispensar o Sustento quando a história der comida e água ao grupo (uma caçada, um poço, a hospitalidade de um NPC).
 
-### 6.4 Condições Comuns
+### 6.5 Condições Comuns
 - **Sangrando**: Sofre 1d4 de dano no final do seu turno. Acaba se curado ou após teste de Medicina (CD 10) como Ação.
 - **Atordoado**: Incapacitado. Falha automaticamente em testes de Força ou Destreza. Ataques contra ele têm Vantagem.
 - **Amedrontado**: Desvantagem em rolagens enquanto a fonte do medo estiver visível.
@@ -164,6 +177,9 @@ O turno é encerrado pelo próprio jogador, passando automaticamente para o pró
 - **Caído**: Ataques a até 1,5m contra o alvo têm Vantagem; ataques à distância têm Desvantagem. Levantar custa metade do movimento.
 - **Agarrado**: Deslocamento cai para 0. Escapar exige uma Ação para teste de Atletismo ou Acrobacias contra o Atletismo do agarrador.
 - **Cego**: Falha automática em testes que exijam visão. Seus ataques têm Desvantagem, e ataques contra você têm Vantagem.
+- **Impedido**: Deslocamento cai para 0 e seus ataques têm Desvantagem. É diferente de Agarrado, que exige um agarrador.
+- **Paralisado**: Não pode agir nem se mover. Falha automaticamente em testes de resistência de Força e Destreza, e ataques contra ele têm Vantagem.
+- **Exausto**: Desvantagem em testes de atributo e deslocamento pela metade. Sai com um Descanso Longo com Sustento.
 
 > **Nota**: Situações não cobertas por estas condições são resolvidas pelo bom senso do Mestre.
 
@@ -178,7 +194,7 @@ Para criar seu personagem, siga estes 6 passos exatos:
 3. **Escolha sua Vocação**: Guerreiro, Batedor, Caçador ou Sacerdote. *(Lembre-se: Levitas devem ser Sacerdotes/Sábios).*
 4. **Fortaleza e Tentação**: Escolha **obrigatoriamente** 1 Fortaleza e 1 Tentação da [lista oficial](fortalezas-tentacoes.md).
 5. **Calcule Dados, CA e Fé**:
-   - Calcule seu HP Inicial (Máximo do Dado de Vida da Vocação + Modificador de CON).
+   - Calcule seu PV Inicial (Máximo do Dado de Vida da Vocação + Modificador de CON).
    - Calcule a sua CA Base (10 + DES) ou a CA com armadura.
    - Anote sua Fé inicial: 50 (se Levi, 60).
 6. **Compre seus Equipamentos**: Anote os pacotes iniciais ou compre os itens sugeridos no [Guia de Criação de Personagem](criacao-de-personagem.md).
