@@ -1,10 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import { characterVitalsService } from '@/services/characterVitalsService';
+import { addDeathSaveFailure, addDeathSaveSuccess } from '@/lib/deathSaves';
 
 export const useDeathSaves = () => {
   const addSuccess = async (characterId: string, currentSuccesses: number) => {
-    const newSuccesses = Math.min(currentSuccesses + 1, 3);
-    const isStable = newSuccesses >= 3;
+    const { newSuccesses, isStable } = addDeathSaveSuccess(currentSuccesses);
 
     const { error } = await supabase
       .from('characters')
@@ -19,8 +19,7 @@ export const useDeathSaves = () => {
   };
 
   const addFailure = async (characterId: string, currentFailures: number, count: number = 1) => {
-    const newFailures = Math.min(currentFailures + count, 3);
-    const isDead = newFailures >= 3;
+    const { newFailures, isDead } = addDeathSaveFailure(currentFailures, count);
 
     const { error } = await supabase
       .from('characters')
