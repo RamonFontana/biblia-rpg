@@ -1,5 +1,13 @@
 // Fé (0 a 100) e Teste de Fé. Uma só leitura da Fé Atual, um só teto, uma só fórmula do teste.
 // Termos: CONTEXT.md (Fé Atual, Fé Inicial, Fé Efetiva, Item Profano, Teste de Fé, Modificador de Fé).
+import { ITEMS_DB } from '@/content/items';
+
+/** Penalidade de Fé (negativa) de cada Item Profano do conteúdo, por slug. */
+const PENALTY_BY_SLUG = new Map<string, number>(
+  ITEMS_DB.flatMap((item) =>
+    item.statPenalty?.stat === 'faith' ? [[item.id, item.statPenalty.value] as const] : [],
+  ),
+);
 
 /** Teto da Fé para todos os personagens. A Fé Inicial (50, ou 60 para levitas) é só o começo. */
 export const FAITH_MAX = 100;
@@ -26,21 +34,16 @@ export function spendFaith(stats: FaithStats | null | undefined, cost: number): 
   return current >= cost ? current - cost : null;
 }
 
-export interface ItemEffectsWithFaithPenalty {
-  statPenalty?: { stat?: string; value?: number } | null;
-}
-
 /**
  * Soma (negativa) das penalidades de Fé dos Itens Profanos que o personagem carrega, equipados
- * ou não. Lê `effects.statPenalty` de cada item; o passo do conteúdo (Onda 3) troca a origem.
+ * ou não. Recebe os slugs dos itens e lê a penalidade do conteúdo (ADR 0003), não da linha do
+ * banco.
  */
-export function sumItemFaithPenalty(
-  itemEffects: Array<ItemEffectsWithFaithPenalty | null | undefined>,
-): number {
+export function sumItemFaithPenalty(itemSlugs: ReadonlyArray<string | null | undefined>): number {
   let total = 0;
-  for (const effects of itemEffects) {
-    const penalty = effects?.statPenalty;
-    if (penalty?.stat === 'faith' && typeof penalty.value === 'number') total += penalty.value;
+  for (const slug of itemSlugs) {
+    const penalty = slug ? PENALTY_BY_SLUG.get(slug) : undefined;
+    if (penalty) total += penalty;
   }
   return total;
 }

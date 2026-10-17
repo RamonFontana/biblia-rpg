@@ -17,9 +17,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:data": "vitest run src/data",
+    "test:data": "vitest run src/data src/content",
     "coverage": "vitest run --coverage",
     "check:rls": "node scripts/check-rls.mjs",
+    "gen:items-seed": "node scripts/gen-items-seed.ts",
     "gen:types": "supabase gen types typescript --linked --schema public > src/types/database.types.ts"
   },
   "dependencies": {

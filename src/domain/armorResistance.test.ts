@@ -3,8 +3,8 @@
 // e item achado pelo UUID do banco ficam para a Onda 3.
 // Termos: CONTEXT.md (Resistência a Condição, Qualidade, Condição).
 import { describe, expect, it } from 'vitest';
-import { CONDITIONS } from '@/data/conditions';
-import { ITEMS_DB } from '@/data/itemsDb';
+import { CONDITIONS } from '@/content/conditions';
+import { ITEMS_DB } from '@/content/items';
 import {
   applyArmorResistance,
   findMaxResistanceLevel,

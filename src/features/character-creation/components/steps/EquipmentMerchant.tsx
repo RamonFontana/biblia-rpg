@@ -17,7 +17,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 
-import { ITEMS_DB, KITS_DB, VOCATION_PROFICIENCIES } from '@/data/itemsDb';
+import { ITEMS_DB } from '@/content/items';
+import { KITS_DB } from '@/content/kits';
+import { VOCATION_PROFICIENCIES } from '@/content/proficiencies';
 
 const INITIAL_COINS = 50;
 

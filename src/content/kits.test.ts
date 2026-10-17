@@ -7,7 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
 import { VOCATION_KIT_ITEMS } from '../features/character-management/api/syncInventory';
-import { ITEMS_DB, KITS_DB } from './itemsDb';
+import { ITEMS_DB } from './items';
+import { KITS_DB } from './kits';
 
 const byId = (id: string) => ITEMS_DB.find((i) => i.id === id)!;
 
@@ -22,16 +23,16 @@ describe('Sustento: Odre e Ração', () => {
 
 describe('itens iniciais por Vocação', () => {
   it('todo item de kit existe no catálogo', () => {
-    const names = new Set(ITEMS_DB.map((i) => i.name));
+    const slugs = new Set(ITEMS_DB.map((i) => i.id));
     for (const [vocation, items] of Object.entries(VOCATION_KIT_ITEMS)) {
       for (const item of items) {
-        expect(names.has(item.name), `${vocation}: ${item.name}`).toBe(true);
+        expect(slugs.has(item.slug), `${vocation}: ${item.slug}`).toBe(true);
       }
     }
   });
 
   it('o Caçador começa com 20 flechas', () => {
-    const arrows = VOCATION_KIT_ITEMS['Caçador'].find((i) => i.name === 'Flecha');
+    const arrows = VOCATION_KIT_ITEMS['Caçador'].find((i) => i.slug === 'flechas');
     expect(arrows?.quantity).toBe(20);
   });
 

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { sumItemFaithPenalty, type ItemEffectsWithFaithPenalty } from '@/domain/faith';
+import { sumItemFaithPenalty } from '@/domain/faith';
 import type { WeaponEffect } from '@/types/combat';
 
 export async function updateWeaponEffects(characterItemId: string, effects: WeaponEffect[]) {
@@ -21,7 +21,7 @@ export async function updateWeaponEffects(characterItemId: string, effects: Weap
 export async function getItemFaithPenalty(characterId: string): Promise<number> {
   const { data, error } = await supabase
     .from('character_items')
-    .select('items!inner(effects)')
+    .select('items!inner(slug)')
     .eq('character_id', characterId);
 
   if (error) {
@@ -29,9 +29,5 @@ export async function getItemFaithPenalty(characterId: string): Promise<number> 
     throw error;
   }
 
-  return sumItemFaithPenalty(
-    (data ?? []).map(
-      (row) => (row.items as { effects?: ItemEffectsWithFaithPenalty | null } | null)?.effects,
-    ),
-  );
+  return sumItemFaithPenalty((data ?? []).map((row) => row.items?.slug));
 }

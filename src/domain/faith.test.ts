@@ -64,25 +64,14 @@ describe('spendFaith: custo de uma habilidade', () => {
 });
 
 describe('sumItemFaithPenalty: Itens Profanos', () => {
-  it('soma as penalidades de Fé de todos os itens carregados', () => {
-    expect(
-      sumItemFaithPenalty([
-        { statPenalty: { stat: 'faith', value: -10 } },
-        { statPenalty: { stat: 'faith', value: -5 } },
-      ]),
-    ).toBe(-15);
+  it('soma a penalidade de Fé dos itens do conteúdo, pelo slug', () => {
+    expect(sumItemFaithPenalty(['simbolo_proibido'])).toBe(-10);
+    expect(sumItemFaithPenalty(['simbolo_proibido', 'simbolo_proibido'])).toBe(-20);
   });
 
-  it('ignora itens sem penalidade e penalidades de outro atributo', () => {
-    expect(
-      sumItemFaithPenalty([
-        null,
-        undefined,
-        {},
-        { statPenalty: { stat: 'strength', value: -3 } },
-        { statPenalty: { stat: 'faith', value: -10 } },
-      ]),
-    ).toBe(-10);
+  it('ignora itens sem penalidade, slugs desconhecidos e valores vazios', () => {
+    expect(sumItemFaithPenalty(['espada_curta', 'nao_existe', null, undefined, ''])).toBe(0);
+    expect(sumItemFaithPenalty(['espada_curta', 'simbolo_proibido'])).toBe(-10);
   });
 
   it('sem itens, a penalidade é 0', () => {

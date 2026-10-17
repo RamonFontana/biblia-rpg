@@ -7,8 +7,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { CharacterEquipment, WeaponEffect } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
-import { ITEMS_DB } from '@/data/itemsDb';
-import { CONDITIONS } from '@/data/conditions';
+import { ITEMS_DB } from '@/content/items';
+import { CONDITIONS } from '@/content/conditions';
 import { resolveHealing } from '@/domain/consumables';
 
 interface InventoryListProps {
