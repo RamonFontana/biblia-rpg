@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CONDITIONS } from '@/data/conditions';
+import { CONDITIONS } from '@/content/conditions';
 import { Plus } from 'lucide-react';
 import {
   Dialog,

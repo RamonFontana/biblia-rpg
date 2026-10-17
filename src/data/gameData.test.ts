@@ -9,8 +9,9 @@ import { characterSchema } from '@/features/character-creation/schemas/character
 import { SKILLS_LIST } from '@/features/character-management/utils/characterMath';
 import { VOCATION_RULES } from '@/features/character-management/utils/rules/vocations';
 import { ABILITIES } from './abilities';
-import { CONDITIONS } from './conditions';
-import { ITEMS_DB } from './itemsDb';
+import { CONDITIONS } from '@/content/conditions';
+import { ITEMS_DB } from '@/content/items';
+import { conditionSchema, itemSchema } from '@/content/schemas';
 import knownViolations from './known-violations.json';
 
 const normalize = (s: string) =>
@@ -30,27 +31,6 @@ const ITEMS_ALLOWED_TO_AFFECT_FAITH = ['simbolo_proibido'];
 const TRIBE_MILESTONES = [1, 4, 8, 12, 16, 20];
 
 const LIMITED_USAGE = ['short_rest', 'long_rest', 'combat', 'week', 'campaign'];
-
-const itemSchema = z.strictObject({
-  id: z.string().regex(/^[a-z_]+$/),
-  name: z.string().min(1),
-  type: z.enum(['Armadura', 'Escudo', 'Arma', 'Consumível', 'Utilidade']),
-  category: z.enum(['Simples', 'Marcial', 'Leve', 'Média', 'Pesada', 'Escudo', 'Sagrada', 'Todas']),
-  description: z.string().min(1),
-  cost: z.number().min(0).max(1000),
-  armorClass: z.number().int().min(0).max(30).optional(),
-  damage: z
-    .string()
-    .regex(/^\d+d\d+ \S+$/)
-    .optional(),
-  level: z.number().int().min(1).max(5).optional(),
-  slot: z.enum(['body', 'head', 'offHand', 'mainHand']).optional(),
-  properties: z.array(z.string().min(1)).optional(),
-  conditionResistances: z.array(z.string().min(1)).optional(),
-  statPenalty: z
-    .strictObject({ stat: z.string().min(1), value: z.number(), type: z.string().min(1) })
-    .optional(),
-});
 
 const abilitySchema = z.strictObject({
   id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
@@ -80,14 +60,6 @@ const abilitySchema = z.strictObject({
       }),
     )
     .optional(),
-});
-
-const conditionSchema = z.strictObject({
-  id: z.string().regex(/^[a-z_]+$/),
-  name: z.string().min(1),
-  description: z.string().min(1),
-  icon: z.string().optional(),
-  color: z.string().optional(),
 });
 
 function schemaViolations(prefix: string, schema: z.ZodType, value: unknown): string[] {

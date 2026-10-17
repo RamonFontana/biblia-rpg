@@ -1,5 +1,5 @@
 import type { CharacterEquipment, ItemEffects } from '../types/combat';
-import { ITEMS_DB } from '../data/itemsDb';
+import { ITEMS_DB } from '../content/items';
 
 export function canEquipItem(
   itemEffects: ItemEffects,

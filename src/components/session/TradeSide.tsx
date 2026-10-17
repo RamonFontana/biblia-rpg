@@ -10,7 +10,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CONDITIONS } from '@/data/conditions';
+import { CONDITIONS } from '@/content/conditions';
 import type { WeaponEffect } from '@/types/combat';
 
 const AVAILABLE_RESISTANCES = ['Corte', 'Perfuração', 'Impacto', 'Fogo', 'Frio', 'Ácido', 'Veneno'];

@@ -1,7 +1,7 @@
 import { Shield, Sword, User } from 'lucide-react';
 import type { CharacterEquipment } from '@/types/combat';
 import { checkWeaponProficiency, getSlotAcBonus } from '@/lib/equipmentUtils';
-import { ITEMS_DB } from '@/data/itemsDb';
+import { ITEMS_DB } from '@/content/items';
 
 interface EquipmentSlotsProps {
   equipment: CharacterEquipment | null;

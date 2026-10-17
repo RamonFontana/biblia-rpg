@@ -7,7 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
 import { VOCATION_KIT_ITEMS } from '../features/character-management/api/syncInventory';
-import { ITEMS_DB, KITS_DB } from './itemsDb';
+import { ITEMS_DB } from './items';
+import { KITS_DB } from './kits';
 
 const byId = (id: string) => ITEMS_DB.find((i) => i.id === id)!;
 

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { EquipmentItem } from '../../character-creation/types';
-import { ITEMS_DB } from '@/data/itemsDb';
+import { ITEMS_DB } from '@/content/items';
 
 export const VOCATION_KIT_ITEMS: Record<string, any[]> = {
   Guerreiro: [

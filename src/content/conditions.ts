@@ -1,10 +1,4 @@
-export interface ConditionDefinition {
-  id: string;
-  name: string;
-  description: string;
-  icon?: string;
-  color?: string; // Tailwind color class or hex
-}
+import type { ConditionDefinition } from './schemas';
 
 export const CONDITIONS: Record<string, ConditionDefinition> = {
   sangrando: {
