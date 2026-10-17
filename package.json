@@ -14,7 +14,8 @@
     "format:check": "prettier --check .",
     "lint:prune": "eslint . --prune-suppressions",
     "typecheck": "tsc -b",
-    "test:data": "vitest run src/data"
+    "test:data": "vitest run src/data",
+    "check:rls": "node scripts/check-rls.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
