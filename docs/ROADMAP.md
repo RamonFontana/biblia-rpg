@@ -309,3 +309,8 @@ O `tsc` passa com `strict`, mas estes arquivos não são checados (todos da cria
 - `src/features/character-creation/components/steps/Summary.tsx`
 
 `scripts/*.ts` não entram em nenhum tsconfig (só no lint).
+
+### Dados: `src/data/known-violations.json` (13 em 2026-10-17)
+Todas são o mesmo problema: `conditionResistances` de itens usa IDs em inglês (`poisoned`, `bleeding`, `frightened`, `grappled`, `stunned`, `blinded`, `restrained`) que não existem em `src/data/conditions.ts` (IDs em português). Resolver junto com a decisão "vocabulário canônico de condições" (Onda 2/3).
+
+Ainda fora do gate de dados (precisa mover código, Onda 3): `VOCATION_KIT_ITEMS` em `src/features/character-management/api/syncInventory.ts` (itens dos kits por nome), os seeds SQL e `src/data/tribeSkills.ts`.

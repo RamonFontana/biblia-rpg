@@ -1,0 +1,222 @@
+// @vitest-environment node
+//
+// Gate de validação dos dados do jogo (itens, habilidades, condições).
+// Violações já existentes ficam em known-violations.json: a lista só pode diminuir.
+// Para remover uma entrada, corrija o dado (com confirmação do autor) e apague a linha.
+import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
+import { characterSchema } from '@/features/character-creation/schemas/characterSchema';
+import { VOCATION_RULES } from '@/features/character-management/utils/rules/vocations';
+import { ABILITIES } from './abilities';
+import { CONDITIONS } from './conditions';
+import { ITEMS_DB } from './itemsDb';
+import knownViolations from './known-violations.json';
+
+const normalize = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const DOC_FILES = Object.keys(import.meta.glob('../../docs/{tribos,vocacoes}/*.md'));
+const docExists = (relativePath: string) => DOC_FILES.includes(`../../docs/${relativePath}`);
+
+// Constitution: nenhum item concede bônus sobrenatural. Itens que mexem na Fé
+// precisam estar nesta lista explícita.
+const ITEMS_ALLOWED_TO_AFFECT_FAITH = ['simbolo_proibido'];
+
+// Marcos de progressão das tribos (docs/tribos/README.md).
+const TRIBE_MILESTONES = [1, 4, 8, 12, 16, 20];
+
+const LIMITED_USAGE = ['short_rest', 'long_rest', 'combat', 'week', 'campaign'];
+
+const itemSchema = z.strictObject({
+  id: z.string().regex(/^[a-z_]+$/),
+  name: z.string().min(1),
+  type: z.enum(['Armadura', 'Escudo', 'Arma', 'Consumível', 'Utilidade']),
+  category: z.enum(['Simples', 'Marcial', 'Leve', 'Média', 'Pesada', 'Escudo', 'Sagrada', 'Todas']),
+  description: z.string().min(1),
+  cost: z.number().min(0).max(1000),
+  armorClass: z.number().int().min(0).max(30).optional(),
+  damage: z
+    .string()
+    .regex(/^\d+d\d+ \S+$/)
+    .optional(),
+  level: z.number().int().min(1).max(5).optional(),
+  slot: z.enum(['body', 'head', 'offHand', 'mainHand']).optional(),
+  properties: z.array(z.string().min(1)).optional(),
+  conditionResistances: z.array(z.string().min(1)).optional(),
+  statPenalty: z
+    .strictObject({ stat: z.string().min(1), value: z.number(), type: z.string().min(1) })
+    .optional(),
+});
+
+const abilitySchema = z.strictObject({
+  id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
+  name: z.string().min(1),
+  sourceType: z.enum(['tribe', 'vocation']),
+  sourceId: z.string().regex(/^[a-z]+$/),
+  minLevel: z.number().int().min(1).max(20),
+  path: z.enum(['A', 'B']).optional(),
+  actionType: z.enum(['passive', 'action', 'bonus_action', 'reaction', 'free_action']),
+  usageType: z.enum([
+    'unlimited',
+    'short_rest',
+    'long_rest',
+    'combat',
+    'week',
+    'campaign',
+    'faith_cost',
+  ]),
+  maxUses: z.number().int().min(1).max(10).optional(),
+  faithCost: z.number().int().min(1).max(100).optional(),
+  effect: z.string().min(1),
+  applyConditions: z
+    .array(
+      z.strictObject({
+        conditionId: z.string().min(1),
+        duration: z.number().int().min(1).optional(),
+      }),
+    )
+    .optional(),
+});
+
+const conditionSchema = z.strictObject({
+  id: z.string().regex(/^[a-z_]+$/),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  icon: z.string().optional(),
+  color: z.string().optional(),
+});
+
+function schemaViolations(prefix: string, schema: z.ZodType, value: unknown): string[] {
+  const result = schema.safeParse(value);
+  if (result.success) return [];
+  return result.error.issues.map((issue) => `${prefix}:schema:${issue.path.join('.')}`);
+}
+
+function duplicates(values: string[]): string[] {
+  return [...new Set(values.filter((v, i) => values.indexOf(v) !== i))];
+}
+
+function collectViolations(): string[] {
+  const violations: string[] = [];
+  const conditionIds = new Set(Object.keys(CONDITIONS));
+
+  // Condições
+  for (const [key, condition] of Object.entries(CONDITIONS)) {
+    violations.push(...schemaViolations(`condition:${key}`, conditionSchema, condition));
+    if (condition.id !== key) violations.push(`condition:${key}:id-differs-from-key`);
+  }
+
+  // Itens
+  for (const id of duplicates(ITEMS_DB.map((i) => i.id)))
+    violations.push(`item:${id}:duplicate-id`);
+  // syncInventory.ts procura itens pelo nome, então o nome também é chave.
+  for (const name of duplicates(ITEMS_DB.map((i) => i.name)))
+    violations.push(`item:${name}:duplicate-name`);
+
+  for (const item of ITEMS_DB) {
+    const p = `item:${item.id}`;
+    violations.push(...schemaViolations(p, itemSchema, item));
+
+    for (const resistance of item.conditionResistances ?? []) {
+      if (!conditionIds.has(resistance)) violations.push(`${p}:unknown-condition:${resistance}`);
+    }
+
+    if (item.type === 'Arma' && !item.damage) violations.push(`${p}:weapon-without-damage`);
+    if ((item.type === 'Armadura' || item.type === 'Escudo') && item.armorClass === undefined)
+      violations.push(`${p}:armor-without-ac`);
+    if ((item.type === 'Armadura' || item.type === 'Escudo') && !item.slot)
+      violations.push(`${p}:armor-without-slot`);
+    if (
+      (item.type === 'Consumível' || item.type === 'Utilidade') &&
+      (item.damage || item.armorClass)
+    )
+      violations.push(`${p}:gear-with-combat-stats`);
+
+    if (item.statPenalty) {
+      if (item.statPenalty.value > 0) violations.push(`${p}:supernatural-bonus`);
+      if (item.statPenalty.stat === 'faith' && !ITEMS_ALLOWED_TO_AFFECT_FAITH.includes(item.id))
+        violations.push(`${p}:affects-faith-without-allowlist`);
+    }
+  }
+
+  // Habilidades
+  for (const id of duplicates(ABILITIES.map((a) => a.id)))
+    violations.push(`ability:${id}:duplicate-id`);
+
+  const vocationIds = new Set(Object.keys(VOCATION_RULES).map(normalize));
+
+  for (const ability of ABILITIES) {
+    const p = `ability:${ability.id}`;
+    violations.push(...schemaViolations(p, abilitySchema, ability));
+
+    for (const { conditionId } of ability.applyConditions ?? []) {
+      if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
+    }
+
+    const limited = LIMITED_USAGE.includes(ability.usageType);
+    if (limited && ability.maxUses === undefined) violations.push(`${p}:limited-without-max-uses`);
+    if (!limited && ability.maxUses !== undefined)
+      violations.push(`${p}:max-uses-on-${ability.usageType}`);
+
+    if (ability.sourceType === 'tribe') {
+      if (!TRIBE_MILESTONES.includes(ability.minLevel))
+        violations.push(`${p}:level-${ability.minLevel}-not-a-tribe-milestone`);
+    } else if (!vocationIds.has(ability.sourceId)) {
+      violations.push(`${p}:unknown-vocation:${ability.sourceId}`);
+    }
+  }
+
+  // Estrutura de cada tribo e vocação (constitution: 2 passivas no nível 1, caminhos A/B no 4).
+  const sources = new Set(ABILITIES.map((a) => `${a.sourceType}:${a.sourceId}`));
+  for (const source of sources) {
+    const [sourceType, sourceId] = source.split(':');
+    const docDir = sourceType === 'tribe' ? 'tribos' : 'vocacoes';
+    if (!docExists(`${docDir}/${sourceId}.md`)) violations.push(`${source}:missing-doc`);
+    if (sourceType !== 'tribe') continue;
+
+    const own = ABILITIES.filter((a) => a.sourceType === 'tribe' && a.sourceId === sourceId);
+    const level1 = own.filter((a) => a.minLevel === 1 && !a.path).length;
+    if (level1 !== 2) violations.push(`${source}:has-${level1}-level-1-passives`);
+    for (const path of ['A', 'B'] as const) {
+      if (!own.some((a) => a.minLevel === 4 && a.path === path))
+        violations.push(`${source}:missing-path-${path}-at-level-4`);
+    }
+  }
+
+  return violations.sort();
+}
+
+describe('dados do jogo', () => {
+  const actual = collectViolations();
+  const known = new Set<string>(knownViolations.violations);
+
+  it('não tem violações novas (fora de known-violations.json)', () => {
+    expect(actual.filter((v) => !known.has(v))).toEqual([]);
+  });
+
+  it('não tem entradas obsoletas em known-violations.json (apague as já corrigidas)', () => {
+    const actualSet = new Set(actual);
+    expect([...known].filter((v) => !actualSet.has(v))).toEqual([]);
+  });
+
+  it('aplica a Regra de Levi na criação de personagem', () => {
+    const base = {
+      name: 'Teste',
+      tribe: 'Levi',
+      attributes: { for: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
+      fortress: 'x',
+      temptation: 'y',
+      coins: 0,
+      equipment: [],
+      narrative: {},
+    };
+    const asWarrior = characterSchema.safeParse({ ...base, vocation: 'Guerreiro' });
+    expect(asWarrior.success).toBe(false);
+    expect(asWarrior.error?.issues.map((i) => i.message)).toContain(
+      'A Regra de Levi exige que a vocação seja Sacerdote ou Sábio.',
+    );
+  });
+});
