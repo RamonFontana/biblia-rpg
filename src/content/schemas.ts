@@ -80,3 +80,22 @@ export const abilitySchema = z.strictObject({
 });
 
 export type AbilityDefinition = z.infer<typeof abilitySchema>;
+
+/** Kit inicial de uma Vocação: o texto da criação de personagem e os itens que o personagem recebe. */
+export const kitSchema = z.strictObject({
+  name: z.string().min(1),
+  cost: z.number().int().min(0),
+  leftover: z.number().int().min(0),
+  markdown: z.string().min(1),
+  /** Itens do kit pelo slug do catálogo (src/content/items.ts). */
+  items: z
+    .array(
+      z.strictObject({
+        slug: z.string().regex(/^[a-z_]+$/),
+        quantity: z.number().int().min(1).optional(),
+      }),
+    )
+    .min(1),
+});
+
+export type Kit = z.infer<typeof kitSchema>;

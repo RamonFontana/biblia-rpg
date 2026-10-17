@@ -11,7 +11,8 @@ import { VOCATION_RULES } from '@/features/character-management/utils/rules/voca
 import { ABILITIES } from './abilities';
 import { CONDITIONS } from './conditions';
 import { ITEMS_DB } from './items';
-import { abilitySchema, conditionSchema, itemSchema } from './schemas';
+import { KITS_DB } from './kits';
+import { abilitySchema, conditionSchema, itemSchema, kitSchema } from './schemas';
 import knownViolations from './known-violations.json';
 
 const normalize = (s: string) =>
@@ -82,6 +83,16 @@ function collectViolations(): string[] {
       if (item.statPenalty.value > 0) violations.push(`${p}:supernatural-bonus`);
       if (item.statPenalty.stat === 'faith' && !ITEMS_ALLOWED_TO_AFFECT_FAITH.includes(item.id))
         violations.push(`${p}:affects-faith-without-allowlist`);
+    }
+  }
+
+  // Kits
+  const itemSlugs = new Set(ITEMS_DB.map((i) => i.id));
+  for (const [vocation, kit] of Object.entries(KITS_DB)) {
+    const p = `kit:${vocation}`;
+    violations.push(...schemaViolations(p, kitSchema, kit));
+    for (const { slug } of kit.items) {
+      if (!itemSlugs.has(slug)) violations.push(`${p}:unknown-item:${slug}`);
     }
   }
 
