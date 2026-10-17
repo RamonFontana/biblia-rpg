@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { calculateModifier, calculateProficiency, formatModifier, SKILLS_LIST } from './characterMath';
+import {
+  calculateModifier,
+  calculateProficiency,
+  formatModifier,
+  SKILLS_LIST,
+} from './characterMath';
 
 describe('characterMath', () => {
   describe('calculateModifier', () => {

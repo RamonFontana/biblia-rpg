@@ -8,13 +8,13 @@ const calculateModifier = (score: number) => Math.floor((score - 10) / 2);
 
 export function InitialStats() {
   const { draft, setStats, nextStep, prevStep } = useCharacterCreationStore();
-  
+
   const conMod = calculateModifier(draft.attributes?.con || 10);
   const desMod = calculateModifier(draft.attributes?.des || 10);
-  
+
   const baseHp = ['Guerreiro', 'Caçador'].includes(draft.vocation || '') ? 10 : 8;
   const initialPv = baseHp + conMod;
-  
+
   const initialCa = 10 + desMod;
   const initialFaith = draft.tribe === 'Levi' ? 60 : 50;
 
@@ -26,17 +26,20 @@ export function InitialStats() {
     <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-2xl font-serif text-stone-100 mb-2">Seus Atributos Derivados</h2>
-        <p className="text-stone-400">Com base na sua tribo, vocação e atributos, aqui estão as suas estatísticas iniciais.</p>
+        <p className="text-stone-400">
+          Com base na sua tribo, vocação e atributos, aqui estão as suas estatísticas iniciais.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
         {/* PV */}
         <div className="bg-stone-800 border-2 border-red-500/50 p-6 rounded-xl flex flex-col items-center justify-center">
           <Heart className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-stone-300 font-semibold mb-1">Pontos de Vida (PV)</h3>
           <p className="text-4xl font-serif text-stone-100">{initialPv}</p>
-          <span className="text-xs text-stone-500 mt-2">Base {baseHp} + Mod. CON ({conMod})</span>
+          <span className="text-xs text-stone-500 mt-2">
+            Base {baseHp} + Mod. CON ({conMod})
+          </span>
         </div>
 
         {/* CA */}
@@ -56,18 +59,17 @@ export function InitialStats() {
             {draft.tribe === 'Levi' ? 'Bônus de Levi (+10)' : 'Padrão (50)'}
           </span>
         </div>
-
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
-        <button 
+        <button
           type="button"
           onClick={prevStep}
           className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
         >
           Voltar
         </button>
-        <button 
+        <button
           onClick={nextStep}
           className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
         >

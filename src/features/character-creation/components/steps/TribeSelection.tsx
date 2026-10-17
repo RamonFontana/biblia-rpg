@@ -13,33 +13,140 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 
 const TRIBES = [
-  { id: 'Judá', name: 'Judá', icon: '🦁', desc: 'Liderança e Medicina', paths: 'Liderança ou Médico', details: 'A tribo dos reis e curandeiros. Possuem forte bônus em testes de Carisma para comandar aliados e em testes de Sabedoria para tratar ferimentos.' },
-  { id: 'Levi', name: 'Levi', icon: '⛪', desc: 'Devoção e Oráculo (Obrigatório: Sacerdote)', paths: 'Oráculo ou Intercessão', details: 'Separados para o serviço sagrado. Possuem maior base de Pontos de Fé e são os principais mediadores de milagres.' },
-  { id: 'Gade', name: 'Gade', icon: '🪨', desc: 'Força Bruta', paths: 'Tanque ou Dano Bruto', details: 'Guerreiros rústicos que habitam além do Jordão. Seus ataques são focados em dano massivo e resistência física.' },
-  { id: 'Benjamim', name: 'Benjamim', icon: '🐺', desc: 'Furtividade e Precisão', paths: 'Atirador ou Controle de Terreno', details: 'Famosos por atiradores canhotos letais e táticas de emboscada implacáveis.' },
-  { id: 'Rúben', name: 'Rúben', icon: '💨', desc: 'Comércio e Feras', paths: 'Mestre das Feras ou Lábia', details: 'A primeira tribo. Possuem facilidade em lidar com animais selvagens e negociações com outros povos.' },
-  { id: 'Issacar', name: 'Issacar', icon: '🌾', desc: 'Mercenários e Lavradores', paths: 'Mercenário ou Lavrador', details: 'Homens fortes de trabalho pesado. Altamente resistentes a venenos e exaustão, servindo bem como linha de frente.' },
-  { id: 'Simeão', name: 'Simeão', icon: '🌿', desc: 'Boticários', paths: 'Venenos ou Curas', details: 'Especialistas em criar misturas de ervas, tanto para curar quanto para envenenar lâminas em combate.' },
-  { id: 'Dã', name: 'Dã', icon: '🐍', desc: 'Juízes e Furtividade', paths: 'Emboscadas ou Punição', details: 'Tribo isolada e perigosa. Bônus em ataques furtivos e conhecimento de armadilhas.' },
-  { id: 'Naftali', name: 'Naftali', icon: '🦌', desc: 'Rapidez e Persuasão', paths: 'Mobilidade ou Liderança', details: 'Ágeis como gazelas. Recebem bônus de deslocamento e vantagens em diplomacia rápida.' },
-  { id: 'Aser', name: 'Aser', icon: '🥖', desc: 'Prosperidade e Fartura', paths: 'Resistência ou Suporte', details: 'Tribo rica do norte. Bons com suprimentos logísticos e capazes de conceder vantagens táticas através de banquetes.' },
-  { id: 'Zebulom', name: 'Zebulom', icon: '⚓', desc: 'Portos e Formação', paths: 'Fluidez ou Falange', details: 'Lutadores altamente disciplinados que operam melhor em falange (ao lado de aliados).' },
-  { id: 'Efraim', name: 'Efraim', icon: '🏹', desc: 'Orgulho e Guerra', paths: 'Arqueiro ou Investida', details: 'Excelentes atiradores com arco longo e bônus de dano ao realizar uma investida a cavalo ou a pé.' },
-  { id: 'Manassés', name: 'Manassés', icon: '⚔️', desc: 'Tática e Resiliência', paths: 'Surpresa ou Defensor', details: 'Guerreiros que lutam melhor quando estão em desvantagem numérica. Difíceis de serem derrubados.' }
+  {
+    id: 'Judá',
+    name: 'Judá',
+    icon: '🦁',
+    desc: 'Liderança e Medicina',
+    paths: 'Liderança ou Médico',
+    details:
+      'A tribo dos reis e curandeiros. Possuem forte bônus em testes de Carisma para comandar aliados e em testes de Sabedoria para tratar ferimentos.',
+  },
+  {
+    id: 'Levi',
+    name: 'Levi',
+    icon: '⛪',
+    desc: 'Devoção e Oráculo (Obrigatório: Sacerdote)',
+    paths: 'Oráculo ou Intercessão',
+    details:
+      'Separados para o serviço sagrado. Possuem maior base de Pontos de Fé e são os principais mediadores de milagres.',
+  },
+  {
+    id: 'Gade',
+    name: 'Gade',
+    icon: '🪨',
+    desc: 'Força Bruta',
+    paths: 'Tanque ou Dano Bruto',
+    details:
+      'Guerreiros rústicos que habitam além do Jordão. Seus ataques são focados em dano massivo e resistência física.',
+  },
+  {
+    id: 'Benjamim',
+    name: 'Benjamim',
+    icon: '🐺',
+    desc: 'Furtividade e Precisão',
+    paths: 'Atirador ou Controle de Terreno',
+    details: 'Famosos por atiradores canhotos letais e táticas de emboscada implacáveis.',
+  },
+  {
+    id: 'Rúben',
+    name: 'Rúben',
+    icon: '💨',
+    desc: 'Comércio e Feras',
+    paths: 'Mestre das Feras ou Lábia',
+    details:
+      'A primeira tribo. Possuem facilidade em lidar com animais selvagens e negociações com outros povos.',
+  },
+  {
+    id: 'Issacar',
+    name: 'Issacar',
+    icon: '🌾',
+    desc: 'Mercenários e Lavradores',
+    paths: 'Mercenário ou Lavrador',
+    details:
+      'Homens fortes de trabalho pesado. Altamente resistentes a venenos e exaustão, servindo bem como linha de frente.',
+  },
+  {
+    id: 'Simeão',
+    name: 'Simeão',
+    icon: '🌿',
+    desc: 'Boticários',
+    paths: 'Venenos ou Curas',
+    details:
+      'Especialistas em criar misturas de ervas, tanto para curar quanto para envenenar lâminas em combate.',
+  },
+  {
+    id: 'Dã',
+    name: 'Dã',
+    icon: '🐍',
+    desc: 'Juízes e Furtividade',
+    paths: 'Emboscadas ou Punição',
+    details: 'Tribo isolada e perigosa. Bônus em ataques furtivos e conhecimento de armadilhas.',
+  },
+  {
+    id: 'Naftali',
+    name: 'Naftali',
+    icon: '🦌',
+    desc: 'Rapidez e Persuasão',
+    paths: 'Mobilidade ou Liderança',
+    details: 'Ágeis como gazelas. Recebem bônus de deslocamento e vantagens em diplomacia rápida.',
+  },
+  {
+    id: 'Aser',
+    name: 'Aser',
+    icon: '🥖',
+    desc: 'Prosperidade e Fartura',
+    paths: 'Resistência ou Suporte',
+    details:
+      'Tribo rica do norte. Bons com suprimentos logísticos e capazes de conceder vantagens táticas através de banquetes.',
+  },
+  {
+    id: 'Zebulom',
+    name: 'Zebulom',
+    icon: '⚓',
+    desc: 'Portos e Formação',
+    paths: 'Fluidez ou Falange',
+    details: 'Lutadores altamente disciplinados que operam melhor em falange (ao lado de aliados).',
+  },
+  {
+    id: 'Efraim',
+    name: 'Efraim',
+    icon: '🏹',
+    desc: 'Orgulho e Guerra',
+    paths: 'Arqueiro ou Investida',
+    details:
+      'Excelentes atiradores com arco longo e bônus de dano ao realizar uma investida a cavalo ou a pé.',
+  },
+  {
+    id: 'Manassés',
+    name: 'Manassés',
+    icon: '⚔️',
+    desc: 'Tática e Resiliência',
+    paths: 'Surpresa ou Defensor',
+    details:
+      'Guerreiros que lutam melhor quando estão em desvantagem numérica. Difíceis de serem derrubados.',
+  },
 ];
 
-const tribeDocs = import.meta.glob('../../../../../docs/tribos/*.md', { query: '?raw', import: 'default', eager: true });
+const tribeDocs = import.meta.glob('../../../../../docs/tribos/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 
 const normalizeString = (str: string) => {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 };
 
 const getTribeMarkdown = (tribeId: string) => {
   const normalizedId = normalizeString(tribeId);
-  const docKey = Object.keys(tribeDocs).find(key => key.endsWith(`/${normalizedId}.md`));
+  const docKey = Object.keys(tribeDocs).find((key) => key.endsWith(`/${normalizedId}.md`));
   return docKey ? (tribeDocs[docKey] as string) : '';
 };
 
@@ -47,13 +154,19 @@ export function TribeSelection() {
   const { draft, setTribe, nextStep, isLocked } = useCharacterCreationStore();
   const { quickSave, saving, message, isEditing } = useQuickSave();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [activeTribe, setActiveTribe] = useState<typeof TRIBES[0] | null>(null);
+  const [activeTribe, setActiveTribe] = useState<(typeof TRIBES)[0] | null>(null);
 
-  const { register, handleSubmit, watch, getValues, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    getValues,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(tribeSchema),
     defaultValues: {
       tribe: draft.tribe || '',
-    }
+    },
   });
 
   const selectedTribe = watch('tribe');
@@ -68,7 +181,7 @@ export function TribeSelection() {
     quickSave({ tribe: data.tribe });
   };
 
-  const handleOpenSheet = (e: React.MouseEvent, tribe: typeof TRIBES[0]) => {
+  const handleOpenSheet = (e: React.MouseEvent, tribe: (typeof TRIBES)[0]) => {
     e.preventDefault();
     e.stopPropagation();
     setActiveTribe(tribe);
@@ -80,7 +193,8 @@ export function TribeSelection() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {isLocked && (
           <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
-            <strong>Atenção:</strong> Personagem já está participando de uma sessão. A tribo não pode ser alterada.
+            <strong>Atenção:</strong> Personagem já está participando de uma sessão. A tribo não
+            pode ser alterada.
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -88,8 +202,8 @@ export function TribeSelection() {
             <label
               key={tribe.id}
               className={`relative p-4 rounded-lg border-2 transition-all flex items-center space-x-4
-                ${isLocked && selectedTribe !== tribe.id ? 'opacity-50 cursor-not-allowed border-stone-800' : (isLocked ? 'border-amber-500 bg-amber-500/10 cursor-not-allowed' : 'cursor-pointer hover:border-amber-500/50 hover:bg-stone-700/50')}
-                ${selectedTribe === tribe.id && !isLocked ? 'border-amber-500 bg-amber-500/10' : (!isLocked ? 'border-stone-700 bg-stone-800' : '')}`}
+                ${isLocked && selectedTribe !== tribe.id ? 'opacity-50 cursor-not-allowed border-stone-800' : isLocked ? 'border-amber-500 bg-amber-500/10 cursor-not-allowed' : 'cursor-pointer hover:border-amber-500/50 hover:bg-stone-700/50'}
+                ${selectedTribe === tribe.id && !isLocked ? 'border-amber-500 bg-amber-500/10' : !isLocked ? 'border-stone-700 bg-stone-800' : ''}`}
             >
               <input
                 type="radio"

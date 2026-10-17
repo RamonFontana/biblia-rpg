@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -13,25 +13,27 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
-const formSchema = z.object({
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-})
+const formSchema = z
+  .object({
+    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  });
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 export function ResetPasswordPage() {
-  const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -39,26 +41,26 @@ export function ResetPasswordPage() {
       password: '',
       confirmPassword: '',
     },
-  })
+  });
 
   async function onSubmit(values: FormData) {
-    setLoading(true)
-    setError(null)
-    setSuccess(false)
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
     try {
       const { error } = await supabase.auth.updateUser({
-        password: values.password
-      })
+        password: values.password,
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
 
-      setSuccess(true)
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao redefinir a senha.')
+      setError(err.message || 'Ocorreu um erro ao redefinir a senha.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -67,9 +69,7 @@ export function ResetPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Redefinir Senha</CardTitle>
-          <CardDescription className="text-center">
-            Digite sua nova senha abaixo.
-          </CardDescription>
+          <CardDescription className="text-center">Digite sua nova senha abaixo.</CardDescription>
         </CardHeader>
         <CardContent>
           {success ? (
@@ -108,9 +108,7 @@ export function ResetPasswordPage() {
                     </FormItem>
                   )}
                 />
-                {error && (
-                  <div className="text-sm text-destructive font-medium">{error}</div>
-                )}
+                {error && <div className="text-sm text-destructive font-medium">{error}</div>}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Redefinindo...' : 'Redefinir Senha'}
                 </Button>
@@ -120,5 +118,5 @@ export function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

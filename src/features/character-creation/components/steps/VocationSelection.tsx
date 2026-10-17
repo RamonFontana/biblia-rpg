@@ -13,24 +13,51 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 
 const VOCATIONS = [
-  { id: 'Guerreiro', name: 'Guerreiro', icon: '⚔️', desc: 'Linha de frente. Uso de armaduras pesadas e armas de guerra.' },
-  { id: 'Batedor', name: 'Batedor', icon: '🗡️', desc: 'Especialistas em furtividade, espionagem e ataques rápidos e letais.' },
-  { id: 'Caçador', name: 'Caçador / Nômade', icon: '🏹', desc: 'Habitantes dos ermos. Rastreio, arqueria e conhecimento da terra.' },
-  { id: 'Sacerdote', name: 'Sacerdote / Sábio', icon: '📜', desc: 'Suporte espiritual e cura. Essenciais para restaurar a Fé.' }
+  {
+    id: 'Guerreiro',
+    name: 'Guerreiro',
+    icon: '⚔️',
+    desc: 'Linha de frente. Uso de armaduras pesadas e armas de guerra.',
+  },
+  {
+    id: 'Batedor',
+    name: 'Batedor',
+    icon: '🗡️',
+    desc: 'Especialistas em furtividade, espionagem e ataques rápidos e letais.',
+  },
+  {
+    id: 'Caçador',
+    name: 'Caçador / Nômade',
+    icon: '🏹',
+    desc: 'Habitantes dos ermos. Rastreio, arqueria e conhecimento da terra.',
+  },
+  {
+    id: 'Sacerdote',
+    name: 'Sacerdote / Sábio',
+    icon: '📜',
+    desc: 'Suporte espiritual e cura. Essenciais para restaurar a Fé.',
+  },
 ];
 
-const vocationDocs = import.meta.glob('../../../../../docs/vocacoes/*.md', { query: '?raw', import: 'default', eager: true });
+const vocationDocs = import.meta.glob('../../../../../docs/vocacoes/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 
 const normalizeString = (str: string) => {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 };
 
 const getVocationMarkdown = (vocationId: string) => {
   const normalizedId = normalizeString(vocationId);
-  const docKey = Object.keys(vocationDocs).find(key => key.endsWith(`/${normalizedId}.md`));
+  const docKey = Object.keys(vocationDocs).find((key) => key.endsWith(`/${normalizedId}.md`));
   return docKey ? (vocationDocs[docKey] as string) : '';
 };
 
@@ -39,13 +66,20 @@ export function VocationSelection() {
   const { quickSave, saving, message, isEditing } = useQuickSave();
   const isLevi = draft.tribe === 'Levi';
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [activeVocation, setActiveVocation] = useState<typeof VOCATIONS[0] | null>(null);
+  const [activeVocation, setActiveVocation] = useState<(typeof VOCATIONS)[0] | null>(null);
 
-  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(vocationSchema),
     defaultValues: {
       vocation: draft.vocation || '',
-    }
+    },
   });
 
   const selectedVocation = watch('vocation');
@@ -67,7 +101,7 @@ export function VocationSelection() {
     quickSave({ vocation: data.vocation });
   };
 
-  const handleOpenSheet = (e: React.MouseEvent, vocation: typeof VOCATIONS[0]) => {
+  const handleOpenSheet = (e: React.MouseEvent, vocation: (typeof VOCATIONS)[0]) => {
     e.preventDefault();
     e.stopPropagation();
     setActiveVocation(vocation);
@@ -79,12 +113,14 @@ export function VocationSelection() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {isLocked && (
           <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
-            <strong>Atenção:</strong> Personagem já está participando de uma sessão. Vocação não pode ser alterada.
+            <strong>Atenção:</strong> Personagem já está participando de uma sessão. Vocação não
+            pode ser alterada.
           </div>
         )}
         {isLevi && !isLocked && (
           <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
-            <strong>A Regra de Levi:</strong> Como membro da tribo de Levi, você foi chamado para o serviço sagrado. Sua vocação deve ser Sacerdote/Sábio.
+            <strong>A Regra de Levi:</strong> Como membro da tribo de Levi, você foi chamado para o
+            serviço sagrado. Sua vocação deve ser Sacerdote/Sábio.
           </div>
         )}
 
@@ -92,23 +128,23 @@ export function VocationSelection() {
           {VOCATIONS.map((vocation) => {
             const disabled = isLocked || (isLevi && vocation.id !== 'Sacerdote');
             const isSelected = selectedVocation === vocation.id;
-            
+
             return (
-              <label 
+              <label
                 key={vocation.id}
                 className={`relative p-4 rounded-lg border-2 transition-all flex items-start space-x-4
                   ${disabled ? 'opacity-50 cursor-not-allowed border-stone-800' : 'cursor-pointer hover:border-amber-500/50 hover:bg-stone-700/50'}
                   ${isSelected && !disabled ? 'border-amber-500 bg-amber-500/10' : 'border-stone-700 bg-stone-800'}
                 `}
               >
-                <input 
-                  type="radio" 
-                  value={vocation.id} 
-                  {...register('vocation')} 
-                  className="hidden" 
+                <input
+                  type="radio"
+                  value={vocation.id}
+                  {...register('vocation')}
+                  className="hidden"
                   disabled={disabled}
                 />
-                
+
                 <button
                   type="button"
                   onClick={(e) => handleOpenSheet(e, vocation)}
@@ -127,12 +163,12 @@ export function VocationSelection() {
             );
           })}
         </div>
-        
+
         {errors.vocation && <p className="text-red-400">{errors.vocation.message}</p>}
 
         <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            <button 
+            <button
               type="button"
               onClick={prevStep}
               className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
@@ -153,7 +189,7 @@ export function VocationSelection() {
               </div>
             )}
           </div>
-          <button 
+          <button
             type="submit"
             className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
           >

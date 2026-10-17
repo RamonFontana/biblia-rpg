@@ -17,15 +17,15 @@ export function EnemyCard({ enemy, participant, onClick }: EnemyCardProps) {
   const isDead = hpCurrent <= 0;
 
   return (
-    <Card 
+    <Card
       className={`cursor-pointer transition-colors hover:border-primary bg-stone-900 border-stone-800 ${isDead ? 'opacity-50 grayscale' : ''}`}
       onClick={onClick}
     >
       <CardContent className="p-4 flex items-center gap-4">
-        <CharacterAvatar 
-          imageUrl={enemy.narrative?.imageUrl} 
-          name={enemy.name || 'Inimigo'} 
-          className={`w-12 h-12 border border-red-900/50 ${isDead ? 'grayscale opacity-60' : ''}`} 
+        <CharacterAvatar
+          imageUrl={enemy.narrative?.imageUrl}
+          name={enemy.name || 'Inimigo'}
+          className={`w-12 h-12 border border-red-900/50 ${isDead ? 'grayscale opacity-60' : ''}`}
         />
         <div className="flex-1 overflow-hidden">
           <h3 className="font-bold text-stone-200 truncate">{enemy.name}</h3>

@@ -27,13 +27,13 @@ export function EndSessionDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const playableCharacters = playerCharacters.filter(
-    (pc) => !pc.character.is_npc && !pc.character.is_enemy && !pc.character.is_deleted
+    (pc) => !pc.character.is_npc && !pc.character.is_enemy && !pc.character.is_deleted,
   );
 
   const toggleSelection = (id: string, disabled: boolean) => {
     if (disabled) return;
     setSelectedCharacterIds((prev) =>
-      prev.includes(id) ? prev.filter((currId) => currId !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((currId) => currId !== id) : [...prev, id],
     );
   };
 
@@ -58,12 +58,14 @@ export function EndSessionDialog({
           <div>
             <h4 className="text-stone-200 font-semibold mb-2">Conceder Level Up</h4>
             <p className="text-stone-400 text-sm mb-4">
-              Selecione quais personagens merecem subir de nível pela experiência adquirida nesta sessão.
+              Selecione quais personagens merecem subir de nível pela experiência adquirida nesta
+              sessão.
             </p>
 
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
               {playableCharacters.map((pc) => {
-                const isLevel20 = (pc.character.level || (pc.character.stats as any)?.level || 1) >= 20;
+                const isLevel20 =
+                  (pc.character.level || (pc.character.stats as any)?.level || 1) >= 20;
                 return (
                   <div
                     key={pc.character.id}
@@ -78,11 +80,14 @@ export function EndSessionDialog({
                     />
                     <label
                       htmlFor={`levelup-${pc.character.id}`}
-                      className={`text-sm font-medium leading-none flex-1 cursor-pointer ${isLevel20 ? 'text-stone-500' : 'text-stone-200'
-                        }`}
+                      className={`text-sm font-medium leading-none flex-1 cursor-pointer ${
+                        isLevel20 ? 'text-stone-500' : 'text-stone-200'
+                      }`}
                     >
                       {pc.character.name}
-                      {isLevel20 && <span className="ml-2 text-xs text-amber-500/70">(Nível Máximo)</span>}
+                      {isLevel20 && (
+                        <span className="ml-2 text-xs text-amber-500/70">(Nível Máximo)</span>
+                      )}
                     </label>
                   </div>
                 );
@@ -96,7 +101,12 @@ export function EndSessionDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting} className="border-stone-700 text-stone-300 hover:bg-stone-800 hover:text-white">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="border-stone-700 text-stone-300 hover:bg-stone-800 hover:text-white"
+          >
             Cancelar
           </Button>
           <Button variant="destructive" onClick={handleConfirm} disabled={isSubmitting}>

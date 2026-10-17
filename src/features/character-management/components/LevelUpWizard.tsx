@@ -21,7 +21,10 @@ const VOCATION_HP_AVERAGE: Record<string, number> = {
 };
 
 function normalizeString(str: string) {
-  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 function calculateConMod(con: number) {
@@ -50,19 +53,21 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   // Steps calculation
   const tribeOptions = useMemo(() => {
     return ABILITIES.filter(
-      a => a.sourceType === 'tribe' &&
+      (a) =>
+        a.sourceType === 'tribe' &&
         normalizeString(a.sourceId) === normalizeString(character.tribe || '') &&
         a.minLevel === newLevel &&
-        a.path
+        a.path,
     );
   }, [character.tribe, newLevel]);
 
   const vocationOptions = useMemo(() => {
     return ABILITIES.filter(
-      a => a.sourceType === 'vocation' &&
+      (a) =>
+        a.sourceType === 'vocation' &&
         normalizeString(a.sourceId) === normalizedVocation &&
         a.minLevel === newLevel &&
-        a.path
+        a.path,
     );
   }, [normalizedVocation, newLevel]);
 
@@ -82,7 +87,8 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const currentStepId = steps[currentStepIndex];
 
   // Derived ASI changes
-  const newCon = currentCon + (asiChoices.attr1 === 'con' ? 1 : 0) + (asiChoices.attr2 === 'con' ? 1 : 0);
+  const newCon =
+    currentCon + (asiChoices.attr1 === 'con' ? 1 : 0) + (asiChoices.attr2 === 'con' ? 1 : 0);
   const newConMod = calculateConMod(newCon);
 
   // Retroactive HP
@@ -106,7 +112,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
   const handleNext = () => {
     if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex(s => s + 1);
+      setCurrentStepIndex((s) => s + 1);
     } else {
       finalizeLevelUp();
     }
@@ -114,7 +120,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
   const handleBack = () => {
     if (currentStepIndex > 0) {
-      setCurrentStepIndex(s => s - 1);
+      setCurrentStepIndex((s) => s - 1);
     } else {
       onCancel();
     }
@@ -140,8 +146,10 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
       const newAttributes = { ...currentAttributes };
       if (hasAsi) {
-        if (asiChoices.attr1) newAttributes[asiChoices.attr1] = (newAttributes[asiChoices.attr1] || 10) + 1;
-        if (asiChoices.attr2) newAttributes[asiChoices.attr2] = (newAttributes[asiChoices.attr2] || 10) + 1;
+        if (asiChoices.attr1)
+          newAttributes[asiChoices.attr1] = (newAttributes[asiChoices.attr1] || 10) + 1;
+        if (asiChoices.attr2)
+          newAttributes[asiChoices.attr2] = (newAttributes[asiChoices.attr2] || 10) + 1;
       }
 
       const newSkills = { ...currentSkills };
@@ -187,17 +195,24 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const renderHpStep = () => (
     <div className="space-y-4">
       <p className="text-stone-300">
-        Seu personagem evoluiu! Você ganhou pontos de vida adicionais baseados na sua vocação e constituição.
+        Seu personagem evoluiu! Você ganhou pontos de vida adicionais baseados na sua vocação e
+        constituição.
       </p>
       <div className="bg-stone-950 border border-stone-800 p-4 rounded-lg flex items-center justify-between">
         <div>
-          <h4 className="text-sm text-stone-500 uppercase tracking-wider mb-1">Vocação ({character.vocation})</h4>
+          <h4 className="text-sm text-stone-500 uppercase tracking-wider mb-1">
+            Vocação ({character.vocation})
+          </h4>
           <span className="text-xl font-bold text-stone-200">+{hpAverage} PV</span>
         </div>
         <div className="text-2xl text-stone-600">+</div>
         <div>
-          <h4 className="text-sm text-stone-500 uppercase tracking-wider mb-1">Constituição (Mod)</h4>
-          <span className="text-xl font-bold text-stone-200">{conMod >= 0 ? `+${conMod}` : conMod} PV</span>
+          <h4 className="text-sm text-stone-500 uppercase tracking-wider mb-1">
+            Constituição (Mod)
+          </h4>
+          <span className="text-xl font-bold text-stone-200">
+            {conMod >= 0 ? `+${conMod}` : conMod} PV
+          </span>
         </div>
         <div className="text-2xl text-stone-600">=</div>
         <div>
@@ -211,25 +226,34 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
     </div>
   );
 
-  const renderPathChoice = (type: 'tribe' | 'vocation', options: any[], selected: string | null, onSelect: (val: any) => void) => {
+  const renderPathChoice = (
+    type: 'tribe' | 'vocation',
+    options: any[],
+    selected: string | null,
+    onSelect: (val: any) => void,
+  ) => {
     return (
       <div className="space-y-4">
         <p className="text-stone-300">
-          Escolha uma habilidade passiva ou ativa de {type === 'tribe' ? 'Tribo' : 'Vocação'} para o nível {newLevel}.
+          Escolha uma habilidade passiva ou ativa de {type === 'tribe' ? 'Tribo' : 'Vocação'} para o
+          nível {newLevel}.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {options.map(opt => (
+          {options.map((opt) => (
             <div
               key={opt.id}
               onClick={() => onSelect(opt.path)}
-              className={`p-4 rounded-lg border cursor-pointer transition-all ${selected === opt.path
+              className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                selected === opt.path
                   ? 'bg-amber-900/20 border-amber-500 shadow-md shadow-amber-900/20'
                   : 'bg-stone-950 border-stone-800 hover:border-amber-700/50'
-                }`}
+              }`}
             >
               <div className="flex justify-between items-start mb-2">
                 <h4 className="font-bold text-stone-200">{opt.name}</h4>
-                <span className="text-xs font-mono bg-stone-800 text-stone-400 px-2 py-1 rounded">Caminho {opt.path}</span>
+                <span className="text-xs font-mono bg-stone-800 text-stone-400 px-2 py-1 rounded">
+                  Caminho {opt.path}
+                </span>
               </div>
               <p className="text-sm text-stone-400">{opt.effect}</p>
             </div>
@@ -241,11 +265,18 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
   const renderAsiStep = () => {
     const attrs = ['for', 'des', 'con', 'int', 'sab', 'car'] as const;
-    const attrNames = { for: 'Força', des: 'Destreza', con: 'Constituição', int: 'Inteligência', sab: 'Sabedoria', car: 'Carisma' };
+    const attrNames = {
+      for: 'Força',
+      des: 'Destreza',
+      con: 'Constituição',
+      int: 'Inteligência',
+      sab: 'Sabedoria',
+      car: 'Carisma',
+    };
     const currentAttributes: any = character.attributes || {};
 
     const handleSelect = (slot: 'attr1' | 'attr2', val: string) => {
-      setAsiChoices(prev => ({ ...prev, [slot]: val }));
+      setAsiChoices((prev) => ({ ...prev, [slot]: val }));
     };
 
     return (
@@ -263,10 +294,17 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
               onChange={(e) => handleSelect('attr1', e.target.value)}
               className="w-full bg-stone-950 border border-stone-800 rounded-md p-2 text-stone-200"
             >
-              <option value="" disabled>Selecione um atributo</option>
-              {attrs.map(a => {
-                const isMaxed = (currentAttributes[a] || 10) + (asiChoices.attr2 === a ? 1 : 0) >= 20;
-                return <option key={a} value={a} disabled={isMaxed}>{attrNames[a]} (Atual: {currentAttributes[a] || 10})</option>
+              <option value="" disabled>
+                Selecione um atributo
+              </option>
+              {attrs.map((a) => {
+                const isMaxed =
+                  (currentAttributes[a] || 10) + (asiChoices.attr2 === a ? 1 : 0) >= 20;
+                return (
+                  <option key={a} value={a} disabled={isMaxed}>
+                    {attrNames[a]} (Atual: {currentAttributes[a] || 10})
+                  </option>
+                );
               })}
             </select>
           </div>
@@ -279,10 +317,17 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
               onChange={(e) => handleSelect('attr2', e.target.value)}
               className="w-full bg-stone-950 border border-stone-800 rounded-md p-2 text-stone-200"
             >
-              <option value="" disabled>Selecione um atributo</option>
-              {attrs.map(a => {
-                const isMaxed = (currentAttributes[a] || 10) + (asiChoices.attr1 === a ? 1 : 0) >= 20;
-                return <option key={a} value={a} disabled={isMaxed}>{attrNames[a]} (Atual: {currentAttributes[a] || 10})</option>
+              <option value="" disabled>
+                Selecione um atributo
+              </option>
+              {attrs.map((a) => {
+                const isMaxed =
+                  (currentAttributes[a] || 10) + (asiChoices.attr1 === a ? 1 : 0) >= 20;
+                return (
+                  <option key={a} value={a} disabled={isMaxed}>
+                    {attrNames[a]} (Atual: {currentAttributes[a] || 10})
+                  </option>
+                );
               })}
             </select>
           </div>
@@ -293,7 +338,9 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
   const renderSummaryStep = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-amber-500 border-b border-stone-800 pb-2">Resumo da Evolução</h3>
+      <h3 className="text-lg font-bold text-amber-500 border-b border-stone-800 pb-2">
+        Resumo da Evolução
+      </h3>
 
       <div className="space-y-3">
         <div className="flex justify-between items-center p-3 bg-stone-950 rounded-lg border border-stone-800">
@@ -316,7 +363,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
           <div className="flex justify-between items-center p-3 bg-stone-950 rounded-lg border border-stone-800">
             <span className="text-stone-400">Habilidade de Tribo</span>
             <span className="font-medium text-stone-200">
-              {tribeOptions.find(o => o.path === selectedTribePath)?.name}
+              {tribeOptions.find((o) => o.path === selectedTribePath)?.name}
             </span>
           </div>
         )}
@@ -325,7 +372,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
           <div className="flex justify-between items-center p-3 bg-stone-950 rounded-lg border border-stone-800">
             <span className="text-stone-400">Habilidade de Vocação</span>
             <span className="font-medium text-stone-200">
-              {vocationOptions.find(o => o.path === selectedVocationPath)?.name}
+              {vocationOptions.find((o) => o.path === selectedVocationPath)?.name}
             </span>
           </div>
         )}
@@ -334,7 +381,10 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
           <div className="flex justify-between items-center p-3 bg-stone-950 rounded-lg border border-stone-800">
             <span className="text-stone-400">Melhoria de Atributos (ASI)</span>
             <span className="font-medium text-stone-200 uppercase">
-              +{asiChoices.attr1 === asiChoices.attr2 ? `2 ${asiChoices.attr1}` : `1 ${asiChoices.attr1}, +1 ${asiChoices.attr2}`}
+              +
+              {asiChoices.attr1 === asiChoices.attr2
+                ? `2 ${asiChoices.attr1}`
+                : `1 ${asiChoices.attr1}, +1 ${asiChoices.attr2}`}
             </span>
           </div>
         )}
@@ -351,7 +401,6 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-stone-900 border border-stone-700 rounded-xl flex flex-col max-h-[90vh] shadow-2xl">
-
         {/* Header */}
         <div className="p-5 border-b border-stone-800 flex justify-between items-center">
           <div>
@@ -368,8 +417,15 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-1">
           {currentStepId === 'hp' && renderHpStep()}
-          {currentStepId === 'tribe' && renderPathChoice('tribe', tribeOptions, selectedTribePath, setSelectedTribePath)}
-          {currentStepId === 'vocation' && renderPathChoice('vocation', vocationOptions, selectedVocationPath, setSelectedVocationPath)}
+          {currentStepId === 'tribe' &&
+            renderPathChoice('tribe', tribeOptions, selectedTribePath, setSelectedTribePath)}
+          {currentStepId === 'vocation' &&
+            renderPathChoice(
+              'vocation',
+              vocationOptions,
+              selectedVocationPath,
+              setSelectedVocationPath,
+            )}
           {currentStepId === 'asi' && renderAsiStep()}
           {currentStepId === 'summary' && renderSummaryStep()}
         </div>
@@ -387,12 +443,17 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
           <button
             onClick={handleNext}
             disabled={!canProceed() || isSubmitting}
-            className={`px-6 py-2 rounded-lg font-medium transition-all duration-300 ${!canProceed() || isSubmitting
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-300 ${
+              !canProceed() || isSubmitting
                 ? 'bg-stone-800 text-stone-500 cursor-not-allowed'
                 : 'bg-amber-700 hover:bg-amber-600 text-amber-50 shadow-md shadow-amber-900/30'
-              }`}
+            }`}
           >
-            {isSubmitting ? 'Salvando...' : (currentStepIndex === steps.length - 1 ? 'Finalizar Progressão' : 'Próximo Passo')}
+            {isSubmitting
+              ? 'Salvando...'
+              : currentStepIndex === steps.length - 1
+                ? 'Finalizar Progressão'
+                : 'Próximo Passo'}
           </button>
         </div>
       </div>

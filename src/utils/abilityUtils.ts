@@ -4,31 +4,36 @@ export function getAbilitiesForCharacter(
   tribe: string,
   vocation: string,
   level: number,
-  pathChoices?: { 
-    tribe?: Record<number, 'A' | 'B'> | 'A' | 'B'; 
+  pathChoices?: {
+    tribe?: Record<number, 'A' | 'B'> | 'A' | 'B';
     vocation?: Record<number, 'A' | 'B'> | 'A' | 'B';
-  }
+  },
 ): AbilityDefinition[] {
-  return ABILITIES.filter(ability => {
+  return ABILITIES.filter((ability) => {
     // Check level requirement
     if (ability.minLevel > level) return false;
 
     // Filter by source
     // Normalize source string matching (e.g. "Guerreiro" vs "guerreiro")
-    const normalizedTribe = tribe.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const normalizedVocation = vocation.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const normalizedTribe = tribe
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const normalizedVocation = vocation
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
 
     if (ability.sourceType === 'tribe' && ability.sourceId !== normalizedTribe) return false;
     if (ability.sourceType === 'vocation' && ability.sourceId !== normalizedVocation) return false;
 
     // Filter by path choice if applicable
     if (ability.path) {
-      const chosenPathData = ability.sourceType === 'tribe' 
-        ? pathChoices?.tribe 
-        : pathChoices?.vocation;
-      
+      const chosenPathData =
+        ability.sourceType === 'tribe' ? pathChoices?.tribe : pathChoices?.vocation;
+
       let chosenPath: 'A' | 'B' | undefined;
-      
+
       if (typeof chosenPathData === 'object' && chosenPathData !== null) {
         chosenPath = chosenPathData[ability.minLevel];
       } else if (typeof chosenPathData === 'string') {
@@ -39,12 +44,12 @@ export function getAbilitiesForCharacter(
       if (chosenPath && chosenPath !== ability.path) {
         return false;
       }
-      
-      // Note: If no path is chosen yet, we currently include it to show the options, 
+
+      // Note: If no path is chosen yet, we currently include it to show the options,
       // but you could choose to hide it.
-      // For now, let's keep it visible so they know they have a choice, 
+      // For now, let's keep it visible so they know they have a choice,
       // or we can hide it. If we hide it, we add:
-      if (!chosenPath) return false; 
+      if (!chosenPath) return false;
     }
 
     return true;
@@ -53,20 +58,20 @@ export function getAbilitiesForCharacter(
 
 export function calculateRechargedAbilities(
   currentAbilityUses: Record<string, number>,
-  restType: 'short_rest' | 'long_rest'
+  restType: 'short_rest' | 'long_rest',
 ): Record<string, number> {
   const newAbilityUses = { ...currentAbilityUses };
-  
+
   for (const abilityId of Object.keys(newAbilityUses)) {
-    const ability = ABILITIES.find(a => a.id === abilityId);
+    const ability = ABILITIES.find((a) => a.id === abilityId);
     if (!ability) continue;
-    
+
     // On Long Rest, everything recharges except 'week' and 'campaign'.
     // On Short Rest, only 'short_rest' and 'combat' recharge.
     // 'combat' recharges automatically on new combats, but a rest also counts.
-    
+
     let shouldRecharge = false;
-    
+
     if (restType === 'long_rest') {
       if (['short_rest', 'long_rest', 'combat'].includes(ability.usageType)) {
         shouldRecharge = true;
@@ -76,26 +81,26 @@ export function calculateRechargedAbilities(
         shouldRecharge = true;
       }
     }
-    
+
     if (shouldRecharge) {
       delete newAbilityUses[abilityId];
     }
   }
-  
+
   return newAbilityUses;
 }
 
 export function resetCombatAbilities(
-  currentAbilityUses: Record<string, number>
+  currentAbilityUses: Record<string, number>,
 ): Record<string, number> {
   const newAbilityUses = { ...currentAbilityUses };
-  
+
   for (const abilityId of Object.keys(newAbilityUses)) {
-    const ability = ABILITIES.find(a => a.id === abilityId);
+    const ability = ABILITIES.find((a) => a.id === abilityId);
     if (ability && ability.usageType === 'combat') {
       delete newAbilityUses[abilityId];
     }
   }
-  
+
   return newAbilityUses;
 }

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import type { Character } from '@/features/character-management/types';
@@ -20,7 +26,9 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
     setIsCreating(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const newCharacter = {
@@ -35,13 +43,13 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
           current_pv: formData.hpCurrent,
           ca: formData.ca,
           faith: 0,
-          current_faith: 0
+          current_faith: 0,
         },
         attributes: formData.attributes,
         skills: formData.skills || [],
         narrative: {
-          imageUrl: formData.imageBase64 || ''
-        }
+          imageUrl: formData.imageBase64 || '',
+        },
       };
 
       // 1. Create character
@@ -57,13 +65,11 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
       }
 
       // 2. Add to session
-      const { error: sessionError } = await supabase
-        .from('session_participants')
-        .insert({
-          session_id: sessionId,
-          character_id: charData.id,
-          user_id: user.id
-        });
+      const { error: sessionError } = await supabase.from('session_participants').insert({
+        session_id: sessionId,
+        character_id: charData.id,
+        user_id: user.id,
+      });
 
       if (sessionError) {
         console.error('Error adding enemy to session:', sessionError);
@@ -73,7 +79,7 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
       if (onEnemyCreated) {
         onEnemyCreated(charData as any);
       }
-      
+
       setIsOpen(false);
     } catch (err) {
       console.error('Failed to create enemy:', err);
@@ -94,9 +100,9 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
         <DialogHeader>
           <DialogTitle>Criar Novo Inimigo</DialogTitle>
         </DialogHeader>
-        
+
         <div className="py-4">
-          <UnifiedEnemyForm 
+          <UnifiedEnemyForm
             onSubmit={handleCreate}
             onCancel={() => setIsOpen(false)}
             isSubmitting={isCreating}

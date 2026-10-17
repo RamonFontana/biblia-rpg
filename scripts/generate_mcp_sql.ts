@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { ITEMS_DB } from '../src/data/itemsDb';
 
-let sql = "DO $$\nBEGIN\n";
+let sql = 'DO $$\nBEGIN\n';
 
 for (const item of ITEMS_DB) {
   const name = item.name.replace(/'/g, "''");
@@ -11,14 +11,15 @@ for (const item of ITEMS_DB) {
   const price = Math.round(item.cost || 0); // avoid 0.5 issue
   const level = item.level || 1;
   const ac = item.armorClass || 0;
-  
+
   let dmg = item.damage ? `'${item.damage}'` : 'NULL';
-  
+
   // Create array literal for resistances
   const resList = item.conditionResistances || [];
-  const resArrayStr = resList.length > 0 
-    ? `ARRAY[${resList.map(r => `'${r}'`).join(',')}]::text[]` 
-    : `ARRAY[]::text[]`;
+  const resArrayStr =
+    resList.length > 0
+      ? `ARRAY[${resList.map((r) => `'${r}'`).join(',')}]::text[]`
+      : `ARRAY[]::text[]`;
 
   sql += `
   UPDATE items SET 
@@ -39,7 +40,7 @@ for (const item of ITEMS_DB) {
 `;
 }
 
-sql += "END $$;";
+sql += 'END $$;';
 
 fs.writeFileSync('supabase/seed_items_mcp.sql', sql);
 console.log('Generated supabase/seed_items_mcp.sql');

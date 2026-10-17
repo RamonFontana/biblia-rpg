@@ -42,7 +42,17 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
     }
   };
 
-  const stepsLabels = ['Tribo', 'Vocação', 'Atributos', 'Perícias', 'Fé', 'Status', 'Equipamento', 'Narrativa', 'Resumo'];
+  const stepsLabels = [
+    'Tribo',
+    'Vocação',
+    'Atributos',
+    'Perícias',
+    'Fé',
+    'Status',
+    'Equipamento',
+    'Narrativa',
+    'Resumo',
+  ];
 
   return (
     <div className="min-h-screen bg-stone-900 text-stone-100 p-0 sm:p-4 md:p-8">
@@ -53,8 +63,8 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
           </h1>
           <p className="text-stone-400 mt-2">Passo {currentStep} de 9</p>
           <div className="w-full bg-stone-700 h-2 mt-4 rounded-full overflow-hidden">
-            <div 
-              className="bg-amber-500 h-full transition-all duration-300" 
+            <div
+              className="bg-amber-500 h-full transition-all duration-300"
               style={{ width: `${(currentStep / 9) * 100}%` }}
             />
           </div>
@@ -73,9 +83,7 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
           )}
         </header>
 
-        <main className="min-h-[400px]">
-          {children || renderStep()}
-        </main>
+        <main className="min-h-[400px]">{children || renderStep()}</main>
       </div>
     </div>
   );

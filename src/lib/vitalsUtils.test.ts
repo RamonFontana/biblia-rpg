@@ -123,7 +123,10 @@ describe('vitalsUtils', () => {
     });
 
     it('migrates a legacy-only record onto canonical keys on write', () => {
-      expect(applyMaxPvIncrease({ max_hp: 10, current_hp: 6 }, 4)).toEqual({ pv: 14, current_pv: 10 });
+      expect(applyMaxPvIncrease({ max_hp: 10, current_hp: 6 }, 4)).toEqual({
+        pv: 14,
+        current_pv: 10,
+      });
     });
   });
 });

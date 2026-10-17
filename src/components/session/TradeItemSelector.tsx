@@ -84,7 +84,9 @@ export function TradeItemSelector({
                     </span>
                   </div>
                   {!useCatalog && item.availableQuantity != null && (
-                    <span className="text-xs text-stone-500">Disponível: {item.availableQuantity}</span>
+                    <span className="text-xs text-stone-500">
+                      Disponível: {item.availableQuantity}
+                    </span>
                   )}
                 </div>
 
@@ -133,7 +135,7 @@ export function TradeItemSelector({
                       disabled={disabled}
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 1;
-                        setPendingQuantities(prev => ({ ...prev, [item.id]: val }));
+                        setPendingQuantities((prev) => ({ ...prev, [item.id]: val }));
                       }}
                       className="w-12 h-7 text-center text-sm bg-stone-800 border border-stone-700 text-stone-300 rounded focus:outline-none focus:border-amber-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
@@ -145,7 +147,7 @@ export function TradeItemSelector({
                       onClick={() => {
                         const qty = pendingQuantities[item.id] || 1;
                         onAddItem(item.id, qty);
-                        setPendingQuantities(prev => ({ ...prev, [item.id]: 1 }));
+                        setPendingQuantities((prev) => ({ ...prev, [item.id]: 1 }));
                       }}
                       className="h-7 text-xs border-stone-600 text-stone-300 hover:bg-stone-700 shrink-0"
                     >

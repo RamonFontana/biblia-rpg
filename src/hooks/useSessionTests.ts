@@ -1,52 +1,56 @@
-import { useState, useEffect, useCallback } from 'react'
-import { subscribeToTables } from '@/lib/realtimeSubscriptions'
-import { type SessionTest, type SessionTestResult, sessionTestService } from '@/services/sessionTestService'
+import { useState, useEffect, useCallback } from 'react';
+import { subscribeToTables } from '@/lib/realtimeSubscriptions';
+import {
+  type SessionTest,
+  type SessionTestResult,
+  sessionTestService,
+} from '@/services/sessionTestService';
 
 export function useSessionTests(sessionId: string) {
-  const [activeTests, setActiveTests] = useState<SessionTest[]>([])
-  const [testResults, setTestResults] = useState<Record<string, SessionTestResult[]>>({})
-  const [loading, setLoading] = useState(true)
+  const [activeTests, setActiveTests] = useState<SessionTest[]>([]);
+  const [testResults, setTestResults] = useState<Record<string, SessionTestResult[]>>({});
+  const [loading, setLoading] = useState(true);
 
   // Fetch initial active tests
   const fetchActiveTests = useCallback(async () => {
-    if (!sessionId) return
+    if (!sessionId) return;
 
     try {
-      setLoading(true)
-      const tests = await sessionTestService.getActiveTestsForSession(sessionId)
-      setActiveTests(tests)
+      setLoading(true);
+      const tests = await sessionTestService.getActiveTestsForSession(sessionId);
+      setActiveTests(tests);
 
       // Fetch results for all active tests
-      const resultsMap: Record<string, SessionTestResult[]> = {}
+      const resultsMap: Record<string, SessionTestResult[]> = {};
       for (const test of tests) {
-        const results = await sessionTestService.getTestResults(test.id)
-        resultsMap[test.id] = results
+        const results = await sessionTestService.getTestResults(test.id);
+        resultsMap[test.id] = results;
       }
-      setTestResults(resultsMap)
+      setTestResults(resultsMap);
     } catch (error) {
-      console.error('Error fetching session tests:', error)
+      console.error('Error fetching session tests:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [sessionId])
+  }, [sessionId]);
 
   useEffect(() => {
-    fetchActiveTests()
-  }, [fetchActiveTests])
+    fetchActiveTests();
+  }, [fetchActiveTests]);
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId) return;
 
     return subscribeToTables(`session_tests_realtime_${sessionId}_${Math.random()}`, [
       { table: 'session_tests', filter: `session_id=eq.${sessionId}`, onChange: fetchActiveTests },
       { table: 'session_test_results', onChange: fetchActiveTests },
-    ])
-  }, [sessionId, fetchActiveTests])
+    ]);
+  }, [sessionId, fetchActiveTests]);
 
   return {
     activeTests,
     testResults,
     loading,
-    refresh: fetchActiveTests
-  }
+    refresh: fetchActiveTests,
+  };
 }

@@ -18,7 +18,7 @@ export function TradeRequestNotification({
   onReject,
 }: TradeRequestNotificationProps) {
   const initiatorChar = playerCharacters.find(
-    (pc) => pc.character.id === trade.initiator_character_id
+    (pc) => pc.character.id === trade.initiator_character_id,
   )?.character;
 
   const getMessage = () => {

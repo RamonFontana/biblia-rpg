@@ -3,7 +3,13 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { enemyFormSchema, type EnemyFormValues } from './schema';
 import { Plus, Upload, Trash2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export interface UnifiedEnemyFormProps {
   initialValues?: Partial<EnemyFormValues>;
@@ -14,10 +20,55 @@ export interface UnifiedEnemyFormProps {
 }
 
 const MOCK_BESTIARY = [
-  { id: 'bandido-deserto', name: 'Bandido do Deserto', max_hp: 11, ca: 11, desc: 'Salteadores de beira de estrada com ataque furtivo e funda.', attributes: { for: 10, des: 14, con: 12, int: 10, sab: 10, car: 10 }, vocation: 'Ladrão', skills: [{ name: 'Ataque Furtivo', description: 'Causa dano extra se o alvo estiver distraído' }] },
-  { id: 'soldado-filisteu', name: 'Soldado Filisteu', max_hp: 16, ca: 16, desc: 'Soldados bem treinados com cota de escamas e formação em parede.', attributes: { for: 15, des: 12, con: 14, int: 10, sab: 10, car: 10 }, vocation: 'Guerreiro', skills: [{ name: 'Ataque Poderoso', description: 'Pode reduzir a chance de acerto para aumentar o dano' }] },
-  { id: 'general-guerra', name: 'General de Guerra', max_hp: 52, ca: 18, desc: 'Líder tático que pode comandar aliados a atacar com reação.', attributes: { for: 16, des: 14, con: 16, int: 14, sab: 12, car: 16 }, vocation: 'Guerreiro', skills: [{ name: 'Comando', description: 'Aliados próximos ganham bônus no ataque' }] },
-  { id: 'leao-judeia', name: 'Leão da Judeia', max_hp: 26, ca: 13, desc: 'Fera com tática de matilha, salto e bote.', attributes: { for: 16, des: 15, con: 14, int: 3, sab: 12, car: 8 }, vocation: 'Fera', skills: [{ name: 'Bote', description: 'Se mover antes de atacar e acertar, pode derrubar o alvo' }] },
+  {
+    id: 'bandido-deserto',
+    name: 'Bandido do Deserto',
+    max_hp: 11,
+    ca: 11,
+    desc: 'Salteadores de beira de estrada com ataque furtivo e funda.',
+    attributes: { for: 10, des: 14, con: 12, int: 10, sab: 10, car: 10 },
+    vocation: 'Ladrão',
+    skills: [
+      { name: 'Ataque Furtivo', description: 'Causa dano extra se o alvo estiver distraído' },
+    ],
+  },
+  {
+    id: 'soldado-filisteu',
+    name: 'Soldado Filisteu',
+    max_hp: 16,
+    ca: 16,
+    desc: 'Soldados bem treinados com cota de escamas e formação em parede.',
+    attributes: { for: 15, des: 12, con: 14, int: 10, sab: 10, car: 10 },
+    vocation: 'Guerreiro',
+    skills: [
+      {
+        name: 'Ataque Poderoso',
+        description: 'Pode reduzir a chance de acerto para aumentar o dano',
+      },
+    ],
+  },
+  {
+    id: 'general-guerra',
+    name: 'General de Guerra',
+    max_hp: 52,
+    ca: 18,
+    desc: 'Líder tático que pode comandar aliados a atacar com reação.',
+    attributes: { for: 16, des: 14, con: 16, int: 14, sab: 12, car: 16 },
+    vocation: 'Guerreiro',
+    skills: [{ name: 'Comando', description: 'Aliados próximos ganham bônus no ataque' }],
+  },
+  {
+    id: 'leao-judeia',
+    name: 'Leão da Judeia',
+    max_hp: 26,
+    ca: 13,
+    desc: 'Fera com tática de matilha, salto e bote.',
+    attributes: { for: 16, des: 15, con: 14, int: 3, sab: 12, car: 8 },
+    vocation: 'Fera',
+    skills: [
+      { name: 'Bote', description: 'Se mover antes de atacar e acertar, pode derrubar o alvo' },
+    ],
+  },
 ];
 
 export function UnifiedEnemyForm({
@@ -25,7 +76,7 @@ export function UnifiedEnemyForm({
   onSubmit,
   onCancel,
   submitLabel = 'Salvar Inimigo',
-  isSubmitting = false
+  isSubmitting = false,
 }: UnifiedEnemyFormProps) {
   const [selectedBaseId, setSelectedBaseId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,24 +90,35 @@ export function UnifiedEnemyForm({
       hpCurrent: initialValues?.hpCurrent || 10,
       ca: initialValues?.ca || 10,
       attributes: initialValues?.attributes || {
-        for: 10, des: 10, con: 10, int: 10, sab: 10, car: 10,
+        for: 10,
+        des: 10,
+        con: 10,
+        int: 10,
+        sab: 10,
+        car: 10,
       },
       skills: initialValues?.skills || [],
       imageBase64: initialValues?.imageBase64 || '',
-    }
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "skills",
+    name: 'skills',
   });
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = form;
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = form;
   const imageUrl = watch('imageBase64');
 
   const onBaseEnemySelect = (val: string) => {
     setSelectedBaseId(val);
-    const base = MOCK_BESTIARY.find(b => b.id === val);
+    const base = MOCK_BESTIARY.find((b) => b.id === val);
     if (base) {
       setValue('name', base.name);
       setValue('hpMax', base.max_hp);
@@ -85,7 +147,6 @@ export function UnifiedEnemyForm({
 
   return (
     <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6">
-      
       {/* Preset Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Base (Bestiário)</label>
@@ -95,7 +156,7 @@ export function UnifiedEnemyForm({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Nenhum (Criar do Zero)</SelectItem>
-            {MOCK_BESTIARY.map(base => (
+            {MOCK_BESTIARY.map((base) => (
               <SelectItem key={base.id} value={base.id}>
                 {base.name} (HP: {base.max_hp} | CA: {base.ca})
               </SelectItem>
@@ -104,7 +165,7 @@ export function UnifiedEnemyForm({
         </Select>
         {selectedBaseId && selectedBaseId !== 'none' && (
           <p className="text-xs text-stone-400 mt-1">
-            {MOCK_BESTIARY.find(b => b.id === selectedBaseId)?.desc}
+            {MOCK_BESTIARY.find((b) => b.id === selectedBaseId)?.desc}
           </p>
         )}
       </div>
@@ -112,22 +173,26 @@ export function UnifiedEnemyForm({
       {/* Image Upload */}
       <div className="flex flex-col gap-2 border border-stone-700 p-4 rounded-lg items-center">
         {imageUrl ? (
-            <img src={imageUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-2 border-stone-600" />
+          <img
+            src={imageUrl}
+            alt="Avatar"
+            className="w-24 h-24 rounded-full object-cover border-2 border-stone-600"
+          />
         ) : (
-            <div className="w-24 h-24 rounded-full bg-stone-800 flex items-center justify-center border-2 border-stone-600">
-              <span className="text-stone-500 text-sm">Sem Imagem</span>
-            </div>
+          <div className="w-24 h-24 rounded-full bg-stone-800 flex items-center justify-center border-2 border-stone-600">
+            <span className="text-stone-500 text-sm">Sem Imagem</span>
+          </div>
         )}
-        <input 
-          type="file" 
-          accept="image/*" 
-          className="hidden" 
-          ref={fileInputRef} 
-          onChange={handleImageUpload} 
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleImageUpload}
         />
-        <button 
-          type="button" 
-          onClick={() => fileInputRef.current?.click()} 
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
           className="mt-2 flex items-center px-3 py-1.5 text-sm border border-stone-700 rounded-md hover:bg-stone-800 transition-colors"
         >
           <Upload size={14} className="mr-2" /> Upload Imagem
@@ -209,13 +274,16 @@ export function UnifiedEnemyForm({
             <Plus size={14} className="mr-1" /> Adicionar
           </button>
         </div>
-        
+
         {fields.length === 0 ? (
           <p className="text-xs text-stone-500 italic">Nenhuma habilidade adicionada.</p>
         ) : (
           <div className="space-y-3">
             {fields.map((field, index) => (
-              <div key={field.id} className="flex gap-2 items-start bg-stone-800/50 p-2 rounded-md border border-stone-700/50">
+              <div
+                key={field.id}
+                className="flex gap-2 items-start bg-stone-800/50 p-2 rounded-md border border-stone-700/50"
+              >
                 <div className="flex-1 space-y-2">
                   <input
                     {...register(`skills.${index}.name`)}

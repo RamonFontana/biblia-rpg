@@ -23,10 +23,11 @@ export function ActiveSession() {
   const { user } = useAuthStore();
 
   // Find if there's an active test for the current player
-  const currentActiveTest = activeTests.find(t => t.status === 'active');
-  const myResult = currentActiveTest && user 
-    ? (testResults[currentActiveTest.id] || []).find(r => r.player_id === user.id) 
-    : null;
+  const currentActiveTest = activeTests.find((t) => t.status === 'active');
+  const myResult =
+    currentActiveTest && user
+      ? (testResults[currentActiveTest.id] || []).find((r) => r.player_id === user.id)
+      : null;
   const hasPendingTest = !!myResult;
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export function ActiveSession() {
       if (!error && data) {
         setSessionData(data);
       } else if (error) {
-        console.error("Erro ao buscar sessão:", error);
+        console.error('Erro ao buscar sessão:', error);
       }
       setIsLoading(false);
     };
@@ -57,7 +58,7 @@ export function ActiveSession() {
         { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${id}` },
         (payload) => {
           setSessionData(payload.new);
-        }
+        },
       )
       .subscribe();
 
@@ -89,15 +90,25 @@ export function ActiveSession() {
           <p className="text-muted-foreground">{sessionData.description}</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className={`px-3 py-1 rounded-full text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          <div
+            className={`px-3 py-1 rounded-full text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+          >
             {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
           </div>
           {sessionData.status === 'active' && (
             <>
-              <Button onClick={() => setIsDiceRollerOpen(true)} variant="outline" className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2">
+              <Button
+                onClick={() => setIsDiceRollerOpen(true)}
+                variant="outline"
+                className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2"
+              >
                 <span>🎲</span> Dados
               </Button>
-              <Button onClick={() => setIsTestDialogOpen(true)} variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white">
+              <Button
+                onClick={() => setIsTestDialogOpen(true)}
+                variant="outline"
+                className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white"
+              >
                 Solicitar Teste
               </Button>
               <AddNPCModal sessionId={id!} />
@@ -125,12 +136,12 @@ export function ActiveSession() {
         </div>
       </div>
 
-      <MasterTestDialog 
-        sessionId={id!} 
-        isOpen={isTestDialogOpen} 
-        onClose={() => setIsTestDialogOpen(false)} 
-        activeTests={activeTests} 
-        testResults={testResults} 
+      <MasterTestDialog
+        sessionId={id!}
+        isOpen={isTestDialogOpen}
+        onClose={() => setIsTestDialogOpen(false)}
+        activeTests={activeTests}
+        testResults={testResults}
         playerCharacters={[]} // TODO: replace with real players
       />
 
@@ -140,10 +151,7 @@ export function ActiveSession() {
         testResult={myResult || null}
       />
 
-      <DiceRollerDialog 
-        isOpen={isDiceRollerOpen}
-        onClose={() => setIsDiceRollerOpen(false)}
-      />
+      <DiceRollerDialog isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />
     </div>
   );
 }

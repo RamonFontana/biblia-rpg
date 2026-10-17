@@ -42,7 +42,11 @@ export function useAmmunition() {
     }
   };
 
-  const recover = async (characterItemId: string, spentAmount: number, maxCapacity: number): Promise<number> => {
+  const recover = async (
+    characterItemId: string,
+    spentAmount: number,
+    maxCapacity: number,
+  ): Promise<number> => {
     try {
       let recoveredCount = 0;
       for (let i = 0; i < spentAmount; i++) {

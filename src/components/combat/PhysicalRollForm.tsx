@@ -17,7 +17,11 @@ interface PhysicalRollFormProps {
   targetParticipantId?: string;
 }
 
-export function PhysicalRollForm({ playerId: _playerId, character, targetParticipantId }: PhysicalRollFormProps) {
+export function PhysicalRollForm({
+  playerId: _playerId,
+  character,
+  targetParticipantId,
+}: PhysicalRollFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [equippedWeapon, setEquippedWeapon] = useState<any | null>(null);
   const [useVersatile, setUseVersatile] = useState(false);
@@ -27,7 +31,7 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
     defaultValues: {
       attackRoll: 0,
       damageRoll: 0,
-    }
+    },
   });
 
   useEffect(() => {
@@ -38,17 +42,19 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
       }
       const { data, error } = await supabase
         .from('character_items')
-        .select(`
+        .select(
+          `
           id,
           items (
             name,
             effects
           ),
           weapon_effects
-        `)
+        `,
+        )
         .eq('id', character.equipment.mainHand)
         .single();
-        
+
       if (!error && data) {
         setEquippedWeapon({ ...data.items, weapon_effects: data.weapon_effects });
       }
@@ -57,12 +63,13 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
   }, [character?.equipment?.mainHand]);
 
   const hasOffhandEquipped = character?.equipment?.offHand !== null;
-  const isVersatile = equippedWeapon?.effects?.properties?.includes("Versátil");
+  const isVersatile = equippedWeapon?.effects?.properties?.includes('Versátil');
   const canUseVersatile = isVersatile && !hasOffhandEquipped;
 
-  const displayDamageDie = canUseVersatile && useVersatile 
-    ? (equippedWeapon?.effects?.versatileDamageDie || "Aumentado") 
-    : equippedWeapon?.effects?.damageDie;
+  const displayDamageDie =
+    canUseVersatile && useVersatile
+      ? equippedWeapon?.effects?.versatileDamageDie || 'Aumentado'
+      : equippedWeapon?.effects?.damageDie;
 
   const isProficient = checkWeaponProficiency(equippedWeapon, character?.vocation || '');
 
@@ -75,15 +82,18 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
       // Por enquanto, não aplicamos dano num id mocado.
 
       if (values.naturalRoll && equippedWeapon?.weapon_effects && targetParticipantId) {
-        await combatEngine.checkWeaponEffects(equippedWeapon.weapon_effects, values.naturalRoll, targetParticipantId);
+        await combatEngine.checkWeaponEffects(
+          equippedWeapon.weapon_effects,
+          values.naturalRoll,
+          targetParticipantId,
+        );
       }
 
       console.log('Fired Roll Event:', values);
       form.reset();
 
       // Simular delay network
-      await new Promise(r => setTimeout(r, 500));
-
+      await new Promise((r) => setTimeout(r, 500));
     } catch (error) {
       console.error('Failed to register physical roll', error);
     } finally {
@@ -97,7 +107,9 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
         <CardTitle className="flex items-center gap-2">
           Rolagem Física
           {equippedWeapon && (
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isProficient ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${isProficient ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}
+            >
               {isProficient ? 'Proficiente' : 'Não Proficiente'}
             </span>
           )}
@@ -110,10 +122,10 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
             </p>
             {canUseVersatile && (
               <div className="flex items-center gap-2 mt-1">
-                <input 
-                  type="checkbox" 
-                  id="versatile-toggle" 
-                  checked={useVersatile} 
+                <input
+                  type="checkbox"
+                  id="versatile-toggle"
+                  checked={useVersatile}
                   onChange={(e) => setUseVersatile(e.target.checked)}
                   className="w-4 h-4 rounded border-stone-700 bg-stone-900 text-amber-500 focus:ring-amber-500"
                 />
@@ -136,7 +148,13 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
                   <FormItem>
                     <FormLabel>Ataque (d20 + Mod)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +168,15 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
                   <FormItem>
                     <FormLabel>Natural (Opcional, 1-20)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === '' ? undefined : parseInt(e.target.value, 10),
+                          )
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -164,7 +190,15 @@ export function PhysicalRollForm({ playerId: _playerId, character, targetPartici
                   <FormItem>
                     <FormLabel>Dano (Opcional)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === '' ? undefined : parseInt(e.target.value, 10),
+                          )
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

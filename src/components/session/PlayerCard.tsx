@@ -50,9 +50,9 @@ export function PlayerCard({
     if (!character?.id) return;
     const current = ((character as any).conditions as unknown as ConditionEntry[]) || [];
     const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
-    
+
     // Optimistic Update
-    const updated = [...current.filter(c => c.conditionId !== conditionId), newCond];
+    const updated = [...current.filter((c) => c.conditionId !== conditionId), newCond];
     if (onUpdateConditions) {
       onUpdateConditions(character.id, updated);
     }
@@ -63,9 +63,9 @@ export function PlayerCard({
   const handleRemoveCondition = async (conditionId: string) => {
     if (!character?.id) return;
     const current = ((character as any).conditions as unknown as ConditionEntry[]) || [];
-    
+
     // Optimistic Update
-    const updated = current.filter(c => c.conditionId !== conditionId);
+    const updated = current.filter((c) => c.conditionId !== conditionId);
     if (onUpdateConditions) {
       onUpdateConditions(character.id, updated);
     }
@@ -91,35 +91,41 @@ export function PlayerCard({
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 gap-3 items-center">
           {character && (
-            <CharacterAvatar 
-              imageUrl={character.narrative?.imageUrl} 
-              name={character.name || user.name || 'Desconhecido'} 
-              className="w-12 h-12 border border-stone-600 shadow-sm shrink-0" 
+            <CharacterAvatar
+              imageUrl={character.narrative?.imageUrl}
+              name={character.name || user.name || 'Desconhecido'}
+              className="w-12 h-12 border border-stone-600 shadow-sm shrink-0"
             />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="min-w-0 truncate block max-w-[200px] sm:max-w-full text-lg font-medium text-stone-200">
-              {character ? `${character.name} (Nível ${character.level || (character.stats as any)?.level || 1})` : (user.name || 'Jogador')}
-            </span>
-            {isSessionGM && (
-              <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
-                👑 Mestre
+                {character
+                  ? `${character.name} (Nível ${character.level || (character.stats as any)?.level || 1})`
+                  : user.name || 'Jogador'}
               </span>
-            )}
-            {isBusy && !isSessionGM && (
-              <span className="flex animate-pulse items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
-                🎲 Testando...
-              </span>
-            )}
-            {isTrading && !isSessionGM && (
-              <span className="flex animate-pulse items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400">
-                ⚖️ Negociando...
-              </span>
-            )}
-          </div>
+              {isSessionGM && (
+                <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
+                  👑 Mestre
+                </span>
+              )}
+              {isBusy && !isSessionGM && (
+                <span className="flex animate-pulse items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+                  🎲 Testando...
+                </span>
+              )}
+              {isTrading && !isSessionGM && (
+                <span className="flex animate-pulse items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400">
+                  ⚖️ Negociando...
+                </span>
+              )}
+            </div>
             <span className="mt-1 block truncate text-xs text-stone-400">
-              {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde {new Date(user.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {character ? `Jogador: ${user.name || 'Desconhecido'} • ` : ''}Online desde{' '}
+              {new Date(user.online_at).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </span>
           </div>
         </div>
@@ -130,7 +136,10 @@ export function PlayerCard({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={(e) => { e.stopPropagation(); onShop(user.user_id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShop(user.user_id);
+                }}
                 className="h-8 whitespace-nowrap border-amber-600/50 px-2.5 text-xs text-amber-400 hover:bg-amber-600/20"
               >
                 <Store className="mr-1 h-3.5 w-3.5" />
@@ -141,7 +150,10 @@ export function PlayerCard({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={(e) => { e.stopPropagation(); onNegotiate(user.user_id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNegotiate(user.user_id);
+                }}
                 className="h-8 whitespace-nowrap border-stone-500 px-2.5 text-xs text-stone-300 hover:bg-stone-600"
               >
                 <Scale className="mr-1 h-3.5 w-3.5" />
@@ -160,14 +172,19 @@ export function PlayerCard({
 
       {character && character.stats && (
         <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-600/50 pt-2 text-xs text-stone-400">
-          <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
+          <div
+            className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}
+          >
             <Heart className="h-3.5 w-3.5 text-red-400" />
             {viewerIsGM && onUpdateStat ? (
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   aria-label="Reduzir PV"
-                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', -1); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStat('current_pv', -1);
+                  }}
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
                 >
                   <Minus className="h-3 w-3" />
@@ -178,28 +195,40 @@ export function PlayerCard({
                 <button
                   type="button"
                   aria-label="Aumentar PV"
-                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_pv', 1); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStat('current_pv', 1);
+                  }}
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
                 >
                   <Plus className="h-3 w-3" />
                 </button>
               </div>
             ) : (
-              <span className="font-mono tabular-nums">{getCurrentPv(character.stats, 0)}/{character.stats.pv}</span>
+              <span className="font-mono tabular-nums">
+                {getCurrentPv(character.stats, 0)}/{character.stats.pv}
+              </span>
             )}
           </div>
-          <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
+          <div
+            className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}
+          >
             <Shield className="h-3.5 w-3.5 text-blue-400" />
             <span className="font-mono tabular-nums">CA {getCombatStats(character).totalAc}</span>
           </div>
-          <div className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}>
+          <div
+            className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}
+          >
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
             {viewerIsGM && onUpdateStat ? (
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   aria-label="Reduzir Fé"
-                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', -1); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStat('current_faith', -1);
+                  }}
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
                 >
                   <Minus className="h-3 w-3" />
@@ -210,14 +239,19 @@ export function PlayerCard({
                 <button
                   type="button"
                   aria-label="Aumentar Fé"
-                  onClick={(e) => { e.stopPropagation(); onUpdateStat('current_faith', 1); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStat('current_faith', 1);
+                  }}
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-stone-700 hover:bg-stone-600"
                 >
                   <Plus className="h-3 w-3" />
                 </button>
               </div>
             ) : (
-              <span className="font-mono tabular-nums">{character.stats.current_faith ?? character.stats.faith}/100</span>
+              <span className="font-mono tabular-nums">
+                {character.stats.current_faith ?? character.stats.faith}/100
+              </span>
             )}
           </div>
         </div>
@@ -225,7 +259,10 @@ export function PlayerCard({
 
       {/* Condições e Efeitos */}
       {character && (currentConditions.length > 0 || viewerIsGM) && !isSessionGM && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {currentConditions.map((cond) => (
             <ConditionBadge
               key={cond.conditionId}
@@ -235,17 +272,20 @@ export function PlayerCard({
               readonly={!viewerIsGM}
             />
           ))}
-          {viewerIsGM && (
-            <ConditionSelector onAddCondition={handleAddCondition} />
-          )}
+          {viewerIsGM && <ConditionSelector onAddCondition={handleAddCondition} />}
         </div>
       )}
 
-      {viewerIsGM && character && ((getCurrentPv(character.stats, 1) <= 0) || character.is_dead || character.is_stable) && (
-        <div className="mt-3 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
-          <MasterDeathControls characterId={character.id} />
-        </div>
-      )}
+      {viewerIsGM &&
+        character &&
+        (getCurrentPv(character.stats, 1) <= 0 || character.is_dead || character.is_stable) && (
+          <div
+            className="mt-3 border-t border-stone-600/50 pt-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MasterDeathControls characterId={character.id} />
+          </div>
+        )}
     </div>
   );
 }

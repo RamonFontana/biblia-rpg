@@ -22,7 +22,13 @@ interface SessionNPCListProps {
   showNegotiateButton?: boolean;
 }
 
-export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiate, showNegotiateButton = false }: SessionNPCListProps) {
+export function SessionNPCList({
+  npcs,
+  sessionId,
+  onUpdateNPCData,
+  onNPCNegotiate,
+  showNegotiateButton = false,
+}: SessionNPCListProps) {
   const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
 
   const handleNPCClick = (npc: SessionNPC) => {
@@ -33,12 +39,20 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
 
   const closeSheet = () => setSelectedNPC(null);
 
-  const updateNPCStat = async (npc: SessionNPC, statKey: 'current_pv' | 'current_faith', delta: number) => {
+  const updateNPCStat = async (
+    npc: SessionNPC,
+    statKey: 'current_pv' | 'current_faith',
+    delta: number,
+  ) => {
     if (!npc.stats) return;
 
     if (statKey === 'current_pv') {
       try {
-        const newStats = await characterVitalsService.adjustCurrentPvWithStatus(npc.id, npc.stats, delta);
+        const newStats = await characterVitalsService.adjustCurrentPvWithStatus(
+          npc.id,
+          npc.stats,
+          delta,
+        );
         if (onUpdateNPCData) onUpdateNPCData(npc.id, { stats: newStats as any });
       } catch (e) {
         console.error('Erro ao atualizar status do NPC:', e);
@@ -55,10 +69,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
     const newStats = { ...npc.stats, current_faith: newValue };
 
     try {
-      await supabase
-        .from('characters')
-        .update({ stats: newStats })
-        .eq('id', npc.id);
+      await supabase.from('characters').update({ stats: newStats }).eq('id', npc.id);
 
       if (onUpdateNPCData) {
         onUpdateNPCData(npc.id, { stats: newStats });
@@ -70,7 +81,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
 
   const toggleVisibility = async (e: React.MouseEvent, npc: SessionNPC) => {
     e.stopPropagation();
-    
+
     // Atualização otimista na UI para não precisar do F5
     if (onUpdateNPCData) {
       onUpdateNPCData(npc.id, { is_visible: !npc.is_visible });
@@ -78,10 +89,7 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
 
     try {
       if (npc.is_playable) {
-        await supabase
-          .from('characters')
-          .update({ is_visible: !npc.is_visible })
-          .eq('id', npc.id);
+        await supabase.from('characters').update({ is_visible: !npc.is_visible }).eq('id', npc.id);
       } else {
         await supabase
           .from('session_npcs')
@@ -112,9 +120,11 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
                   className={`relative p-3 bg-stone-900 border border-stone-700 rounded-md transition-colors ${npc.is_playable ? 'cursor-pointer hover:bg-stone-700' : ''} ${npc.stats?.status === 'Morto' ? 'opacity-60 grayscale' : ''}`}
                   onClick={() => handleNPCClick(npc)}
                 >
-                    <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
+                  <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 min-w-0 max-w-[70%] sm:max-w-none flex-wrap">
-                      <p className="font-semibold text-stone-200 truncate" title={npc.name}>{npc.name}</p>
+                      <p className="font-semibold text-stone-200 truncate" title={npc.name}>
+                        {npc.name}
+                      </p>
                       {npc.is_playable && (
                         <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-500 border border-amber-500/30">
                           Ficha Completa
@@ -131,49 +141,78 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={(e) => { e.stopPropagation(); onNPCNegotiate(npc); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNPCNegotiate(npc);
+                          }}
                           className="h-7 text-xs border-stone-500 text-stone-300 hover:bg-stone-600"
                         >
                           ⚖️ Negociar
                         </Button>
                       )}
-                    <div 
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={(e) => toggleVisibility(e, npc)}
-                      title={npc.is_visible ? "Visível aos jogadores - Clique para ocultar" : "Oculto dos jogadores - Clique para mostrar"}
-                    >
-                      <span className={`text-[10px] font-medium uppercase tracking-wider ${npc.is_visible ? 'text-green-400' : 'text-stone-500'}`}>
-                        {npc.is_visible ? "Visível" : "Oculto"}
-                      </span>
-                      <button
-                        type="button"
-                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
-                          npc.is_visible ? 'bg-green-500' : 'bg-stone-700'
-                        }`}
+                      <div
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={(e) => toggleVisibility(e, npc)}
+                        title={
+                          npc.is_visible
+                            ? 'Visível aos jogadores - Clique para ocultar'
+                            : 'Oculto dos jogadores - Clique para mostrar'
+                        }
                       >
-                        <span className="sr-only">Alternar visibilidade</span>
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-primary-foreground shadow-lg ring-0 transition duration-200 ease-in-out ${
-                            npc.is_visible ? 'translate-x-4' : 'translate-x-0'
+                          className={`text-[10px] font-medium uppercase tracking-wider ${npc.is_visible ? 'text-green-400' : 'text-stone-500'}`}
+                        >
+                          {npc.is_visible ? 'Visível' : 'Oculto'}
+                        </span>
+                        <button
+                          type="button"
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
+                            npc.is_visible ? 'bg-green-500' : 'bg-stone-700'
                           }`}
-                        />
-                      </button>
-                    </div>
+                        >
+                          <span className="sr-only">Alternar visibilidade</span>
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-primary-foreground shadow-lg ring-0 transition duration-200 ease-in-out ${
+                              npc.is_visible ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <p className={`text-sm ${npc.is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
-                    {npc.is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}` : npc.vocation}
+                  <p
+                    className={`text-sm ${npc.is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}
+                  >
+                    {npc.is_playable
+                      ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'}`
+                      : npc.vocation}
                   </p>
                   {npc.stats && npc.is_playable && (
                     <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 pt-2 border-t border-stone-800/50 text-xs text-stone-400">
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-red-400">♥</span>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_pv', -1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">-</button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateNPCStat(npc, 'current_pv', -1);
+                            }}
+                            className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center"
+                          >
+                            -
+                          </button>
                           <span className="w-8 text-center font-mono">
                             {getCurrentPv(npc.stats, 10)}/{getMaxPv(npc.stats, 10)}
                           </span>
-                          <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_pv', 1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">+</button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateNPCStat(npc, 'current_pv', 1);
+                            }}
+                            className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
 
@@ -185,11 +224,27 @@ export function SessionNPCList({ npcs, sessionId, onUpdateNPCData, onNPCNegotiat
                       <div className="flex items-center gap-2 bg-stone-950 px-2 py-1 rounded">
                         <span className="text-amber-400">✨</span>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_faith', -1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">-</button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateNPCStat(npc, 'current_faith', -1);
+                            }}
+                            className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center"
+                          >
+                            -
+                          </button>
                           <span className="w-8 text-center font-mono">
                             {npc.stats.current_faith ?? npc.stats.faith ?? 0}/100
                           </span>
-                          <button onClick={(e) => { e.stopPropagation(); updateNPCStat(npc, 'current_faith', 1); }} className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center">+</button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateNPCStat(npc, 'current_faith', 1);
+                            }}
+                            className="w-5 h-5 bg-stone-800 hover:bg-stone-700 rounded flex items-center justify-center"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
                     </div>

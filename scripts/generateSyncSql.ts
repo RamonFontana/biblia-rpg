@@ -17,7 +17,7 @@ for (const item of ITEMS_DB) {
 
   let cr = 'ARRAY[]::text[]';
   if (item.conditionResistances && item.conditionResistances.length > 0) {
-    const formattedArray = item.conditionResistances.map(c => `'${c}'`).join(',');
+    const formattedArray = item.conditionResistances.map((c) => `'${c}'`).join(',');
     cr = `ARRAY[${formattedArray}]::text[]`;
   }
 

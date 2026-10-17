@@ -11,14 +11,16 @@ interface EnemyCombatListProps {
 
 export function EnemyCombatList({ enemies, isLoading }: EnemyCombatListProps) {
   const { participants, activeCombat } = useCombatStore();
-  
+
   const [selectedEnemy, setSelectedEnemy] = useState<Character | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   if (!activeCombat || participants.length === 0) return null;
 
   // Filter participants that are enemies/npcs
-  const enemyParticipants = participants.filter(p => p.entity_type === 'enemy' || p.entity_type === 'npc');
+  const enemyParticipants = participants.filter(
+    (p) => p.entity_type === 'enemy' || p.entity_type === 'npc',
+  );
 
   if (enemyParticipants.length === 0) return null;
 
@@ -29,34 +31,36 @@ export function EnemyCombatList({ enemies, isLoading }: EnemyCombatListProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-stone-300 border-b border-stone-800 pb-2">Inimigos na Cena</h3>
-      
+      <h3 className="text-lg font-semibold text-stone-300 border-b border-stone-800 pb-2">
+        Inimigos na Cena
+      </h3>
+
       {isLoading ? (
         <div className="text-sm text-stone-500 animate-pulse">Carregando inimigos...</div>
       ) : (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {enemyParticipants.map(participant => {
-            const enemyData = enemies.find(e => e.id === participant.entity_id);
-            
+          {enemyParticipants.map((participant) => {
+            const enemyData = enemies.find((e) => e.id === participant.entity_id);
+
             if (!enemyData) return null; // Still loading or not found
 
             return (
-              <EnemyCard 
-                key={participant.id} 
-                enemy={enemyData} 
-                participant={participant} 
-                onClick={() => handleEnemyClick(enemyData)} 
+              <EnemyCard
+                key={participant.id}
+                enemy={enemyData}
+                participant={participant}
+                onClick={() => handleEnemyClick(enemyData)}
               />
             );
           })}
         </div>
       )}
 
-      <EnemySheet 
-        enemy={selectedEnemy} 
-        participant={participants.find(p => p.entity_id === selectedEnemy?.id)}
-        isOpen={isSheetOpen} 
-        onOpenChange={setIsSheetOpen} 
+      <EnemySheet
+        enemy={selectedEnemy}
+        participant={participants.find((p) => p.entity_id === selectedEnemy?.id)}
+        isOpen={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
       />
     </div>
   );

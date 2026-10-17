@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function main() {
   console.log('Starting sync of', ITEMS_DB.length, 'items...');
-  
+
   for (const item of ITEMS_DB) {
     const payload = {
       name: item.name,
@@ -24,7 +24,7 @@ async function main() {
       level: item.level || 1,
       armor_class: item.armorClass || 0,
       damage: item.damage || null,
-      condition_resistances: item.conditionResistances || []
+      condition_resistances: item.conditionResistances || [],
     };
 
     // Find if item exists by name
@@ -41,10 +41,7 @@ async function main() {
 
     if (existing && existing.length > 0) {
       // Update
-      const { error } = await supabase
-        .from('items')
-        .update(payload)
-        .eq('id', existing[0].id);
+      const { error } = await supabase.from('items').update(payload).eq('id', existing[0].id);
       if (error) {
         console.error('Failed to update item:', item.name, error);
       } else {
@@ -52,9 +49,7 @@ async function main() {
       }
     } else {
       // Insert
-      const { error } = await supabase
-        .from('items')
-        .insert([payload]);
+      const { error } = await supabase.from('items').insert([payload]);
       if (error) {
         console.error('Failed to insert item:', item.name, error);
       } else {
@@ -62,7 +57,7 @@ async function main() {
       }
     }
   }
-  
+
   console.log('Sync finished.');
 }
 

@@ -35,7 +35,6 @@ export function Summary() {
 
   return (
     <div className="space-y-8">
-      
       <div className="bg-stone-800 p-6 rounded-xl border-2 border-amber-500/30 text-stone-300">
         <h2 className="text-3xl font-serif text-amber-500 mb-6 text-center border-b border-amber-500/20 pb-4">
           {draft.name}
@@ -44,17 +43,31 @@ export function Summary() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="font-bold text-amber-400 mb-2">Detalhes Principais</h3>
-            <p><strong>Tribo:</strong> {draft.tribe}</p>
-            <p><strong>Vocação:</strong> {draft.vocation}</p>
-            <p><strong>Fortaleza:</strong> {draft.fortress}</p>
-            <p><strong>Tentação:</strong> {draft.temptation}</p>
+            <p>
+              <strong>Tribo:</strong> {draft.tribe}
+            </p>
+            <p>
+              <strong>Vocação:</strong> {draft.vocation}
+            </p>
+            <p>
+              <strong>Fortaleza:</strong> {draft.fortress}
+            </p>
+            <p>
+              <strong>Tentação:</strong> {draft.temptation}
+            </p>
           </div>
 
           <div>
             <h3 className="font-bold text-amber-400 mb-2">Estatísticas</h3>
-            <p><strong>PV:</strong> {draft.stats?.pv}</p>
-            <p><strong>CA:</strong> {draft.stats?.ca}</p>
-            <p><strong>Fé:</strong> {draft.stats?.faith}</p>
+            <p>
+              <strong>PV:</strong> {draft.stats?.pv}
+            </p>
+            <p>
+              <strong>CA:</strong> {draft.stats?.ca}
+            </p>
+            <p>
+              <strong>Fé:</strong> {draft.stats?.faith}
+            </p>
           </div>
         </div>
 
@@ -69,13 +82,12 @@ export function Summary() {
             <span className="whitespace-nowrap">CAR: {draft.attributes?.car}</span>
           </div>
         </div>
-
       </div>
 
       {error && <p className="text-red-400 text-center">{error}</p>}
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
-        <button 
+        <button
           type="button"
           onClick={prevStep}
           disabled={saving}
@@ -83,7 +95,7 @@ export function Summary() {
         >
           Voltar e Editar
         </button>
-        <button 
+        <button
           onClick={handleSave}
           disabled={saving}
           className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors disabled:opacity-50 flex justify-center text-center"
@@ -91,7 +103,6 @@ export function Summary() {
           {saving ? 'Salvando...' : 'Confirmar e Salvar'}
         </button>
       </div>
-
     </div>
   );
 }

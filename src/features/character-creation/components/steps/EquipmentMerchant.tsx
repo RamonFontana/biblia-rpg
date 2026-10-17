@@ -15,7 +15,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 
 import { ITEMS_DB, KITS_DB, VOCATION_PROFICIENCIES } from '@/data/itemsDb';
 
@@ -24,13 +24,17 @@ const INITIAL_COINS = 50;
 export function EquipmentMerchant() {
   const { draft, setEquipment, nextStep, prevStep, isLocked } = useCharacterCreationStore();
   const { quickSave, saving, message, isEditing } = useQuickSave();
-  
+
   const [wallet, setWallet] = useState<number>(draft.coins || INITIAL_COINS);
-  const [cart, setCart] = useState<EquipmentItem[]>(Array.isArray(draft.equipment) ? draft.equipment : []);
-  
+  const [cart, setCart] = useState<EquipmentItem[]>(
+    Array.isArray(draft.equipment) ? draft.equipment : [],
+  );
+
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [activeDetails, setActiveDetails] = useState<{ title: string; markdown: string } | null>(null);
-  
+  const [activeDetails, setActiveDetails] = useState<{ title: string; markdown: string } | null>(
+    null,
+  );
+
   // UX: Controle de tabs
   const [activeTab, setActiveTab] = useState<'pacote' | 'armas' | 'armaduras' | 'geral'>('pacote');
 
@@ -39,36 +43,44 @@ export function EquipmentMerchant() {
 
   // Filtra itens permitidos pela proficiência da classe
   const allowedCategories = VOCATION_PROFICIENCIES[vocationId] || ['Todas'];
-  const availableItems = ITEMS_DB.filter(item => allowedCategories.includes(item.category));
+  const availableItems = ITEMS_DB.filter((item) => allowedCategories.includes(item.category));
 
   const { handleSubmit } = useForm({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
       coins: wallet,
-      equipment: cart
-    }
+      equipment: cart,
+    },
   });
 
   const handleBuy = (item: EquipmentItem) => {
     if (wallet >= (item.cost || 0)) {
-      setWallet(prev => prev - (item.cost || 0));
-      setCart(prev => [...prev, item]);
+      setWallet((prev) => prev - (item.cost || 0));
+      setCart((prev) => [...prev, item]);
     }
   };
 
   const handleBuyKit = () => {
     if (!vocationKit) return;
-    setCart([{ id: 'kit_basico', name: vocationKit.name, type: 'Kit', cost: 50, description: 'Pacote inicial de equipamentos.' }]);
+    setCart([
+      {
+        id: 'kit_basico',
+        name: vocationKit.name,
+        type: 'Kit',
+        cost: 50,
+        description: 'Pacote inicial de equipamentos.',
+      },
+    ]);
     setWallet(vocationKit.leftover);
   };
 
   const handleSell = (item: EquipmentItem, index: number) => {
-    setWallet(prev => {
+    setWallet((prev) => {
       // Se for um kit, ele devolve os 50 integrais (assumindo que o kit gastou 50)
       if (item.id === 'kit_basico') return INITIAL_COINS;
       return prev + (item.cost || 0);
     });
-    setCart(prev => {
+    setCart((prev) => {
       const newCart = [...prev];
       newCart.splice(index, 1);
       return newCart;
@@ -96,10 +108,11 @@ export function EquipmentMerchant() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {isLocked && (
         <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200">
-          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Os equipamentos não podem ser alterados nesta tela.
+          <strong>Atenção:</strong> Personagem já está participando de uma sessão. Os equipamentos
+          não podem ser alterados nesta tela.
         </div>
       )}
-      
+
       <div className="flex items-center justify-between bg-stone-800 p-4 rounded-xl border-2 border-amber-500/30">
         <div>
           <h2 className="text-xl font-serif text-stone-100">Mercador da Caravana</h2>
@@ -112,11 +125,12 @@ export function EquipmentMerchant() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
         {/* Loja - Ocupa 7 colunas em telas grandes */}
         <div className="lg:col-span-7 space-y-4">
-          <h3 className="text-lg font-bold text-stone-300 flex items-center"><Package className="mr-2" /> Catálogo</h3>
-          
+          <h3 className="text-lg font-bold text-stone-300 flex items-center">
+            <Package className="mr-2" /> Catálogo
+          </h3>
+
           {/* Navegação de Tabs */}
           <div className="flex bg-stone-900 rounded-lg p-1 border border-stone-700 overflow-x-auto custom-scrollbar">
             {vocationKit && (
@@ -165,12 +179,15 @@ export function EquipmentMerchant() {
                   <HelpCircle className="w-5 h-5" />
                 </button>
                 <h4 className="font-serif text-xl text-amber-500 pr-8">{vocationKit.name}</h4>
-                <p className="text-sm text-stone-400 mt-2 mb-6">Um conjunto completo de itens recomendado para sua vocação.</p>
+                <p className="text-sm text-stone-400 mt-2 mb-6">
+                  Um conjunto completo de itens recomendado para sua vocação.
+                </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <span className="text-xs text-stone-400 bg-stone-900 px-3 py-1.5 rounded-full border border-stone-700">
-                    Custa: <strong className="text-amber-500">{INITIAL_COINS} SP</strong> (Sobra {vocationKit.leftover} SP)
+                    Custa: <strong className="text-amber-500">{INITIAL_COINS} SP</strong> (Sobra{' '}
+                    {vocationKit.leftover} SP)
                   </span>
-                  <button 
+                  <button
                     type="button"
                     onClick={handleBuyKit}
                     disabled={isLocked || wallet < INITIAL_COINS}
@@ -185,51 +202,60 @@ export function EquipmentMerchant() {
             {activeTab !== 'pacote' && (
               <div className="space-y-3">
                 {availableItems
-                  .filter(item => {
+                  .filter((item) => {
                     if (activeTab === 'armas') return item.type === 'Arma';
-                    if (activeTab === 'armaduras') return item.type === 'Armadura' || item.type === 'Escudo';
-                    if (activeTab === 'geral') return item.type === 'Consumível' || item.type === 'Utilidade';
+                    if (activeTab === 'armaduras')
+                      return item.type === 'Armadura' || item.type === 'Escudo';
+                    if (activeTab === 'geral')
+                      return item.type === 'Consumível' || item.type === 'Utilidade';
                     return false;
                   })
-                  .map(item => (
-                  <div key={item.id} className="relative flex flex-col sm:flex-row sm:items-center justify-between bg-stone-900/80 p-4 rounded-lg border border-stone-700 hover:border-stone-500 transition-colors gap-4">
-                    <div className="pr-8 flex-1">
-                      <h4 className="font-bold text-stone-200 text-base">{item.name}</h4>
-                      <p className="text-xs text-stone-500 mt-1">
-                        <span className="text-stone-400">{item.type}</span> 
-                        {item.damage ? ` • ${item.damage}` : ''} 
-                        {item.armorClass ? ` • CA ${item.armorClass}` : ''}
-                      </p>
-                      {item.level && item.conditionResistances && (
-                         <div className="mt-2 flex gap-2 items-center flex-wrap">
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="relative flex flex-col sm:flex-row sm:items-center justify-between bg-stone-900/80 p-4 rounded-lg border border-stone-700 hover:border-stone-500 transition-colors gap-4"
+                    >
+                      <div className="pr-8 flex-1">
+                        <h4 className="font-bold text-stone-200 text-base">{item.name}</h4>
+                        <p className="text-xs text-stone-500 mt-1">
+                          <span className="text-stone-400">{item.type}</span>
+                          {item.damage ? ` • ${item.damage}` : ''}
+                          {item.armorClass ? ` • CA ${item.armorClass}` : ''}
+                        </p>
+                        {item.level && item.conditionResistances && (
+                          <div className="mt-2 flex gap-2 items-center flex-wrap">
                             <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-900/40 text-amber-500 border border-amber-500/20">
                               Resistência Nv{item.level}
                             </span>
                             <span className="text-xs text-stone-400 italic">
                               vs {item.conditionResistances.join(', ')}
                             </span>
-                         </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleBuy(item)}
+                        disabled={
+                          isLocked ||
+                          wallet < (item.cost || 0) ||
+                          cart.some((c) => c.id === 'kit_basico')
+                        }
+                        className="px-4 py-2 bg-stone-800 hover:bg-stone-700 disabled:opacity-50 disabled:hover:bg-stone-800 border border-stone-600 rounded-lg text-amber-500 font-bold transition-colors shrink-0 whitespace-nowrap"
+                      >
+                        {item.cost} SP
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenSheet(e, item.name, item.description || '')}
+                        className="absolute top-4 right-4 text-stone-500 hover:text-amber-500 transition-colors"
+                        title="Ver detalhes"
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                      </button>
                     </div>
-                    <button 
-                      type="button"
-                      onClick={() => handleBuy(item)}
-                      disabled={isLocked || wallet < (item.cost || 0) || cart.some(c => c.id === 'kit_basico')}
-                      className="px-4 py-2 bg-stone-800 hover:bg-stone-700 disabled:opacity-50 disabled:hover:bg-stone-800 border border-stone-600 rounded-lg text-amber-500 font-bold transition-colors shrink-0 whitespace-nowrap"
-                    >
-                      {item.cost} SP
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={(e) => handleOpenSheet(e, item.name, item.description || '')}
-                      className="absolute top-4 right-4 text-stone-500 hover:text-amber-500 transition-colors"
-                      title="Ver detalhes"
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -238,7 +264,9 @@ export function EquipmentMerchant() {
         {/* Inventário - Ocupa 5 colunas em telas grandes e fica Fixo (Sticky) na rolagem geral da página */}
         <div className="lg:col-span-5 sticky top-6">
           <div className="bg-stone-800/50 p-5 rounded-xl border border-stone-700">
-            <h3 className="text-lg font-bold text-stone-300 mb-4 flex items-center"><Shield className="mr-2" /> Seu Inventário</h3>
+            <h3 className="text-lg font-bold text-stone-300 mb-4 flex items-center">
+              <Shield className="mr-2" /> Seu Inventário
+            </h3>
             {cart.length === 0 ? (
               <div className="bg-stone-900/50 py-8 px-4 rounded-lg border border-stone-700/50 text-center text-stone-500 italic">
                 Sua bolsa está vazia.
@@ -246,11 +274,14 @@ export function EquipmentMerchant() {
             ) : (
               <div className="space-y-2 overflow-y-auto max-h-[350px] scrollbar-thin scrollbar-thumb-stone-600 scrollbar-track-stone-900 pr-1">
                 {cart.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="flex items-center justify-between bg-stone-800 p-3 rounded border border-amber-500/20 group hover:border-amber-500/50 transition-colors">
+                  <div
+                    key={`${item.id}-${index}`}
+                    className="flex items-center justify-between bg-stone-800 p-3 rounded border border-amber-500/20 group hover:border-amber-500/50 transition-colors"
+                  >
                     <div>
                       <h4 className="font-semibold text-amber-100 text-sm">{item.name}</h4>
                     </div>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => handleSell(item, index)}
                       disabled={isLocked}
@@ -268,7 +299,7 @@ export function EquipmentMerchant() {
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700">
         <div className="flex items-center gap-4 w-full sm:w-auto">
-          <button 
+          <button
             type="button"
             onClick={prevStep}
             className="w-full sm:w-auto px-6 py-2 border border-stone-600 hover:bg-stone-700 text-stone-300 rounded transition-colors flex justify-center items-center"
@@ -289,7 +320,7 @@ export function EquipmentMerchant() {
             </div>
           )}
         </div>
-        <button 
+        <button
           type="submit"
           className="w-full sm:w-auto px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded transition-colors flex justify-center items-center"
         >

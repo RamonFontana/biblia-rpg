@@ -25,7 +25,7 @@ export function CharacterAvatar({ imageUrl, name, className }: CharacterAvatarPr
       className={cn(
         'relative flex shrink-0 overflow-hidden rounded-full',
         'w-12 h-12', // default size, can be overridden by className
-        className
+        className,
       )}
     >
       {showFallback ? (

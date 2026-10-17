@@ -11,14 +11,14 @@ export function CharacterDetails() {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-200 flex flex-col">
       <div className="p-4 border-b border-stone-800 flex items-center justify-between bg-stone-900 sticky top-0 z-10">
-        <button 
-          onClick={() => navigate('/characters')} 
+        <button
+          onClick={() => navigate('/characters')}
           className="flex items-center gap-2 text-stone-400 hover:text-amber-500 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           Voltar
         </button>
-        
+
         <div className="flex gap-2">
           <button
             onClick={() => navigate(`/characters/${id}/edit`)}

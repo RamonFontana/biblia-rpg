@@ -131,7 +131,7 @@ export const tradeService = {
     tradeId: string,
     side: TradeSide,
     itemId: string,
-    quantity: number
+    quantity: number,
   ): Promise<TradeItemWithDetails> {
     const { data: existing } = await (supabase as any)
       .from('trade_items')
@@ -168,10 +168,16 @@ export const tradeService = {
   async updateTradeItemQuantity(tradeItemId: string, quantity: number): Promise<void> {
     await withTradeItem(tradeItemId, async () => {
       if (quantity <= 0) {
-        const { error } = await (supabase as any).from('trade_items').delete().eq('id', tradeItemId);
+        const { error } = await (supabase as any)
+          .from('trade_items')
+          .delete()
+          .eq('id', tradeItemId);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from('trade_items').update({ quantity }).eq('id', tradeItemId);
+        const { error } = await (supabase as any)
+          .from('trade_items')
+          .update({ quantity })
+          .eq('id', tradeItemId);
         if (error) throw error;
       }
     });
@@ -187,21 +193,30 @@ export const tradeService = {
   async updateTradeItemLevel(tradeItemId: string, level: number): Promise<void> {
     const clampedLevel = Math.max(1, Math.min(5, level));
     await withTradeItem(tradeItemId, async () => {
-      const { error } = await (supabase as any).from('trade_items').update({ level: clampedLevel }).eq('id', tradeItemId);
+      const { error } = await (supabase as any)
+        .from('trade_items')
+        .update({ level: clampedLevel })
+        .eq('id', tradeItemId);
       if (error) throw error;
     });
   },
 
   async updateTradeItemResistances(tradeItemId: string, resistances: string[]): Promise<void> {
     await withTradeItem(tradeItemId, async () => {
-      const { error } = await (supabase as any).from('trade_items').update({ custom_condition_resistances: resistances }).eq('id', tradeItemId);
+      const { error } = await (supabase as any)
+        .from('trade_items')
+        .update({ custom_condition_resistances: resistances })
+        .eq('id', tradeItemId);
       if (error) throw error;
     });
   },
 
   async updateTradeItemWeaponEffects(tradeItemId: string, effects: any[]): Promise<void> {
     await withTradeItem(tradeItemId, async () => {
-      const { error } = await (supabase as any).from('trade_items').update({ weapon_effects: effects }).eq('id', tradeItemId);
+      const { error } = await (supabase as any)
+        .from('trade_items')
+        .update({ weapon_effects: effects })
+        .eq('id', tradeItemId);
       if (error) throw error;
     });
   },
@@ -232,14 +247,17 @@ export const tradeService = {
   },
 
   async cancelSessionTrades(sessionId: string): Promise<void> {
-    const { error } = await (supabase as any).rpc('cancel_session_trades', { p_session_id: sessionId });
+    const { error } = await (supabase as any).rpc('cancel_session_trades', {
+      p_session_id: sessionId,
+    });
     if (error) throw error;
   },
 
   async getCharacterInventory(characterId: string) {
     const { data, error } = await (supabase as any)
       .from('character_items')
-      .select(`
+      .select(
+        `
         id,
         quantity,
         items (
@@ -249,7 +267,8 @@ export const tradeService = {
           category,
           price
         )
-      `)
+      `,
+      )
       .eq('character_id', characterId);
 
     if (error) throw error;

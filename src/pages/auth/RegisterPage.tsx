@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useNavigate, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -13,26 +13,35 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
 
-const formSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-})
+const formSchema = z
+  .object({
+    email: z.string().email('Email inválido'),
+    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  });
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 export function RegisterPage() {
-  const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -41,33 +50,33 @@ export function RegisterPage() {
       password: '',
       confirmPassword: '',
     },
-  })
+  });
 
   async function onSubmit(values: FormData) {
-    setLoading(true)
-    setError(null)
-    setSuccess(false)
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
     try {
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
-      })
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
 
       if (data.user) {
-        setSuccess(true)
+        setSuccess(true);
         // Se a configuração de email confirmation estiver desligada, redirecionar
         if (data.session) {
-          navigate('/')
+          navigate('/');
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao fazer cadastro.')
+      setError(err.message || 'Ocorreu um erro ao fazer cadastro.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -84,7 +93,9 @@ export function RegisterPage() {
           {success ? (
             <div className="text-center space-y-4">
               <p className="text-green-600 font-medium">Conta criada com sucesso!</p>
-              <p className="text-sm text-muted-foreground">Se necessário, verifique sua caixa de entrada para confirmar o email.</p>
+              <p className="text-sm text-muted-foreground">
+                Se necessário, verifique sua caixa de entrada para confirmar o email.
+              </p>
               <Button onClick={() => navigate('/login')} className="w-full">
                 Ir para o Login
               </Button>
@@ -131,9 +142,7 @@ export function RegisterPage() {
                     </FormItem>
                   )}
                 />
-                {error && (
-                  <div className="text-sm text-destructive font-medium">{error}</div>
-                )}
+                {error && <div className="text-sm text-destructive font-medium">{error}</div>}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
@@ -148,5 +157,5 @@ export function RegisterPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

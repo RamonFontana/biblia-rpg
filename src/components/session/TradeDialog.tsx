@@ -42,27 +42,25 @@ export function TradeDialog({
   const [executing, setExecuting] = useState(false);
 
   const initiatorChar = playerCharacters.find(
-    (pc) => pc.character.id === trade.initiator_character_id
+    (pc) => pc.character.id === trade.initiator_character_id,
   )?.character;
   const targetChar = playerCharacters.find(
-    (pc) => pc.character.id === trade.target_character_id
+    (pc) => pc.character.id === trade.target_character_id,
   )?.character;
 
   const initiatorLabel =
-    trade.type === 'shop'
-      ? 'Mestre (Lojinha)'
-      : initiatorChar?.name ?? 'Iniciador';
+    trade.type === 'shop' ? 'Mestre (Lojinha)' : (initiatorChar?.name ?? 'Iniciador');
 
   const targetLabel =
     trade.type === 'npc_trade' && trade.target_npc_id && !trade.target_character_id
-      ? npcName ?? 'NPC'
-      : targetChar?.name ?? 'Alvo';
+      ? (npcName ?? 'NPC')
+      : (targetChar?.name ?? 'Alvo');
 
   const userControlsInitiator =
     trade.type === 'shop' ? isGM : trade.initiator_user_id === currentUserId;
 
   const targetUserId = playerCharacters.find(
-    (pc) => pc.character.id === trade.target_character_id
+    (pc) => pc.character.id === trade.target_character_id,
   )?.user_id;
 
   const userControlsTarget =
@@ -73,12 +71,7 @@ export function TradeDialog({
         : targetUserId === currentUserId;
 
   useEffect(() => {
-    if (
-      trade.initiator_ready &&
-      trade.target_ready &&
-      trade.status === 'active' &&
-      !executing
-    ) {
+    if (trade.initiator_ready && trade.target_ready && trade.status === 'active' && !executing) {
       handleExecute();
     }
   }, [trade.initiator_ready, trade.target_ready, trade.status, executing]);
@@ -170,7 +163,9 @@ export function TradeDialog({
             onItemsChanged={onTradeUpdated}
           />
 
-          <div className="hidden md:flex items-center justify-center text-stone-500 text-2xl">⇄</div>
+          <div className="hidden md:flex items-center justify-center text-stone-500 text-2xl">
+            ⇄
+          </div>
 
           <TradeSide
             label={targetLabel}
@@ -183,10 +178,16 @@ export function TradeDialog({
             canEdit={userControlsTarget && trade.status === 'active'}
             isGM={isGM}
             useCatalog={
-              trade.type === 'npc_trade' && isGM && !!trade.target_npc_id && !trade.target_character_id
+              trade.type === 'npc_trade' &&
+              isGM &&
+              !!trade.target_npc_id &&
+              !trade.target_character_id
             }
             skipBalanceCheck={
-              trade.type === 'npc_trade' && isGM && !!trade.target_npc_id && !trade.target_character_id
+              trade.type === 'npc_trade' &&
+              isGM &&
+              !!trade.target_npc_id &&
+              !trade.target_character_id
             }
             characterId={trade.target_character_id}
             characterCoins={targetChar?.coins ?? 0}
@@ -197,7 +198,11 @@ export function TradeDialog({
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t border-stone-800">
-          <Button variant="outline" onClick={handleCancel} className="border-stone-600 text-stone-300">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            className="border-stone-600 text-stone-300"
+          >
             Cancelar
           </Button>
         </div>

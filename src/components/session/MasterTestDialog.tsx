@@ -1,17 +1,21 @@
-import { useState } from 'react'
-import { type SessionTest, type SessionTestResult, sessionTestService } from '@/services/sessionTestService'
-import type { Character } from '@/features/character-management/types'
+import { useState } from 'react';
+import {
+  type SessionTest,
+  type SessionTestResult,
+  sessionTestService,
+} from '@/services/sessionTestService';
+import type { Character } from '@/features/character-management/types';
 
 interface MasterTestDialogProps {
-  sessionId: string
-  isOpen: boolean
-  onClose: () => void
-  activeTests: SessionTest[]
-  testResults: Record<string, SessionTestResult[]>
-  playerCharacters: { character: Character; profile: any | null }[]
+  sessionId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  activeTests: SessionTest[];
+  testResults: Record<string, SessionTestResult[]>;
+  playerCharacters: { character: Character; profile: any | null }[];
 }
 
-import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath'
+import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
 
 export function MasterTestDialog({
   sessionId,
@@ -19,98 +23,99 @@ export function MasterTestDialog({
   onClose,
   activeTests,
   testResults,
-  playerCharacters
+  playerCharacters,
 }: MasterTestDialogProps) {
-  const [testType, setTestType] = useState(TEST_GROUPS[0].options[0])
-  const [difficulty, setDifficulty] = useState(10)
-  const [faithModifierType, setFaithModifierType] = useState<'mercy' | 'punishment'>('mercy')
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [testType, setTestType] = useState(TEST_GROUPS[0].options[0]);
+  const [difficulty, setDifficulty] = useState(10);
+  const [faithModifierType, setFaithModifierType] = useState<'mercy' | 'punishment'>('mercy');
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // There is an active test if there's any test with 'active' status
   // We can just look at the first active test for now to simplify
-  const currentActiveTest = activeTests.find(t => t.status === 'active')
-  const currentResults = currentActiveTest ? testResults[currentActiveTest.id] || [] : []
+  const currentActiveTest = activeTests.find((t) => t.status === 'active');
+  const currentResults = currentActiveTest ? testResults[currentActiveTest.id] || [] : [];
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleTogglePlayer = (characterId: string) => {
-    setSelectedPlayers(prev =>
-      prev.includes(characterId)
-        ? prev.filter(id => id !== characterId)
-        : [...prev, characterId]
-    )
-  }
+    setSelectedPlayers((prev) =>
+      prev.includes(characterId) ? prev.filter((id) => id !== characterId) : [...prev, characterId],
+    );
+  };
 
   const handleSelectAll = () => {
-    setSelectedPlayers(playerCharacters.map(pc => pc.character.id))
-  }
+    setSelectedPlayers(playerCharacters.map((pc) => pc.character.id));
+  };
 
   const handleDeselectAll = () => {
-    setSelectedPlayers([])
-  }
+    setSelectedPlayers([]);
+  };
 
   const handleCreateTest = async () => {
     if (selectedPlayers.length === 0) {
-      setError('Selecione pelo menos um jogador.')
-      return
+      setError('Selecione pelo menos um jogador.');
+      return;
     }
     if (difficulty < 0 || difficulty > 100) {
-      setError('O valor deve estar entre 0 e 100.')
-      return
+      setError('O valor deve estar entre 0 e 100.');
+      return;
     }
 
-    setError(null)
-    setIsSubmitting(true)
+    setError(null);
+    setIsSubmitting(true);
 
-    let finalDifficulty = difficulty
+    let finalDifficulty = difficulty;
     if (testType === 'Fé') {
-      finalDifficulty = faithModifierType === 'punishment' ? -Math.abs(difficulty) : Math.abs(difficulty)
+      finalDifficulty =
+        faithModifierType === 'punishment' ? -Math.abs(difficulty) : Math.abs(difficulty);
     }
 
     try {
-      const targets = selectedPlayers.map(charId => {
-        const pc = playerCharacters.find(p => p.character.id === charId)
-        return {
-          characterId: charId,
-          playerId: pc?.character.user_id || ''
-        }
-      }).filter(t => t.playerId !== '')
+      const targets = selectedPlayers
+        .map((charId) => {
+          const pc = playerCharacters.find((p) => p.character.id === charId);
+          return {
+            characterId: charId,
+            playerId: pc?.character.user_id || '',
+          };
+        })
+        .filter((t) => t.playerId !== '');
 
-      await sessionTestService.createTest(sessionId, testType, finalDifficulty, targets)
+      await sessionTestService.createTest(sessionId, testType, finalDifficulty, targets);
       // The state will be updated via the realtime hook in the parent
     } catch (err: any) {
-      setError(err.message || 'Erro ao criar o teste.')
+      setError(err.message || 'Erro ao criar o teste.');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleCancelTest = async () => {
-    if (!currentActiveTest) return
-    setIsSubmitting(true)
+    if (!currentActiveTest) return;
+    setIsSubmitting(true);
     try {
-      await sessionTestService.cancelTest(currentActiveTest.id)
+      await sessionTestService.cancelTest(currentActiveTest.id);
     } catch (err: any) {
-      setError(err.message || 'Erro ao cancelar o teste.')
+      setError(err.message || 'Erro ao cancelar o teste.');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleCompleteTest = async () => {
-    if (!currentActiveTest) return
-    setIsSubmitting(true)
+    if (!currentActiveTest) return;
+    setIsSubmitting(true);
     try {
-      await sessionTestService.completeTest(currentActiveTest.id)
-      onClose() // Close the dialog completely when finished
+      await sessionTestService.completeTest(currentActiveTest.id);
+      onClose(); // Close the dialog completely when finished
     } catch (err: any) {
-      setError(err.message || 'Erro ao concluir o teste.')
+      setError(err.message || 'Erro ao concluir o teste.');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Determine if we are showing the creation form or the active dashboard
   if (currentActiveTest) {
@@ -119,7 +124,9 @@ export function MasterTestDialog({
         <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-serif text-amber-500">Teste em Andamento</h2>
-            <button onClick={onClose} className="text-stone-400 hover:text-white">✕</button>
+            <button onClick={onClose} className="text-stone-400 hover:text-white">
+              ✕
+            </button>
           </div>
 
           <div className="mb-6 p-4 bg-stone-800 rounded border border-stone-700">
@@ -130,42 +137,66 @@ export function MasterTestDialog({
               </div>
               <div className="text-right">
                 <p className="text-sm text-stone-400">
-                  {currentActiveTest.test_type === 'Fé' 
-                    ? (currentActiveTest.difficulty < 0 ? 'Punição' : 'Misericórdia') 
+                  {currentActiveTest.test_type === 'Fé'
+                    ? currentActiveTest.difficulty < 0
+                      ? 'Punição'
+                      : 'Misericórdia'
                     : 'Dificuldade'}
                 </p>
-                <p className="text-2xl font-bold text-red-500">{Math.abs(currentActiveTest.difficulty)}</p>
+                <p className="text-2xl font-bold text-red-500">
+                  {Math.abs(currentActiveTest.difficulty)}
+                </p>
               </div>
             </div>
           </div>
 
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">Resultados ({currentResults.filter(r => r.status === 'submitted').length}/{currentResults.length})</h3>
+            <h3 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">
+              Resultados ({currentResults.filter((r) => r.status === 'submitted').length}/
+              {currentResults.length})
+            </h3>
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-              {currentResults.map(result => {
-                const pc = playerCharacters.find(p => p.character.id === result.character_id)
-                const charName = pc?.character.name || 'Desconhecido'
-                
+              {currentResults.map((result) => {
+                const pc = playerCharacters.find((p) => p.character.id === result.character_id);
+                const charName = pc?.character.name || 'Desconhecido';
+
                 return (
-                  <div key={result.id} className="flex justify-between items-center p-3 bg-stone-800 rounded border border-stone-700">
+                  <div
+                    key={result.id}
+                    className="flex justify-between items-center p-3 bg-stone-800 rounded border border-stone-700"
+                  >
                     <span className="font-medium text-stone-300">{charName}</span>
                     {result.status === 'pending' ? (
-                      <span className="text-stone-500 italic text-sm animate-pulse">Aguardando...</span>
+                      <span className="text-stone-500 italic text-sm animate-pulse">
+                        Aguardando...
+                      </span>
                     ) : (
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center gap-4">
-                          <span className="text-lg font-mono bg-stone-900 px-2 py-1 rounded">{result.result_value}</span>
+                          <span className="text-lg font-mono bg-stone-900 px-2 py-1 rounded">
+                            {result.result_value}
+                          </span>
                           {result.is_approved ? (
-                            <span className="text-emerald-500 font-bold px-2 py-1 bg-emerald-500/10 rounded">Aprovado</span>
+                            <span className="text-emerald-500 font-bold px-2 py-1 bg-emerald-500/10 rounded">
+                              Aprovado
+                            </span>
                           ) : (
-                            <span className="text-red-500 font-bold px-2 py-1 bg-red-500/10 rounded">Reprovado</span>
+                            <span className="text-red-500 font-bold px-2 py-1 bg-red-500/10 rounded">
+                              Reprovado
+                            </span>
                           )}
                         </div>
-                        <span className="text-xs font-mono text-stone-500">{getTestBreakdown(currentActiveTest.test_type, result.result_value, pc?.character)}</span>
+                        <span className="text-xs font-mono text-stone-500">
+                          {getTestBreakdown(
+                            currentActiveTest.test_type,
+                            result.result_value,
+                            pc?.character,
+                          )}
+                        </span>
                       </div>
                     )}
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -190,7 +221,7 @@ export function MasterTestDialog({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -198,11 +229,15 @@ export function MasterTestDialog({
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-serif text-amber-500">Solicitar Teste aos Jogadores</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-white">✕</button>
+          <button onClick={onClose} className="text-stone-400 hover:text-white">
+            ✕
+          </button>
         </div>
 
         <div className="space-y-5">
-          <div className={`grid grid-cols-1 ${testType === 'Fé' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
+          <div
+            className={`grid grid-cols-1 ${testType === 'Fé' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}
+          >
             <div>
               <label className="block text-sm font-medium text-stone-400 mb-1">Tipo de Teste</label>
               <select
@@ -210,10 +245,12 @@ export function MasterTestDialog({
                 onChange={(e) => setTestType(e.target.value)}
                 className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-500"
               >
-                {TEST_GROUPS.map(group => (
+                {TEST_GROUPS.map((group) => (
                   <optgroup key={group.label} label={group.label}>
-                    {group.options.map(t => (
-                      <option key={t} value={t}>{t}</option>
+                    {group.options.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
                     ))}
                   </optgroup>
                 ))}
@@ -234,8 +271,10 @@ export function MasterTestDialog({
             )}
             <div>
               <label className="block text-sm font-medium text-stone-400 mb-1">
-                {testType === 'Fé' 
-                  ? (faithModifierType === 'mercy' ? 'Misericórdia (0-100)' : 'Punição (0-100)') 
+                {testType === 'Fé'
+                  ? faithModifierType === 'mercy'
+                    ? 'Misericórdia (0-100)'
+                    : 'Punição (0-100)'
                   : 'Dificuldade'}
               </label>
               <input
@@ -251,38 +290,71 @@ export function MasterTestDialog({
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-stone-400">Jogadores Alvo ({selectedPlayers.length})</label>
+              <label className="block text-sm font-medium text-stone-400">
+                Jogadores Alvo ({selectedPlayers.length})
+              </label>
               <div className="space-x-2 text-xs">
-                <button onClick={handleSelectAll} className="text-amber-500 hover:text-amber-400">Todos</button>
+                <button onClick={handleSelectAll} className="text-amber-500 hover:text-amber-400">
+                  Todos
+                </button>
                 <span className="text-stone-600">|</span>
-                <button onClick={handleDeselectAll} className="text-stone-500 hover:text-stone-400">Nenhum</button>
+                <button onClick={handleDeselectAll} className="text-stone-500 hover:text-stone-400">
+                  Nenhum
+                </button>
               </div>
             </div>
-            
+
             <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2 border border-stone-800 p-2 rounded bg-stone-900/50">
               {playerCharacters.length === 0 ? (
-                <p className="text-stone-500 text-sm italic text-center py-4">Nenhum jogador conectado com personagem.</p>
+                <p className="text-stone-500 text-sm italic text-center py-4">
+                  Nenhum jogador conectado com personagem.
+                </p>
               ) : (
                 playerCharacters.map((pc) => {
-                  const isSelected = selectedPlayers.includes(pc.character.id)
+                  const isSelected = selectedPlayers.includes(pc.character.id);
                   return (
-                    <div 
+                    <div
                       key={pc.character.id}
                       onClick={() => handleTogglePlayer(pc.character.id)}
                       className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
-                        isSelected ? 'bg-stone-800 border border-amber-500/30' : 'hover:bg-stone-800 border border-transparent'
+                        isSelected
+                          ? 'bg-stone-800 border border-amber-500/30'
+                          : 'hover:bg-stone-800 border border-transparent'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                        isSelected ? 'bg-amber-500 border-amber-500 text-stone-900' : 'border-stone-600'
-                      }`}>
-                        {isSelected && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center border ${
+                          isSelected
+                            ? 'bg-amber-500 border-amber-500 text-stone-900'
+                            : 'border-stone-600'
+                        }`}
+                      >
+                        {isSelected && (
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
                       </div>
-                      <span className={isSelected ? 'text-stone-200 font-medium' : 'text-stone-400'}>
-                        {pc.character.name} <span className="text-xs opacity-50">({pc.profile?.name || 'Sem jogador'})</span>
+                      <span
+                        className={isSelected ? 'text-stone-200 font-medium' : 'text-stone-400'}
+                      >
+                        {pc.character.name}{' '}
+                        <span className="text-xs opacity-50">
+                          ({pc.profile?.name || 'Sem jogador'})
+                        </span>
                       </span>
                     </div>
-                  )
+                  );
                 })
               )}
             </div>
@@ -308,5 +380,5 @@ export function MasterTestDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }

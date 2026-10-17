@@ -65,16 +65,14 @@ export function SessionParticipantList({
     return activeTrades.some(
       (t) =>
         (t.status === 'active' || t.status === 'pending') &&
-        (t.initiator_character_id === characterId || t.target_character_id === characterId)
+        (t.initiator_character_id === characterId || t.target_character_id === characterId),
     );
   };
 
   const pendingTradesForUser = activeTrades.filter((t) => {
     if (t.status !== 'pending') return false;
     if (t.type === 'player_trade') {
-      const targetUser = playerCharacters.find(
-        (pc) => pc.character.id === t.target_character_id
-      );
+      const targetUser = playerCharacters.find((pc) => pc.character.id === t.target_character_id);
       return targetUser?.user_id === user?.id;
     }
     if (t.type === 'npc_trade' && isGM) {
@@ -100,12 +98,20 @@ export function SessionParticipantList({
   const closeNPCSheet = () => setSelectedNPC(null);
   const closeContextMenu = () => setContextMenuPos(null);
 
-  const updatePlayerStat = async (character: Character, statKey: 'current_pv' | 'current_faith', delta: number) => {
+  const updatePlayerStat = async (
+    character: Character,
+    statKey: 'current_pv' | 'current_faith',
+    delta: number,
+  ) => {
     if (!character.stats) return;
 
     if (statKey === 'current_pv') {
       try {
-        const newStats = await characterVitalsService.adjustCurrentPv(character.id, character.stats, delta);
+        const newStats = await characterVitalsService.adjustCurrentPv(
+          character.id,
+          character.stats,
+          delta,
+        );
         if (onUpdatePlayerData) onUpdatePlayerData(character.id, { stats: newStats });
       } catch (e) {
         console.error('Erro ao atualizar status do Jogador:', e);
@@ -122,10 +128,7 @@ export function SessionParticipantList({
     const newStats = { ...character.stats, current_faith: newValue };
 
     try {
-      await supabase
-        .from('characters')
-        .update({ stats: newStats })
-        .eq('id', character.id);
+      await supabase.from('characters').update({ stats: newStats }).eq('id', character.id);
 
       if (onUpdatePlayerData) {
         onUpdatePlayerData(character.id, { stats: newStats });
@@ -136,23 +139,23 @@ export function SessionParticipantList({
   };
 
   const handleAddNPCCondition = async (npcId: string, conditionId: string, duration: number) => {
-    const npc = npcs.find(n => n.id === npcId);
+    const npc = npcs.find((n) => n.id === npcId);
     if (!npc) return;
     const current = ((npc as any).conditions as unknown as ConditionEntry[]) || [];
     const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
-    
-    const updated = [...current.filter(c => c.conditionId !== conditionId), newCond];
+
+    const updated = [...current.filter((c) => c.conditionId !== conditionId), newCond];
     if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
 
     await conditionsService.applyToCharacter(npcId, current, newCond);
   };
 
   const handleRemoveNPCCondition = async (npcId: string, conditionId: string) => {
-    const npc = npcs.find(n => n.id === npcId);
+    const npc = npcs.find((n) => n.id === npcId);
     if (!npc) return;
     const current = ((npc as any).conditions as unknown as ConditionEntry[]) || [];
-    
-    const updated = current.filter(c => c.conditionId !== conditionId);
+
+    const updated = current.filter((c) => c.conditionId !== conditionId);
     if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
 
     await conditionsService.removeFromCharacter(npcId, current, conditionId);
@@ -171,19 +174,18 @@ export function SessionParticipantList({
 
         {gmUser && (
           <div className="mb-6">
-            <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">Mestre</h4>
-            <PlayerCard
-              user={gmUser}
-              isClickable={false}
-              isSessionGM={true}
-              viewerIsGM={isGM}
-            />
+            <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">
+              Mestre
+            </h4>
+            <PlayerCard user={gmUser} isClickable={false} isSessionGM={true} viewerIsGM={isGM} />
           </div>
         )}
 
         {(!isGM || playerUsers.length > 0) && (
           <div className="mb-6">
-            <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">Personagens</h4>
+            <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">
+              Personagens
+            </h4>
             {playerUsers.length === 0 ? (
               <p className="text-stone-500 text-sm italic">Nenhum jogador conectado.</p>
             ) : (
@@ -193,11 +195,11 @@ export function SessionParticipantList({
                     (test) =>
                       test.status === 'active' &&
                       testResults[test.id]?.some(
-                        (r) => r.player_id === pUser.user_id && r.status === 'pending'
-                      )
+                        (r) => r.player_id === pUser.user_id && r.status === 'pending',
+                      ),
                   );
                   const associatedCharacter = playerCharacters.find(
-                    (pc) => pc.user_id === pUser.user_id
+                    (pc) => pc.user_id === pUser.user_id,
                   )?.character;
                   const trading = isCharacterTrading(associatedCharacter?.id);
                   const blocked = isBusy || trading;
@@ -214,7 +216,8 @@ export function SessionParticipantList({
                         viewerIsGM={isGM}
                         onUpdateStat={
                           associatedCharacter
-                            ? (statKey, delta) => updatePlayerStat(associatedCharacter, statKey, delta)
+                            ? (statKey, delta) =>
+                                updatePlayerStat(associatedCharacter, statKey, delta)
                             : undefined
                         }
                         onUpdateConditions={
@@ -240,23 +243,32 @@ export function SessionParticipantList({
 
         {npcs.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">NPCs</h4>
+            <h4 className="text-sm font-semibold text-stone-400 mb-3 uppercase tracking-wider">
+              NPCs
+            </h4>
             <ul className="space-y-3">
               {npcs.map((npc) => (
                 <li key={npc.id}>
                   <div
                     className={`relative p-3 bg-stone-700 border border-stone-600 rounded-md transition-colors ${(npc as any).is_playable ? 'cursor-pointer hover:bg-stone-600' : ''}`}
-                    onClick={() => { if ((npc as any).is_playable) setSelectedNPC(npc); }}
+                    onClick={() => {
+                      if ((npc as any).is_playable) setSelectedNPC(npc);
+                    }}
                   >
                     <div className="flex items-start gap-3">
-                      <CharacterAvatar 
-                        imageUrl={npc.narrative?.imageUrl} 
-                        name={npc.name || 'NPC'} 
-                        className="w-10 h-10 border border-stone-600 shrink-0" 
+                      <CharacterAvatar
+                        imageUrl={npc.narrative?.imageUrl}
+                        name={npc.name || 'NPC'}
+                        className="w-10 h-10 border border-stone-600 shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-1">
-                          <p className="font-semibold text-stone-200 truncate min-w-0 max-w-[70%] sm:max-w-none" title={npc.name}>{npc.name}</p>
+                          <p
+                            className="font-semibold text-stone-200 truncate min-w-0 max-w-[70%] sm:max-w-none"
+                            title={npc.name}
+                          >
+                            {npc.name}
+                          </p>
                           {!isGM && onNPCNegotiate && (npc as any).is_visible !== false && (
                             <Button
                               size="sm"
@@ -271,8 +283,12 @@ export function SessionParticipantList({
                             </Button>
                           )}
                         </div>
-                        <p className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}>
-                          {(npc as any).is_playable ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'} (Nível ${npc.level || (npc.stats as any)?.level || 1})` : npc.vocation}
+                        <p
+                          className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}
+                        >
+                          {(npc as any).is_playable
+                            ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'} (Nível ${npc.level || (npc.stats as any)?.level || 1})`
+                            : npc.vocation}
                         </p>
                       </div>
                     </div>
@@ -280,24 +296,38 @@ export function SessionParticipantList({
                       <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 pt-2 border-t border-stone-600/50 text-xs text-stone-400">
                         <div className="flex items-center gap-1">
                           <span className="text-red-400">♥</span>
-                          <span>{getCurrentPv(npc.stats)}/{npc.stats.pv}</span>
+                          <span>
+                            {getCurrentPv(npc.stats)}/{npc.stats.pv}
+                          </span>
                         </div>
                       </div>
                     )}
                     {/* Condições do NPC */}
-                    {(((npc as any).conditions as unknown as ConditionEntry[])?.length > 0 || isGM) && (
-                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2" onClick={(e) => e.stopPropagation()}>
-                        {(((npc as any).conditions as unknown as ConditionEntry[]) || []).map((cond) => (
-                          <ConditionBadge
-                            key={cond.conditionId}
-                            conditionId={cond.conditionId}
-                            duration={cond.duration || undefined}
-                            onRemove={isGM ? () => handleRemoveNPCCondition(npc.id, cond.conditionId) : undefined}
-                            readonly={!isGM}
-                          />
-                        ))}
+                    {(((npc as any).conditions as unknown as ConditionEntry[])?.length > 0 ||
+                      isGM) && (
+                      <div
+                        className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {(((npc as any).conditions as unknown as ConditionEntry[]) || []).map(
+                          (cond) => (
+                            <ConditionBadge
+                              key={cond.conditionId}
+                              conditionId={cond.conditionId}
+                              duration={cond.duration || undefined}
+                              onRemove={
+                                isGM
+                                  ? () => handleRemoveNPCCondition(npc.id, cond.conditionId)
+                                  : undefined
+                              }
+                              readonly={!isGM}
+                            />
+                          ),
+                        )}
                         {isGM && (
-                          <ConditionSelector onAddCondition={(cId, dur) => handleAddNPCCondition(npc.id, cId, dur)} />
+                          <ConditionSelector
+                            onAddCondition={(cId, dur) => handleAddNPCCondition(npc.id, cId, dur)}
+                          />
                         )}
                       </div>
                     )}

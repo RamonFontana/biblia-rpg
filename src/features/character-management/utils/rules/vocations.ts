@@ -9,41 +9,62 @@ export interface VocationRules {
 }
 
 export const VOCATION_RULES: Record<string, VocationRules> = {
-  'Guerreiro': {
+  Guerreiro: {
     id: 'Guerreiro',
     name: 'Guerreiro / Soldado',
     maxSkills: 2,
-    eligibleSkills: ['atletismo', 'acrobacia', 'intimidacao', 'sobrevivencia', 'lidar_com_animais', 'percepcao'],
+    eligibleSkills: [
+      'atletismo',
+      'acrobacia',
+      'intimidacao',
+      'sobrevivencia',
+      'lidar_com_animais',
+      'percepcao',
+    ],
     savingThrows: ['for', 'con'],
   },
-  'Batedor': {
+  Batedor: {
     id: 'Batedor',
     name: 'Batedor',
     maxSkills: 3,
-    eligibleSkills: ['furtividade', 'acrobacia', 'investigacao', 'percepcao', 'enganacao', 'prestidigitacao'],
+    eligibleSkills: [
+      'furtividade',
+      'acrobacia',
+      'investigacao',
+      'percepcao',
+      'enganacao',
+      'prestidigitacao',
+    ],
     savingThrows: ['des', 'int'],
   },
-  'Caçador': {
+  Caçador: {
     id: 'Caçador',
     name: 'Caçador / Nômade',
     maxSkills: 3,
-    eligibleSkills: ['furtividade', 'sobrevivencia', 'natureza', 'percepcao', 'atletismo', 'medicina'],
+    eligibleSkills: [
+      'furtividade',
+      'sobrevivencia',
+      'natureza',
+      'percepcao',
+      'atletismo',
+      'medicina',
+    ],
     savingThrows: ['for', 'des'],
   },
-  'Sacerdote': {
+  Sacerdote: {
     id: 'Sacerdote',
     name: 'Sacerdote / Sábio',
     maxSkills: 3,
     eligibleSkills: ['religiao', 'historia', 'medicina', 'intuicao', 'persuasao', 'natureza'],
     savingThrows: ['sab', 'car'],
   },
-  'Nobre': {
+  Nobre: {
     id: 'Nobre',
     name: 'Nobre / Comerciante',
     maxSkills: 3,
     eligibleSkills: ['persuasao', 'enganacao', 'intuicao', 'historia', 'atuacao', 'investigacao'],
     savingThrows: ['int', 'car'],
-  }
+  },
 };
 
 export function getVocationRules(vocationName: string | undefined | null): VocationRules | null {

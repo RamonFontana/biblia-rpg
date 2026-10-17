@@ -1,6 +1,9 @@
-
 import { ShieldAlert } from 'lucide-react';
-import { calculateModifier, calculateProficiency, formatModifier } from '@/features/character-management/utils/characterMath';
+import {
+  calculateModifier,
+  calculateProficiency,
+  formatModifier,
+} from '@/features/character-management/utils/characterMath';
 import { getVocationRules } from '@/features/character-management/utils/rules/vocations';
 
 interface CharacterSavingThrowsProps {
@@ -15,7 +18,7 @@ const ATTRIBUTES = [
   { id: 'con', name: 'Constituição' },
   { id: 'int', name: 'Inteligência' },
   { id: 'sab', name: 'Sabedoria' },
-  { id: 'car', name: 'Carisma' }
+  { id: 'car', name: 'Carisma' },
 ];
 
 export function CharacterSavingThrows({ attributes, level, vocation }: CharacterSavingThrowsProps) {
@@ -42,16 +45,24 @@ export function CharacterSavingThrows({ attributes, level, vocation }: Character
               className={`flex flex-col items-center justify-center p-3 rounded-lg border ${isProficient ? 'border-amber-500/50 bg-amber-500/10 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : 'border-stone-800 bg-stone-900/50'} `}
             >
               <div className="flex items-center gap-1 mb-1">
-                <div className={`w-2 h-2 rounded-full border ${isProficient ? 'bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-transparent border-stone-700'}`} />
-                <span className={`text-[10px] font-bold uppercase ${isProficient ? 'text-amber-200' : 'text-stone-500'}`}>
+                <div
+                  className={`w-2 h-2 rounded-full border ${isProficient ? 'bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-transparent border-stone-700'}`}
+                />
+                <span
+                  className={`text-[10px] font-bold uppercase ${isProficient ? 'text-amber-200' : 'text-stone-500'}`}
+                >
                   {attr.name}
                 </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className={`text-xl font-bold leading-none ${isProficient ? 'text-amber-400 drop-shadow-md' : 'text-stone-400'}`}>
+                <span
+                  className={`text-xl font-bold leading-none ${isProficient ? 'text-amber-400 drop-shadow-md' : 'text-stone-400'}`}
+                >
                   {formatModifier(totalMod)}
                 </span>
-                <span className={`text-[8px] mt-1 uppercase tracking-wider ${isProficient ? 'text-amber-500/70' : 'text-stone-600'}`}>
+                <span
+                  className={`text-[8px] mt-1 uppercase tracking-wider ${isProficient ? 'text-amber-500/70' : 'text-stone-600'}`}
+                >
                   {isProficient ? 'Mod + Prof' : 'Apenas Mod'}
                 </span>
               </div>

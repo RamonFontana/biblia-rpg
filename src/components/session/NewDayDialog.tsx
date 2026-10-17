@@ -27,18 +27,17 @@ export function NewDayDialog({ isOpen, onClose, day }: NewDayDialogProps) {
             O sol surge no horizonte e estamos agora no <strong>DIA {day}</strong>.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="py-4 text-stone-300">
           <p>
-            Se o seu personagem teve um sono reparador ou o descanso necessário, lembre-se de abrir sua ficha de personagem e usar a funcionalidade de <strong>Descanso Longo</strong> ou <strong>Descanso Curto</strong> para recarregar suas habilidades diárias.
+            Se o seu personagem teve um sono reparador ou o descanso necessário, lembre-se de abrir
+            sua ficha de personagem e usar a funcionalidade de <strong>Descanso Longo</strong> ou{' '}
+            <strong>Descanso Curto</strong> para recarregar suas habilidades diárias.
           </p>
         </div>
 
         <div className="flex justify-end mt-4">
-          <Button 
-            onClick={onClose} 
-            className="bg-amber-600 hover:bg-amber-700 text-white"
-          >
+          <Button onClick={onClose} className="bg-amber-600 hover:bg-amber-700 text-white">
             Entendi
           </Button>
         </div>

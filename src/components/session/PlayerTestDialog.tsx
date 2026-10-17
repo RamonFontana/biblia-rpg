@@ -1,13 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
-import { type SessionTest, type SessionTestResult, sessionTestService } from '@/services/sessionTestService'
-import { getTestModifiers, getTestBreakdown } from '@/features/character-management/utils/characterMath'
+import { useState, useEffect, useRef } from 'react';
+import {
+  type SessionTest,
+  type SessionTestResult,
+  sessionTestService,
+} from '@/services/sessionTestService';
+import {
+  getTestModifiers,
+  getTestBreakdown,
+} from '@/features/character-management/utils/characterMath';
 
 interface PlayerTestDialogProps {
-  isOpen: boolean
-  activeTest: SessionTest | null
-  testResult: SessionTestResult | null
-  playerCharacters?: any[]
-  onClose?: () => void
+  isOpen: boolean;
+  activeTest: SessionTest | null;
+  testResult: SessionTestResult | null;
+  playerCharacters?: any[];
+  onClose?: () => void;
 }
 
 export function PlayerTestDialog({
@@ -15,60 +22,62 @@ export function PlayerTestDialog({
   activeTest,
   testResult,
   playerCharacters: _playerCharacters = [],
-  onClose: _onClose
+  onClose: _onClose,
 }: PlayerTestDialogProps) {
-  const [resultValue, setResultValue] = useState<number | ''>('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [dismissed, setDismissed] = useState(false)
-  const [isRolling, setIsRolling] = useState(false)
-  
-  // Equipment and passive effects
-  const [hasStealthDisadvantage, setHasStealthDisadvantage] = useState(false)
-  const [faithPenalty, setFaithPenalty] = useState(0)
-  const [charData, setCharData] = useState<any>(null)
-  
-  // Faith test penalty state
-  const [showPenaltyScreen, setShowPenaltyScreen] = useState(false)
-  const [initialRollValue, setInitialRollValue] = useState<number>(0)
-  const [faithPenaltyResult, setFaithPenaltyResult] = useState<number | ''>('')
-  const [isRollingPenalty, setIsRollingPenalty] = useState(false)
+  const [resultValue, setResultValue] = useState<number | ''>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const [isRolling, setIsRolling] = useState(false);
 
-  const isMounted = useRef(true)
+  // Equipment and passive effects
+  const [hasStealthDisadvantage, setHasStealthDisadvantage] = useState(false);
+  const [faithPenalty, setFaithPenalty] = useState(0);
+  const [charData, setCharData] = useState<any>(null);
+
+  // Faith test penalty state
+  const [showPenaltyScreen, setShowPenaltyScreen] = useState(false);
+  const [initialRollValue, setInitialRollValue] = useState<number>(0);
+  const [faithPenaltyResult, setFaithPenaltyResult] = useState<number | ''>('');
+  const [isRollingPenalty, setIsRollingPenalty] = useState(false);
+
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    isMounted.current = true
-    return () => { isMounted.current = false }
-  }, [])
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Reset state when a new test arrives
   useEffect(() => {
     if (activeTest) {
-      setResultValue('')
-      setError(null)
-      setIsSubmitting(false)
-      setDismissed(false)
-      setIsRolling(false)
-      setShowPenaltyScreen(false)
-      setInitialRollValue(0)
-      setFaithPenaltyResult('')
-      setIsRollingPenalty(false)
+      setResultValue('');
+      setError(null);
+      setIsSubmitting(false);
+      setDismissed(false);
+      setIsRolling(false);
+      setShowPenaltyScreen(false);
+      setInitialRollValue(0);
+      setFaithPenaltyResult('');
+      setIsRollingPenalty(false);
     }
 
     if (activeTest && testResult) {
       // Fetch character stats, equipment, and items
       const fetchCharContext = async () => {
-        const { supabase } = await import('@/lib/supabase')
+        const { supabase } = await import('@/lib/supabase');
         const { data: cData } = await supabase
           .from('characters')
           .select('stats, equipment, level, proficiencies, attributes, vocation')
           .eq('id', testResult.character_id)
-          .single()
+          .single();
 
         const { data: charItems } = await supabase
           .from('character_items')
           .select(`id, items!inner(effects)`)
-          .eq('character_id', testResult.character_id)
+          .eq('character_id', testResult.character_id);
 
         let stealthDis = false;
         let penaltyF = 0;
@@ -83,7 +92,10 @@ export function PlayerTestDialog({
             }
 
             // Check stealth disadvantage only if equipped
-            if (equipmentIds.includes(cItem.id) && effects.properties?.includes('stealth_disadvantage')) {
+            if (
+              equipmentIds.includes(cItem.id) &&
+              effects.properties?.includes('stealth_disadvantage')
+            ) {
               stealthDis = true;
             }
           }
@@ -94,47 +106,65 @@ export function PlayerTestDialog({
           setFaithPenalty(penaltyF);
           setCharData(cData);
         }
-      }
+      };
       fetchCharContext();
     }
-  }, [activeTest, testResult])
+  }, [activeTest, testResult]);
 
-  if (!isOpen || !activeTest || !testResult || dismissed) return null
+  if (!isOpen || !activeTest || !testResult || dismissed) return null;
 
   // If already submitted, show waiting screen
   if (testResult.status === 'submitted') {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
         <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl text-center relative">
-          <button 
-            onClick={() => setDismissed(true)} 
+          <button
+            onClick={() => setDismissed(true)}
             className="absolute top-4 right-4 text-stone-400 hover:text-white transition-colors"
             title="Fechar aviso"
           >
             ✕
           </button>
-          
+
           <div className="mb-4 mt-2">
-            <svg className="w-12 h-12 mx-auto text-amber-500 mb-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-12 h-12 mx-auto text-amber-500 mb-2 animate-pulse"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <h2 className="text-xl font-serif text-amber-500">Resultado Enviado!</h2>
           </div>
-          
+
           <div className="p-4 bg-stone-800 rounded mb-4">
             <p className="text-stone-400 text-sm mb-1">Seu Resultado</p>
             <div className="flex flex-col justify-center items-center gap-2">
               <div className="flex justify-center items-center gap-4">
-                <span className="text-3xl font-mono bg-stone-950 px-4 py-2 rounded-lg border border-stone-700">{testResult.result_value}</span>
+                <span className="text-3xl font-mono bg-stone-950 px-4 py-2 rounded-lg border border-stone-700">
+                  {testResult.result_value}
+                </span>
                 {testResult.is_approved ? (
-                  <span className="text-emerald-500 font-bold px-4 py-2 bg-emerald-500/10 rounded-lg text-xl border border-emerald-500/20">Aprovado!</span>
+                  <span className="text-emerald-500 font-bold px-4 py-2 bg-emerald-500/10 rounded-lg text-xl border border-emerald-500/20">
+                    Aprovado!
+                  </span>
                 ) : (
-                  <span className="text-red-500 font-bold px-4 py-2 bg-red-500/10 rounded-lg text-xl border border-red-500/20">Reprovado</span>
+                  <span className="text-red-500 font-bold px-4 py-2 bg-red-500/10 rounded-lg text-xl border border-red-500/20">
+                    Reprovado
+                  </span>
                 )}
               </div>
-              <p className="text-stone-400 font-mono text-sm mt-2">{getTestBreakdown(activeTest.test_type, testResult.result_value, charData)}</p>
+              <p className="text-stone-400 font-mono text-sm mt-2">
+                {getTestBreakdown(activeTest.test_type, testResult.result_value, charData)}
+              </p>
             </div>
-            
+
             {!testResult.is_approved && activeTest.test_type === 'Fé' && (
               <div className="mt-4 text-red-400 italic bg-red-500/10 p-2 rounded border border-red-500/20">
                 Sua fé foi abalada... O personagem perdeu 1d6 pontos de Fé.
@@ -143,7 +173,7 @@ export function PlayerTestDialog({
 
             <p className="mt-6 text-sm text-stone-500">O Mestre já pode ver o seu resultado.</p>
           </div>
-          
+
           <p className="text-sm text-stone-500 italic mb-4">
             Aguardando o mestre encerrar o teste...
           </p>
@@ -156,43 +186,43 @@ export function PlayerTestDialog({
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   const executeSubmit = async (val: number, penalty?: number) => {
     if (val < 0 || val > 100) {
-      setError('Valor fora do intervalo aceitável (0-100).')
-      return
+      setError('Valor fora do intervalo aceitável (0-100).');
+      return;
     }
 
     let isFailedFaithTest = false;
     if (activeTest.test_type === 'Fé') {
       // Busca a fé atual do personagem direto do banco para garantir o valor correto
-      const { supabase } = await import('@/lib/supabase')
+      const { supabase } = await import('@/lib/supabase');
       const { data: charData } = await supabase
         .from('characters')
         .select('stats')
         .eq('id', testResult.character_id)
-        .single()
-      const stats = charData?.stats as Record<string, any> | undefined
+        .single();
+      const stats = charData?.stats as Record<string, any> | undefined;
       let currentFaith = stats?.current_faith ?? stats?.faith ?? 0;
       currentFaith += faithPenalty; // faithPenalty is usually negative
-      
+
       // Misericórdia subtrai do DADO, não da fé
       // Passa se (dado - misericórdia) <= fé
-      isFailedFaithTest = (val - activeTest.difficulty) > currentFaith;
+      isFailedFaithTest = val - activeTest.difficulty > currentFaith;
     }
 
     if (isFailedFaithTest && penalty === undefined) {
-      setShowPenaltyScreen(true)
-      setInitialRollValue(val)
-      setResultValue('') // clear input just in case
-      setError(null)
-      return
+      setShowPenaltyScreen(true);
+      setInitialRollValue(val);
+      setResultValue(''); // clear input just in case
+      setError(null);
+      return;
     }
 
-    setError(null)
-    setIsSubmitting(true)
+    setError(null);
+    setIsSubmitting(true);
 
     try {
       await sessionTestService.submitTestResult(
@@ -201,122 +231,124 @@ export function PlayerTestDialog({
         activeTest.difficulty,
         testResult.character_id,
         activeTest.test_type,
-        penalty
-      )
+        penalty,
+      );
       // The component will re-render in the 'submitted' state because of realtime update
     } catch (err: any) {
       if (isMounted.current) {
-        setError(err.message || 'Erro ao enviar resultado.')
-        setIsSubmitting(false)
-        setIsRolling(false)
+        setError(err.message || 'Erro ao enviar resultado.');
+        setIsSubmitting(false);
+        setIsRolling(false);
       }
     }
-  }
+  };
 
   const handleSubmit = () => {
     if (resultValue === '' || isNaN(resultValue as number)) {
-      setError('Insira um valor válido.')
-      return
+      setError('Insira um valor válido.');
+      return;
     }
-    
+
     let finalResult = Number(resultValue);
     if (activeTest.test_type !== 'Fé') {
       const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
       finalResult += attrMod + profBonus;
     }
-    
-    executeSubmit(finalResult)
-  }
+
+    executeSubmit(finalResult);
+  };
 
   const handleSubmitPenalty = () => {
     if (faithPenaltyResult === '' || isNaN(faithPenaltyResult as number)) {
-      setError('Insira um valor válido para o d6 (1-6).')
-      return
+      setError('Insira um valor válido para o d6 (1-6).');
+      return;
     }
     if (Number(faithPenaltyResult) < 1 || Number(faithPenaltyResult) > 6) {
-      setError('O valor do d6 deve estar entre 1 e 6.')
-      return
+      setError('O valor do d6 deve estar entre 1 e 6.');
+      return;
     }
-    executeSubmit(initialRollValue, Number(faithPenaltyResult))
-  }
+    executeSubmit(initialRollValue, Number(faithPenaltyResult));
+  };
 
   const handleRollPenalty = () => {
-    if (isRollingPenalty || isSubmitting) return
-    setIsRollingPenalty(true)
-    setError(null)
+    if (isRollingPenalty || isSubmitting) return;
+    setIsRollingPenalty(true);
+    setError(null);
 
-    const duration = 1000
-    const minInterval = 50
-    const maxInterval = 150
-    let elapsed = 0
+    const duration = 1000;
+    const minInterval = 50;
+    const maxInterval = 150;
+    let elapsed = 0;
 
     const rollStep = () => {
-      if (!isMounted.current) return
+      if (!isMounted.current) return;
 
-      const progress = elapsed / duration
-      const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2)
+      const progress = elapsed / duration;
+      const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2);
 
       if (elapsed >= duration) {
-        const finalResult = Math.floor(Math.random() * 6) + 1
-        setFaithPenaltyResult(finalResult)
+        const finalResult = Math.floor(Math.random() * 6) + 1;
+        setFaithPenaltyResult(finalResult);
         setTimeout(() => {
           if (isMounted.current) {
-            executeSubmit(initialRollValue, finalResult)
+            executeSubmit(initialRollValue, finalResult);
           }
-        }, 400)
+        }, 400);
       } else {
-        setFaithPenaltyResult(Math.floor(Math.random() * 6) + 1)
-        elapsed += currentInterval
-        setTimeout(rollStep, currentInterval)
+        setFaithPenaltyResult(Math.floor(Math.random() * 6) + 1);
+        elapsed += currentInterval;
+        setTimeout(rollStep, currentInterval);
       }
-    }
+    };
 
-    rollStep()
-  }
+    rollStep();
+  };
 
   const handleRollDice = () => {
-    if (isRolling || isSubmitting) return
-    setIsRolling(true)
-    setError(null)
+    if (isRolling || isSubmitting) return;
+    setIsRolling(true);
+    setError(null);
 
-    const duration = 1500 // 1.5 seconds of rolling
-    const minInterval = 50
-    const maxInterval = 200
-    let elapsed = 0
+    const duration = 1500; // 1.5 seconds of rolling
+    const minInterval = 50;
+    const maxInterval = 200;
+    let elapsed = 0;
 
     const rollStep = () => {
-      if (!isMounted.current) return
+      if (!isMounted.current) return;
 
       // Calculate next interval (starts fast, slows down)
-      const progress = elapsed / duration
-      const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2)
+      const progress = elapsed / duration;
+      const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2);
 
       if (elapsed >= duration) {
         // Final base result
         const maxDice = activeTest.test_type === 'Fé' ? 100 : 20;
-        const baseResult = Math.floor(Math.random() * maxDice) + 1
-        
-        setResultValue(baseResult)
-        setIsRolling(false) // Parar o estado de rolando
+        const baseResult = Math.floor(Math.random() * maxDice) + 1;
+
+        setResultValue(baseResult);
+        setIsRolling(false); // Parar o estado de rolando
       } else {
         // Show random number
         const maxDice = activeTest.test_type === 'Fé' ? 100 : 20;
-        setResultValue(Math.floor(Math.random() * maxDice) + 1)
-        elapsed += currentInterval
-        setTimeout(rollStep, currentInterval)
+        setResultValue(Math.floor(Math.random() * maxDice) + 1);
+        elapsed += currentInterval;
+        setTimeout(rollStep, currentInterval);
       }
-    }
+    };
 
-    rollStep()
-  }
+    rollStep();
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl relative overflow-hidden">
         {/* Decorative corner */}
         <div className="absolute top-0 right-0 w-16 h-16 bg-amber-600/20 rotate-45 transform translate-x-8 -translate-y-8" />
-        
-        <h2 className="text-2xl font-serif text-amber-500 mb-1 text-center animate-pulse">O Mestre Exige um Teste!</h2>
+
+        <h2 className="text-2xl font-serif text-amber-500 mb-1 text-center animate-pulse">
+          O Mestre Exige um Teste!
+        </h2>
         <p className="text-center text-stone-400 text-sm mb-6 pb-4 border-b border-stone-800">
           Role seus dados físicos e insira o resultado, ou use o dado virtual.
         </p>
@@ -333,11 +365,15 @@ export function PlayerTestDialog({
               </div>
               <div>
                 <p className="text-xs text-stone-400 mb-1 uppercase">
-                  {activeTest.test_type === 'Fé' 
-                    ? (activeTest.difficulty < 0 ? 'Punição' : 'Misericórdia') 
+                  {activeTest.test_type === 'Fé'
+                    ? activeTest.difficulty < 0
+                      ? 'Punição'
+                      : 'Misericórdia'
                     : 'Dificuldade'}
                 </p>
-                <p className="font-bold text-red-500 text-2xl leading-none">{Math.abs(activeTest.difficulty)}</p>
+                <p className="font-bold text-red-500 text-2xl leading-none">
+                  {Math.abs(activeTest.difficulty)}
+                </p>
               </div>
             </div>
           </div>
@@ -347,17 +383,23 @@ export function PlayerTestDialog({
               {hasStealthDisadvantage && activeTest.test_type === 'Destreza' && (
                 <div className="bg-red-900/30 border border-red-500/50 p-2 rounded mb-4 text-center">
                   <p className="text-red-400 text-sm font-bold">⚠️ Desvantagem</p>
-                  <p className="text-stone-300 text-xs">Sua armadura pesada prejudica seus reflexos e furtividade. Role 2 dados e escolha o pior!</p>
+                  <p className="text-stone-300 text-xs">
+                    Sua armadura pesada prejudica seus reflexos e furtividade. Role 2 dados e
+                    escolha o pior!
+                  </p>
                 </div>
               )}
 
               {activeTest.test_type === 'Fé' && faithPenalty < 0 && (
                 <div className="bg-purple-900/30 border border-purple-500/50 p-2 rounded mb-4 text-center">
                   <p className="text-purple-400 text-sm font-bold">⚠️ Profanação</p>
-                  <p className="text-stone-300 text-xs">A presença de um item profano no seu inventário reduziu sua Fé em {Math.abs(faithPenalty)} para este teste.</p>
+                  <p className="text-stone-300 text-xs">
+                    A presença de um item profano no seu inventário reduziu sua Fé em{' '}
+                    {Math.abs(faithPenalty)} para este teste.
+                  </p>
                 </div>
               )}
-              
+
               <div className="flex flex-col items-center">
                 <label className="block text-center text-sm font-medium text-stone-300 mb-1">
                   Qual foi o valor tirado no dado?
@@ -367,7 +409,7 @@ export function PlayerTestDialog({
                     Seus bônus serão aplicados automaticamente.
                   </p>
                 )}
-                
+
                 <input
                   type="number"
                   min="1"
@@ -375,50 +417,63 @@ export function PlayerTestDialog({
                   autoFocus
                   disabled={isRolling || isSubmitting}
                   value={resultValue}
-                  onChange={(e) => setResultValue(e.target.value === '' ? '' : parseInt(e.target.value))}
+                  onChange={(e) =>
+                    setResultValue(e.target.value === '' ? '' : parseInt(e.target.value))
+                  }
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !isRolling && !isSubmitting && resultValue !== '') {
-                      handleSubmit()
+                      handleSubmit();
                     }
                   }}
                   className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-amber-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70 mb-2"
                   placeholder="0"
                 />
 
-                {resultValue !== '' && !isRolling && activeTest.test_type !== 'Fé' && (() => {
-                  const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
-                  const totalBonus = attrMod + profBonus;
-                  return (
-                    <div className="w-full bg-stone-800 border border-stone-700 px-3 py-3 rounded-lg flex justify-between items-center text-sm font-mono mt-2 animate-in fade-in zoom-in duration-200 overflow-x-auto">
-                      <div className="flex flex-col items-center">
-                        <span className="text-stone-500 text-[10px] uppercase">Dado</span>
-                        <span className="text-stone-300">{resultValue}</span>
+                {resultValue !== '' &&
+                  !isRolling &&
+                  activeTest.test_type !== 'Fé' &&
+                  (() => {
+                    const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
+                    const totalBonus = attrMod + profBonus;
+                    return (
+                      <div className="w-full bg-stone-800 border border-stone-700 px-3 py-3 rounded-lg flex justify-between items-center text-sm font-mono mt-2 animate-in fade-in zoom-in duration-200 overflow-x-auto">
+                        <div className="flex flex-col items-center">
+                          <span className="text-stone-500 text-[10px] uppercase">Dado</span>
+                          <span className="text-stone-300">{resultValue}</span>
+                        </div>
+                        <span className="text-stone-600 mx-1">+</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-stone-500 text-[10px] uppercase">Mod</span>
+                          <span className="text-amber-500">
+                            {attrMod >= 0 ? `+${attrMod}` : attrMod}
+                          </span>
+                        </div>
+                        {profBonus > 0 && (
+                          <>
+                            <span className="text-stone-600 mx-1">+</span>
+                            <div className="flex flex-col items-center">
+                              <span className="text-stone-500 text-[10px] uppercase">Prof</span>
+                              <span className="text-emerald-500">+{profBonus}</span>
+                            </div>
+                          </>
+                        )}
+                        <span className="text-stone-600 mx-1">=</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-stone-500 text-[10px] uppercase">Total</span>
+                          <span className="text-white font-bold text-lg">
+                            {Number(resultValue) + totalBonus}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-stone-600 mx-1">+</span>
-                      <div className="flex flex-col items-center">
-                        <span className="text-stone-500 text-[10px] uppercase">Mod</span>
-                        <span className="text-amber-500">{attrMod >= 0 ? `+${attrMod}` : attrMod}</span>
-                      </div>
-                      {profBonus > 0 && (
-                        <>
-                          <span className="text-stone-600 mx-1">+</span>
-                          <div className="flex flex-col items-center">
-                            <span className="text-stone-500 text-[10px] uppercase">Prof</span>
-                            <span className="text-emerald-500">+{profBonus}</span>
-                          </div>
-                        </>
-                      )}
-                      <span className="text-stone-600 mx-1">=</span>
-                      <div className="flex flex-col items-center">
-                        <span className="text-stone-500 text-[10px] uppercase">Total</span>
-                        <span className="text-white font-bold text-lg">{Number(resultValue) + totalBonus}</span>
-                      </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
               </div>
 
-              {error && <div className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded mt-2">{error}</div>}
+              {error && (
+                <div className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded mt-2">
+                  {error}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -426,7 +481,12 @@ export function PlayerTestDialog({
                   disabled={isSubmitting || isRolling}
                   className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-stone-600 text-white rounded-lg font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
-                  <span>🎲</span> {isRolling ? 'Rolando...' : (activeTest.test_type === 'Fé' ? 'Rolar D100' : 'Rolar D20')}
+                  <span>🎲</span>{' '}
+                  {isRolling
+                    ? 'Rolando...'
+                    : activeTest.test_type === 'Fé'
+                      ? 'Rolar D100'
+                      : 'Rolar D20'}
                 </button>
 
                 <button
@@ -442,13 +502,16 @@ export function PlayerTestDialog({
             <>
               <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/20 mb-4 text-center">
                 <p className="text-red-400 font-medium mb-1">Teste de Fé Reprovado!</p>
-              <p className="text-stone-300 text-sm">A sua fé vacilou perante o desafio. O personagem perderá <strong>1d6</strong> de Fé.</p>
+                <p className="text-stone-300 text-sm">
+                  A sua fé vacilou perante o desafio. O personagem perderá <strong>1d6</strong> de
+                  Fé.
+                </p>
               </div>
 
               <div>
-              <label className="block text-center text-sm font-medium text-stone-300 mb-3">
-                Role o d6 de punição pela falha de Fé:
-              </label>
+                <label className="block text-center text-sm font-medium text-stone-300 mb-3">
+                  Role o d6 de punição pela falha de Fé:
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -456,10 +519,12 @@ export function PlayerTestDialog({
                   autoFocus
                   disabled={isRollingPenalty || isSubmitting}
                   value={faithPenaltyResult}
-                  onChange={(e) => setFaithPenaltyResult(e.target.value === '' ? '' : parseInt(e.target.value))}
+                  onChange={(e) =>
+                    setFaithPenaltyResult(e.target.value === '' ? '' : parseInt(e.target.value))
+                  }
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !isRollingPenalty && !isSubmitting) {
-                      handleSubmitPenalty()
+                      handleSubmitPenalty();
                     }
                   }}
                   className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-red-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70"
@@ -467,7 +532,11 @@ export function PlayerTestDialog({
                 />
               </div>
 
-              {error && <div className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded">{error}</div>}
+              {error && (
+                <div className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded">
+                  {error}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -491,5 +560,5 @@ export function PlayerTestDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }
