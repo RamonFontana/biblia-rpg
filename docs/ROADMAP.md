@@ -318,6 +318,10 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 - ~~"Sábio" é alias de Sacerdote; Nobre e `tribeSkills.ts` são removidos.~~ FEITO (`canonicalVocation` em `src/lib/vocation.ts`, usado nas regras de Vocação e nas habilidades).
 - ~~Itens: textos de Odre e Ração perdem "Cura"; Caçador recebe 20 flechas; textos dos kits iguais ao doc.~~ FEITO no catálogo e nos kits do app. As linhas de `items` já gravadas no banco (efeitos de cura de Odre e Ração) não foram tocadas.
 - **Precisam de lista de fichas afetadas antes de aplicar:** CA com teto de DES (média +2, pesada sem DES, aviso de FOR em vez de bloqueio) e proficiências de armadura conforme os docs de vocação.
+  - Lista levantada em 2026-10-17 (leitura no banco, autorizada): 6 fichas não inimigas (5 de jogadores, 1 NPC jogável). **Nenhuma muda de CA nem perde proficiência**: todas usam Couro Cru (leve) ou nenhuma armadura, e nenhuma tem escudo equipado. O `stats.ca` gravado na criação ainda bate com a DES atual de todas (todas estão no nível 1).
+  - Achados para a Onda 3: a tabela `items` guarda `category = 'Armadura'`, sem leve/média/pesada (o tipo só existe no catálogo `itemsDb.ts`, achado pelo nome); o NPC jogável não tem `stats.ca` e tem atributos em inglês (bug conhecido do NPC).
+  - Divergências doc × código ainda abertas: elmos dão +1/+2 de CA no código e o doc não dá número; proficiências de armadura no código (`VOCATION_PROFICIENCIES`) diferem dos docs (Caçador sem escudo no código; Batedor com média no código e só leve no doc; Sacerdote com leve e Sagrada no código, leve, média e escudo no doc).
+  - Implementação vai junto do `src/domain/armorClass` na Onda 3, que também unifica as duas fórmulas de CA.
 - Recuperação de munição segue automática (50%); o 1d4 de Fé do Descanso Longo é digitado pelo Mestre; rolagens de jogador são digitadas, com Rolagem Virtual opcional (ADR 0001).
 
 **C. Features novas** (Onda 5, via `/to-spec` → `/to-tickets` → `/tdd`)
