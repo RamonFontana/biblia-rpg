@@ -7,7 +7,7 @@
 | Onda | Estado |
 |---|---|
 | 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub (o sistema bloqueou a minha tentativa via `gh api`; o autor configura no GitHub) |
-| 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização da maioria das regras (branch `test/wave-2-characterization`, ver abaixo). Falta: caracterizar consumíveis, perda de Fé e criação de NPC/sessão, e depois as correções de código (bloco B) |
+| 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização das regras (PRs #10 e #11, ver abaixo). Caracterização concluída (faltam só as funções SQL e o tempo real, ver abaixo). Próximo: as correções de código (bloco B) |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
@@ -259,12 +259,24 @@ Cada regra foi extraída sem mudar comportamento (commit `refactor:`) e fixada e
 | Criação de NPC jogável e de inimigo (chaves inconsistentes) | `src/lib/sessionEntities.ts` | `sessionEntities.test.ts` |
 | Sinal do Modificador de Fé, aprovação de Teste comum, perda de Fé | `src/lib/sessionTests.ts` | `sessionTests.test.ts` |
 | Nível do personagem e teto 20 | `utils/levelUp.ts` | `levelUp.test.ts` |
+| Combate: ordem de turnos, tique de Condições por rodada, início e fim do combate | `combatStore` (com Supabase falso, `src/test/fakeSupabase.ts`) | `combatStore.test.ts` |
+| Troca de itens e moedas (não a transferência, que é SQL) | `tradeService` | `tradeService.test.ts` |
+| Criar e encerrar sessão | `sessionService` | `sessionService.test.ts` |
 | Morte por PV ≤ 0 ao fim do combate | `vitalsUtils.deriveDeathState` | já coberto em `vitalsUtils.test.ts` (o teste "marks dead when hp drops to 0" é o comportamento a mudar) |
 
 **Ainda sem teste de caracterização**
-- Tique de condições por rodada e fim de combate no `combatStore` (mistura Supabase, realtime e estado); troca de itens (`tradeService`).
 - O máximo de Fé com 4 valores diferentes e o `current_faith ?? faith ?? 0` repetido 16 vezes (será `getCurrentFaith` na Onda 3).
-- Encerramento da sessão (`sessionService.endSession`): cancela trocas, apaga NPCs e inimigos, concede `pending_level_up` e finaliza. **Não mata ninguém com PV ≤ 0**: a morte por PV ≤ 0 acontece no fim do *combate* (`combatStore.endCombat`, via `deriveDeathState`). A regra "a sessão não encerra com alguém Morrendo" ainda não existe no código.
+- As funções SQL `execute_trade`, `cancel_session_trades` e `create_game_session` (a transferência de itens e moedas e a criação da sessão em si). Os testes do serviço só provam o que o app envia a elas.
+- A assinatura em tempo real do combate (`initSubscriptions`).
+
+**Achados desta etapa (combate, troca e sessão)**
+- O turno é guardado como índice de posição, não como participante: se alguém sai do combate, a vez passa a apontar para outro participante.
+- `nextTurn` desconta a duração das Condições antes de gravar o novo turno, sem transação: se gravar o turno falhar, as Condições já foram descontadas. Ninguém é pulado, nem quem está com 0 PV.
+- `endCombat` junta os personagens mortos numa lista (`deadCharIds`) que nunca é usada: só inimigos com PV 0 saem da lista (`is_deleted`). Jogador com PV 0 vira Morto (BUG conhecido, decisão: Morrendo).
+- `startCombat` não preenche o estado local; quem mostra o combate é a assinatura em tempo real. Inimigos não herdam Condições da ficha.
+- `tradeService` não valida nada: aceita moedas negativas ou fracionadas, quantidade acima do que o personagem tem e Qualidade fracionada. Qualquer validação depende da função SQL.
+- `createGameSession` cria as fichas de NPC e inimigo antes de chamar a função SQL: se ela falhar, as fichas ficam órfãs.
+- `endSession` ignora erros de apagar NPCs e de conceder nível e encerra mesmo assim; não olha PV nem Testes de Morte (a regra do Morrendo ainda não existe).
 
 **Por que a correção do Teste de Fé não entrou agora**: o serviço que grava `is_approved` não conhece a penalidade de Item Profano (quem a calcula é a tela, lendo os itens). Unificar exige que a camada de dados leia os itens do personagem, então a correção nasce junto com `src/domain/faith` na Onda 3. O mesmo vale para a resistência de armadura (depende do vocabulário de condições e de ler `items.condition_resistances` do banco).
 
