@@ -22,7 +22,8 @@ vi.mock('../lib/supabase', async () => {
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import { sessionTestService } from './sessionTestService';
 
-const amulet = { items: { effects: { statPenalty: { stat: 'faith', value: -10 } } } };
+// Como em produção: a linha do amuleto tem `effects` vazio; a penalidade vem do conteúdo (slug).
+const amulet = { items: { slug: 'simbolo_proibido', effects: {} } };
 
 const world = (options: { faith?: number; items?: unknown[] } = {}) => {
   state.respond = (call) => {

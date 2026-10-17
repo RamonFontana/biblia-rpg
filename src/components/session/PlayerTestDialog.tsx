@@ -8,12 +8,8 @@ import {
   getTestModifiers,
   getTestBreakdown,
 } from '@/features/character-management/utils/characterMath';
-import {
-  getEffectiveFaith,
-  isFaithTestPassed,
-  sumItemFaithPenalty,
-  type ItemEffectsWithFaithPenalty,
-} from '@/domain/faith';
+import { getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
+import { getItemFaithPenalty } from '@/services/characterItemService';
 import { rollDie } from '@/domain/dice';
 import { systemRng } from '@/lib/systemRng';
 
@@ -25,7 +21,7 @@ interface PlayerTestDialogProps {
   onClose?: () => void;
 }
 
-interface DialogItemEffects extends ItemEffectsWithFaithPenalty {
+interface DialogItemEffects {
   properties?: string[];
 }
 
@@ -95,7 +91,8 @@ export function PlayerTestDialog({
           (cItem.items as { effects?: DialogItemEffects } | null)?.effects;
 
         let stealthDis = false;
-        const penaltyF = sumItemFaithPenalty((charItems ?? []).map(effectsOf));
+        // Se a leitura falhar, a tela segue sem a penalidade; quem decide a aprovação é o serviço.
+        const penaltyF = await getItemFaithPenalty(testResult.character_id).catch(() => 0);
 
         if (cData && charItems) {
           const equipmentIds = Object.values(cData.equipment || {}).filter(Boolean) as string[];
