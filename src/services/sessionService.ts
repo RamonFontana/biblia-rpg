@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { tradeService } from '@/services/tradeService';
+import { buildEnemyRow, buildPlayableNpcRow } from '@/lib/sessionEntities';
 import type { SessionEnemyDraft, SessionNPCDraft } from '@/store/createSessionStore';
 
 export interface CreateSessionPayload {
@@ -27,35 +28,7 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
 
     const { data: charData, error: charErr } = await supabase
       .from('characters')
-      .insert({
-        user_id: user.id, // Mestre "possui" o NPC por padrão
-        is_npc: true,
-        name: npc.name,
-        tribe: npc.characterData.tribo || '',
-        vocation: npc.characterData.classe || '',
-        attributes: {
-          strength: npc.characterData.for || 10,
-          dexterity: npc.characterData.des || 10,
-          constitution: npc.characterData.con || 10,
-          intelligence: npc.characterData.int || 10,
-          wisdom: npc.characterData.sab || 10,
-          charisma: npc.characterData.car || 10,
-        },
-        stats: {
-          level: npc.characterData.level || 1,
-          armor_class: npc.characterData.ca || 10,
-          pv: 10,
-          current_pv: 10,
-          current_faith: 100,
-          max_faith: 100,
-          experience: 0,
-        },
-        narrative: {
-          biography: npc.description,
-        },
-        fortress: 'Coragem',
-        temptation: 'Ganância',
-      } as any)
+      .insert(buildPlayableNpcRow(npc, user.id) as any)
       .select('id')
       .single();
 
@@ -71,33 +44,7 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
 
   // 1.5 Create Enemies as Characters
   for (const enemy of payload.enemies) {
-    const newCharacter = {
-      user_id: user.id,
-      is_enemy: true,
-      name: enemy.name,
-      vocation: enemy.vocation || '',
-      tribe: 'Inimigo',
-      has_participated_in_session: true,
-      attributes: {
-        for: enemy.attributes?.for || 0,
-        des: enemy.attributes?.des || 0,
-        con: enemy.attributes?.con || 0,
-        int: enemy.attributes?.int || 0,
-        sab: enemy.attributes?.sab || 0,
-        car: enemy.attributes?.car || 0,
-      },
-      stats: {
-        pv: enemy.hpMax,
-        current_pv: enemy.hpCurrent,
-        ca: enemy.ca,
-        faith: 0,
-        current_faith: 0,
-      },
-      skills: enemy.skills || [],
-      narrative: {
-        imageUrl: enemy.imageBase64 || '',
-      },
-    };
+    const newCharacter = buildEnemyRow(enemy, user.id);
 
     const { data: charData, error: charErr } = await supabase
       .from('characters')

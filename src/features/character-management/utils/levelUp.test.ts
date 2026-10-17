@@ -2,7 +2,15 @@
 // Decisões: ROADMAP.md, Onda 2: Marco no lugar de XP; Aumento de Atributo nos níveis 4/8/12/16/19.
 // Termos: CONTEXT.md (PV, Vocação, Marco).
 import { describe, expect, it } from 'vitest';
-import { ASI_LEVELS, calculateLevelUpHp, getHpAverage } from './levelUp';
+import {
+  ASI_LEVELS,
+  MAX_LEVEL,
+  calculateLevelUpHp,
+  canGrantLevelUp,
+  getCharacterLevel,
+  getHpAverage,
+  getLevelUpSteps,
+} from './levelUp';
 
 const hp = (over: Partial<Parameters<typeof calculateLevelUpHp>[0]> = {}) =>
   calculateLevelUpHp({
@@ -39,19 +47,12 @@ describe('calculateLevelUpHp: PV ganhos', () => {
 
   it('ganha no mínimo 1 PV, mesmo com CON muito baixa', () => {
     expect(hp({ vocation: 'Batedor', currentCon: 3 }).totalHpGained).toBe(1);
-    expect(hp({ vocation: 'Batedor', currentCon: 3 }).hpGained).toBe(1);
   });
 
   it('o piso de 1 PV só dispara fora da faixa de criação (CON 1: média 5, modificador -5)', () => {
     const r = hp({ vocation: 'Batedor', currentCon: 1 });
     expect(r.finalHpGained).toBe(0);
     expect(r.totalHpGained).toBe(1);
-  });
-
-  it('o ganho do passo de PV usa o modificador antigo de CON', () => {
-    const r = hp({ currentCon: 13, conPointsGained: 1, newLevel: 4 });
-    expect(r.conMod).toBe(1);
-    expect(r.hpGained).toBe(6 + 1);
   });
 });
 
@@ -76,15 +77,71 @@ describe('calculateLevelUpHp: CON sobe com o Aumento de Atributo', () => {
     expect(r.retroactiveHpGained).toBe(3);
   });
 
-  it('BUG conhecido: o passo de PV mostra um número e o total gravado é outro', () => {
-    // O jogador vê "+7 PV" (modificador antigo) e a ficha grava 11 (modificador novo + retroativo).
+  it('o total é a soma do que a tela mostra: média + modificador novo + retroativo', () => {
     const r = hp({ currentCon: 13, conPointsGained: 1, newLevel: 4 });
-    expect(r.hpGained).not.toBe(r.totalHpGained);
+    expect(r.hpAverage + r.newConMod + r.retroactiveHpGained).toBe(r.totalHpGained);
+  });
+});
+
+describe('getLevelUpSteps: o passo de PV mostra o ganho final', () => {
+  const all = { hasTribeChoice: true, hasVocationChoice: true, hasAsi: true };
+
+  it('o passo de PV vem depois da escolha de atributo e antes do resumo', () => {
+    const steps = getLevelUpSteps(all);
+    expect(steps).toEqual(['tribe', 'vocation', 'asi', 'hp', 'summary']);
+    expect(steps.indexOf('hp')).toBeGreaterThan(steps.indexOf('asi'));
+  });
+
+  it('sem escolhas, só PV e resumo', () => {
+    expect(
+      getLevelUpSteps({ hasTribeChoice: false, hasVocationChoice: false, hasAsi: false }),
+    ).toEqual(['hp', 'summary']);
+  });
+
+  it('só inclui os passos que o nível pede', () => {
+    expect(getLevelUpSteps({ ...all, hasTribeChoice: false, hasVocationChoice: false })).toEqual([
+      'asi',
+      'hp',
+      'summary',
+    ]);
   });
 });
 
 describe('Aumento de Atributo', () => {
   it('acontece nos níveis 4, 8, 12, 16 e 19', () => {
     expect(ASI_LEVELS).toEqual([4, 8, 12, 16, 19]);
+  });
+});
+
+describe('getCharacterLevel', () => {
+  it('usa a coluna level', () => {
+    expect(getCharacterLevel({ level: 5, stats: { level: 3 } })).toBe(5);
+  });
+
+  it('nas fichas antigas cai para stats.level', () => {
+    expect(getCharacterLevel({ level: null, stats: { level: 3 } })).toBe(3);
+    expect(getCharacterLevel({ stats: { level: 7 } })).toBe(7);
+  });
+
+  it('sem nenhum dos dois é nível 1', () => {
+    expect(getCharacterLevel({})).toBe(1);
+    expect(getCharacterLevel({ level: 0, stats: null })).toBe(1);
+  });
+});
+
+describe('canGrantLevelUp: teto de nível', () => {
+  it('o nível máximo é 20', () => {
+    expect(MAX_LEVEL).toBe(20);
+  });
+
+  it('permite até o nível 19 e bloqueia no 20', () => {
+    expect(canGrantLevelUp({ level: 19 })).toBe(true);
+    expect(canGrantLevelUp({ level: 20 })).toBe(false);
+    expect(canGrantLevelUp({ level: 21 })).toBe(false);
+  });
+
+  it('GAP conhecido: a trava existe só na tela de encerramento, nenhuma regra impede o salto no banco', () => {
+    // O LevelUpWizard calcula getCharacterLevel + 1 sem checar o teto.
+    expect(getCharacterLevel({ level: 20 }) + 1).toBe(21);
   });
 });

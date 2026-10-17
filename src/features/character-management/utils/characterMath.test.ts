@@ -55,8 +55,12 @@ describe('characterMath', () => {
   });
 
   describe('SKILLS_LIST', () => {
-    it('contains exactly 18 skills', () => {
-      expect(SKILLS_LIST.length).toBe(18);
+    it('contains exactly 17 skills', () => {
+      expect(SKILLS_LIST.length).toBe(17);
+    });
+
+    it('has no arcane skill (the setting has no arcane magic)', () => {
+      expect(SKILLS_LIST.map((s) => s.id)).not.toContain('arcanismo');
     });
   });
 });

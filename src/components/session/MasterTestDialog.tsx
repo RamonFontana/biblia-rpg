@@ -16,6 +16,7 @@ interface MasterTestDialogProps {
 }
 
 import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
+import { toStoredDifficulty } from '@/lib/sessionTests';
 
 export function MasterTestDialog({
   sessionId,
@@ -66,11 +67,7 @@ export function MasterTestDialog({
     setError(null);
     setIsSubmitting(true);
 
-    let finalDifficulty = difficulty;
-    if (testType === 'Fé') {
-      finalDifficulty =
-        faithModifierType === 'punishment' ? -Math.abs(difficulty) : Math.abs(difficulty);
-    }
+    const finalDifficulty = toStoredDifficulty(testType, difficulty, faithModifierType);
 
     try {
       const targets = selectedPlayers

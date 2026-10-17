@@ -1,6 +1,5 @@
 export const SKILLS_LIST = [
   { id: 'acrobacia', name: 'Acrobacia', attribute: 'des' },
-  { id: 'arcanismo', name: 'Arcanismo', attribute: 'int' },
   { id: 'atletismo', name: 'Atletismo', attribute: 'for' },
   { id: 'atuacao', name: 'Atuação', attribute: 'car' },
   { id: 'enganacao', name: 'Enganação', attribute: 'car' },

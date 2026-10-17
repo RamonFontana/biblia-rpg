@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { canGrantLevelUp } from '@/features/character-management/utils/levelUp';
 
 interface EndSessionDialogProps {
   isOpen: boolean;
@@ -64,8 +65,7 @@ export function EndSessionDialog({
 
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
               {playableCharacters.map((pc) => {
-                const isLevel20 =
-                  (pc.character.level || (pc.character.stats as any)?.level || 1) >= 20;
+                const isLevel20 = !canGrantLevelUp(pc.character);
                 return (
                   <div
                     key={pc.character.id}

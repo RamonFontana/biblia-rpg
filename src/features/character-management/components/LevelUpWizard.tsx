@@ -3,7 +3,12 @@ import type { Character } from '../types';
 import { updateCharacter } from '../api/characterApi';
 import { applyMaxPvIncrease } from '@/lib/vitalsUtils';
 import { ABILITIES } from '../../../data/abilities';
-import { ASI_LEVELS, calculateLevelUpHp } from '../utils/levelUp';
+import {
+  ASI_LEVELS,
+  calculateLevelUpHp,
+  getCharacterLevel,
+  getLevelUpSteps,
+} from '../utils/levelUp';
 
 interface LevelUpWizardProps {
   character: Character;
@@ -23,7 +28,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const newLevel = (character.level || (character.stats as any)?.level || 1) + 1;
+  const newLevel = getCharacterLevel(character) + 1;
   const currentCon = (character.attributes as any)?.con || 10;
 
   // State for choices
@@ -32,7 +37,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const [asiChoices, setAsiChoices] = useState<{ attr1?: string; attr2?: string }>({});
 
   const normalizedVocation = normalizeString(character.vocation || '');
-  const { hpAverage, conMod, hpGained, retroactiveHpGained, totalHpGained } = calculateLevelUpHp({
+  const { hpAverage, newConMod, retroactiveHpGained, totalHpGained } = calculateLevelUpHp({
     vocation: character.vocation,
     currentCon,
     conPointsGained: (asiChoices.attr1 === 'con' ? 1 : 0) + (asiChoices.attr2 === 'con' ? 1 : 0),
@@ -65,12 +70,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const hasAsi = ASI_LEVELS.includes(newLevel);
 
   const steps = useMemo(() => {
-    const s = ['hp'];
-    if (hasTribeChoice) s.push('tribe');
-    if (hasVocationChoice) s.push('vocation');
-    if (hasAsi) s.push('asi');
-    s.push('summary');
-    return s;
+    return getLevelUpSteps({ hasTribeChoice, hasVocationChoice, hasAsi });
   }, [hasTribeChoice, hasVocationChoice, hasAsi]);
 
   const currentStepId = steps[currentStepIndex];
@@ -186,18 +186,29 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
             Constituição (Mod)
           </h4>
           <span className="text-xl font-bold text-stone-200">
-            {conMod >= 0 ? `+${conMod}` : conMod} PV
+            {newConMod >= 0 ? `+${newConMod}` : newConMod} PV
           </span>
         </div>
+        {retroactiveHpGained > 0 && (
+          <>
+            <div className="text-2xl text-stone-600">+</div>
+            <div>
+              <h4 className="text-sm text-stone-500 uppercase tracking-wider mb-1">Retroativo</h4>
+              <span className="text-xl font-bold text-stone-200">+{retroactiveHpGained} PV</span>
+            </div>
+          </>
+        )}
         <div className="text-2xl text-stone-600">=</div>
         <div>
           <h4 className="text-sm text-amber-500 uppercase tracking-wider mb-1">Total Ganho</h4>
-          <span className="text-2xl font-bold text-amber-400">+{hpGained} PV</span>
+          <span className="text-2xl font-bold text-amber-400">+{totalHpGained} PV</span>
         </div>
       </div>
-      <p className="text-sm text-stone-500">
-        * Se você aumentar sua Constituição neste nível, o ganho retroativo será calculado no final.
-      </p>
+      {retroactiveHpGained > 0 && (
+        <p className="text-sm text-stone-500">
+          O aumento de Constituição também rende PV retroativo pelos níveis anteriores.
+        </p>
+      )}
     </div>
   );
 

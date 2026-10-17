@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getCurrentPv, getMaxPv, applyHpDelta } from '@/lib/vitalsUtils';
+import { applyConsumableEffects } from '@/lib/consumables';
 
 export function useUpdateNPCInventory() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -100,22 +100,7 @@ export function useUpdateNPCInventory() {
 
       // 2. Apply effects if any
       if (itemEffects && Object.keys(itemEffects).length > 0) {
-        let newStats = { ...currentStats };
-        let hasChanges = false;
-
-        if (itemEffects.heal) {
-          const maxHp = getMaxPv(newStats);
-          const currentHp = getCurrentPv(newStats, maxHp);
-          newStats.current_pv = applyHpDelta(currentHp, maxHp, itemEffects.heal);
-          hasChanges = true;
-        }
-
-        if (itemEffects.restore_faith) {
-          const maxFaith = newStats.faith || 0;
-          const currentFaith = newStats.current_faith ?? maxFaith;
-          newStats.current_faith = Math.min(currentFaith + itemEffects.restore_faith, maxFaith);
-          hasChanges = true;
-        }
+        const { stats: newStats, hasChanges } = applyConsumableEffects(currentStats, itemEffects);
 
         if (hasChanges) {
           const table = isPlayable ? 'characters' : 'session_npcs';
