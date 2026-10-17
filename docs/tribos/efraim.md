@@ -24,7 +24,7 @@ A tribo de Efraim sempre assumiu uma postura de liderança militar e orgulho, es
 *Foco na força bruta de linha de frente, investidas e liderança autoritária.*
 
 - **Nível 4 - Investida Majestosa**: Se você se mover 6 metros em linha reta e atacar com arma corpo a corpo, você pode realizar um ataque de Empurrão (Shove) como Ação Bônus.
-- **Nível 8 - Vigor Orgulhoso**: Quando um ataque reduziria você a 0 HP, você pode fazer um Teste de Constituição (CD 15). Se passar, você fica com 1 HP em vez disso (uma vez por Descanso Longo).
+- **Nível 8 - Vigor Orgulhoso**: Quando um ataque reduziria você a 0 PV, você pode fazer um Teste de Constituição (CD 15). Se passar, você fica com 1 PV em vez disso (uma vez por Descanso Longo).
 - **Nível 12 - Grito de Comando**: Uma vez por Descanso Curto, como ação bônus, você ordena um aliado adjacente a atacar. Ele usa a Reação dele para fazer um ataque corpo a corpo.
 - **Nível 16 - Impacto do Touro**: Se você acertar um ataque corpo a corpo após mover-se pelo menos 4,5 metros, você rola o dado de dano duas vezes.
 
@@ -42,7 +42,7 @@ A tribo de Efraim sempre assumiu uma postura de liderança militar e orgulho, es
 | Tiro Penetrante | 4 (A) | Ação | - | 1 / D. Curto | Próx tiro com arco ignora armadura física (CA base + Des). |
 | Investida Majestosa | 4 (B) | Ação Bônus | - | - | Após mover 6m reto e atacar, pode dar Empurrão (Shove). |
 | Disparo Evasivo | 8 (A) | Passiva | - | - | Sem Desvantagem atq à distância se inimigo a até 1,5m. |
-| Vigor Orgulhoso | 8 (B) | Reação | - | 1 / D. Longo | Se a 0 HP, Teste CON CD 15 para ficar com 1 HP. |
+| Vigor Orgulhoso | 8 (B) | Reação | - | 1 / D. Longo | Se a 0 PV, Teste CON CD 15 para ficar com 1 PV. |
 | Flecha Marcada | 12 (A) | Ação Bônus | - | - | Próx 2 ataques com arco no alvo focado têm Vantagem. |
 | Grito de Comando | 12 (B) | Ação Bônus | - | 1 / D. Curto | Ordena aliado adjacente a fazer ataque c/c (Reação). |
 | Chuva de Efraim | 16 (A) | Ação | - | 1 / Combate | Ataca com arco até 3 alvos em cone 18m. |

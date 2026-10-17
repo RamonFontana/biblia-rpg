@@ -23,12 +23,12 @@ A tribo de Dã é astuta, associada a emboscadas, julgamento severo e oportunism
 *Foco em punir agressores e liderança por intimidação (como Sansão).*
 
 - **Nível 4 - Força de Leão (1/Descanso Curto)**: Você invoca uma força repentina. Por 1 minuto, você ganha Vantagem em testes de Força e seus ataques corpo a corpo empurram o alvo 1,5m para trás se você desejar.
-- **Nível 8 - Veredito**: Se um aliado cair a 0 HP a até 9 metros de você, você tem Vantagem em todos os ataques contra o agressor até que ele seja derrotado.
+- **Nível 8 - Veredito**: Se um aliado cair a 0 PV a até 9 metros de você, você tem Vantagem em todos os ataques contra o agressor até que ele seja derrotado.
 - **Nível 12 - Pele Intratável**: Você resiste a dano de concussão provindo de armas não-metálicas (clavas, pedras, etc) ou ataques desarmados de feras.
 - **Nível 16 - Destruidor de Pilares (1/Descanso Longo)**: Seus ataques contra estruturas causam dano máximo. Além disso, uma vez ao dia, um ataque corpo a corpo seu que acerte causa atordoamento no alvo até o final do próximo turno dele, sem direito a teste.
 
 ## Habilidade Suprema (Nível 20)
-- **Vingança de Dã**: Se o seu HP cair a 0, mas você não morrer na hora, você realiza imediatamente um turno completo antes de cair inconsciente. Você tem Vantagem em todos os ataques neste turno e causa dano duplo. Ao final desse turno extra, você cai a 0 HP normalmente.
+- **Vingança de Dã**: Se o seu PV cair a 0, mas você não morrer na hora, você realiza imediatamente um turno completo antes de cair inconsciente. Você tem Vantagem em todos os ataques neste turno e causa dano duplo. Ao final desse turno extra, você cai a 0 PV normalmente.
 
 ---
 
@@ -41,9 +41,9 @@ A tribo de Dã é astuta, associada a emboscadas, julgamento severo e oportunism
 | Ataque Ofuscante | 4 (A) | Ação Bônus | - | 1 / D. Curto | Próx atq ofusca (desvantagem p/ o inimigo no próx ataque dele). |
 | Força de Leão | 4 (B) | Ação Bônus | - | 1 / D. Curto | Vantagem em Força; atqs empurram 1,5m p/ trás (1 min). |
 | Rastejar Furtivo | 8 (A) | Passiva | - | - | Furtividade sem custo mov; Vantagem em Furtividade (rocha/mato). |
-| Veredito | 8 (B) | Passiva | - | - | Vantagem contra agressor se aliado cair a 0 HP a até 9m. |
+| Veredito | 8 (B) | Passiva | - | - | Vantagem contra agressor se aliado cair a 0 PV a até 9m. |
 | Reflexos Peçonhentos | 12 (A) | Reação | - | - | Se inimigo errar corpo a corpo, faz ataque imediato nele. |
 | Pele Intratável | 12 (B) | Passiva | - | - | Resiste dano concussão (armas não-metálicas/desarmado fera). |
 | Bote Fatal | 16 (A) | Passiva | - | - | Ataque contra criatura que não agiu vira Crítico se acertar. |
 | Destruidor de Pilares | 16 (B) | Passiva | - | 1 / D. Longo | Dano máx em estrutura; 1x/dia atordoa alvo no acerto s/ teste. |
-| Vingança de Dã | 20 | Passiva | - | - | Ao cair a 0 HP, ganha turno imediato com Vantagem e dano duplo. |
+| Vingança de Dã | 20 | Passiva | - | - | Ao cair a 0 PV, ganha turno imediato com Vantagem e dano duplo. |

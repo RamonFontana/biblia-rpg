@@ -3,7 +3,7 @@
 Os Guerreiros formam a espinha dorsal dos exércitos de Israel (ou de exércitos mercenários vizinhos). Com o advento das armas de ferro, sua capacidade de impacto e defesa aumentou significativamente. Eles são peritos em aguentar o castigo físico e proteger o grupo.
 
 ## Características Base
-- **Dado de Vida (HP)**: 1d10 por nível.
+- **Dado de Vida (PV)**: 1d10 por nível.
 - **Proficiências**: Todas as armaduras, escudos, e armas simples e marciais (espadas, lanças, machados).
 - **Testes de Resistência**: Força e Constituição.
 
@@ -23,14 +23,14 @@ Além das passivas que você ganha com a sua Tribo, ser um Guerreiro lhe concede
 - **Determinação (1/Descanso Longo)**: Se rolar um Teste de Sabedoria (para resistir a medo/Tentações) e falhar, você pode usar uma Reação para re-rolar e deve usar o novo resultado.
 
 ### Nível 10: Vigor do Defensor
-- **Vigor do Defensor (1/Descanso Curto)**: Como ação bônus, você recupera HP equivalente a 1d10 + seu nível.
+- **Vigor do Defensor (1/Descanso Curto)**: Como ação bônus, você recupera PV equivalente a 1d10 + seu nível.
 - **Bloqueio Inabalável**: Se estiver empunhando um escudo, ataques de oportunidade contra você têm desvantagem.
 
 ### Nível 14: Ataque Extra Superior
 - **Ataque Extra (3 ataques)**: Você passa a poder atacar três vezes quando usa a Ação de Ataque no seu turno.
 
 ### Nível 18: Presença do General
-- **Grito de Guerra (1/Descanso Longo)**: Como Ação, você emite um comando ou grito encorajador. Até 6 aliados que puderem ouvi-lo ganham Vantagem nos ataques até o fim do próximo turno deles e recuperam imediatamente 2d6 de HP. Inimigos a até 9 metros que ouvirem devem passar num Teste de Sabedoria ou ficarão Amedrontados por 1 minuto.
+- **Grito de Guerra (1/Descanso Longo)**: Como Ação, você emite um comando ou grito encorajador. Até 6 aliados que puderem ouvi-lo ganham Vantagem nos ataques até o fim do próximo turno deles e recuperam imediatamente 2d6 de PV. Inimigos a até 9 metros que ouvirem devem passar num Teste de Sabedoria ou ficarão Amedrontados por 1 minuto.
 
 ---
 
@@ -44,7 +44,7 @@ Além das passivas que você ganha com a sua Tribo, ser um Guerreiro lhe concede
 | Surto de Ação | 2 | Ação Livre | - | 1 / D. Curto | Ação adicional no turno. |
 | Ataque Extra | 6 | Passiva | - | - | Ataca duas vezes com Ação de Ataque. |
 | Determinação | 6 | Reação | - | 1 / D. Longo | Rerrola Teste de SAB (medo/tentações) falho. |
-| Vigor do Defensor | 10 | Ação Bônus | 1d10 | 1 / D. Curto | Recupera HP igual a 1d10 + Nível. |
+| Vigor do Defensor | 10 | Ação Bônus | 1d10 | 1 / D. Curto | Recupera PV igual a 1d10 + Nível. |
 | Bloqueio Inabalável | 10 | Passiva | - | - | Com escudo, atqs de oportunidade têm Desv. contra você. |
 | Ataque Extra Superior | 14 | Passiva | - | - | Ataca três vezes com Ação de Ataque. |
-| Grito de Guerra | 18 | Ação | 2d6 | 1 / D. Longo | 6 aliados c/ Vant. atq e curam 2d6 HP. Inimigos TR SAB/fogem. |
+| Grito de Guerra | 18 | Ação | 2d6 | 1 / D. Longo | 6 aliados c/ Vant. atq e curam 2d6 PV. Inimigos TR SAB/fogem. |

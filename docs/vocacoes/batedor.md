@@ -3,7 +3,7 @@
 O Batedor é o especialista em espreitar, coletar informações e realizar eliminações cirúrgicas. Podem ser espiões enviados para sondar a Terra Prometida, ou assassinos mercenários. Eles não dependem de força bruta, mas sim de precisão, agilidade e astúcia.
 
 ## Características Base
-- **Dado de Vida (HP)**: 1d8 por nível.
+- **Dado de Vida (PV)**: 1d8 por nível.
 - **Proficiências**: Armaduras leves, armas simples, espadas curtas, arcos curtos, facas de bronze. Ferramentas de ladrão (se aplicável).
 - **Testes de Resistência**: Destreza e Inteligência.
 

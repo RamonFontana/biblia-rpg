@@ -8,7 +8,7 @@ Neste cenário, a possessão e o tormento espiritual são ameaças mecânicas di
 
 ## Modificadores Mecânicos
 
-- **Atributos Físicos**: A Força e a Constituição da criatura base são aumentadas em **+4** (Aumentando os modificadores em +2). Aumente os pontos de vida máximos (HP) e ataques que dependem destes atributos de acordo.
+- **Atributos Físicos**: A Força e a Constituição da criatura base são aumentadas em **+4** (Aumentando os modificadores em +2). Aumente os pontos de vida máximos (PV) e ataques que dependem destes atributos de acordo.
 - **Inteligência e Carisma**: A Inteligência cai para 6 (se for maior), tornando-se puramente instintiva/animalesca na maioria dos casos. O Carisma, no entanto, é modificado por uma aura macabra: ganha Proficiência em Intimidação (se não tiver).
 - **Alinhamento**: Muda imediatamente para Caótico e Mau.
 

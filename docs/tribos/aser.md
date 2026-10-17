@@ -6,7 +6,7 @@
 A tribo de Aser é próspera, ocupando terras férteis no litoral e no norte, especializando-se na produção de azeite e colheitas abundantes. São hospitaleiros, vigorosos e têm vastos recursos.
 
 ## Passivas Iniciais (Nível 1)
-- **Fartura da Terra**: Durante um Descanso Curto, a refeição que você prepara recupera 1d4 HP de cada aliado que descansa com você (não consome ração). Você tem Proficiência com Ferramentas de Cozinheiro (ou equivalente).
+- **Fartura da Terra**: Durante um Descanso Curto, a refeição que você prepara recupera 1d4 PV de cada aliado que descansa com você (não consome ração). Você tem Proficiência com Ferramentas de Cozinheiro (ou equivalente).
 - **Vigor do Azeite**: Você tem Vantagem em Testes de Resistência contra venenos, doenças e exaustão.
 
 ## Especializações (Nível 4)
@@ -16,20 +16,20 @@ A tribo de Aser é próspera, ocupando terras férteis no litoral e no norte, es
 *Foco em resistência física contínua e proteção natural.*
 
 - **Nível 4 - Calçado de Ferro**: Sua postura é como rocha. Você não pode ser derrubado (prono) ou empurrado contra a sua vontade se estiver de pé e consciente em terra firme.
-- **Nível 8 - Corpo Nutrrido**: O seu HP máximo aumenta em 8 e passa a aumentar em +1 em cada nível subsequente.
-- **Nível 12 - Ungido (1/Descanso Longo)**: Você pode aplicar azeite/bálsamo a si ou a um aliado como Ação Bônus. O alvo recupera 3d8 de HP e se cura de uma condição de envenenamento ou doença.
+- **Nível 8 - Corpo Nutrrido**: O seu PV máximo aumenta em 8 e passa a aumentar em +1 em cada nível subsequente.
+- **Nível 12 - Ungido (1/Descanso Longo)**: Você pode aplicar azeite/bálsamo a si ou a um aliado como Ação Bônus. O alvo recupera 3d8 de PV e se cura de uma condição de envenenamento ou doença.
 - **Nível 16 - Muralha Inabalável**: Todo o dano não-mágico de concussão, cortante ou perfurante que você recebe é reduzido em 3.
 
 ### Caminho B: O Emissário Real
 *Foco em suporte, comércio, persuasão e garantir que os aliados rendam no ápice.*
 
-- **Nível 4 - Delícias Reais (1/Descanso Longo)**: Durante um descanso curto, você reparte porções de iguarias/azeite. Até 4 pessoas ganham HP Temporário igual ao seu nível + seu Modificador de Carisma ou Constituição (sua escolha).
+- **Nível 4 - Delícias Reais (1/Descanso Longo)**: Durante um descanso curto, você reparte porções de iguarias/azeite. Até 4 pessoas ganham PV Temporário igual ao seu nível + seu Modificador de Carisma ou Constituição (sua escolha).
 - **Nível 8 - Mercador Hábil**: Você tem Vantagem em todos os testes de Carisma para negociações, comércio e apaziguar tensões entre grupos neutros/hostis.
-- **Nível 12 - Banquete do Acampamento**: O benefício de PV da Fartura da Terra (Passiva do Nível 1) aumenta para 1d8 HP e remove também a condição Exausto dos membros do grupo em cada Descanso Curto que fizerem uma refeição com você.
+- **Nível 12 - Banquete do Acampamento**: O benefício de PV da Fartura da Terra (Passiva do Nível 1) aumenta para 1d8 PV e remove também a condição Exausto dos membros do grupo em cada Descanso Curto que fizerem uma refeição com você.
 - **Nível 16 - A Favor dos Reis**: A sua influência e aura de prosperidade afetam aliados. Uma vez por combate (1/Descanso Curto), você pode dar o comando de ação para um aliado. Ele pode realizar um Ataque ou uma Ação imediatamente como Reação.
 
 ## Habilidade Suprema (Nível 20)
-- **A Benção Eterna de Aser**: A abundância da tribo flui em você. No final de todo turno seu em combate, se você estiver com HP menor que a metade, você recupera 10 HP passivamente.
+- **A Benção Eterna de Aser**: A abundância da tribo flui em você. No final de todo turno seu em combate, se você estiver com PV menor que a metade, você recupera 10 PV passivamente.
 
 ---
 
@@ -37,15 +37,15 @@ A tribo de Aser é próspera, ocupando terras férteis no litoral e no norte, es
 
 | Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
 |---|---|---|---|---|---|
-| Fartura da Terra | 1 | Passiva | - | - | No Descanso Curto, a refeição de Aser recupera 1d4 HP de cada aliado (sem consumir ração). |
+| Fartura da Terra | 1 | Passiva | - | - | No Descanso Curto, a refeição de Aser recupera 1d4 PV de cada aliado (sem consumir ração). |
 | Vigor do Azeite | 1 | Passiva | - | - | Vantagem em TR contra venenos, doenças e exaustão. |
 | Calçado de Ferro | 4 (A) | Passiva | - | - | Imunidade a ser derrubado (prono) ou empurrado contra a vontade. |
-| Delícias Reais | 4 (B) | Ação | - | 1 / D. Longo | (Desc. Curto) Até 4 pessoas ganham HP Temp igual a Nível + MOD Car/Con. |
-| Corpo Nutrrido | 8 (A) | Passiva | - | - | HP máximo +8 e +1 por nível subsequente. |
+| Delícias Reais | 4 (B) | Ação | - | 1 / D. Longo | (Desc. Curto) Até 4 pessoas ganham PV Temp igual a Nível + MOD Car/Con. |
+| Corpo Nutrrido | 8 (A) | Passiva | - | - | PV máximo +8 e +1 por nível subsequente. |
 | Mercador Hábil | 8 (B) | Passiva | - | - | Vantagem em testes de Carisma para comércio e apaziguar tensões. |
-| Ungido | 12 (A) | Ação Bônus | 3d8 | 1 / D. Longo | Cura 3d8 HP e remove envenenamento/doença do alvo. |
-| Banquete do Acampamento | 12 (B) | Passiva | - | - | Refeição do Descanso Curto sobe p/ 1d8 HP e remove Exausto do grupo. |
+| Ungido | 12 (A) | Ação Bônus | 3d8 | 1 / D. Longo | Cura 3d8 PV e remove envenenamento/doença do alvo. |
+| Banquete do Acampamento | 12 (B) | Passiva | - | - | Refeição do Descanso Curto sobe p/ 1d8 PV e remove Exausto do grupo. |
 | Muralha Inabalável | 16 (A) | Passiva | - | - | Reduz dano não-mágico de concussão, cortante ou perfurante em 3. |
 | A Favor dos Reis | 16 (B) | Reação | - | 1 / D. Curto | Comanda aliado para realizar um Ataque ou Ação imediatamente. |
-| A Benção Eterna de Aser | 20 | Passiva | - | - | Se HP < metade, recupera 10 HP no final do turno (combate). |
+| A Benção Eterna de Aser | 20 | Passiva | - | - | Se PV < metade, recupera 10 PV no final do turno (combate). |
 

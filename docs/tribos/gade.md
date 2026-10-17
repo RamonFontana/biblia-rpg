@@ -54,7 +54,7 @@
 
 ### Caminho A — Tanque
 **Bastião de Israel**
-- Ao cair a **0 HP**, faz um **teste de Fé** para ficar com **1 HP**.
+- Ao cair a **0 PV**, faz um **teste de Fé** para ficar com **1 PV**.
 
 ### Caminho B — Dano Bruto
 **Golpe Sísmico**
@@ -68,7 +68,7 @@
 ### Caminho A — Tanque
 **Escudo de Deus**
 - **Imune a dano físico** por 1 minuto.
-- Converte dano recebido em **HP Temporário para aliados**.
+- Converte dano recebido em **PV Temporário para aliados**.
 
 ### Caminho B — Dano Bruto
 **Espírito de Sansão**
@@ -90,7 +90,7 @@
 | Ataque Bônus | 8 (B) | Ação Bônus | - | - | Ataque extra como Ação Bônus. |
 | Guarda-Costas | 12 (A) | Reação | - | - | Troca de lugar c/ aliado adjacente p/ receber dano. |
 | Mãos Calejadas | 12 (B) | Passiva | - | - | Adiciona CON ao dano de concussão. |
-| Bastião de Israel | 16 (A) | Reação | - | - | Ao cair a 0 HP, Teste de Fé para ficar com 1 HP. |
+| Bastião de Israel | 16 (A) | Reação | - | - | Ao cair a 0 PV, Teste de Fé para ficar com 1 PV. |
 | Golpe Sísmico | 16 (B) | Ação | - | 1 / D. Curto | Atinge chão para derrubar em cone. |
-| Escudo de Deus | 20 (A) | Ação | - | 1 / Semana | Imune a dano físico (1 min). Converte dano em HP Temp. p/ aliados. |
+| Escudo de Deus | 20 (A) | Ação | - | 1 / Semana | Imune a dano físico (1 min). Converte dano em PV Temp. p/ aliados. |
 | Espírito de Sansão | 20 (B) | Ação | - | 1 / Semana | Força 30 (3 turnos), críticos autos. Perde metade da Fé depois. |

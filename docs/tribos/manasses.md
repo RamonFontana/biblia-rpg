@@ -6,7 +6,7 @@ O Senhor diz de Gideão (da tribo de Manassés): *"O Senhor é contigo, homem va
 Manassés foi dividida em duas "meias-tribos", habitando ambos os lados do rio Jordão, cobrindo territórios férteis e inóspitos. Essa divisão moldou-os como um povo altamente resiliente, tático e de valor comprovado sob situações extremas e escassez numérica.
 
 ## Passivas Iniciais (Nível 1)
-- **Homem Valoroso**: Você ganha Vantagem em ataques corpo a corpo se estiver lutando contra um oponente cujo tamanho seja maior que o seu, ou se você estiver com o HP abaixo da metade.
+- **Homem Valoroso**: Você ganha Vantagem em ataques corpo a corpo se estiver lutando contra um oponente cujo tamanho seja maior que o seu, ou se você estiver com o PV abaixo da metade.
 - **Guerreiro de Fronteira**: Você ganha Proficiência na perícia Sobrevivência e Atletismo.
 
 ## Especializações (Nível 4)
@@ -23,7 +23,7 @@ Manassés foi dividida em duas "meias-tribos", habitando ambos os lados do rio J
 ### Caminho B: O Senhor de Gileade
 *Foco em sobrevivência, robustez extrema (defesa de terras agrestes de Basã e Gileade) e combate pesado.*
 
-- **Nível 4 - Sangue Resiliente**: O seu HP máximo aumenta na quantidade igual ao dobro do seu Modificador de Constituição e você recupera 1 ponto de HP extra por cada Dado de Vida que gasta em Descansos Curtos.
+- **Nível 4 - Sangue Resiliente**: O seu PV máximo aumenta na quantidade igual ao dobro do seu Modificador de Constituição e você recupera 1 ponto de PV extra por cada Dado de Vida que gasta em Descansos Curtos.
 - **Nível 8 - Guardião da Fronteira**: Se você for alvo de um ataque corpo a corpo, você pode usar uma Reação para empurrar o inimigo 1,5m para trás antes do dano ser rolado (se ele falhar num Teste de Força).
 - **Nível 12 - Implacável**: Se você estiver sob efeitos das condições Envenenado, Surdo ou Sangrando, você rola um dado de Vida no início de cada um de seus turnos para se curar.
 - **Nível 16 - A Muralha do Jordão (1/Descanso Longo)**: Você pode plantar os pés firmemente no chão como Ação Bônus. Por 1 minuto, qualquer inimigo que tentar passar pela sua área de ameaça tem o deslocamento reduzido a 0.
@@ -37,10 +37,10 @@ Manassés foi dividida em duas "meias-tribos", habitando ambos os lados do rio J
 
 | Nome | Nível Min. | Tipo Ação | Dado de Rolagem | Usos/Recarga | Efeito |
 |---|---|---|---|---|---|
-| Homem Valoroso | 1 | Passiva | - | - | Vantagem c/c contra oponente maior ou se HP < 50%. |
+| Homem Valoroso | 1 | Passiva | - | - | Vantagem c/c contra oponente maior ou se PV < 50%. |
 | Guerreiro de Fronteira | 1 | Passiva | - | - | Proficiência Sobrevivência e Atletismo. |
 | Surpresa Tática | 4 (A) | Passiva | 1d6 | 1 / D. Curto | 1ª rodada: se atacar antes do alvo, +1d6 dano e alvo Surdo. |
-| Sangue Resiliente | 4 (B) | Passiva | - | - | HP máx aumenta 2x CON; +1 HP por Dado de Vida em D. Curto. |
+| Sangue Resiliente | 4 (B) | Passiva | - | - | PV máx aumenta 2x CON; +1 PV por Dado de Vida em D. Curto. |
 | Força na Fraqueza | 8 (A) | Reação | - | - | Força rerrolagem de Acerto Crítico sofrido por aliado/si. |
 | Guardião da Fronteira | 8 (B) | Reação | - | - | Empurra inimigo 1,5m antes do dano c/c (Teste FOR). |
 | Tática do Cântaro Quebrado | 12 (A) | Ação Bônus | - | 1 / D. Longo | Inimigos 9m Teste SAB; falha = Amedrontado (1 min). |
