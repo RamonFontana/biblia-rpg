@@ -9,8 +9,8 @@ Este guia detalha o passo a passo para criar o seu personagem no RPG Bíblico. A
 ## Passos para a Criação de Personagem
 
 ### 1. Tribo e Vocação
-- **Escolha sua Tribo**: As 12 Tribos de Israel (e outras nações da região) definem a "raça" do seu personagem, concedendo passivas únicas e um contexto cultural profundo.
-- **Escolha sua Vocação**: É a sua "classe". As opções principais incluem Guerreiro, Caçador, Sábio e Sacerdote.
+- **Escolha sua Tribo**: As 13 tribos de Israel definem a "raça" do seu personagem, concedendo passivas únicas e um contexto cultural profundo.
+- **Escolha sua Vocação**: É a sua "classe". As opções são Guerreiro, Batedor, Caçador e Sacerdote/Sábio.
 - **A Regra de Levi**: Se você escolher a Tribo de Levi, está *obrigado* a escolher a Vocação de Sacerdote ou Sábio. Levitas não podem ser Guerreiros ou Caçadores de linha de frente, pois foram separados para o serviço no Tabernáculo.
 
 ### 2. Geração de Atributos
@@ -28,40 +28,39 @@ O Sistema de Fé é o cerne deste RPG.
 Antes de comprar itens, calcule as estatísticas vitais do seu personagem:
 - **Pontos de Vida (PV)**: Baseado no dado de vida da sua Vocação (ex: d10 para Guerreiro) + seu Modificador de Constituição.
 - **Classe de Armadura (CA)**: Sem armadura, sua CA inicial é 10 + Modificador de Destreza. Com armadura, siga o cálculo descrito no item.
-- **Pontos de Fé Iniciais**: Você começa com um valor base de Fé ditado pela sua Vocação e Tribo.
+- **Pontos de Fé Iniciais**: Você começa com 50 pontos de Fé (60 se for da Tribo de Levi).
 
 ### 5. Equipamentos Iniciais
 Armas e armaduras são limitadas à tecnologia da Idade do Bronze ou início da Idade do Ferro. 
-- **Moeda**: Você recebe moedas de Prata (Shekels) ou de Cobre (Geras) para comprar equipamentos na criação. A quantia inicial é *4d4 x 10 Shekels de Prata*.
+- **Moeda**: Você recebe moedas de Prata (Shekels) ou de Cobre (Geras) para comprar equipamentos na criação. A quantia inicial é fixa: *50 Shekels de Prata*.
 - Em vez de comprar tudo avulso, você pode escolher um dos **Pacotes Iniciais** sugeridos abaixo, de acordo com a sua vocação.
 
 ---
 
 ## Pacotes Iniciais Sugeridos
 
-Ao invés de rolar dinheiro, você pode simplesmente pegar o pacote correspondente à sua vocação:
+Ao invés de gastar os 50 Shekels em itens avulsos, você pode simplesmente pegar o pacote correspondente à sua vocação. O pacote vale os 50 Shekels e já deixa uma sobra no bolso:
 
 ### Guerreiro
-- Espada curta de bronze (1d6 cortante) ou Lança (1d6 perfurante).
-- Armadura de couro fervido (CA 11 + Mod Des) e um escudo de madeira (+2 CA).
-- 5 rações de viagem e um cantil de água.
-- Uma faca de osso (1d4 perfurante) e 5 Shekels de prata no bolso.
+- Espada curta de ferro (1d6 cortante).
+- Armadura de couro cru (CA 11 + Mod Des) e um escudo de madeira (+2 CA).
+- 5 rações de viagem e um odre de água (o Sustento dos primeiros Descansos Longos).
+- Uma faca de bronze (1d4 perfurante) e 5 Shekels de prata no bolso.
+
+### Batedor
+- Duas facas de bronze (1d4 perfurante).
+- Armadura de couro cru (CA 11 + Mod Des).
+- Corda de cânhamo (15m) e 8 Shekels de prata no bolso.
 
 ### Caçador
-- Arco curto (1d6 perfurante) com aljava e 20 flechas OU Funda (1d4 concussão) com 20 pedras.
-- Adaga de bronze (1d4 perfurante).
-- Armadura de couro leve (CA 11 + Mod Des).
-- Um kit de armadilhas, corda de cânhamo (15m), e 10 Shekels de prata.
+- Arco curto (1d6 perfurante) com 20 flechas.
+- Faca de bronze (1d4 perfurante).
+- Armadura de couro cru (CA 11 + Mod Des).
+- Corda de cânhamo (15m) e 10 Shekels de prata no bolso.
 
-### Sábio
-- Cajado robusto (1d6 concussão).
-- Manto de linho grosso e sandálias resistentes.
-- 5 rolos de pergaminho, tinta e pena.
-- Um odre com vinho, um saco de ervas curativas e 15 Shekels de prata.
-
-### Sacerdote (Levita)
-- Cajado ou Cetro cerimonial (1d6 concussão).
-- Veste de linho fino com o Éfode.
-- Óleo de unção e incenso.
-- Instrumento musical (ex: harpa, shofar ou tamborim).
-- 12 Shekels de prata (representando dízimos iniciais).
+### Sacerdote / Sábio
+Os dois ofícios usam o mesmo pacote.
+- Cajado de pastor (1d6 concussão).
+- 3 Bálsamos curativos (cada um cura 1d4 PV).
+- 12 Shekels de prata no bolso (representando dízimos iniciais).
+- Itens de cena, sem efeito de regra: veste de linho fino com o Éfode, óleo de unção e incenso, instrumento musical (harpa, shofar ou tamborim) para o Sacerdote; manto de linho grosso, sandálias, pergaminhos, tinta e pena para o Sábio.
