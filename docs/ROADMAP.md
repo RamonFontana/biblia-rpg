@@ -7,7 +7,7 @@
 | Onda | Estado |
 |---|---|
 | 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub |
-| 2 — Rede de segurança | em andamento (branch `docs/wave-2-domain-model`): grill feito, glossário e ADRs 0001–0002 gravados; faltam as correções de doc (bloco A) e os testes de caracterização |
+| 2 — Rede de segurança | em andamento (branch `docs/wave-2-domain-model`): grill feito; glossário, ADRs 0001–0002 e as correções de doc (bloco A) aplicados. Faltam os testes de caracterização e as correções de código (bloco B) |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
@@ -241,7 +241,7 @@ Em cada gate novo, provo que ele **falha** com uma violação temporária (um `a
 #### Decisões do grill (2026-10-17)
 Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 
-**A. Correções nos docs de regra** (conteúdo aprovado; um commit por arquivo)
+**A. Correções nos docs de regra** (FEITO em 2026-10-17; conteúdo aprovado, um commit por documento. Os guias do Mestre também foram ajustados.)
 1. `docs/regras-base.md`
    - Proficiência no padrão 5e (+1 nos níveis 5, 9, 13 e 17).
    - "Sem itens +1/+2" passa a proibir bônus *sobrenaturais*; a Qualidade de item é permitida (ADR 0002).
@@ -275,9 +275,20 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 3. Efeitos do Estado de Fé: Inspiração (Inabalável), desvantagem (Abalado), Ruptura.
 4. Dados de Vida nos descansos.
 
+**Sincronizar o código com os docs já corrigidos** (junto do bloco B, Onda 3, ao migrar `abilities.ts` para `src/content/`)
+- `abilities.ts`: efeito de Zebulom nível 8 (sem Encantado; vantagem em Testes de Fé de Tentação), de Aser níveis 1 e 12 (refeição sem ração; Exausto no lugar de "exaustão") e de Sacerdote nível 18 (sem Encantado).
+- `itemsDb.ts`: descrições de Odre e Ração sem "Cura"; adicionar 20 Flechas ao kit do Caçador (`VOCATION_KIT_ITEMS`).
+- `KITS_DB`: textos dos kits iguais aos do `criacao-de-personagem.md`; kit do Sábio é o do Sacerdote.
+- `bestiario`: o endemoniado não tem mais imunidade a Encantado (campo de condição no preset, se existir).
+
 **Pendências (nenhuma decisão ainda)**
+- **Vantagem e Desvantagem num Teste de Fé** (1d100, passa se ≤ Fé Efetiva + Modificador): como o teste passa com resultado BAIXO, Vantagem deve usar o **menor** dos dois dados e Desvantagem o **maior**. Assumido assim, mas confirme antes de implementar. Afeta Fortaleza (Vantagem), Zebulom nível 8 e Abalado.
+- **Valores do Modificador de Fé** para Tentação e Testemunho: os guias descrevem níveis (Misericórdia / sem modificador / Punição), sem números. Só o Clamor tem atalhos (0 / −20 / −50).
+- **"TR de Fé"** aparece nas habilidades (ex.: Aser "Vigor do Azeite", Juda "Coração de Leão"). Decidir se é Teste de Fé ou um teste de resistência de Sabedoria.
 - Efeito exato de Vulnerável além do Testemunho frequente.
 - Definição de Ruptura em termos de app (hoje só texto de doc).
+- Dados de Vida: o doc os cita nos descansos, o código não os implementa (feature C4).
+- **Testes de Morte**: o 1 natural contar duas falhas e o 20 natural voltar com 1 PV já estavam no código e passaram para o `regras-base.md` e o glossário sem pergunta explícita. Confirmar que valem.
 
 ### Onda 3: motor e dados
 - **`src/domain/`:** motor puro. `rng.ts` com um `Rng` injetável (seed); `dice`, `attributes`, `proficiency`, `armorClass`, `vitals` (reaproveitar `vitalsUtils.ts`), `faith` (`getCurrentFaith`), `conditions`, `rest`, `deathSaves`, `ammo`. Tudo migra de componentes e services para cá, um módulo por PR, com os testes da Onda 2 ficando verdes.
