@@ -3,7 +3,14 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Coffee, Moon, Loader2 } from 'lucide-react';
 import { calculateRechargedAbilities } from '@/utils/abilityUtils';
-import { getMaxPv } from '@/lib/vitalsUtils';
+import {
+  applyLongRestToStats,
+  calculateFaithRecovery,
+  canTakeLongRest,
+  canTakeShortRest,
+  hasPriestInGroup,
+  shouldApplyShortRestToCharacters,
+} from '@/lib/rest';
 import { characterVitalsService } from '@/services/characterVitalsService';
 
 interface SessionRestControlsProps {
@@ -29,8 +36,8 @@ export function SessionRestControls({
   const currentDay = sessionData.current_day || 1;
   const lastLongRestDay = sessionData.last_long_rest_day || 1;
 
-  const canShortRest = shortRestsTaken < 2;
-  const canLongRest = currentDay - lastLongRestDay >= 2;
+  const canShortRest = canTakeShortRest(shortRestsTaken);
+  const canLongRest = canTakeLongRest(currentDay, lastLongRestDay);
 
   const handleShortRest = async () => {
     if (!canShortRest || isResting) return;
@@ -58,7 +65,7 @@ export function SessionRestControls({
       if (sessionError) throw sessionError;
 
       // 2. Update characters if amount > 0
-      if (amount > 0) {
+      if (shouldApplyShortRestToCharacters(amount)) {
         const allCharacters = [
           ...playerCharacters
             .filter((pc) => pc.character && !pc.character.is_enemy)
@@ -114,14 +121,10 @@ export function SessionRestControls({
       if (sessionError) throw sessionError;
 
       // 2. Check if there's a Priest for the Faith bonus
-      const hasPriest = playerCharacters.some(
-        (pc) =>
-          pc.character?.vocation?.includes('Sacerdote') ||
-          pc.character?.vocation?.includes('Sábio'),
-      );
+      const hasPriest = hasPriestInGroup(playerCharacters.map((pc) => pc.character?.vocation));
 
       const baseFaithRoll = Math.floor(Math.random() * 4) + 1; // 1d4
-      const faithRecovered = hasPriest ? baseFaithRoll + 2 : baseFaithRoll;
+      const faithRecovered = calculateFaithRecovery(baseFaithRoll, hasPriest);
 
       // 3. Update all characters (players and npcs)
       const allCharacters = [
@@ -133,11 +136,6 @@ export function SessionRestControls({
 
       const updates = allCharacters.map((char) => {
         const currentStats = char.stats || {};
-        const maxPv = getMaxPv(currentStats);
-        const maxFaith = 100;
-        const currentFaith = currentStats.current_faith ?? currentStats.faith ?? 0;
-
-        const newFaith = Math.min(maxFaith, currentFaith + faithRecovered);
 
         // Calculate recharged abilities
         const currentSkills = char.skills || {};
@@ -152,11 +150,7 @@ export function SessionRestControls({
         return supabase
           .from('characters')
           .update({
-            stats: {
-              ...currentStats,
-              current_pv: maxPv,
-              current_faith: newFaith,
-            },
+            stats: applyLongRestToStats(currentStats, faithRecovered),
             skills: newSkills,
           })
           .eq('id', char.id);

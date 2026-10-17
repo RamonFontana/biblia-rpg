@@ -3,7 +3,11 @@ import type { AbilityDefinition } from '../data/abilities';
 import { useCombatStore } from '../store/combatStore';
 import type { ConditionEntry, CharacterEquipment, WeaponEffect } from '../types/combat';
 import { supabase } from '../lib/supabase';
-import { ITEMS_DB } from '../data/itemsDb';
+import {
+  applyArmorResistance,
+  findMaxResistanceLevel,
+  resolveEquippedItems,
+} from '../lib/armorResistance';
 
 export const combatEngine = {
   /**
@@ -65,71 +69,26 @@ export const combatEngine = {
         const equipment = charData.equipment as unknown as CharacterEquipment;
         const charItems = (charData.character_items as any[]) || [];
 
-        const equippedIds = [
-          equipment?.head,
-          equipment?.body,
-          equipment?.mainHand,
-          equipment?.offHand,
-        ].filter(Boolean);
-
-        const equippedItemsData = equippedIds
-          .map((slotId) => {
-            // It could be a character_item uuid or directly the item id
-            const invItem = charItems.find((i) => i.id === slotId || i.item_id === slotId);
-            const itemId = invItem?.item_id || slotId;
-            const dbItem = ITEMS_DB.find((i) => i.id === itemId);
-            if (!dbItem) return null;
-
-            const baseResistances = dbItem.conditionResistances || [];
-            const customResistances = invItem?.custom_condition_resistances || [];
-            const allResistances = [...baseResistances, ...customResistances];
-
-            return {
-              ...dbItem,
-              level: invItem?.level || 1,
-              conditionResistances: allResistances,
-            };
-          })
-          .filter(Boolean);
+        const equippedItemsData = resolveEquippedItems(equipment, charItems);
 
         // Evaluate incoming conditions against resistances
-        for (const cond of ability.applyConditions) {
-          for (const item of equippedItemsData) {
-            if (
-              item &&
-              item.conditionResistances &&
-              item.conditionResistances.includes(cond.conditionId)
-            ) {
-              maxResistanceLevel = Math.max(maxResistanceLevel, item.level || 1);
-            }
-          }
-        }
+        maxResistanceLevel = findMaxResistanceLevel(
+          ability.applyConditions.map((c) => c.conditionId),
+          equippedItemsData,
+        );
       }
     }
 
     for (const cond of ability.applyConditions) {
-      let finalDuration = cond.duration ?? null;
-      let isImmune = false;
-      let toastMsg = '';
+      const {
+        duration: finalDuration,
+        immune: isImmune,
+        toast: toastMsg,
+      } = applyArmorResistance(cond.conditionId, cond.duration ?? null, maxResistanceLevel);
 
-      if (maxResistanceLevel > 0) {
-        if (maxResistanceLevel === 1) {
-          toastMsg = `Resistência de Armadura Nv1: Vantagem no Teste contra ${cond.conditionId}`;
-        } else if (maxResistanceLevel === 2) {
-          finalDuration = finalDuration !== null ? Math.ceil(finalDuration / 2) : finalDuration;
-          toastMsg = `Resistência de Armadura Nv2: Duração de ${cond.conditionId} reduzida pela metade`;
-        } else if (maxResistanceLevel === 3) {
-          finalDuration = finalDuration !== null ? Math.ceil(finalDuration / 2) : finalDuration;
-          toastMsg = `Resistência de Armadura Nv3: Vantagem e duração de ${cond.conditionId} reduzida pela metade`;
-        } else if (maxResistanceLevel >= 4) {
-          isImmune = true;
-          toastMsg = `Resistência de Armadura Nv4: Imune a ${cond.conditionId}!`;
-        }
-
-        // Dispatch simple global event for toast notification
-        if (typeof window !== 'undefined' && toastMsg) {
-          window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message: toastMsg } }));
-        }
+      // Dispatch simple global event for toast notification
+      if (maxResistanceLevel > 0 && typeof window !== 'undefined' && toastMsg) {
+        window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message: toastMsg } }));
       }
 
       if (!isImmune) {

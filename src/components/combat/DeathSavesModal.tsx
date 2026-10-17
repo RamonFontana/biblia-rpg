@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useDeathSaves } from '../../hooks/useDeathSaves';
+import { getDeathSaveOutcome } from '../../lib/deathSaves';
 
 interface DeathSavesModalProps {
   character: any;
@@ -24,13 +25,12 @@ export function DeathSavesModal({ character, participantId }: DeathSavesModalPro
   const handleRollResult = async (roll: number) => {
     setIsRolling(true);
     try {
-      if (roll === 1) {
-        await addFailure(character.id, failures, 2);
-      } else if (roll >= 2 && roll <= 9) {
-        await addFailure(character.id, failures, 1);
-      } else if (roll >= 10 && roll <= 19) {
+      const outcome = getDeathSaveOutcome(roll);
+      if (outcome.kind === 'failure') {
+        await addFailure(character.id, failures, outcome.count);
+      } else if (outcome.kind === 'success') {
         await addSuccess(character.id, successes);
-      } else if (roll === 20) {
+      } else if (outcome.kind === 'revive') {
         await healAndAwake(character.id, participantId, 1);
       }
     } catch (e) {

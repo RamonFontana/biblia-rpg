@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { isFaithTestApprovedByService } from '@/lib/faithTest';
 
 export interface SessionTest {
   id: string;
@@ -81,10 +82,9 @@ export const sessionTestService = {
 
     if (testType === 'Fé' && charData?.stats) {
       const stats = charData.stats as Record<string, any>;
-      const currentFaith = stats.current_faith ?? stats.faith ?? 0;
       // Misericórdia subtrai do DADO, não da fé
       // Passa se (dado - misericórdia) <= fé  <==>  dado <= fé + misericórdia
-      isApproved = resultValue - difficulty <= currentFaith;
+      isApproved = isFaithTestApprovedByService(resultValue, difficulty, stats);
     }
 
     const { error } = await (supabase as any)

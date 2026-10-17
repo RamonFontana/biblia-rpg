@@ -3,6 +3,7 @@ import type { Character } from '../types';
 import { updateCharacter } from '../api/characterApi';
 import { applyMaxPvIncrease } from '@/lib/vitalsUtils';
 import { ABILITIES } from '../../../data/abilities';
+import { ASI_LEVELS, calculateLevelUpHp } from '../utils/levelUp';
 
 interface LevelUpWizardProps {
   character: Character;
@@ -10,25 +11,11 @@ interface LevelUpWizardProps {
   onCancel: () => void;
 }
 
-const VOCATION_HP_AVERAGE: Record<string, number> = {
-  guerreiro: 6,
-  batedor: 5,
-  caçador: 6,
-  cacador: 6,
-  sacerdote: 5,
-  sábio: 5,
-  sabio: 5,
-};
-
 function normalizeString(str: string) {
   return str
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
-}
-
-function calculateConMod(con: number) {
-  return Math.floor((con - 10) / 2);
 }
 
 export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizardProps) {
@@ -45,10 +32,12 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const [asiChoices, setAsiChoices] = useState<{ attr1?: string; attr2?: string }>({});
 
   const normalizedVocation = normalizeString(character.vocation || '');
-  const hpAverage = VOCATION_HP_AVERAGE[normalizedVocation] || 5;
-  const conMod = calculateConMod(currentCon);
-
-  const hpGained = Math.max(1, hpAverage + conMod);
+  const { hpAverage, conMod, hpGained, retroactiveHpGained, totalHpGained } = calculateLevelUpHp({
+    vocation: character.vocation,
+    currentCon,
+    conPointsGained: (asiChoices.attr1 === 'con' ? 1 : 0) + (asiChoices.attr2 === 'con' ? 1 : 0),
+    newLevel,
+  });
 
   // Steps calculation
   const tribeOptions = useMemo(() => {
@@ -73,7 +62,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
   const hasTribeChoice = tribeOptions.length > 0;
   const hasVocationChoice = vocationOptions.length > 0;
-  const hasAsi = [4, 8, 12, 16, 19].includes(newLevel);
+  const hasAsi = ASI_LEVELS.includes(newLevel);
 
   const steps = useMemo(() => {
     const s = ['hp'];
@@ -85,20 +74,6 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   }, [hasTribeChoice, hasVocationChoice, hasAsi]);
 
   const currentStepId = steps[currentStepIndex];
-
-  // Derived ASI changes
-  const newCon =
-    currentCon + (asiChoices.attr1 === 'con' ? 1 : 0) + (asiChoices.attr2 === 'con' ? 1 : 0);
-  const newConMod = calculateConMod(newCon);
-
-  // Retroactive HP
-  // If CON increases, this level ALSO gets the new mod, AND previous levels get it.
-  // Actually, retroactive HP is (newConMod - oldConMod) * (newLevel - 1).
-  // We can just add this to the total max HP.
-
-  const finalHpGained = hpAverage + newConMod;
-  const retroactiveHpGained = (newConMod - conMod) * (newLevel - 1);
-  const totalHpGained = Math.max(1, finalHpGained) + retroactiveHpGained;
 
   const canProceed = () => {
     if (currentStepId === 'tribe' && !selectedTribePath) return false;

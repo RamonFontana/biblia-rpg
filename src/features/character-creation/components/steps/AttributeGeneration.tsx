@@ -7,8 +7,8 @@ import { useCharacterCreationStore } from '../../store/useCharacterCreationStore
 import { useQuickSave } from '../../hooks/useQuickSave';
 import { Dices, List } from 'lucide-react';
 import type { CharacterAttributes } from '../../types';
+import { STANDARD_ARRAY, rollAttributeScores } from '../../utils/attributeGeneration';
 
-const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
 const ATTRIBUTES_KEYS: (keyof CharacterAttributes)[] = ['for', 'des', 'con', 'int', 'sab', 'car'];
 const LABELS: Record<keyof CharacterAttributes, string> = {
   for: 'Força (FOR)',
@@ -51,11 +51,7 @@ export function AttributeGeneration() {
   }, [isLocked, currentAttributes]);
 
   const handleRollDice = () => {
-    const newRolls = Array.from({ length: 6 }, () => {
-      const dice = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
-      dice.sort((a, b) => b - a); // sort descending
-      return dice[0] + dice[1] + dice[2]; // sum top 3
-    });
+    const newRolls = rollAttributeScores();
     setRolls(newRolls);
     setAvailableValues([...newRolls]);
     setMethod('dice');
