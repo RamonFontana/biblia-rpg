@@ -49,15 +49,18 @@ export function deriveStatusLabel(hp: number): 'Vivo' | 'Morto' {
   return hp <= 0 ? 'Morto' : 'Vivo';
 }
 
-// Sticky: once dead, only an explicit revival (reviveWithHp) clears is_dead. Prevents an
-// unrelated PV adjustment after a narrative kill (killInstant) from silently reviving
-// a character just because their tracked HP happens to be above 0.
-export function deriveDeathState(
+// State at the end of a combat. An enemy at 0 HP dies. A player character or NPC at 0 HP is
+// Morrendo and keeps making death saves after the combat (CONTEXT.md); only 3 failed saves or
+// the GM kill them. Sticky: once dead, only an explicit revival (reviveWithHp) clears is_dead,
+// so a PV adjustment after a narrative kill (killInstant) cannot silently revive a character.
+export function deriveCombatEndState(
   hp: number,
   previousIsDead: boolean,
-): { isDead: boolean; status: 'Vivo' | 'Morto' } {
-  const isDead = previousIsDead || hp <= 0;
-  return { isDead, status: isDead ? 'Morto' : 'Vivo' };
+  isEnemy: boolean,
+): { isDead: boolean; status: 'Vivo' | 'Morrendo' | 'Morto' } {
+  const isDead = previousIsDead || (isEnemy && hp <= 0);
+  if (isDead) return { isDead, status: 'Morto' };
+  return { isDead, status: hp <= 0 ? 'Morrendo' : 'Vivo' };
 }
 
 // Distinct semantics from damage/heal: raises max and current together (retroactive

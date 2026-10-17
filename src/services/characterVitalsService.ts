@@ -9,7 +9,7 @@ import {
   applyHpDelta,
   applyDamageOrHealing as computeDamageOrHealing,
   deriveStatusLabel,
-  deriveDeathState,
+  deriveCombatEndState,
   applyMaxPvIncrease,
 } from '@/lib/vitalsUtils';
 
@@ -69,16 +69,17 @@ export const characterVitalsService = {
   },
 
   // Combat end: push a participant's final HP onto its character row and derive
-  // is_dead/status together from that HP (sticky — see deriveDeathState). Conditions
+  // is_dead/status together from that HP (sticky — see deriveCombatEndState). Conditions
   // are a pass-through so this stays the single existing round trip.
   async syncFromCombatEnd(
     characterId: string,
     currentStats: VitalsLike,
     finalHp: number,
     previousIsDead: boolean,
+    isEnemy: boolean,
     permanentConditions: ConditionEntry[],
   ): Promise<{ isDead: boolean }> {
-    const { isDead, status } = deriveDeathState(finalHp, previousIsDead);
+    const { isDead, status } = deriveCombatEndState(finalHp, previousIsDead, isEnemy);
     const newStats = { ...currentStats, current_pv: finalHp, status };
 
     const { error } = await supabase

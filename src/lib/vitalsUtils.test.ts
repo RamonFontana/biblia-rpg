@@ -6,7 +6,7 @@ import {
   applyHpDelta,
   applyDamageOrHealing,
   deriveStatusLabel,
-  deriveDeathState,
+  deriveCombatEndState,
   applyMaxPvIncrease,
 } from './vitalsUtils';
 
@@ -103,17 +103,22 @@ describe('vitalsUtils', () => {
     });
   });
 
-  describe('deriveDeathState', () => {
-    it('marks dead when hp drops to 0 or below', () => {
-      expect(deriveDeathState(0, false)).toEqual({ isDead: true, status: 'Morto' });
+  describe('deriveCombatEndState', () => {
+    it('a player character at 0 HP is Morrendo, not dead (death saves continue)', () => {
+      expect(deriveCombatEndState(0, false, false)).toEqual({ isDead: false, status: 'Morrendo' });
+    });
+
+    it('an enemy at 0 HP is dead', () => {
+      expect(deriveCombatEndState(0, false, true)).toEqual({ isDead: true, status: 'Morto' });
     });
 
     it('stays dead once previously dead, even if hp is now above 0 (sticky)', () => {
-      expect(deriveDeathState(10, true)).toEqual({ isDead: true, status: 'Morto' });
+      expect(deriveCombatEndState(10, true, false)).toEqual({ isDead: true, status: 'Morto' });
     });
 
-    it('stays alive when never dead and hp is above 0', () => {
-      expect(deriveDeathState(10, false)).toEqual({ isDead: false, status: 'Vivo' });
+    it('stays alive when hp is above 0', () => {
+      expect(deriveCombatEndState(10, false, false)).toEqual({ isDead: false, status: 'Vivo' });
+      expect(deriveCombatEndState(1, false, true)).toEqual({ isDead: false, status: 'Vivo' });
     });
   });
 

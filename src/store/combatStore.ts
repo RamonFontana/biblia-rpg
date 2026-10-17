@@ -342,6 +342,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               currentStats,
               participant.hp_current,
               char.is_dead,
+              char.is_enemy,
               permanentConditions,
             );
 
