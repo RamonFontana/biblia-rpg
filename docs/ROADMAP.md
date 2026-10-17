@@ -354,7 +354,7 @@ Decisões do grill de 2026-10-17 (glossário em `CONTEXT.md`; ADR 0003: conteúd
 - **Dependência aprovada:** CLI do `supabase` como devDependency (o autor fornece a senha do banco uma vez para o `db pull`).
 
 Passos, um PR cada:
-1. **CLI e schema-base:** `supabase db pull` gera a migration-base com o schema real (inclui `characters`); script `gen:types`; o gate de RLS passa a cobrir `characters`.
+1. ~~**CLI e schema-base.**~~ FEITO: o `db pull` não funcionava (a primeira migration já dependia de `characters`, criada pelo dashboard), então as 31 migrations viraram uma base única gerada por `supabase db dump`, mais a publicação do Realtime e o gatilho `ensure_rls`, que o dump não traz. `supabase db diff --linked` sai vazio contra produção. Script `gen:types`; o gate de RLS cobre as 14 tabelas e passou a ignorar SQL entre aspas e corpos de função. O registro remoto foi ajustado com `supabase migration repair`.
 2. **`src/domain/`:** `rng.ts` (`Rng` com seed, sem dependência nova) e `dice`; mudança mecânica dos módulos puros já extraídos em `src/lib/` (faithTest, deathSaves, rest, ammo, consumables, armorResistance, vitalsUtils, sessionTests, levelUp, initialStats, attributeGeneration). O lint de pureza passa a valer para eles.
 3. **Fé:** `getCurrentFaith` no lugar das 16 cópias de `current_faith ?? faith ?? 0`; Fé Efetiva com os Itens Profanos; Teste de Fé numa função única usada pela tela e pelo serviço (resolve as duas fórmulas); teto 100.
 4. **Conteúdo:** Condições → itens (migration do `slug`: as 35 linhas pelo nome, com mapa explícito para "Flechas" → `flechas` e "Saco de Pedras para Funda" → `pedras_funda`; nomes do banco passam a ser os do conteúdo; duplicatas fundidas na original) → kits (`KITS_DB` e `VOCATION_KIT_ITEMS` viram um só) → habilidades. O `syncInventory` passa a procurar por `slug`.
@@ -389,7 +389,7 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 3. **Supabase**
    - ~~Verificar se o projeto está pausado.~~ Estava pausado; reativado em 2026-10-17. O plano gratuito pausa por inatividade, então o app pode cair de novo.
    - ~~Conferir RLS de `characters` e rodar o Security Advisor.~~ Feito (ver §4). A proteção contra senhas vazadas não aparece no menu do plano gratuito (provável recurso do Pro, não confirmado); fica como risco aceito enquanto o projeto for gratuito.
-   - Ter a senha do banco à mão para o `supabase db pull` na Onda 3.
+   - ~~Login e link do CLI.~~ Feito em 2026-10-17.
 4. **Vercel:** confirmar que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estão em Production e Preview e que **nenhuma** `SUPABASE_SERVICE_ROLE_KEY` está lá (o app não precisa dela). Não consegui conferir: o MCP da Vercel deu 403 no time e o CLI não está logado (`vercel login`).
 5. Revisar os 13 itens de conteúdo bíblico do §2.
 6. Preencher a lista de features novas.

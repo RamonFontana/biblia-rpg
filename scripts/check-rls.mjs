@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Gate: toda tabela do schema public criada em supabase/migrations precisa ter
 // RLS habilitado em alguma migration, e nenhuma migration pode desabilitar RLS.
-// Limite conhecido: tabelas criadas pelo dashboard (ex.: characters) não aparecem
-// aqui até existir uma migration-base (ver docs/ROADMAP.md, Onda 3).
+// Cobre o schema inteiro desde a migration-base (Onda 3, passo 1). Texto entre aspas e
+// corpos de função ($$ ... $$) são ignorados, para que SQL citado não conte como tabela.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -21,6 +21,8 @@ const qualify = (name) => {
   return clean.includes('.') ? clean : `public.${clean}`;
 };
 const stripComments = (sql) => sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '');
+const stripQuoted = (sql) =>
+  sql.replace(/\$(\w*)\$[\s\S]*?\$\1\$/g, '').replace(/'(?:[^']|'')*'/g, "''");
 
 const created = new Map(); // tabela -> migration que a criou
 const enabled = new Set();
@@ -31,7 +33,7 @@ const files = readdirSync(dir)
   .sort();
 
 for (const file of files) {
-  const sql = stripComments(readFileSync(join(dir, file), 'utf8'));
+  const sql = stripQuoted(stripComments(readFileSync(join(dir, file), 'utf8')));
   for (const [, name] of sql.matchAll(createRe)) created.set(qualify(name), file);
   for (const [, name] of sql.matchAll(dropRe)) created.delete(qualify(name));
   for (const [, name] of sql.matchAll(enableRe)) enabled.add(qualify(name));
