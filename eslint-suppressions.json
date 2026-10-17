@@ -1,14 +1,4 @@
 {
-  "scripts/generateSyncSql.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "scripts/generate_mcp_sql.ts": {
-    "prefer-const": {
-      "count": 1
-    }
-  },
   "src/App.tsx": {
     "no-restricted-imports": {
       "count": 1
@@ -306,11 +296,6 @@
   "src/features/character-management/api/characterApi.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/features/character-management/api/syncInventory.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
     }
   },
   "src/features/character-management/components/LevelUpWizard.tsx": {
