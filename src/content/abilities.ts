@@ -11,7 +11,8 @@ export const ABILITIES: AbilityDefinition[] = [
     minLevel: 1,
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Ração/refeição recupera +1d4 HP adicional no descanso.',
+    effect:
+      'No Descanso Curto, a refeição de Aser recupera 1d4 PV de cada aliado (sem consumir ração).',
   },
   {
     id: 'tribe-aser-1-vigor-do-azeite',
@@ -44,7 +45,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'long_rest',
     maxUses: 1,
-    effect: '(Desc. Curto) Até 4 pessoas ganham HP Temp igual a Nível + MOD Car/Con.',
+    effect: '(Desc. Curto) Até 4 pessoas ganham PV Temp igual a Nível + MOD Car/Con.',
   },
   {
     id: 'tribe-aser-8-corpo-nutrrido',
@@ -55,7 +56,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'A',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'HP máximo +8 e +1 por nível subsequente.',
+    effect: 'PV máximo +8 e +1 por nível subsequente.',
   },
   {
     id: 'tribe-aser-8-mercador-habil',
@@ -78,7 +79,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'bonus_action',
     usageType: 'long_rest',
     maxUses: 1,
-    effect: 'Cura 3d8 HP e remove envenenamento/doença do alvo.',
+    effect: 'Cura 3d8 PV e remove envenenamento/doença do alvo.',
   },
   {
     id: 'tribe-aser-12-banquete-do-aca',
@@ -89,7 +90,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'B',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Bônus de refeição sobe p/ 1d8 HP e remove 1 exaustão do grupo.',
+    effect: 'Refeição do Descanso Curto sobe p/ 1d8 PV e remove Exausto do grupo.',
   },
   {
     id: 'tribe-aser-16-muralha-inabala',
@@ -122,7 +123,7 @@ export const ABILITIES: AbilityDefinition[] = [
     minLevel: 20,
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Se HP < metade, recupera 10 HP no final do turno (combate).',
+    effect: 'Se PV < metade, recupera 10 PV no final do turno (combate).',
   },
   {
     id: 'tribe-benjamim-1-mira-e-furtivid',
@@ -322,7 +323,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'B',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Vantagem contra agressor se aliado cair a 0 HP a até 9m.',
+    effect: 'Vantagem contra agressor se aliado cair a 0 PV a até 9m.',
   },
   {
     id: 'tribe-da-12-reflexos-peconh',
@@ -377,7 +378,7 @@ export const ABILITIES: AbilityDefinition[] = [
     minLevel: 20,
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Ao cair a 0 HP, ganha turno imediato com Vantagem e dano duplo.',
+    effect: 'Ao cair a 0 PV, ganha turno imediato com Vantagem e dano duplo.',
   },
   {
     id: 'tribe-efraim-1-orgulho-do-nort',
@@ -443,7 +444,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'reaction',
     usageType: 'long_rest',
     maxUses: 1,
-    effect: 'Se a 0 HP, Teste CON CD 15 para ficar com 1 HP.',
+    effect: 'Se a 0 PV, Teste CON CD 15 para ficar com 1 PV.',
   },
   {
     id: 'tribe-efraim-12-flecha-marcada',
@@ -598,7 +599,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'A',
     actionType: 'reaction',
     usageType: 'unlimited',
-    effect: 'Ao cair a 0 HP, Teste de Fé para ficar com 1 HP.',
+    effect: 'Ao cair a 0 PV, Teste de Fé para ficar com 1 PV.',
   },
   {
     id: 'tribe-gade-16-golpe-sismico',
@@ -622,7 +623,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'week',
     maxUses: 1,
-    effect: 'Imune a dano físico (1 min). Converte dano em HP Temp. p/ aliados.',
+    effect: 'Imune a dano físico (1 min). Converte dano em PV Temp. p/ aliados.',
   },
   {
     id: 'tribe-gade-20-espirito-de-san',
@@ -742,7 +743,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'B',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Dano máximo automático quando HP < 50%.',
+    effect: 'Dano máximo automático quando PV < 50%.',
   },
   {
     id: 'tribe-issacar-20-a-ceifa',
@@ -820,7 +821,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'A',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Se aliado <20% HP, bônus do Grito dobra (+4 FOR).',
+    effect: 'Se aliado <20% PV, bônus do Grito dobra (+4 FOR).',
   },
   {
     id: 'tribe-juda-8-merape-miadi',
@@ -878,7 +879,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'long_rest',
     maxUses: 1,
-    effect: 'Reanima aliado com 1/4 do HP máx em combate.',
+    effect: 'Reanima aliado com 1/4 do PV máx em combate.',
   },
   {
     id: 'tribe-juda-20-o-rugido-de-jud',
@@ -890,7 +891,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'week',
     maxUses: 1,
-    effect: 'Inimigos 18m fogem; aliados ganham HP Temp e +15 Fé.',
+    effect: 'Inimigos 18m fogem; aliados ganham PV Temp e +15 Fé.',
   },
   {
     id: 'tribe-juda-20-o-sopro-da-vida',
@@ -902,7 +903,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'week',
     maxUses: 1,
-    effect: 'Restaura 100% HP; ressuscita morto há <2 rodadas.',
+    effect: 'Restaura 100% PV; ressuscita morto há <2 rodadas.',
   },
   {
     id: 'tribe-levi-1-jejum-do-desert',
@@ -1048,7 +1049,7 @@ export const ABILITIES: AbilityDefinition[] = [
     minLevel: 1,
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Vantagem c/c contra oponente maior ou se HP < 50%.',
+    effect: 'Vantagem c/c contra oponente maior ou se PV < 50%.',
   },
   {
     id: 'tribe-manasses-1-guerreiro-de-fr',
@@ -1081,7 +1082,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'B',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'HP máx aumenta 2x CON; +1 HP por Dado de Vida em D. Curto.',
+    effect: 'PV máx aumenta 2x CON; +1 PV por Dado de Vida em D. Curto.',
   },
   {
     id: 'tribe-manasses-8-forca-na-fraque',
@@ -1355,7 +1356,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'A',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Animal ganha resistência e protege dono a 0 HP.',
+    effect: 'Animal ganha resistência e protege dono a 0 PV.',
   },
   {
     id: 'tribe-ruben-12-compra-de-leald',
@@ -1402,7 +1403,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'week',
     maxUses: 1,
-    effect: 'Animal Enorme, dobro HP e causa terror em área.',
+    effect: 'Animal Enorme, dobro PV e causa terror em área.',
   },
   {
     id: 'tribe-ruben-20-embaixador-da-p',
@@ -1614,7 +1615,7 @@ export const ABILITIES: AbilityDefinition[] = [
     path: 'B',
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Imune a Encantado; Vantagem em TR Fé cont. heresia.',
+    effect: 'Vantagem em Testes de Fé de Tentação e contra heresia.',
   },
   {
     id: 'tribe-zebulom-12-equilibrio-perf',
@@ -1933,7 +1934,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'bonus_action',
     usageType: 'short_rest',
     maxUses: 1,
-    effect: 'Recupera HP igual a 1d10 + Nível.',
+    effect: 'Recupera PV igual a 1d10 + Nível.',
   },
   {
     id: 'vocation-guerreiro-10-bloqueio-inabal',
@@ -1964,7 +1965,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'long_rest',
     maxUses: 1,
-    effect: '6 aliados c/ Vant. atq e curam 2d6 HP. Inimigos TR SAB/fogem.',
+    effect: '6 aliados c/ Vant. atq e curam 2d6 PV. Inimigos TR SAB/fogem.',
   },
   {
     id: 'vocation-sacerdote-1-imposicao-de-ma',
@@ -1976,7 +1977,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'long_rest',
     maxUses: 2,
     faithCost: 3,
-    effect: 'Cura 1d6 HP fora de combate.',
+    effect: 'Cura 1d6 PV fora de combate.',
   },
   {
     id: 'vocation-sacerdote-1-oracao-de-prote',
@@ -2021,7 +2022,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'long_rest',
     maxUses: 3,
-    effect: 'Cura 1d8+SAB HP e recupera 1d4 Fé do aliado.',
+    effect: 'Cura 1d8+SAB PV e recupera 1d4 Fé do aliado.',
   },
   {
     id: 'vocation-sacerdote-2-repreensao-divi',
@@ -2054,7 +2055,7 @@ export const ABILITIES: AbilityDefinition[] = [
     minLevel: 6,
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Desc. Longo: cura total, +1d4+2 Fé p/ grupo, +5 HP Temp.',
+    effect: 'Desc. Longo: cura total, +1d4+2 Fé p/ grupo, +5 PV Temp.',
   },
   {
     id: 'vocation-sacerdote-6-consagracao',
@@ -2098,7 +2099,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'reaction',
     usageType: 'short_rest',
     maxUses: 1,
-    effect: 'Aliado a 0 HP: causa 2d10+SAB dano e Amedronta agressor.',
+    effect: 'Aliado a 0 PV: causa 2d10+SAB dano e Amedronta agressor.',
   },
   {
     id: 'vocation-sacerdote-18-intervencao-mai',
@@ -2119,6 +2120,6 @@ export const ABILITIES: AbilityDefinition[] = [
     minLevel: 18,
     actionType: 'passive',
     usageType: 'unlimited',
-    effect: 'Fé nunca < 30. Imune a Amedrontado, Encantado e Possessão.',
+    effect: 'Fé nunca < 30. Imune a Amedrontado e Possessão.',
   },
 ];
