@@ -23,7 +23,7 @@ vi.mock('../../lib/supabase', async () => {
 });
 
 import { callsOf, filterOf } from '../../test/fakeSupabase';
-import { ABILITIES } from '../../data/abilities';
+import { ABILITIES } from '@/content/abilities';
 import { SessionRestControls } from './SessionRestControls';
 
 const shortRestAbility = ABILITIES.find((a) => a.usageType === 'short_rest')!.id;

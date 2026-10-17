@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { Character } from '../types';
 import { updateCharacter } from '../api/characterApi';
 import { applyMaxPvIncrease } from '@/domain/vitals';
-import { ABILITIES } from '../../../data/abilities';
+import { ABILITIES } from '@/content/abilities';
 import {
   ASI_LEVELS,
   calculateLevelUpHp,

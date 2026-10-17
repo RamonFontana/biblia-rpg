@@ -1,20 +1,6 @@
-// Auto-generated abilities data from documentation tables
-
-export interface AbilityDefinition {
-  id: string;
-  name: string;
-  sourceType: 'tribe' | 'vocation';
-  sourceId: string;
-  minLevel: number;
-  path?: 'A' | 'B';
-  actionType: 'passive' | 'action' | 'bonus_action' | 'reaction' | 'free_action';
-  usageType:
-    'unlimited' | 'short_rest' | 'long_rest' | 'combat' | 'week' | 'campaign' | 'faith_cost';
-  maxUses?: number;
-  faithCost?: number;
-  effect: string;
-  applyConditions?: { conditionId: string; duration?: number }[];
-}
+// Habilidades de tribos e vocações, geradas das tabelas em docs/. O `id` é a chave gravada em
+// `ability_uses` nas fichas: nunca o renomeie.
+import type { AbilityDefinition } from './schemas';
 
 export const ABILITIES: AbilityDefinition[] = [
   {
@@ -2136,33 +2122,3 @@ export const ABILITIES: AbilityDefinition[] = [
     effect: 'Fé nunca < 30. Imune a Amedrontado, Encantado e Possessão.',
   },
 ];
-
-export function getAbilitiesForCharacter(
-  tribe: string,
-  vocation: string,
-  level: number,
-  pathChoices?: { tribe?: 'A' | 'B'; vocation?: 'A' | 'B' },
-): AbilityDefinition[] {
-  return ABILITIES.filter((ability) => {
-    // Check level requirement
-    if (ability.minLevel > level) return false;
-
-    // Filter by source
-    if (ability.sourceType === 'tribe' && ability.sourceId !== tribe) return false;
-    if (ability.sourceType === 'vocation' && ability.sourceId !== vocation) return false;
-
-    // Filter by path choice if applicable
-    if (ability.path) {
-      const chosenPath =
-        ability.sourceType === 'tribe' ? pathChoices?.tribe : pathChoices?.vocation;
-
-      // If a path is required but hasn't been chosen yet (e.g. they are level 4 but haven't selected),
-      // we might not return it. Or if they chose different path.
-      if (chosenPath && chosenPath !== ability.path) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-}

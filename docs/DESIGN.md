@@ -24,7 +24,7 @@ Tema escuro e único: pedra e bronze. Fundo de pedra quente (`stone`), acento de
 | Aviso | `bg-amber-900/50 border-amber-500/50 text-amber-200` | — |
 | Erro | `text-red-400`; botão destrutivo `bg-red-900/30 border-red-700/50 text-red-400` | `--destructive` |
 
-Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`…) não fazem parte do padrão. As exceções são as cores semânticas de condição em `src/data/conditions.ts`.
+Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`…) não fazem parte do padrão. As exceções são as cores semânticas de condição em `src/content/conditions.ts`.
 
 ## Tipografia
 - **Títulos:** `font-serif` (pilha serifada padrão do Tailwind; não há fonte customizada).

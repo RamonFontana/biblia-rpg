@@ -1,5 +1,5 @@
 import { conditionsService } from './conditionsService';
-import type { AbilityDefinition } from '../data/abilities';
+import type { AbilityDefinition } from '@/content/schemas';
 import { useCombatStore } from '../store/combatStore';
 import type { ConditionEntry, CharacterEquipment, WeaponEffect } from '../types/combat';
 import { supabase } from '../lib/supabase';

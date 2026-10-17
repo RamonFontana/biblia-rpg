@@ -4,14 +4,14 @@
 // Violações já existentes ficam em known-violations.json: a lista só pode diminuir.
 // Para remover uma entrada, corrija o dado (com confirmação do autor) e apague a linha.
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { characterSchema } from '@/features/character-creation/schemas/characterSchema';
 import { SKILLS_LIST } from '@/features/character-management/utils/characterMath';
 import { VOCATION_RULES } from '@/features/character-management/utils/rules/vocations';
 import { ABILITIES } from './abilities';
-import { CONDITIONS } from '@/content/conditions';
-import { ITEMS_DB } from '@/content/items';
-import { conditionSchema, itemSchema } from '@/content/schemas';
+import { CONDITIONS } from './conditions';
+import { ITEMS_DB } from './items';
+import { abilitySchema, conditionSchema, itemSchema } from './schemas';
 import knownViolations from './known-violations.json';
 
 const normalize = (s: string) =>
@@ -31,36 +31,6 @@ const ITEMS_ALLOWED_TO_AFFECT_FAITH = ['simbolo_proibido'];
 const TRIBE_MILESTONES = [1, 4, 8, 12, 16, 20];
 
 const LIMITED_USAGE = ['short_rest', 'long_rest', 'combat', 'week', 'campaign'];
-
-const abilitySchema = z.strictObject({
-  id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
-  name: z.string().min(1),
-  sourceType: z.enum(['tribe', 'vocation']),
-  sourceId: z.string().regex(/^[a-z]+$/),
-  minLevel: z.number().int().min(1).max(20),
-  path: z.enum(['A', 'B']).optional(),
-  actionType: z.enum(['passive', 'action', 'bonus_action', 'reaction', 'free_action']),
-  usageType: z.enum([
-    'unlimited',
-    'short_rest',
-    'long_rest',
-    'combat',
-    'week',
-    'campaign',
-    'faith_cost',
-  ]),
-  maxUses: z.number().int().min(1).max(10).optional(),
-  faithCost: z.number().int().min(1).max(100).optional(),
-  effect: z.string().min(1),
-  applyConditions: z
-    .array(
-      z.strictObject({
-        conditionId: z.string().min(1),
-        duration: z.number().int().min(1).optional(),
-      }),
-    )
-    .optional(),
-});
 
 function schemaViolations(prefix: string, schema: z.ZodType, value: unknown): string[] {
   const result = schema.safeParse(value);
