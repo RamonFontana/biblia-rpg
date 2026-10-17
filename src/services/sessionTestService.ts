@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { isFaithTestApprovedByService } from '@/lib/faithTest';
+import { calculateFaithAfterFailure, isRegularTestApproved } from '@/lib/sessionTests';
 
 export interface SessionTest {
   id: string;
@@ -68,7 +69,7 @@ export const sessionTestService = {
     testType?: string,
     faithPenalty?: number,
   ): Promise<void> {
-    let isApproved = resultValue >= difficulty;
+    let isApproved = isRegularTestApproved(resultValue, difficulty);
 
     let charData = null;
     if (characterId) {
@@ -113,9 +114,10 @@ export const sessionTestService = {
         // current_faith é a fé atual (se não existir, usa faith como base)
         const currentFaithValue = stats.current_faith ?? stats.faith ?? 0;
         if (typeof currentFaithValue === 'number') {
-          const faithLoss =
-            faithPenalty !== undefined ? faithPenalty : Math.floor(Math.random() * 6) + 1;
-          const newCurrentFaith = Math.max(0, currentFaithValue - faithLoss);
+          const { newFaith: newCurrentFaith } = calculateFaithAfterFailure(
+            currentFaithValue,
+            faithPenalty,
+          );
 
           await (supabase as any)
             .from('characters')
