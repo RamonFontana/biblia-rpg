@@ -298,6 +298,7 @@ export type Database = {
           name: string
           price: number | null
           requires_target: boolean | null
+          slug: string
           weight: number | null
         }
         Insert: {
@@ -315,6 +316,7 @@ export type Database = {
           name: string
           price?: number | null
           requires_target?: boolean | null
+          slug: string
           weight?: number | null
         }
         Update: {
@@ -332,6 +334,7 @@ export type Database = {
           name?: string
           price?: number | null
           requires_target?: boolean | null
+          slug?: string
           weight?: number | null
         }
         Relationships: []
