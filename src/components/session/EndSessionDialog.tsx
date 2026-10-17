@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { canGrantLevelUp } from '@/features/character-management/utils/levelUp';
+import { isDying } from '@/lib/deathSaves';
 
 interface EndSessionDialogProps {
   isOpen: boolean;
@@ -31,6 +32,12 @@ export function EndSessionDialog({
     (pc) => !pc.character.is_npc && !pc.character.is_enemy && !pc.character.is_deleted,
   );
 
+  // A sessão não encerra com alguém Morrendo: o Mestre resolve os Testes de Morte antes.
+  const dyingCharacters = playerCharacters
+    .map((pc) => pc.character)
+    .filter((character) => character && isDying(character));
+  const isBlocked = dyingCharacters.length > 0;
+
   const toggleSelection = (id: string, disabled: boolean) => {
     if (disabled) return;
     setSelectedCharacterIds((prev) =>
@@ -39,6 +46,7 @@ export function EndSessionDialog({
   };
 
   const handleConfirm = () => {
+    if (isBlocked) return;
     setIsSubmitting(true);
     onConfirm(selectedCharacterIds);
   };
@@ -54,6 +62,13 @@ export function EndSessionDialog({
             Tem certeza que deseja finalizar esta sessão? Esta ação não pode ser desfeita.
           </DialogDescription>
         </DialogHeader>
+
+        {isBlocked && (
+          <div className="bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200 text-sm">
+            <strong>Atenção:</strong> resolva os Testes de Morte antes de encerrar. Morrendo:{' '}
+            {dyingCharacters.map((character) => character.name).join(', ')}.
+          </div>
+        )}
 
         <div className="py-4 space-y-4 border-y border-stone-800 my-2">
           <div>
@@ -109,7 +124,11 @@ export function EndSessionDialog({
           >
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} disabled={isSubmitting}>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={isSubmitting || isBlocked}
+          >
             {isSubmitting ? 'Finalizando...' : 'Sim, Finalizar Sessão'}
           </Button>
         </DialogFooter>
