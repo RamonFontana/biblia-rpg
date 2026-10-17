@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/database.types';
+import { calculateRecoveredQuantity, canConsumeAmmo, rollAmmoRecovery } from '@/lib/ammo';
 
 export type CharacterItemWithDetails = Tables<'character_items'> & {
   items: Tables<'items'>;
@@ -20,7 +21,7 @@ export function useAmmunition() {
       }
 
       const currentQuantity = item.quantity || 0;
-      if (currentQuantity < amount) {
+      if (!canConsumeAmmo(currentQuantity, amount)) {
         console.warn('Not enough quantity to consume.');
         return false;
       }
@@ -48,12 +49,7 @@ export function useAmmunition() {
     maxCapacity: number,
   ): Promise<number> => {
     try {
-      let recoveredCount = 0;
-      for (let i = 0; i < spentAmount; i++) {
-        if (Math.random() >= 0.5) {
-          recoveredCount++;
-        }
-      }
+      const recoveredCount = rollAmmoRecovery(spentAmount);
 
       if (recoveredCount === 0) return 0;
 
@@ -69,7 +65,7 @@ export function useAmmunition() {
       }
 
       const currentQuantity = item.quantity || 0;
-      const newQuantity = Math.min(currentQuantity + recoveredCount, maxCapacity);
+      const newQuantity = calculateRecoveredQuantity(currentQuantity, recoveredCount, maxCapacity);
 
       const { error: updateError } = await supabase
         .from('character_items')
