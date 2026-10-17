@@ -7,7 +7,7 @@ import {
   applyArmorResistance,
   findMaxResistanceLevel,
   resolveEquippedItems,
-} from '../lib/armorResistance';
+} from '@/domain/armorResistance';
 
 export const combatEngine = {
   /**

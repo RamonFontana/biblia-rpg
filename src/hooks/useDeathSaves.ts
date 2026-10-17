@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { characterVitalsService } from '@/services/characterVitalsService';
-import { addDeathSaveFailure, addDeathSaveSuccess } from '@/lib/deathSaves';
+import { addDeathSaveFailure, addDeathSaveSuccess } from '@/domain/deathSaves';
 
 export const useDeathSaves = () => {
   const addSuccess = async (characterId: string, currentSuccesses: number) => {

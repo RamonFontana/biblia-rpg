@@ -4,7 +4,7 @@
 // cura 1d4 PV, rolado pelo jogador na mesa (ADR 0001).
 // Problemas conhecidos: o dado de cura é exibido mas nunca rolado; o texto da descrição do item
 // vira regra de cura (a descrição do catálogo é a fonte).
-import { applyHpDelta, getCurrentPv, getMaxPv, type VitalsLike } from './vitalsUtils';
+import { applyHpDelta, getCurrentPv, getMaxPv, type VitalsLike } from '@/domain/vitals';
 
 /** Progressão do dado de cura: cada nível de Qualidade acima de 1 avança um degrau. */
 const DICE_PROGRESSION = [

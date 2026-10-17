@@ -1,9 +1,6 @@
 import { ShieldAlert } from 'lucide-react';
-import {
-  calculateModifier,
-  calculateProficiency,
-  formatModifier,
-} from '@/features/character-management/utils/characterMath';
+import { formatModifier } from '@/features/character-management/utils/characterMath';
+import { calculateModifier, calculateProficiency } from '@/domain/attributes';
 import { getVocationRules } from '@/features/character-management/utils/rules/vocations';
 
 interface CharacterSavingThrowsProps {

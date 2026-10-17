@@ -9,8 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { canGrantLevelUp } from '@/features/character-management/utils/levelUp';
-import { isDying } from '@/lib/deathSaves';
+import { canGrantLevelUp } from '@/domain/levelUp';
+import { isDying } from '@/domain/deathSaves';
 
 interface EndSessionDialogProps {
   isOpen: boolean;

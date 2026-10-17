@@ -7,7 +7,8 @@ import { useCharacterCreationStore } from '../../store/useCharacterCreationStore
 import { useQuickSave } from '../../hooks/useQuickSave';
 import { Dices, List } from 'lucide-react';
 import type { CharacterAttributes } from '../../types';
-import { STANDARD_ARRAY, rollAttributeScores } from '../../utils/attributeGeneration';
+import { STANDARD_ARRAY, rollAttributeScores } from '@/domain/attributeGeneration';
+import { systemRng } from '@/lib/systemRng';
 
 const ATTRIBUTES_KEYS: (keyof CharacterAttributes)[] = ['for', 'des', 'con', 'int', 'sab', 'car'];
 const LABELS: Record<keyof CharacterAttributes, string> = {
@@ -51,7 +52,7 @@ export function AttributeGeneration() {
   }, [isLocked, currentAttributes]);
 
   const handleRollDice = () => {
-    const newRolls = rollAttributeScores();
+    const newRolls = rollAttributeScores(systemRng);
     setRolls(newRolls);
     setAvailableValues([...newRolls]);
     setMethod('dice');

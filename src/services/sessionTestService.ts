@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
-import { isFaithTestApprovedByService } from '@/lib/faithTest';
-import { calculateFaithAfterFailure, isRegularTestApproved } from '@/lib/sessionTests';
+import { isFaithTestApprovedByService } from '@/domain/faith';
+import { calculateFaithAfterFailure, isRegularTestApproved } from '@/domain/sessionTests';
+import { systemRng } from '@/lib/systemRng';
 
 export interface SessionTest {
   id: string;
@@ -121,6 +122,7 @@ export const sessionTestService = {
           const { newFaith: newCurrentFaith } = calculateFaithAfterFailure(
             currentFaithValue,
             faithPenalty,
+            systemRng,
           );
 
           await (supabase as any)

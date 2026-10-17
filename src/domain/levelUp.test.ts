@@ -10,7 +10,7 @@ import {
   getCharacterLevel,
   getHpAverage,
   getLevelUpSteps,
-} from './levelUp';
+} from '@/domain/levelUp';
 
 const hp = (over: Partial<Parameters<typeof calculateLevelUpHp>[0]> = {}) =>
   calculateLevelUpHp({

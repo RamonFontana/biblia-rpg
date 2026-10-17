@@ -8,7 +8,7 @@ import {
   getTestModifiers,
   getTestBreakdown,
 } from '@/features/character-management/utils/characterMath';
-import { isFaithTestFailedOnPlayerScreen } from '@/lib/faithTest';
+import { isFaithTestFailedOnPlayerScreen } from '@/domain/faith';
 
 interface PlayerTestDialogProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 // Regras de PV e Aumento de Atributo do level-up, extraídas do LevelUpWizard.
 // Decisões: ROADMAP.md, Onda 2 (XP dá lugar ao Marco; aumento de atributo nos níveis 4/8/12/16/19;
 // o passo de PV mostra o ganho final, depois da escolha de atributo).
-import { calculateModifier } from './characterMath';
+import { calculateModifier } from '@/domain/attributes';
 
 /** Média do dado de vida por Vocação (o doc também permite rolar; o app só usa a média). */
 const VOCATION_HP_AVERAGE: Record<string, number> = {

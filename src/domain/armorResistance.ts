@@ -6,8 +6,8 @@
 // - o nível máximo de resistência é calculado sobre todas as condições da habilidade e depois
 //   aplicado a cada uma, mesmo às que nenhum item resiste;
 // - a duração é reduzida arredondando para cima.
-import { ITEMS_DB } from '../data/itemsDb';
-import type { CharacterEquipment } from '../types/combat';
+import { ITEMS_DB } from '@/data/itemsDb';
+import type { CharacterEquipment } from '@/types/combat';
 
 export interface InventoryItemRow {
   id?: string;

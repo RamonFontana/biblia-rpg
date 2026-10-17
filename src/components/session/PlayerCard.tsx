@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';
 import { MasterDeathControls } from '../combat/MasterDeathControls';
 import { getCombatStats } from '@/lib/equipmentUtils';
-import { getCurrentPv } from '@/lib/vitalsUtils';
+import { getCurrentPv } from '@/domain/vitals';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';

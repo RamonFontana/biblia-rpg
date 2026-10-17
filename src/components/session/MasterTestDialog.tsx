@@ -16,7 +16,7 @@ interface MasterTestDialogProps {
 }
 
 import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
-import { toStoredDifficulty } from '@/lib/sessionTests';
+import { toStoredDifficulty } from '@/domain/sessionTests';
 
 export function MasterTestDialog({
   sessionId,

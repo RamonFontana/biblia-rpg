@@ -2,7 +2,7 @@
 // Decisões: ROADMAP.md, Onda 2 (bloco B): a CA com teto de DES por peso de armadura vem depois;
 // hoje a CA base é gravada aqui e nunca mais recalculada.
 // Termos: CONTEXT.md (PV, Fé Inicial).
-import { calculateModifier } from '../../character-management/utils/characterMath';
+import { calculateModifier } from '@/domain/attributes';
 
 interface AttributeScores {
   con?: number;

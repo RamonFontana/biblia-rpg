@@ -1,12 +1,13 @@
 // CARACTERIZAÇÃO: regras de munição, extraídas de useAmmunition sem alteração de comportamento.
 // Recuperar munição é uma das rolagens que o app faz sozinho (ADR 0001): 50% por unidade gasta.
-// O sorteio é injetável para os testes serem determinísticos.
+// O sorteio (Rng) é injetado para os testes serem determinísticos.
+import type { Rng } from './rng';
 
 /** Quantas das unidades gastas voltam: cada uma tem 50% de chance (sorteio >= 0.5). */
-export function rollAmmoRecovery(spentAmount: number, random: () => number = Math.random): number {
+export function rollAmmoRecovery(spentAmount: number, rng: Rng): number {
   let recoveredCount = 0;
   for (let i = 0; i < spentAmount; i++) {
-    if (random() >= 0.5) {
+    if (rng() >= 0.5) {
       recoveredCount++;
     }
   }

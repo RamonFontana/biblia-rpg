@@ -3,7 +3,7 @@
 // Termos: CONTEXT.md (Personagem, Fé Inicial, PV).
 import { describe, expect, it } from 'vitest';
 import { getCombatStats } from './equipmentUtils';
-import { calculateModifier } from '../features/character-management/utils/characterMath';
+import { calculateModifier } from '@/domain/attributes';
 import { buildEnemyRow, buildPlayableNpcRow } from './sessionEntities';
 
 const npc = (characterData?: Record<string, unknown>) => ({

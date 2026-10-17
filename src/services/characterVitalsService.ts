@@ -11,7 +11,7 @@ import {
   deriveStatusLabel,
   deriveCombatEndState,
   applyMaxPvIncrease,
-} from '@/lib/vitalsUtils';
+} from '@/domain/vitals';
 
 type CombatParticipantRow = Database['public']['Tables']['combat_participants']['Row'];
 

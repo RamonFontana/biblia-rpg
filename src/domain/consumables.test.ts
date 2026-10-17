@@ -2,8 +2,8 @@
 // Decisões: ROADMAP.md, Onda 2 (bloco B): Odre e Ração não curam (Sustento); Bálsamo cura 1d4 PV.
 // Termos: CONTEXT.md (Sustento, Ração, Qualidade).
 import { describe, expect, it } from 'vitest';
-import { ITEMS_DB } from '../data/itemsDb';
-import { applyConsumableEffects, resolveHealing } from './consumables';
+import { ITEMS_DB } from '@/data/itemsDb';
+import { applyConsumableEffects, resolveHealing } from '@/domain/consumables';
 
 describe('resolveHealing: de onde vem a cura', () => {
   it('usa os efeitos gravados no item quando existem', () => {

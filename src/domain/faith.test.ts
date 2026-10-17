@@ -1,7 +1,7 @@
 // CARACTERIZAÇÃO: fixa o comportamento ATUAL do Teste de Fé, inclusive o que está errado.
 // Decisões: ROADMAP.md, Onda 2 (bloco B) e CONTEXT.md (Teste de Fé, Fé Efetiva, Modificador de Fé).
 import { describe, expect, it } from 'vitest';
-import { isFaithTestApprovedByService, isFaithTestFailedOnPlayerScreen } from './faithTest';
+import { isFaithTestApprovedByService, isFaithTestFailedOnPlayerScreen } from '@/domain/faith';
 
 describe('Teste de Fé: regra comum às duas fórmulas (sem Item Profano)', () => {
   // [Fé Atual, Modificador de Fé, resultado do 1d100, passa?]

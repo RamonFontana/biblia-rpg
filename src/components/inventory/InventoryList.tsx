@@ -9,7 +9,7 @@ import type { CharacterEquipment, WeaponEffect } from '@/types/combat';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/data/itemsDb';
 import { CONDITIONS } from '@/data/conditions';
-import { resolveHealing } from '@/lib/consumables';
+import { resolveHealing } from '@/domain/consumables';
 
 interface InventoryListProps {
   inventoryItems: any[];

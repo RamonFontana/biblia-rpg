@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react';
 import type { Character } from '../types';
 import { updateCharacter } from '../api/characterApi';
-import { applyMaxPvIncrease } from '@/lib/vitalsUtils';
+import { applyMaxPvIncrease } from '@/domain/vitals';
 import { ABILITIES } from '../../../data/abilities';
 import {
   ASI_LEVELS,
   calculateLevelUpHp,
   getCharacterLevel,
   getLevelUpSteps,
-} from '../utils/levelUp';
+} from '@/domain/levelUp';
 
 interface LevelUpWizardProps {
   character: Character;

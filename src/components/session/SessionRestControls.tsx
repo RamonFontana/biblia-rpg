@@ -9,7 +9,7 @@ import {
   canTakeLongRest,
   canTakeShortRest,
   hasPriestInGroup,
-} from '@/lib/rest';
+} from '@/domain/rest';
 import { characterVitalsService } from '@/services/characterVitalsService';
 
 interface SessionRestControlsProps {
