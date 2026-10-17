@@ -114,10 +114,43 @@ describe('getTestBreakdown', () => {
     expect(getTestBreakdown('Inteligência', 9, char())).toBe('1d20 (10) + Mod (-1) = 9');
   });
 
-  it('BUG conhecido: reconstrói o d20 com os modificadores de AGORA, não os da rolagem', () => {
+  it('sem o dado gravado (testes antigos), reconstrói o d20 com os modificadores de AGORA', () => {
     // O jogador rolou 13 com DES 14 (+2) e o app guardou 15. Depois a DES subiu para 16 (+3).
-    // O detalhamento passa a mostrar d20 12, um dado que nunca foi rolado.
+    // Sem o dado gravado, o detalhamento mostra d20 12, um dado que nunca foi rolado.
     const sheetNow = char();
     expect(getTestBreakdown('Destreza', 15, sheetNow)).toBe('1d20 (12) + Mod (3) = 15');
+  });
+
+  describe('com o dado gravado (rollValue)', () => {
+    it('mostra o dado que saiu, mesmo que a ficha tenha mudado depois', () => {
+      // Rolou 13, total 15 (bônus +2 na época). A DES de agora dá +3, mas o dado é 13.
+      const text = getTestBreakdown('Destreza', 15, char(), 13);
+      expect(text).toContain('1d20 (13)');
+      expect(text).not.toContain('1d20 (12)');
+    });
+
+    it('os bônus mostrados somam o que foi gravado', () => {
+      // Bônus gravado +2; a ficha de agora diria +3: mostra o bônus real em bloco.
+      expect(getTestBreakdown('Destreza', 15, char(), 13)).toBe('1d20 (13) + Bônus (2) = 15');
+    });
+
+    it('com a ficha igual à da rolagem, detalha modificador e proficiência', () => {
+      const proficient = char({ proficiencies: { skill_proficiencies: ['furtividade'] } });
+      expect(getTestBreakdown('Furtividade', 17, proficient, 12)).toBe(
+        '1d20 (12) + Mod (3) + Prof (2) = 17',
+      );
+    });
+
+    it('sem bônus mostra só o dado', () => {
+      expect(getTestBreakdown('Sorte', 12, char(), 12)).toBe('1d20 (12)');
+    });
+
+    it('rollValue nulo cai para a reconstrução', () => {
+      expect(getTestBreakdown('Destreza', 15, char(), null)).toBe('1d20 (12) + Mod (3) = 15');
+    });
+
+    it('Fé continua mostrando o d100', () => {
+      expect(getTestBreakdown('Fé', 45, char(), 45)).toBe('1d100 (45)');
+    });
   });
 });

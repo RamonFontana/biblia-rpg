@@ -126,17 +126,33 @@ export function getTestModifiers(
   return { attrMod, profBonus };
 }
 
+/**
+ * Texto do detalhamento de um resultado. Com `rollValue` (o dado que o jogador rolou, gravado
+ * junto do total), mostra o dado real. Sem ele (testes antigos), reconstrói o d20 subtraindo os
+ * modificadores de AGORA, que podem diferir dos da época da rolagem.
+ */
 export function getTestBreakdown(
   testType: string,
   resultValue: number | null,
   charData: any,
+  rollValue?: number | null,
 ): string {
   if (resultValue === null) return '';
   if (testType === 'Fé') return `1d100 (${resultValue})`;
 
   const { attrMod, profBonus } = getTestModifiers(testType, charData);
-  const totalModifiers = attrMod + profBonus;
-  const d20 = resultValue - totalModifiers;
+  const hasRoll = rollValue !== undefined && rollValue !== null;
+  const totalModifiers = hasRoll ? resultValue - rollValue : attrMod + profBonus;
+  const d20 = hasRoll ? rollValue : resultValue - totalModifiers;
+
+  if (hasRoll && totalModifiers === 0) {
+    return `1d20 (${d20})`;
+  }
+
+  // O bônus gravado pode não bater com a ficha de agora: então mostra o bônus real em bloco.
+  if (hasRoll && totalModifiers !== attrMod + profBonus) {
+    return `1d20 (${d20}) + Bônus (${totalModifiers}) = ${resultValue}`;
+  }
 
   if (attrMod === 0 && profBonus === 0) {
     return `1d20 (${d20})`;

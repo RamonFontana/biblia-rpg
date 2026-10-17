@@ -191,6 +191,7 @@ export function MasterTestDialog({
                             currentActiveTest.test_type,
                             result.result_value,
                             pc?.character,
+                            result.roll_value,
                           )}
                         </span>
                       </div>

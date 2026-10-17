@@ -17,6 +17,8 @@ export interface SessionTestResult {
   player_id: string;
   status: 'pending' | 'submitted';
   result_value: number | null;
+  /** Dado rolado, sem bônus. Nulo em testes anteriores à coluna. */
+  roll_value: number | null;
   is_approved: boolean | null;
   created_at: string;
   updated_at: string | null;
@@ -67,6 +69,7 @@ export const sessionTestService = {
     characterId?: string,
     testType?: string,
     faithPenalty?: number,
+    rollValue?: number,
   ): Promise<void> {
     let isApproved = resultValue >= difficulty;
 
@@ -91,6 +94,7 @@ export const sessionTestService = {
       .from('session_test_results')
       .update({
         result_value: resultValue,
+        roll_value: rollValue ?? null,
         is_approved: isApproved,
         status: 'submitted',
         updated_at: new Date().toISOString(),
