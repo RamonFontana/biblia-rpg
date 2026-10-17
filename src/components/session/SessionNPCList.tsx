@@ -8,6 +8,7 @@ import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { characterVitalsService } from '@/services/characterVitalsService';
 import { AddNPCModal } from './AddNPCModal';
+import { addFaith, getCurrentFaith } from '@/domain/faith';
 
 interface SessionNPC extends Character {
   is_playable?: boolean;
@@ -60,11 +61,7 @@ export function SessionNPCList({
       return;
     }
 
-    const maxValue = npc.stats.faith || 100;
-    const currentValue = npc.stats.current_faith ?? npc.stats.faith ?? 0;
-
-    let newValue = Math.max(0, currentValue + delta);
-    if (newValue > maxValue) newValue = maxValue;
+    const newValue = addFaith(npc.stats, delta);
 
     const newStats = { ...npc.stats, current_faith: newValue };
 
@@ -234,7 +231,7 @@ export function SessionNPCList({
                             -
                           </button>
                           <span className="w-8 text-center font-mono">
-                            {npc.stats.current_faith ?? npc.stats.faith ?? 0}/100
+                            {getCurrentFaith(npc.stats)}/100
                           </span>
                           <button
                             onClick={(e) => {

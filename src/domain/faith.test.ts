@@ -1,10 +1,107 @@
-// CARACTERIZAÇÃO: fixa o comportamento ATUAL do Teste de Fé, inclusive o que está errado.
-// Decisões: ROADMAP.md, Onda 2 (bloco B) e CONTEXT.md (Teste de Fé, Fé Efetiva, Modificador de Fé).
+// Fé: leitura da Fé Atual, teto 100 para todos, Fé Efetiva com Item Profano e Teste de Fé único.
+// Decisões: ROADMAP.md, Onda 3 (passo 3); CONTEXT.md (Fé Atual, Fé Inicial, Fé Efetiva, Item
+// Profano, Teste de Fé, Modificador de Fé).
 import { describe, expect, it } from 'vitest';
-import { isFaithTestApprovedByService, isFaithTestFailedOnPlayerScreen } from '@/domain/faith';
+import {
+  FAITH_MAX,
+  addFaith,
+  getCurrentFaith,
+  getEffectiveFaith,
+  isFaithTestPassed,
+  spendFaith,
+  sumItemFaithPenalty,
+} from '@/domain/faith';
 
-describe('Teste de Fé: regra comum às duas fórmulas (sem Item Profano)', () => {
-  // [Fé Atual, Modificador de Fé, resultado do 1d100, passa?]
+describe('getCurrentFaith', () => {
+  it('usa current_faith quando existe', () => {
+    expect(getCurrentFaith({ current_faith: 40, faith: 60 })).toBe(40);
+  });
+
+  it('cai para faith (Fé Inicial gravada) quando não há current_faith', () => {
+    expect(getCurrentFaith({ faith: 60 })).toBe(60);
+  });
+
+  it('current_faith igual a 0 vale 0 (não cai para faith)', () => {
+    expect(getCurrentFaith({ current_faith: 0, faith: 50 })).toBe(0);
+  });
+
+  it('sem nenhuma Fé gravada, ou sem ficha, vale 0', () => {
+    expect(getCurrentFaith({})).toBe(0);
+    expect(getCurrentFaith(undefined)).toBe(0);
+    expect(getCurrentFaith(null)).toBe(0);
+    expect(getCurrentFaith({ current_faith: null, faith: null })).toBe(0);
+  });
+});
+
+describe('teto de Fé', () => {
+  it('é 100 para todos, qualquer que seja a Fé Inicial', () => {
+    expect(FAITH_MAX).toBe(100);
+    expect(addFaith({ current_faith: 50, faith: 50 }, 80)).toBe(100);
+    expect(addFaith({ current_faith: 95, faith: 60 }, 3)).toBe(98);
+  });
+
+  it('não passa de 0 para baixo', () => {
+    expect(addFaith({ current_faith: 3 }, -10)).toBe(0);
+  });
+
+  it('parte da Fé Inicial gravada quando não há Fé Atual', () => {
+    expect(addFaith({ faith: 50 }, 4)).toBe(54);
+  });
+});
+
+describe('spendFaith: custo de uma habilidade', () => {
+  it('desconta o custo e devolve a Fé que sobra', () => {
+    expect(spendFaith({ current_faith: 30 }, 10)).toBe(20);
+  });
+
+  it('gasta tudo quando o custo é igual à Fé', () => {
+    expect(spendFaith({ current_faith: 10 }, 10)).toBe(0);
+  });
+
+  it('sem Fé suficiente, devolve null e nada é gasto', () => {
+    expect(spendFaith({ current_faith: 9 }, 10)).toBeNull();
+  });
+});
+
+describe('sumItemFaithPenalty: Itens Profanos', () => {
+  it('soma as penalidades de Fé de todos os itens carregados', () => {
+    expect(
+      sumItemFaithPenalty([
+        { statPenalty: { stat: 'faith', value: -10 } },
+        { statPenalty: { stat: 'faith', value: -5 } },
+      ]),
+    ).toBe(-15);
+  });
+
+  it('ignora itens sem penalidade e penalidades de outro atributo', () => {
+    expect(
+      sumItemFaithPenalty([
+        null,
+        undefined,
+        {},
+        { statPenalty: { stat: 'strength', value: -3 } },
+        { statPenalty: { stat: 'faith', value: -10 } },
+      ]),
+    ).toBe(-10);
+  });
+
+  it('sem itens, a penalidade é 0', () => {
+    expect(sumItemFaithPenalty([])).toBe(0);
+  });
+});
+
+describe('getEffectiveFaith', () => {
+  it('é a Fé Atual somada à penalidade dos Itens Profanos', () => {
+    expect(getEffectiveFaith({ current_faith: 50 }, -10)).toBe(40);
+  });
+
+  it('sem Item Profano, é a Fé Atual', () => {
+    expect(getEffectiveFaith({ current_faith: 50 }, 0)).toBe(50);
+  });
+});
+
+describe('isFaithTestPassed: 1d100 passa se rolou <= Fé Efetiva + Modificador de Fé', () => {
+  // [Fé Efetiva, Modificador de Fé, resultado do 1d100, passa?]
   const cases: [number, number, number, boolean][] = [
     [50, 0, 50, true], // igual à Fé passa
     [50, 0, 51, false],
@@ -17,47 +114,17 @@ describe('Teste de Fé: regra comum às duas fórmulas (sem Item Profano)', () =
     [0, 0, 1, false],
   ];
 
-  it.each(cases)('Fé %i, modificador %i, rolou %i => passa: %s', (faith, mod, rolled, passes) => {
-    expect(isFaithTestApprovedByService(rolled, mod, { current_faith: faith })).toBe(passes);
-    expect(isFaithTestFailedOnPlayerScreen(rolled, mod, { current_faith: faith }, 0)).toBe(!passes);
-  });
+  it.each(cases)(
+    'Fé Efetiva %i, modificador %i, rolou %i => passa: %s',
+    (effective, modifier, rolled, passes) => {
+      expect(isFaithTestPassed(rolled, modifier, effective)).toBe(passes);
+    },
+  );
 
-  it('usa current_faith quando existe e cai para faith (Fé Inicial) quando não existe', () => {
-    expect(isFaithTestApprovedByService(40, 0, { current_faith: 40, faith: 60 })).toBe(true);
-    expect(isFaithTestApprovedByService(41, 0, { current_faith: 40, faith: 60 })).toBe(false);
-    expect(isFaithTestApprovedByService(60, 0, { faith: 60 })).toBe(true);
-    expect(isFaithTestApprovedByService(61, 0, { faith: 60 })).toBe(false);
-  });
-
-  it('current_faith igual a 0 vale 0 (não cai para faith)', () => {
-    expect(isFaithTestApprovedByService(1, 0, { current_faith: 0, faith: 50 })).toBe(false);
-  });
-
-  it('sem nenhuma Fé gravada, a tela do jogador trata como Fé 0', () => {
-    expect(isFaithTestFailedOnPlayerScreen(1, 0, undefined, 0)).toBe(true);
-    expect(isFaithTestFailedOnPlayerScreen(0, 0, undefined, 0)).toBe(false);
-  });
-});
-
-describe('Teste de Fé: BUG conhecido — a tela e o serviço divergem com Item Profano', () => {
-  // Cenário: Fé 50, Amuleto Proibido (-10), sem modificador, o jogador rolou 45.
-  // Decisão (grill): a penalidade vale, então a Fé Efetiva é 40 e o teste FALHA.
-  const stats = { current_faith: 50 };
-
-  it('a tela soma a penalidade e mostra "Reprovado"', () => {
-    expect(isFaithTestFailedOnPlayerScreen(45, 0, stats, -10)).toBe(true);
-  });
-
-  it('o serviço ignora a penalidade e grava "aprovado" (sem perder Fé)', () => {
-    expect(isFaithTestApprovedByService(45, 0, stats)).toBe(true);
-  });
-
-  it('só divergem quando a rolagem cai entre a Fé Efetiva e a Fé Atual', () => {
-    // Fé Efetiva 40, Fé Atual 50: de 41 a 50 a tela reprova e o serviço aprova.
-    for (let rolled = 1; rolled <= 100; rolled++) {
-      const screenFails = isFaithTestFailedOnPlayerScreen(rolled, 0, stats, -10);
-      const serviceFails = !isFaithTestApprovedByService(rolled, 0, stats);
-      expect(screenFails !== serviceFails).toBe(rolled >= 41 && rolled <= 50);
-    }
+  it('com Item Profano a Fé Efetiva menor reprova o que a Fé Atual aprovaria', () => {
+    // Fé 50, Amuleto Proibido (-10), sem modificador, o jogador rolou 45: Fé Efetiva 40, falha.
+    const effective = getEffectiveFaith({ current_faith: 50 }, -10);
+    expect(isFaithTestPassed(45, 0, effective)).toBe(false);
+    expect(isFaithTestPassed(40, 0, effective)).toBe(true);
   });
 });

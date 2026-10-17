@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { isFaithTestApprovedByService } from '@/domain/faith';
+import { getCurrentFaith, getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
+import { getItemFaithPenalty } from '@/services/characterItemService';
 import { calculateFaithAfterFailure, isRegularTestApproved } from '@/domain/sessionTests';
 import { systemRng } from '@/lib/systemRng';
 
@@ -85,11 +86,16 @@ export const sessionTestService = {
       charData = data;
     }
 
-    if (testType === 'Fé' && charData?.stats) {
+    if (testType === 'Fé' && characterId && charData?.stats) {
       const stats = charData.stats as Record<string, any>;
-      // Misericórdia subtrai do DADO, não da fé
-      // Passa se (dado - misericórdia) <= fé  <==>  dado <= fé + misericórdia
-      isApproved = isFaithTestApprovedByService(resultValue, difficulty, stats);
+      // Mesma regra da tela do jogador: passa se o dado <= Fé Efetiva (Fé Atual mais a penalidade
+      // dos Itens Profanos) + Modificador de Fé do Mestre.
+      const itemFaithPenalty = await getItemFaithPenalty(characterId);
+      isApproved = isFaithTestPassed(
+        resultValue,
+        difficulty,
+        getEffectiveFaith(stats, itemFaithPenalty),
+      );
     }
 
     const { error } = await (supabase as any)
@@ -116,25 +122,21 @@ export const sessionTestService = {
 
       if (freshCharData && freshCharData.stats) {
         const stats = freshCharData.stats as Record<string, any>;
-        // current_faith é a fé atual (se não existir, usa faith como base)
-        const currentFaithValue = stats.current_faith ?? stats.faith ?? 0;
-        if (typeof currentFaithValue === 'number') {
-          const { newFaith: newCurrentFaith } = calculateFaithAfterFailure(
-            currentFaithValue,
-            faithPenalty,
-            systemRng,
-          );
+        const { newFaith: newCurrentFaith } = calculateFaithAfterFailure(
+          getCurrentFaith(stats),
+          faithPenalty,
+          systemRng,
+        );
 
-          await (supabase as any)
-            .from('characters')
-            .update({
-              stats: {
-                ...stats,
-                current_faith: newCurrentFaith,
-              },
-            })
-            .eq('id', characterId);
-        }
+        await (supabase as any)
+          .from('characters')
+          .update({
+            stats: {
+              ...stats,
+              current_faith: newCurrentFaith,
+            },
+          })
+          .eq('id', characterId);
       }
     }
   },

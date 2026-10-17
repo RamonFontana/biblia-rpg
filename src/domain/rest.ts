@@ -1,12 +1,10 @@
 // CARACTERIZAÇÃO: regras de Descanso Curto e Longo, extraídas de SessionRestControls sem alteração.
 // Decisões: ROADMAP.md, Onda 2 (bloco B): o 1d4 de Fé é digitado pelo Mestre (ADR 0001); Sustento.
 // Termos: CONTEXT.md (Descanso Curto, Descanso Longo, Sustento).
+import { addFaith } from '@/domain/faith';
 import { getMaxPv, type VitalsLike } from '@/domain/vitals';
 
 export const MAX_SHORT_RESTS_PER_DAY = 2;
-
-/** Teto de Fé usado ao recuperar no Descanso Longo (fixo, ignora a Fé Inicial do personagem). */
-const FAITH_CAP = 100;
 
 interface RestStats extends VitalsLike {
   current_faith?: number | null;
@@ -37,10 +35,9 @@ export function applyLongRestToStats<T extends RestStats>(
   stats: T,
   faithRecovered: number,
 ): T & { current_pv: number; current_faith: number } {
-  const currentFaith = stats.current_faith ?? stats.faith ?? 0;
   return {
     ...stats,
     current_pv: getMaxPv(stats),
-    current_faith: Math.min(FAITH_CAP, currentFaith + faithRecovered),
+    current_faith: addFaith(stats, faithRecovered),
   };
 }

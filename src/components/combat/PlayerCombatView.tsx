@@ -12,6 +12,7 @@ import { getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '../../data/abilities';
 import type { Character } from '../../features/character-management/types';
+import { spendFaith } from '@/domain/faith';
 
 interface PlayerCombatViewProps {
   sessionId: string;
@@ -66,12 +67,12 @@ export function PlayerCombatView({
 
       if (ability.faithCost) {
         const stats = character.stats || {};
-        const currentFaith = stats.current_faith ?? stats.faith ?? 0;
+        const faithLeft = spendFaith(stats, ability.faithCost);
 
-        if (currentFaith >= ability.faithCost) {
+        if (faithLeft !== null) {
           updates.stats = {
             ...stats,
-            current_faith: currentFaith - ability.faithCost,
+            current_faith: faithLeft,
           };
         } else {
           // Not enough faith
@@ -213,9 +214,7 @@ export function PlayerCombatView({
                 disabled = true;
               } else {
                 if (ability.faithCost) {
-                  const currentFaith =
-                    character?.stats?.current_faith ?? character?.stats?.faith ?? 0;
-                  if (currentFaith < ability.faithCost) {
+                  if (spendFaith(character?.stats, ability.faithCost) === null) {
                     disabled = true;
                     disabledReason = 'Fé Insuficiente';
                   }

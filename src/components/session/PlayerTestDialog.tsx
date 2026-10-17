@@ -8,7 +8,14 @@ import {
   getTestModifiers,
   getTestBreakdown,
 } from '@/features/character-management/utils/characterMath';
-import { isFaithTestFailedOnPlayerScreen } from '@/domain/faith';
+import {
+  getEffectiveFaith,
+  isFaithTestPassed,
+  sumItemFaithPenalty,
+  type ItemEffectsWithFaithPenalty,
+} from '@/domain/faith';
+import { rollDie } from '@/domain/dice';
+import { systemRng } from '@/lib/systemRng';
 
 interface PlayerTestDialogProps {
   isOpen: boolean;
@@ -16,6 +23,10 @@ interface PlayerTestDialogProps {
   testResult: SessionTestResult | null;
   playerCharacters?: any[];
   onClose?: () => void;
+}
+
+interface DialogItemEffects extends ItemEffectsWithFaithPenalty {
+  properties?: string[];
 }
 
 export function PlayerTestDialog({
@@ -80,18 +91,16 @@ export function PlayerTestDialog({
           .select(`id, items!inner(effects)`)
           .eq('character_id', testResult.character_id);
 
+        const effectsOf = (cItem: { items: unknown }) =>
+          (cItem.items as { effects?: DialogItemEffects } | null)?.effects;
+
         let stealthDis = false;
-        let penaltyF = 0;
+        const penaltyF = sumItemFaithPenalty((charItems ?? []).map(effectsOf));
 
         if (cData && charItems) {
           const equipmentIds = Object.values(cData.equipment || {}).filter(Boolean) as string[];
           for (const cItem of charItems) {
-            const effects = (cItem.items as any)?.effects || {};
-            // Check passive penalty regardless of being equipped
-            if (effects.statPenalty && effects.statPenalty.stat === 'faith') {
-              penaltyF += effects.statPenalty.value;
-            }
-
+            const effects = effectsOf(cItem) || {};
             // Check stealth disadvantage only if equipped
             if (
               equipmentIds.includes(cItem.id) &&
@@ -211,14 +220,11 @@ export function PlayerTestDialog({
         .eq('id', testResult.character_id)
         .single();
       const stats = charData?.stats as Record<string, any> | undefined;
-      // faithPenalty is usually negative
-      // Misericórdia subtrai do DADO, não da fé
-      // Passa se (dado - misericórdia) <= fé
-      isFailedFaithTest = isFaithTestFailedOnPlayerScreen(
+      // faithPenalty é a soma (negativa) dos Itens Profanos; a mesma regra grava is_approved.
+      isFailedFaithTest = !isFaithTestPassed(
         val,
         activeTest.difficulty,
-        stats,
-        faithPenalty,
+        getEffectiveFaith(stats, faithPenalty),
       );
     }
 
@@ -298,7 +304,7 @@ export function PlayerTestDialog({
       const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2);
 
       if (elapsed >= duration) {
-        const finalResult = Math.floor(Math.random() * 6) + 1;
+        const finalResult = rollDie(6, systemRng);
         setFaithPenaltyResult(finalResult);
         setTimeout(() => {
           if (isMounted.current) {
@@ -306,7 +312,7 @@ export function PlayerTestDialog({
           }
         }, 400);
       } else {
-        setFaithPenaltyResult(Math.floor(Math.random() * 6) + 1);
+        setFaithPenaltyResult(rollDie(6, systemRng));
         elapsed += currentInterval;
         setTimeout(rollStep, currentInterval);
       }

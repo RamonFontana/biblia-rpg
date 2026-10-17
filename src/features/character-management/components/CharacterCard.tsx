@@ -1,4 +1,5 @@
 import type { Character } from '../types';
+import { getCurrentFaith } from '@/domain/faith';
 
 interface CharacterCardProps {
   character: Character;
@@ -57,7 +58,7 @@ export function CharacterCard({
           <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
             Fé
           </span>
-          <span className="font-bold text-stone-200">{character.stats?.faith || 0}</span>
+          <span className="font-bold text-stone-200">{getCurrentFaith(character.stats)}</span>
         </div>
       </div>
 
