@@ -153,7 +153,8 @@ O resto (≈25 specs) está implementado com tasks fechadas. Conclusão: as spec
    - `items` INSERT aberto.
    - RPCs `SECURITY DEFINER` sem `search_path` e sem checar dono (`use_consumable_item`, `add_kit_to_character`, `create_game_session`, `execute_trade`).
    - `cancel_session_trades` sem checagem de mestre.
-   - `characters` sem migration, então o RLS dela não é verificável pelo repo.
+   - `characters` sem migration, então o RLS dela não é verificável pelo repo. Conferido no banco ao vivo em 2026-10-17: as 14 tabelas de `public` têm RLS ativo (`characters` com 7 políticas). O conteúdo dessas políticas ainda não foi revisado.
+   - Security Advisor (2026-10-17): `anon` e `authenticated` executam as 9 funções `SECURITY DEFINER` de `public` (inclusive `is_session_gm` e `cancel_session_trades`); 4 delas sem `search_path` fixo; proteção contra senhas vazadas desligada no Auth. A função `rls_auto_enable()` existe no banco e não tem migration no repo.
 2. **Regras contraditórias:** teste de Fé, CA, morte no fim do combate, resistências que nunca funcionam, NPC jogável com chaves erradas.
 3. **Regras declaradas e não implementadas:** tiers de Fé, cura de consumíveis, `maxUses`, efeitos de habilidade.
 4. **Acesso ao Supabase espalhado:** ~30% das chamadas vêm de 13 componentes e páginas; `(supabase as any)` nos services.
@@ -354,9 +355,8 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.
 2. **GitHub:** proteger a branch `main`, exigindo o check `ci` e o deploy da Vercel antes do merge (sem isso o CI não bloqueia de fato). Ativar Dependabot alerts.
 3. **Supabase**
-   - Verificar se o projeto está pausado (o MCP deu timeout).
-   - Conferir no dashboard (Database → Tables) que `characters` tem RLS ativo e ver as políticas reais.
-   - Rodar o Security Advisor.
+   - ~~Verificar se o projeto está pausado.~~ Estava pausado; reativado em 2026-10-17. O plano gratuito pausa por inatividade, então o app pode cair de novo.
+   - ~~Conferir RLS de `characters` e rodar o Security Advisor.~~ Feito (ver §4). Falta ligar a proteção contra senhas vazadas no dashboard (Auth → Passwords).
    - Ter a senha do banco à mão para o `supabase db pull` na Onda 3.
 4. **Vercel:** confirmar que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estão em Production e Preview e que **nenhuma** `SUPABASE_SERVICE_ROLE_KEY` está lá (o app não precisa dela).
 5. Revisar os 13 itens de conteúdo bíblico do §2.
