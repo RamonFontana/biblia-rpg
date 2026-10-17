@@ -7,8 +7,8 @@
 | Onda | Estado |
 |---|---|
 | 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub (o sistema bloqueou a minha tentativa via `gh api`; o autor configura no GitHub) |
-| 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização das regras (PRs #10 e #11, ver abaixo). Caracterização concluída (faltam só as funções SQL e o tempo real, ver abaixo). Próximo: as correções de código (bloco B) |
-| 3 — Motor e dados | pendente |
+| 2 — Rede de segurança | concluída: grill, glossário, ADRs 0001–0002, correções de doc (PR #9), caracterização das regras (PRs #10, #11 e #13) e correções do bloco B (PR #14). O que sobrou do bloco B (Teste de Fé unificado, CA, Resistência a Condição) entrou nos passos da Onda 3 |
+| 3 — Motor e dados | grill feito (2026-10-17, ADRs 0003 e 0004); próximo: passo 1 (CLI e schema-base) |
 | 4 — Restante + padronização visual | pendente |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
 
@@ -345,13 +345,26 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 - **Testes de Morte**: o 1 natural contar duas falhas e o 20 natural voltar com 1 PV já estavam no código e passaram para o `regras-base.md` e o glossário sem pergunta explícita. Confirmar que valem.
 
 ### Onda 3: motor e dados
-- **`src/domain/`:** motor puro. `rng.ts` com um `Rng` injetável (seed); `dice`, `attributes`, `proficiency`, `armorClass`, `vitals` (reaproveitar `vitalsUtils.ts`), `faith` (`getCurrentFaith`), `conditions`, `rest`, `deathSaves`, `ammo`. Tudo migra de componentes e services para cá, um módulo por PR, com os testes da Onda 2 ficando verdes.
-- **`src/content/`:** definições tipadas e validadas por zod. Os efeitos passam a ser uma união discriminada (`{type:'heal', dice:'1d4'}`, `{type:'applyCondition', id, duration}`, `{type:'acBonus', value}`), interpretada pelo motor.
-  - Ordem: condições, itens, kits, habilidades.
-  - Os IDs de habilidade são **preservados** (chaves no banco).
-  - O gate da Onda 1 passa a validar o schema novo e a lista de `known-violations` encolhe.
-- **Supabase:** com o CLI aprovado, `supabase db pull` gera a migration-base (inclui `characters`) e `gen types` vira script. Depois, migrations de correção de RLS e `search_path` (cada uma com sua confirmação), e o gate de RLS passa a cobrir tudo.
-- **Recomendação:** *refatorar* o motor (a lógica existe e é testável depois de extraída); *reescrever* a camada de efeitos de item e habilidade (hoje é texto livre e `jsonb` sem contrato, não há o que aproveitar).
+Decisões do grill de 2026-10-17 (glossário em `CONTEXT.md`; ADR 0003: conteúdo no repositório, banco por seed; ADR 0004: regras no motor, cliente confiável):
+- **Conteúdo:** itens, kits, habilidades e Condições em `src/content/`, tipados e validados por zod. Habilidades e Condições não ganham tabela; os ids são preservados (chaves gravadas nas fichas).
+- **Itens no banco:** `items` ganha `slug` (único, obrigatório) igual ao id do conteúdo; a linha guarda só identidade e exibição; o seed é uma migration `upsert ... on conflict (slug)` gerada do conteúdo. O app para de inserir em `items`, e `items.effects` deixa de ser lido.
+- **CA:** sempre calculada para personagens com ficha (o `stats.ca` digitado fica só para inimigos e NPCs simples); elmo não dá CA, e a Resistência a Condição dele aparece no item e na hora de equipar; equipar sem proficiência é permitido, com aviso; proficiências de armadura conforme os docs de vocação.
+- **Fé:** teto 100 para todos (os 4 "máximos de Fé" viram um; sai o rótulo de BUG do teste do Descanso Longo).
+- **Confiança:** o motor decide aprovação e efeitos; o banco aceita o resultado do cliente, e o RLS garante só quem escreve.
+- **Dependência aprovada:** CLI do `supabase` como devDependency (o autor fornece a senha do banco uma vez para o `db pull`).
+
+Passos, um PR cada:
+1. **CLI e schema-base:** `supabase db pull` gera a migration-base com o schema real (inclui `characters`); script `gen:types`; o gate de RLS passa a cobrir `characters`.
+2. **`src/domain/`:** `rng.ts` (`Rng` com seed, sem dependência nova) e `dice`; mudança mecânica dos módulos puros já extraídos em `src/lib/` (faithTest, deathSaves, rest, ammo, consumables, armorResistance, vitalsUtils, sessionTests, levelUp, initialStats, attributeGeneration). O lint de pureza passa a valer para eles.
+3. **Fé:** `getCurrentFaith` no lugar das 16 cópias de `current_faith ?? faith ?? 0`; Fé Efetiva com os Itens Profanos; Teste de Fé numa função única usada pela tela e pelo serviço (resolve as duas fórmulas); teto 100.
+4. **Conteúdo:** Condições → itens (migration do `slug`: as 35 linhas pelo nome, com mapa explícito para "Flechas" → `flechas` e "Saco de Pedras para Funda" → `pedras_funda`; nomes do banco passam a ser os do conteúdo; duplicatas fundidas na original) → kits (`KITS_DB` e `VOCATION_KIT_ITEMS` viram um só) → habilidades. O `syncInventory` passa a procurar por `slug`.
+5. **CA:** `src/domain/armorClass` com uma fórmula só (substitui a do cartão de slot e a da ficha), teto de DES, elmo sem CA, aviso de proficiência e de FOR, Resistência visível no elmo.
+6. **Resistência a Condição:** item achado pelo `slug` e nível aplicado por Condição (hoje o maior nível vaza para todas).
+7. **RLS**, uma migration por tabela ou função, cada uma confirmada antes de aplicar: revogar `EXECUTE` de `anon` nas funções `SECURITY DEFINER`, fixar `search_path` e checar dono ou Mestre dentro delas; apagar `add_kit_to_character` (sem uso); `session_test_results` e `character_items` escritos só pelo dono ou pelo Mestre da sessão; `items` sem insert pelo cliente; `characters` continua "dono ou Mestre".
+
+Achado que este plano resolve: o catálogo chama as flechas de "Flecha" e o banco de "Flechas". Como o `syncInventory` procura pelo nome e cria o item se não acha, comprar flechas (ou o kit do Caçador, desde o PR #14) cria uma segunda linha de flechas em `items`. A munição continua funcionando (reconhece "Flecha" no nome); o passo 4 funde as duplicatas.
+
+- **Recomendação mantida:** *refatorar* o motor; *reescrever* a camada de efeitos de item e habilidade (união discriminada interpretada pelo motor).
 - **Risco:** alto, mitigado pela Onda 2.
 
 ### Onda 4: o restante, módulo por módulo

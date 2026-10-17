@@ -37,11 +37,11 @@ Pontos de vida do personagem.
 _Avoid_: HP, vida
 
 **Fé Atual**:
-O valor de Fé do personagem agora, de 0 a 100.
+O valor de Fé do personagem agora, de 0 a 100. O teto é 100 para todos.
 _Avoid_: fé (sem qualificador), current_faith
 
 **Fé Inicial**:
-A Fé com que o personagem começa: 50, ou 60 para levitas.
+A Fé com que o personagem começa: 50, ou 60 para levitas. É só o ponto de partida, não um teto.
 _Avoid_: fé máxima, max_faith
 
 **Fé Efetiva**:
@@ -125,6 +125,17 @@ A natureza de um dano (Corte, Perfuração, Concussão); não é uma Condição.
 Proteção de um item contra uma Condição, que cresce com a Qualidade do item: vantagem, metade da duração, as duas, imunidade.
 
 ## Equipamento
+
+**CA**:
+Classe de Armadura. Sem armadura, 10 + modificador de DES; armadura leve soma a DES inteira, média soma até +2, pesada não soma DES; escudo dá +2. Armadura e escudo ganham +1 por nível de Qualidade acima de 1. Elmo não dá CA. É sempre calculada para personagens com ficha; o Mestre a digita só para inimigos e NPCs simples.
+_Avoid_: AC, defesa
+
+**Elmo**:
+Proteção de cabeça que dá só Resistência a Condição, nunca CA.
+_Avoid_: capacete (como termo de regra)
+
+**Proficiência de armadura**:
+Os tipos de armadura e escudo que a Vocação sabe usar. Equipar sem proficiência é permitido, com aviso.
 
 **Qualidade**:
 O nível de forja de um item (1 a 5): material e artesanato, nunca magia. Cada nível acima de 1 soma +1 de CA em armaduras e escudos e fortalece a Resistência a Condição.
