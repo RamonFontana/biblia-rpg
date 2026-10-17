@@ -2,21 +2,19 @@
 import React, { useEffect } from 'react';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
 import { Shield, Heart, Flame } from 'lucide-react';
-
-// Simplified modifier calculation (D&D 5e standard)
-const calculateModifier = (score: number) => Math.floor((score - 10) / 2);
+import { calculateInitialStats } from '../../utils/initialStats';
 
 export function InitialStats() {
   const { draft, setStats, nextStep, prevStep } = useCharacterCreationStore();
 
-  const conMod = calculateModifier(draft.attributes?.con || 10);
-  const desMod = calculateModifier(draft.attributes?.des || 10);
-
-  const baseHp = ['Guerreiro', 'Caçador'].includes(draft.vocation || '') ? 10 : 8;
-  const initialPv = baseHp + conMod;
-
-  const initialCa = 10 + desMod;
-  const initialFaith = draft.tribe === 'Levi' ? 60 : 50;
+  const {
+    baseHp,
+    conMod,
+    desMod,
+    pv: initialPv,
+    ca: initialCa,
+    faith: initialFaith,
+  } = calculateInitialStats(draft.vocation, draft.tribe, draft.attributes);
 
   useEffect(() => {
     setStats({ pv: initialPv, ca: initialCa, faith: initialFaith });
