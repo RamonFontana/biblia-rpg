@@ -1,6 +1,5 @@
 // CARACTERIZAÇÃO: regras de Descanso Curto e Longo, extraídas de SessionRestControls sem alteração.
-// Decisões: ROADMAP.md, Onda 2 (bloco B): Longo 1 por dia (hoje a cada 2 dias); o Curto recarrega
-// habilidades mesmo sem cura; o 1d4 de Fé é digitado pelo Mestre (ADR 0001); Sustento.
+// Decisões: ROADMAP.md, Onda 2 (bloco B): o 1d4 de Fé é digitado pelo Mestre (ADR 0001); Sustento.
 // Termos: CONTEXT.md (Descanso Curto, Descanso Longo, Sustento).
 import { getMaxPv, type VitalsLike } from './vitalsUtils';
 
@@ -18,14 +17,9 @@ export function canTakeShortRest(shortRestsTaken: number): boolean {
   return shortRestsTaken < MAX_SHORT_RESTS_PER_DAY;
 }
 
-/** Hoje exige 2 dias de jogo desde o último Descanso Longo. */
+/** 1 por dia de jogo: só a partir do dia seguinte ao último Descanso Longo. */
 export function canTakeLongRest(currentDay: number, lastLongRestDay: number): boolean {
-  return currentDay - lastLongRestDay >= 2;
-}
-
-/** O Descanso Curto só cura e recarrega habilidades quando o Mestre informa mais de 0 PV. */
-export function shouldApplyShortRestToCharacters(healedPv: number): boolean {
-  return healedPv > 0;
+  return currentDay > lastLongRestDay;
 }
 
 /** Há Sacerdote ou Sábio entre os jogadores (compara o texto, com maiúscula, como o app faz). */

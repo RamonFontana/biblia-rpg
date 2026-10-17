@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import type { EquipmentItem } from '../../character-creation/types';
 import { ITEMS_DB } from '@/data/itemsDb';
 
-const VOCATION_KIT_ITEMS: Record<string, any[]> = {
+export const VOCATION_KIT_ITEMS: Record<string, any[]> = {
   Guerreiro: [
     { name: 'Espada Curta (Ferro)', category: 'Marcial', is_consumable: false, type: 'Arma' },
     { name: 'Couro Cru', category: 'Leve', is_consumable: false, type: 'Armadura' },
@@ -22,6 +22,7 @@ const VOCATION_KIT_ITEMS: Record<string, any[]> = {
     { name: 'Faca/Adaga de Bronze', category: 'Simples', is_consumable: false, type: 'Arma' },
     { name: 'Couro Cru', category: 'Leve', is_consumable: false, type: 'Armadura' },
     { name: 'Corda de Cânhamo (15m)', category: 'Todas', is_consumable: false, type: 'Utilidade' },
+    { name: 'Flecha', category: 'Todas', is_consumable: true, type: 'Consumível', quantity: 20 },
   ],
   Batedor: [
     {

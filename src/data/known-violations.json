@@ -1,17 +1,3 @@
 {
-  "violations": [
-    "item:chapeu_couro:unknown-condition:blinded",
-    "item:cota_escamas:unknown-condition:bleeding",
-    "item:cota_malha:unknown-condition:bleeding",
-    "item:couro_batido:unknown-condition:grappled",
-    "item:elmo_bronze:unknown-condition:blinded",
-    "item:elmo_bronze:unknown-condition:stunned",
-    "item:escudo:unknown-condition:restrained",
-    "item:lorica:unknown-condition:bleeding",
-    "item:lorica:unknown-condition:stunned",
-    "item:peitoral_bronze:unknown-condition:bleeding",
-    "item:peitoral_bronze:unknown-condition:poisoned",
-    "item:tunica:unknown-condition:poisoned",
-    "item:tunica_sagrada:unknown-condition:frightened"
-  ]
+  "violations": []
 }

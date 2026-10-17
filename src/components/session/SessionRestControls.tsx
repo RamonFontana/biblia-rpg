@@ -9,7 +9,6 @@ import {
   canTakeLongRest,
   canTakeShortRest,
   hasPriestInGroup,
-  shouldApplyShortRestToCharacters,
 } from '@/lib/rest';
 import { characterVitalsService } from '@/services/characterVitalsService';
 
@@ -64,36 +63,34 @@ export function SessionRestControls({
 
       if (sessionError) throw sessionError;
 
-      // 2. Update characters if amount > 0
-      if (shouldApplyShortRestToCharacters(amount)) {
-        const allCharacters = [
-          ...playerCharacters
-            .filter((pc) => pc.character && !pc.character.is_enemy)
-            .map((pc) => pc.character),
-          ...npcs.filter((npc) => !npc.is_enemy),
-        ];
+      // 2. Heal (possibly 0 PV) and recharge short-rest abilities for everyone
+      const allCharacters = [
+        ...playerCharacters
+          .filter((pc) => pc.character && !pc.character.is_enemy)
+          .map((pc) => pc.character),
+        ...npcs.filter((npc) => !npc.is_enemy),
+      ];
 
-        const updates = allCharacters.map((char) => {
-          const currentStats = char.stats || {};
+      const updates = allCharacters.map((char) => {
+        const currentStats = char.stats || {};
 
-          // Calculate recharged abilities
-          const currentSkills = char.skills || {};
-          const abilityUses = currentSkills.ability_uses || {};
-          const newAbilityUses = calculateRechargedAbilities(abilityUses, 'short_rest');
+        // Calculate recharged abilities
+        const currentSkills = char.skills || {};
+        const abilityUses = currentSkills.ability_uses || {};
+        const newAbilityUses = calculateRechargedAbilities(abilityUses, 'short_rest');
 
-          const newSkills = {
-            ...currentSkills,
-            ability_uses: newAbilityUses,
-          };
+        const newSkills = {
+          ...currentSkills,
+          ability_uses: newAbilityUses,
+        };
 
-          return characterVitalsService.healCurrentPv('characters', char.id, currentStats, amount, {
-            skills: newSkills,
-          });
+        return characterVitalsService.healCurrentPv('characters', char.id, currentStats, amount, {
+          skills: newSkills,
         });
+      });
 
-        await Promise.all(updates);
-        if (onRestCompleted) onRestCompleted();
-      }
+      await Promise.all(updates);
+      if (onRestCompleted) onRestCompleted();
 
       alert(`Descanso Curto concluído! Todos recuperaram ${amount} PV.`);
     } catch (error) {
@@ -195,7 +192,7 @@ export function SessionRestControls({
           disabled={!canLongRest || isResting}
           variant="outline"
           className="bg-indigo-900/20 text-indigo-400 border-indigo-800 hover:bg-indigo-900/40 hover:text-indigo-300"
-          title={!canLongRest ? 'Necessário aguardar 2 dias de jogo.' : ''}
+          title={!canLongRest ? 'Só um Descanso Longo por dia de jogo.' : ''}
         >
           {isResting ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -207,7 +204,7 @@ export function SessionRestControls({
       </div>
       {!canLongRest && (
         <p className="text-xs text-stone-500 mt-2">
-          Descanso longo estará disponível a partir do dia {lastLongRestDay + 2}.
+          Descanso longo estará disponível a partir do dia {lastLongRestDay + 1}.
         </p>
       )}
     </div>

@@ -296,14 +296,27 @@ describe('endCombat', () => {
     });
   });
 
-  it('BUG conhecido: PV 0 ao fim do combate marca o personagem como Morto', () => {
-    // Decisão do autor: com PV 0 o personagem fica Morrendo e faz Testes de Morte, mesmo depois
-    // do combate. Hoje is_dead vira true na hora (via deriveDeathState).
-    return run([downedPlayer]).then(() => {
-      expect(writeOf('char-downed')!.payload).toMatchObject({
-        stats: { current_pv: 0, status: 'Morto' },
-        is_dead: true,
-      });
+  it('PV 0 ao fim do combate deixa o personagem Morrendo, sem matar', async () => {
+    // Decisão do autor: o personagem continua os Testes de Morte depois do combate.
+    await run([downedPlayer]);
+    expect(writeOf('char-downed')!.payload).toEqual({
+      stats: { pv: 10, current_pv: 0, status: 'Morrendo' },
+      conditions: [],
+      is_dead: false,
+    });
+  });
+
+  it('o fim do combate não mexe nos Testes de Morte já feitos', async () => {
+    await run([downedPlayer]);
+    const keys = Object.keys(writeOf('char-downed')!.payload as object);
+    expect(keys.sort()).toEqual(['conditions', 'is_dead', 'stats']);
+  });
+
+  it('inimigo com PV 0 morre ao fim do combate', async () => {
+    await run([deadEnemy]);
+    expect(writeOf('char-enemy')!.payload).toMatchObject({
+      stats: { current_pv: 0, status: 'Morto' },
+      is_dead: true,
     });
   });
 

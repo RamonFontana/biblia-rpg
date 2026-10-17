@@ -10,7 +10,7 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   sangrando: {
     id: 'sangrando',
     name: 'Sangrando',
-    description: 'Sofre dano no início de cada turno e tem desvantagem em testes de Vigor.',
+    description: 'Sofre dano no final de cada turno e tem desvantagem em testes de Vigor.',
     color: 'bg-red-500',
   },
   envenenado: {
@@ -46,11 +46,30 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
     description: 'Deslocamento se torna 0.',
     color: 'bg-stone-500',
   },
-  assustado: {
-    id: 'assustado',
-    name: 'Assustado',
-    description:
-      'Desvantagem em testes de atributo e ataques enquanto a fonte do medo estiver visível.',
+  amedrontado: {
+    id: 'amedrontado',
+    name: 'Amedrontado',
+    description: 'Desvantagem em testes e ataques enquanto a fonte do medo estiver visível.',
     color: 'bg-purple-500',
+  },
+  impedido: {
+    id: 'impedido',
+    name: 'Impedido',
+    description: 'Não se desloca e ataca com desvantagem.',
+    color: 'bg-teal-600',
+  },
+  paralisado: {
+    id: 'paralisado',
+    name: 'Paralisado',
+    description:
+      'Não age nem se move, falha automaticamente em TR de Força e Destreza, e ataques contra ele têm vantagem.',
+    color: 'bg-pink-600',
+  },
+  exausto: {
+    id: 'exausto',
+    name: 'Exausto',
+    description:
+      'Desvantagem em testes de atributo e deslocamento pela metade. Sai com um Descanso Longo.',
+    color: 'bg-neutral-500',
   },
 };

@@ -1,8 +1,14 @@
 // CARACTERIZAÇÃO: fixa o comportamento ATUAL dos Testes de Morte.
-// Decisões: ROADMAP.md, Onda 2: Morrendo continua depois do combate (o fim do combate mata hoje).
+// Decisões: ROADMAP.md, Onda 2: Morrendo continua depois do combate; a sessão não encerra com
+// alguém Morrendo (o Mestre resolve os Testes de Morte antes).
 // Termos: CONTEXT.md (Teste de Morte, Morrendo, Estável, Morto).
 import { describe, expect, it } from 'vitest';
-import { addDeathSaveFailure, addDeathSaveSuccess, getDeathSaveOutcome } from './deathSaves';
+import {
+  addDeathSaveFailure,
+  addDeathSaveSuccess,
+  getDeathSaveOutcome,
+  isDying,
+} from './deathSaves';
 
 describe('getDeathSaveOutcome: o que o d20 causa', () => {
   it('1 natural conta duas falhas', () => {
@@ -59,5 +65,43 @@ describe('contadores de sucessos e falhas', () => {
 
   it('um 1 natural sozinho não mata; só com uma falha prévia', () => {
     expect(addDeathSaveFailure(0, 2).isDead).toBe(false);
+  });
+});
+
+describe('isDying: quem impede o fim da sessão', () => {
+  const char = (over: Record<string, unknown> = {}) => ({
+    stats: { pv: 10, current_pv: 0 },
+    is_dead: false,
+    is_stable: false,
+    is_enemy: false,
+    is_deleted: false,
+    ...over,
+  });
+
+  it('0 PV, sem estar Estável nem Morto, é Morrendo', () => {
+    expect(isDying(char())).toBe(true);
+    expect(isDying(char({ stats: { pv: 10, current_pv: -3 } }))).toBe(true);
+  });
+
+  it('com PV acima de 0 não está Morrendo', () => {
+    expect(isDying(char({ stats: { pv: 10, current_pv: 1 } }))).toBe(false);
+  });
+
+  it('Estável ou Morto já não faz Testes de Morte', () => {
+    expect(isDying(char({ is_stable: true }))).toBe(false);
+    expect(isDying(char({ is_dead: true }))).toBe(false);
+  });
+
+  it('inimigo com 0 PV morre, não fica Morrendo', () => {
+    expect(isDying(char({ is_enemy: true }))).toBe(false);
+  });
+
+  it('ficha apagada não conta', () => {
+    expect(isDying(char({ is_deleted: true }))).toBe(false);
+  });
+
+  it('ficha sem PV gravado conta como viva', () => {
+    expect(isDying(char({ stats: undefined }))).toBe(false);
+    expect(isDying(char({ stats: {} }))).toBe(false);
   });
 });

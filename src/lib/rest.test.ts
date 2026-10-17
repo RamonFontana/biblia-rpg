@@ -8,7 +8,6 @@ import {
   canTakeLongRest,
   canTakeShortRest,
   hasPriestInGroup,
-  shouldApplyShortRestToCharacters,
 } from './rest';
 
 describe('Descanso Curto', () => {
@@ -17,23 +16,16 @@ describe('Descanso Curto', () => {
     expect(canTakeShortRest(1)).toBe(true);
     expect(canTakeShortRest(2)).toBe(false);
   });
-
-  it('BUG conhecido: sem informar PV recuperados, nem cura nem recarrega habilidades', () => {
-    // O Mestre digita quantos PV o grupo recupera; com 0 (ou em branco) nada é aplicado,
-    // inclusive a recarga das habilidades de Descanso Curto.
-    expect(shouldApplyShortRestToCharacters(0)).toBe(false);
-    expect(shouldApplyShortRestToCharacters(1)).toBe(true);
-  });
 });
 
 describe('Descanso Longo: quando é permitido', () => {
-  it('exige 2 dias de jogo desde o último (decisão: passa a ser 1 por dia)', () => {
-    expect(canTakeLongRest(2, 1)).toBe(false);
+  it('é 1 por dia: só a partir do dia seguinte ao último', () => {
+    expect(canTakeLongRest(2, 1)).toBe(true);
     expect(canTakeLongRest(3, 1)).toBe(true);
-    expect(canTakeLongRest(5, 3)).toBe(true);
+    expect(canTakeLongRest(5, 5)).toBe(false);
   });
 
-  it('no primeiro dia, com o padrão do banco (dia 1, último no dia 1), não é permitido', () => {
+  it('no primeiro dia, com o padrão do banco (dia 1, último no dia 1), ainda não é permitido', () => {
     expect(canTakeLongRest(1, 1)).toBe(false);
   });
 });

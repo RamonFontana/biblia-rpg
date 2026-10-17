@@ -22,7 +22,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage'],
     slot: 'body',
     level: 1,
-    conditionResistances: ['poisoned'],
+    conditionResistances: ['envenenado'],
   },
   {
     id: 'tunica_sagrada',
@@ -34,7 +34,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'CA: 11 + Des. Abençoada contra medos.',
     slot: 'body',
     level: 2,
-    conditionResistances: ['frightened'],
+    conditionResistances: ['amedrontado'],
   },
   {
     id: 'couro_cru',
@@ -57,7 +57,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'CA: 12 + Des. Armadura leve reforçada',
     slot: 'body',
     level: 2,
-    conditionResistances: ['grappled'],
+    conditionResistances: ['agarrado'],
   },
   {
     id: 'cota_escamas',
@@ -70,7 +70,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage'],
     slot: 'body',
     level: 2,
-    conditionResistances: ['bleeding'],
+    conditionResistances: ['sangrando'],
   },
   {
     id: 'peitoral_bronze',
@@ -82,7 +82,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'CA: 14 + Des (máx 2). Proteção superior no peito',
     slot: 'body',
     level: 3,
-    conditionResistances: ['bleeding', 'poisoned'],
+    conditionResistances: ['sangrando', 'envenenado'],
   },
   {
     id: 'cota_malha',
@@ -95,7 +95,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage'],
     slot: 'body',
     level: 3,
-    conditionResistances: ['bleeding'],
+    conditionResistances: ['sangrando'],
   },
   {
     id: 'lorica',
@@ -108,7 +108,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage', 'heavy'],
     slot: 'body',
     level: 4,
-    conditionResistances: ['bleeding', 'stunned'],
+    conditionResistances: ['sangrando', 'atordoado'],
   },
 
   // Elmos
@@ -122,7 +122,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'Proteção básica para a cabeça. CA +1',
     slot: 'head',
     level: 1,
-    conditionResistances: ['blinded'],
+    conditionResistances: ['cego'],
   },
   {
     id: 'elmo_bronze',
@@ -135,7 +135,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['perception_disadvantage'],
     slot: 'head',
     level: 3,
-    conditionResistances: ['stunned', 'blinded'],
+    conditionResistances: ['atordoado', 'cego'],
   },
 
   {
@@ -148,7 +148,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: '+2 CA. Ocupa uma mão',
     slot: 'offHand',
     level: 2,
-    conditionResistances: ['restrained'],
+    conditionResistances: ['impedido'],
   },
 
   // Armas
@@ -289,7 +289,7 @@ export const ITEMS_DB: ShopItem[] = [
     name: 'Odre (Água)',
     type: 'Consumível',
     cost: 1,
-    description: 'Cura 2 PV. Sobrevivência no deserto (1 dia)',
+    description: 'Sustento: água de 1 dia, consumida no Descanso Longo.',
     category: 'Todas',
   },
   {
@@ -313,7 +313,7 @@ export const ITEMS_DB: ShopItem[] = [
     name: 'Ração de Viagem',
     type: 'Consumível',
     cost: 1,
-    description: 'Cura 1d4 PV. 1 dia de nutrição',
+    description: 'Sustento: pão seco, tâmaras e queijo duro, consumida no Descanso Longo.',
     category: 'Todas',
   },
   {
@@ -385,31 +385,31 @@ export const KITS_DB: Record<
     name: 'Kit Básico de Guerreiro',
     cost: 50,
     leftover: 5,
-    markdown: `### Guerreiro\n- Espada curta de bronze (1d6 cortante) ou Lança (1d6 perfurante).\n- Armadura de couro fervido (CA 11 + Mod Des) e um escudo de madeira (+2 CA).\n- 5 rações de viagem e um cantil de água.\n- Uma faca de osso (1d4 perfurante) e 5 Shekels de prata no bolso.`,
+    markdown: `### Guerreiro\n- Espada curta de ferro (1d6 cortante).\n- Armadura de couro cru (CA 11 + Mod Des) e um escudo de madeira (+2 CA).\n- 5 rações de viagem e um odre de água (o Sustento dos primeiros Descansos Longos).\n- Uma faca de bronze (1d4 perfurante) e 5 Shekels de prata no bolso.`,
   },
   Caçador: {
     name: 'Kit Básico de Caçador/Nômade',
     cost: 50,
     leftover: 10,
-    markdown: `### Caçador/Nômade\n- Arco curto (1d6 perfurante) com aljava e Flechas para arcos OU Funda (1d4 concussão) com Pedras para funda.\n- Adaga de bronze (1d4 perfurante).\n- Armadura de couro leve (CA 11 + Mod Des).\n- Um kit de armadilhas, corda de cânhamo (15m), e 10 Shekels de prata.`,
+    markdown: `### Caçador/Nômade\n- Arco curto (1d6 perfurante) com 20 flechas.\n- Faca de bronze (1d4 perfurante).\n- Armadura de couro cru (CA 11 + Mod Des).\n- Corda de cânhamo (15m) e 10 Shekels de prata no bolso.`,
   },
   Batedor: {
     name: 'Kit Básico de Batedor',
     cost: 50,
     leftover: 8,
-    markdown: `### Batedor\n- Duas adagas de bronze (1d4 perfurante).\n- Armadura de couro leve (CA 11 + Mod Des).\n- Corda de cânhamo (15m) e um gancho.\n- Kit de ferramentas de ladrão (gazúas) e 8 Shekels de prata no bolso.`,
+    markdown: `### Batedor\n- Duas facas de bronze (1d4 perfurante).\n- Armadura de couro cru (CA 11 + Mod Des).\n- Corda de cânhamo (15m) e 8 Shekels de prata no bolso.`,
   },
   Sacerdote: {
     name: 'Kit Básico de Sacerdote/Sábio',
     cost: 50,
     leftover: 12,
-    markdown: `### Sacerdote / Sábio\n- Cajado ou Cetro cerimonial (1d6 concussão).\n- Veste de linho fino com o Éfode.\n- Óleo de unção e incenso.\n- Instrumento musical (ex: harpa, shofar ou tamborim).\n- 12 Shekels de prata (representando dízimos iniciais).`,
+    markdown: `### Sacerdote / Sábio\nOs dois ofícios usam o mesmo pacote.\n- Cajado de pastor (1d6 concussão).\n- 3 Bálsamos curativos (cada um cura 1d4 PV).\n- 12 Shekels de prata no bolso (representando dízimos iniciais).\n- Itens de cena, sem efeito de regra: veste de linho fino com o Éfode, óleo de unção e incenso, instrumento musical (harpa, shofar ou tamborim) para o Sacerdote; manto de linho grosso, sandálias, pergaminhos, tinta e pena para o Sábio.`,
   },
   Sábio: {
     name: 'Kit Básico de Sacerdote/Sábio',
     cost: 50,
     leftover: 12,
-    markdown: `### Sacerdote / Sábio\n- Cajado ou Cetro cerimonial (1d6 concussão).\n- Veste de linho fino com o Éfode.\n- Óleo de unção e incenso.\n- Instrumento musical (ex: harpa, shofar ou tamborim).\n- 12 Shekels de prata (representando dízimos iniciais).`,
+    markdown: `### Sacerdote / Sábio\nOs dois ofícios usam o mesmo pacote.\n- Cajado de pastor (1d6 concussão).\n- 3 Bálsamos curativos (cada um cura 1d4 PV).\n- 12 Shekels de prata no bolso (representando dízimos iniciais).\n- Itens de cena, sem efeito de regra: veste de linho fino com o Éfode, óleo de unção e incenso, instrumento musical (harpa, shofar ou tamborim) para o Sacerdote; manto de linho grosso, sandálias, pergaminhos, tinta e pena para o Sábio.`,
   },
 };
 

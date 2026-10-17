@@ -49,14 +49,11 @@ describe('getAbilitiesForCharacter: filtro por nível e origem', () => {
     expect(list.some((a) => a.sourceType === 'tribe')).toBe(false);
   });
 
-  it('GAP conhecido: a Vocação "Sábio" não tem nenhuma habilidade (decisão: alias de Sacerdote)', () => {
-    const sabio = getAbilitiesForCharacter('Levi', 'Sábio', 20, { tribe: 'A', vocation: 'A' });
-    expect(sabio.some((a) => a.sourceType === 'vocation')).toBe(false);
-    const sacerdote = getAbilitiesForCharacter('Levi', 'Sacerdote', 20, {
-      tribe: 'A',
-      vocation: 'A',
-    });
+  it('"Sábio" é alias de Sacerdote: tem as mesmas habilidades', () => {
+    const choices = { tribe: 'A', vocation: 'A' } as const;
+    const sacerdote = getAbilitiesForCharacter('Levi', 'Sacerdote', 20, choices);
     expect(sacerdote.some((a) => a.sourceType === 'vocation')).toBe(true);
+    expect(ids(getAbilitiesForCharacter('Levi', 'Sábio', 20, choices))).toEqual(ids(sacerdote));
   });
 });
 
