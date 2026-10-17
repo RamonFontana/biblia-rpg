@@ -254,23 +254,27 @@ Cada regra foi extraída sem mudar comportamento (commit `refactor:`) e fixada e
 | Munição (RNG injetável) | `src/lib/ammo.ts` | `ammo.test.ts` |
 | PV, CA e Fé iniciais; geração de atributos (RNG injetável) | `character-creation/utils/` | `initialStats.test.ts`, `attributeGeneration.test.ts` |
 | Lista de Condições (mesclar, remover, tique, limpeza) | `conditionsService` (puro, com mock do Supabase) | `conditionsService.test.ts` |
+| Consumíveis: cura, Qualidade, Fé | `src/lib/consumables.ts` | `consumables.test.ts` |
+| Criação de NPC jogável e de inimigo (chaves inconsistentes) | `src/lib/sessionEntities.ts` | `sessionEntities.test.ts` |
+| Sinal do Modificador de Fé, aprovação de Teste comum, perda de Fé | `src/lib/sessionTests.ts` | `sessionTests.test.ts` |
+| Nível do personagem e teto 20 | `utils/levelUp.ts` | `levelUp.test.ts` |
 | Morte por PV ≤ 0 ao fim do combate | `vitalsUtils.deriveDeathState` | já coberto em `vitalsUtils.test.ts` (o teste "marks dead when hp drops to 0" é o comportamento a mudar) |
 
-**Ainda sem teste de caracterização** (próxima fatia da Onda 2)
-- Consumíveis: `useUpdateNPCInventory` (`heal`, `restore_faith`) e o `heal_dice` que é exibido e nunca rolado (`InventoryList`).
-- Perda de 1d6 de Fé na falha e o nome `faithPenalty` com dois significados (`sessionTestService`).
-- Dificuldade do Mestre como número com sinal (`MasterTestDialog`, Misericórdia/Punição).
-- Criação de NPC jogável e de inimigo (`sessionService`): chaves `strength/dexterity` e `stats.armor_class` que nenhum leitor usa.
-- Encerramento da sessão: `pending_level_up` e a morte por PV ≤ 0 (`sessionService.endSession`).
-- Tique de condições por rodada e fim de combate no `combatStore`; troca de itens (`tradeService`).
+**Ainda sem teste de caracterização**
+- Tique de condições por rodada e fim de combate no `combatStore` (mistura Supabase, realtime e estado); troca de itens (`tradeService`).
 - O máximo de Fé com 4 valores diferentes e o `current_faith ?? faith ?? 0` repetido 16 vezes (será `getCurrentFaith` na Onda 3).
+- Encerramento da sessão (`sessionService.endSession`): cancela trocas, apaga NPCs e inimigos, concede `pending_level_up` e finaliza. **Não mata ninguém com PV ≤ 0**: a morte por PV ≤ 0 acontece no fim do *combate* (`combatStore.endCombat`, via `deriveDeathState`). A regra "a sessão não encerra com alguém Morrendo" ainda não existe no código.
 
 **Por que a correção do Teste de Fé não entrou agora**: o serviço que grava `is_approved` não conhece a penalidade de Item Profano (quem a calcula é a tela, lendo os itens). Unificar exige que a camada de dados leia os itens do personagem, então a correção nasce junto com `src/domain/faith` na Onda 3. O mesmo vale para a resistência de armadura (depende do vocabulário de condições e de ler `items.condition_resistances` do banco).
 
 **Achados novos desta etapa**
-- A lista de perícias tem **Arcanismo** (`SKILLS_LIST`), num cenário que proíbe magia arcana. Decidir se sai ou se vira outra perícia (ex.: Conhecimento do Povo). Não mexi.
-- O `LevelUpWizard` mostra "+7 PV" no passo de PV e grava 11 quando a CON sobe; o jogador não vê o retroativo antes de confirmar.
+- ~~A lista de perícias tem **Arcanismo**~~ Removida (decisão do autor, 2026-10-17). O gate de dados agora também falha se uma Vocação listar uma perícia que não existe.
+- ~~O `LevelUpWizard` mostrava o ganho de PV com o modificador antigo~~ Corrigido: o passo de PV agora vem depois da escolha de atributo e mostra o valor que será gravado, com o retroativo.
 - `calculateModifier` tinha 4 cópias; 2 já foram unificadas (`LevelUpWizard`, `InitialStats`). Resta uma, em `EnemySheet.tsx:85`.
+
+#### Direção registrada pelo autor (2026-10-17, ainda não decidida em detalhe)
+- **Dados de jogo no banco**: itens, habilidades e condições estão hoje espalhados entre arquivos (`itemsDb.ts`, `abilities.ts`, `conditions.ts`) e o banco (`items`), com vocabulários diferentes. O autor sugere migrar **tudo para o banco, populado por seeds**. Isso muda o plano da Onda 3 (hoje: `src/content/` em código, validado por zod). A decidir em um `/grill-with-docs` antes da Onda 3, pesando: o gate de validação precisa continuar rodando sobre os seeds no repo; os IDs de habilidade (chaves em `ability_uses`) e os UUIDs de itens precisam ser estáveis; a resistência de armadura só passa a funcionar quando o catálogo e o banco falarem a mesma língua. Provável ADR.
+- **Detalhamento da rolagem**: deve mostrar também o dado, para saber quanto saiu no d20. Exige gravar o valor do dado (hoje só o total é gravado em `session_test_results.result_value`), ou seja, uma coluna nova no banco. Aguarda aprovação da migração (ver pendências).
 
 #### Decisões do grill (2026-10-17)
 Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
