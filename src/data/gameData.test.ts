@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { characterSchema } from '@/features/character-creation/schemas/characterSchema';
+import { SKILLS_LIST } from '@/features/character-management/utils/characterMath';
 import { VOCATION_RULES } from '@/features/character-management/utils/rules/vocations';
 import { ABILITIES } from './abilities';
 import { CONDITIONS } from './conditions';
@@ -147,6 +148,14 @@ function collectViolations(): string[] {
     violations.push(`ability:${id}:duplicate-id`);
 
   const vocationIds = new Set(Object.keys(VOCATION_RULES).map(normalize));
+
+  // Vocações: toda perícia elegível existe na lista de perícias.
+  const skillIds = new Set<string>(SKILLS_LIST.map((s) => s.id));
+  for (const [name, rules] of Object.entries(VOCATION_RULES)) {
+    for (const skillId of rules.eligibleSkills) {
+      if (!skillIds.has(skillId)) violations.push(`vocation:${name}:unknown-skill:${skillId}`);
+    }
+  }
 
   for (const ability of ABILITIES) {
     const p = `ability:${ability.id}`;
