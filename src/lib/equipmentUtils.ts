@@ -114,6 +114,25 @@ export function checkWeaponProficiency(weapon: any, vocation: string): boolean {
   return true;
 }
 
+/**
+ * CARACTERIZAÇÃO: fórmula de CA do cartão de slot (EquipmentSlots), extraída sem alteração.
+ * Ela SOMA acBonus, ca e (armorClass - 10), enquanto getCombatStats usa só um dos três
+ * (precedência acBonus > ca > armorClass). Um item com mais de um campo mostra mais CA no
+ * slot do que entra no total da ficha. Decisão: ROADMAP, Onda 2 (CA com teto de DES) e Onda 3.
+ */
+export function getSlotAcBonus(
+  effects: { acBonus?: unknown; ca?: unknown; armorClass?: unknown },
+  level?: number,
+) {
+  const { acBonus, ca, armorClass } = effects;
+  const baseCaBonus =
+    (acBonus ? Number(acBonus) : 0) +
+    (ca ? Number(ca) : 0) +
+    (armorClass ? Math.max(0, Number(armorClass) - 10) : 0);
+  const levelBonus = baseCaBonus > 0 ? (level || 1) - 1 : 0;
+  return { baseCaBonus, levelBonus, totalCaBonus: baseCaBonus + levelBonus };
+}
+
 export function getCombatStats(character: any) {
   const { stats, equipment, character_items: inventoryItems = [] } = character || {};
   const baseAc = Number(stats?.ca) || 10;

@@ -1,6 +1,6 @@
 import { Shield, Sword, User } from 'lucide-react';
 import type { CharacterEquipment } from '@/types/combat';
-import { checkWeaponProficiency } from '@/lib/equipmentUtils';
+import { checkWeaponProficiency, getSlotAcBonus } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/data/itemsDb';
 
 interface EquipmentSlotsProps {
@@ -56,13 +56,8 @@ export function EquipmentSlots({
 
     if (Object.keys(effects).length === 0) return null;
 
-    const { damageDie, acBonus, ca, armorClass } = effects;
-    const baseCaBonus =
-      (acBonus ? Number(acBonus) : 0) +
-      (ca ? Number(ca) : 0) +
-      (armorClass ? Math.max(0, Number(armorClass) - 10) : 0);
-    const levelBonus = baseCaBonus > 0 ? (item.level || 1) - 1 : 0;
-    const totalCaBonus = baseCaBonus + levelBonus;
+    const { damageDie } = effects;
+    const { baseCaBonus, levelBonus, totalCaBonus } = getSlotAcBonus(effects, item.level);
 
     return (
       <div className="flex gap-2 mt-1 text-[11px] font-medium">
