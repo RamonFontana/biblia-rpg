@@ -1298,6 +1298,7 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_event_trigger WHERE evtname = 'ensure_rls') THEN
     CREATE EVENT TRIGGER "ensure_rls" ON ddl_command_end
+      WHEN TAG IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
       EXECUTE FUNCTION "public"."rls_auto_enable"();
   END IF;
 END
