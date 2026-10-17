@@ -6,7 +6,7 @@
 ## Status
 | Onda | Estado |
 |---|---|
-| 1 — Fundação | em andamento (branch `chore/wave-1-foundation`) |
+| 1 — Fundação | passos 1–12 feitos (branch `chore/wave-1-foundation`). Falta: `/setup-matt-pocock-skills` (passo 13), PR com CI verde e proteção da `main` |
 | 2 — Rede de segurança | pendente |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
