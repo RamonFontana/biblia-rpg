@@ -14,7 +14,7 @@ Neste cenário, a possessão e o tormento espiritual são ameaças mecânicas di
 
 ## Novas Habilidades (Passivas)
 
-- **Imunidade Psicológica**: O endemoniado é **imune** às condições Encantado e Amedrontado.
+- **Imunidade Psicológica**: O endemoniado é **imune** à condição Amedrontado.
 - **Fúria Desumana**: O endemoniado ignora dores mortais. Quando cair a 0 Pontos de Vida, ele faz um Teste de Constituição (CD 10). Se passar, ele sobrevive com 1 Ponto de Vida. O CD aumenta em 5 a cada uso até ele descansar ou ser exorcizado.
 - **Vulnerabilidade Espiritual**: O endemoniado possui vulnerabilidade a ataques ou rituais baseados no **Sistema de Fé** (como orações exorcistas de Sacerdotes). Caso um personagem gaste Pontos de Fé para invocar repreensão, o demônio sofre Dano Espiritual diretamente ou é forçado a fazer um Teste de Resistência de Carisma para não fugir/abandonar o corpo.
 
