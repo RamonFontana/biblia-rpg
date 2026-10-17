@@ -1,0 +1,9 @@
+dist
+coverage
+node_modules
+package-lock.json
+src/types/database.types.ts
+.claude/skills
+supabase/*.sql
+*.md
+.impeccable
