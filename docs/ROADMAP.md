@@ -311,12 +311,12 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 
 **B. Correções de comportamento no código** (sempre depois do teste de caracterização)
 - Teste de Fé numa função única, incluindo a penalidade do Item Profano. Perda de 1d6 só em Tentação, Testemunho e Pedido Egoísta.
-- `endCombat` deixa o personagem Morrendo em vez de matar (`vitalsUtils.ts:43`, `characterVitalsService.ts:69`). O fim da sessão também.
-- Descanso Longo 1 por dia (hoje a cada 2). Descanso Curto recarrega habilidades mesmo sem cura (`SessionRestControls.tsx:53`).
-- `conditionResistances` dos itens usam os IDs em português do catálogo (zera `known-violations.json`). O ID `assustado` vira `amedrontado` com migração de dados (Onda 3). Condições Impedido, Paralisado e Exausto entram no catálogo.
-- Sangrando: descrição passa a dizer final do turno (`conditions.ts:13`).
-- "Sábio" é alias de Sacerdote; Nobre e `tribeSkills.ts` são removidos.
-- Itens: textos de Odre e Ração perdem "Cura"; Caçador recebe 20 flechas.
+- ~~`endCombat` deixa o personagem Morrendo em vez de matar.~~ FEITO: inimigo com PV 0 morre; jogador e NPC com PV 0 ficam Morrendo (`stats.status = 'Morrendo'`, `is_dead` intacto, Testes de Morte preservados). **Falta o fim da sessão:** hoje `endSession` não olha ninguém Morrendo; a regra "a sessão não encerra com alguém Morrendo" precisa de decisão de UI (bloquear ou só avisar o Mestre).
+- ~~Descanso Longo 1 por dia. Descanso Curto recarrega habilidades mesmo sem cura.~~ FEITO. Nota: o banco cria a sessão com `last_long_rest_day = 1`, então no dia 1 o Longo continua indisponível (mesmo comportamento de antes).
+- ~~`conditionResistances` do catálogo em português; `assustado` vira `amedrontado`; Impedido, Paralisado e Exausto entram.~~ FEITO no catálogo (`known-violations.json` está vazio; nenhum dado gravado usava `assustado`). **Falta, na Onda 3:** 10 das 35 linhas da tabela `items` no banco ainda guardam as resistências em inglês, e os seeds antigos (`supabase/seed_items*.sql`) também. Corrigir junto da decisão de mover itens para o banco com seeds.
+- ~~Sangrando: descrição diz final do turno.~~ FEITO (só a descrição; o dano automático continua não existindo).
+- ~~"Sábio" é alias de Sacerdote; Nobre e `tribeSkills.ts` são removidos.~~ FEITO (`canonicalVocation` em `src/lib/vocation.ts`, usado nas regras de Vocação e nas habilidades).
+- ~~Itens: textos de Odre e Ração perdem "Cura"; Caçador recebe 20 flechas; textos dos kits iguais ao doc.~~ FEITO no catálogo e nos kits do app. As linhas de `items` já gravadas no banco (efeitos de cura de Odre e Ração) não foram tocadas.
 - **Precisam de lista de fichas afetadas antes de aplicar:** CA com teto de DES (média +2, pesada sem DES, aviso de FOR em vez de bloqueio) e proficiências de armadura conforme os docs de vocação.
 - Recuperação de munição segue automática (50%); o 1d4 de Fé do Descanso Longo é digitado pelo Mestre; rolagens de jogador são digitadas, com Rolagem Virtual opcional (ADR 0001).
 
@@ -328,8 +328,7 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 
 **Sincronizar o código com os docs já corrigidos** (junto do bloco B, Onda 3, ao migrar `abilities.ts` para `src/content/`)
 - `abilities.ts`: efeito de Zebulom nível 8 (sem Encantado; vantagem em Testes de Fé de Tentação), de Aser níveis 1 e 12 (refeição sem ração; Exausto no lugar de "exaustão") e de Sacerdote nível 18 (sem Encantado).
-- `itemsDb.ts`: descrições de Odre e Ração sem "Cura"; adicionar 20 Flechas ao kit do Caçador (`VOCATION_KIT_ITEMS`).
-- `KITS_DB`: textos dos kits iguais aos do `criacao-de-personagem.md`; kit do Sábio é o do Sacerdote.
+- ~~`itemsDb.ts`: descrições de Odre e Ração; 20 Flechas no kit do Caçador; textos de `KITS_DB`.~~ FEITO.
 - `bestiario`: o endemoniado não tem mais imunidade a Encantado (campo de condição no preset, se existir).
 
 **Pendências (nenhuma decisão ainda)**
