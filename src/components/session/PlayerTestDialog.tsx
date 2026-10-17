@@ -8,6 +8,7 @@ import {
   getTestModifiers,
   getTestBreakdown,
 } from '@/features/character-management/utils/characterMath';
+import { isFaithTestFailedOnPlayerScreen } from '@/lib/faithTest';
 
 interface PlayerTestDialogProps {
   isOpen: boolean;
@@ -205,12 +206,15 @@ export function PlayerTestDialog({
         .eq('id', testResult.character_id)
         .single();
       const stats = charData?.stats as Record<string, any> | undefined;
-      let currentFaith = stats?.current_faith ?? stats?.faith ?? 0;
-      currentFaith += faithPenalty; // faithPenalty is usually negative
-
+      // faithPenalty is usually negative
       // Misericórdia subtrai do DADO, não da fé
       // Passa se (dado - misericórdia) <= fé
-      isFailedFaithTest = val - activeTest.difficulty > currentFaith;
+      isFailedFaithTest = isFaithTestFailedOnPlayerScreen(
+        val,
+        activeTest.difficulty,
+        stats,
+        faithPenalty,
+      );
     }
 
     if (isFailedFaithTest && penalty === undefined) {
