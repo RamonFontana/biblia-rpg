@@ -2,7 +2,7 @@ import { Card, CardContent } from '../ui/card';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { Shield, Heart } from 'lucide-react';
 import type { Character } from '@/features/character-management/types';
-import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
+import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 
 interface EnemyCardProps {
   enemy: Character;

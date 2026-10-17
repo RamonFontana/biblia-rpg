@@ -3,6 +3,8 @@
 // Decisões: ROADMAP.md, Onda 2 (bloco B): a perda de 1d6 só ocorre em Tentação, Testemunho e
 // Pedido Egoísta (hoje toda falha de Teste de Fé perde); Modificador de Fé no lugar de dificuldade.
 // Termos: CONTEXT.md (Modificador de Fé, Misericórdia, Punição, Teste de Fé).
+import { rollDie } from './dice';
+import type { Rng } from './rng';
 
 export type FaithModifierType = 'mercy' | 'punishment';
 
@@ -33,8 +35,8 @@ export function isRegularTestApproved(resultValue: number, difficulty: number): 
 export function calculateFaithAfterFailure(
   currentFaith: number,
   faithPenalty: number | undefined,
-  random: () => number = Math.random,
+  rng: Rng,
 ): { faithLoss: number; newFaith: number } {
-  const faithLoss = faithPenalty !== undefined ? faithPenalty : Math.floor(random() * 6) + 1;
+  const faithLoss = faithPenalty !== undefined ? faithPenalty : rollDie(6, rng);
   return { faithLoss, newFaith: Math.max(0, currentFaith - faithLoss) };
 }

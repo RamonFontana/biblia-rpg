@@ -2,7 +2,7 @@
 // Decisões: ROADMAP.md, Onda 2 (bloco B): a CA passa a considerar o teto de DES por armadura.
 // Termos: CONTEXT.md (PV, Fé Inicial).
 import { describe, expect, it } from 'vitest';
-import { calculateInitialStats } from './initialStats';
+import { calculateInitialStats } from '@/domain/initialStats';
 
 const stats = (vocation: string, tribe: string, con = 10, des = 10) =>
   calculateInitialStats(vocation, tribe, { con, des });

@@ -1,4 +1,4 @@
-import { canonicalVocation } from '@/lib/vocation';
+import { canonicalVocation } from '@/domain/vocation';
 import type { SkillId } from '../characterMath';
 
 export interface VocationRules {

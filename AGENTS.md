@@ -27,7 +27,7 @@ Quando código e doc divergirem, registre a divergência em `docs/ROADMAP.md` e 
 O código está migrando por ondas; o plano, as decisões tomadas e a dívida registrada estão em `docs/ROADMAP.md`. Leia a seção da onda em andamento antes de refatorar.
 
 Arquitetura alvo:
-- **`src/domain/`: motor do jogo puro.** Regras (atributos, CA, PV, Fé, condições, descanso, testes de morte) sem React, Supabase nem estado global. A aleatoriedade entra como parâmetro (`Rng`), e os testes usam seed fixa. O lint garante a pureza.
+- **`src/domain/`: motor do jogo puro.** Regras (atributos, PV, Fé, descanso, testes de morte, munição, consumíveis, level-up; CA e condições entram nos próximos passos) sem React, Supabase nem estado global. A aleatoriedade entra como parâmetro `Rng` (`src/domain/rng.ts`; teste com `createSeededRng(seed)`, app com `systemRng` de `src/lib/systemRng.ts`). O lint garante a pureza: o motor só importa de `src/domain`, `src/data` e `src/types`, e não usa `Math.random`.
 - **`src/content/`: itens, habilidades e condições como dados** tipados e validados por zod. O efeito de um item ou habilidade é um dado que o motor interpreta.
 - **Camada de dados única** para o Supabase (hoje `src/services/` e `src/features/*/api/`; alvo `src/data-access/`), com os tipos gerados em `src/types/database.types.ts`. Componentes, hooks e stores consomem essa camada; o lint bloqueia novos imports de `@/lib/supabase` fora dela.
 - **UI segue `docs/DESIGN.md`**, cujo padrão de referência é a criação de personagem. Tela nova ou refatorada usa a paleta e os componentes de lá.

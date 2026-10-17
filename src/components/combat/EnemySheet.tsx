@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import type { Character } from '@/features/character-management/types';
 import { Shield, Heart } from 'lucide-react';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
-import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
+import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 
 interface EnemySheetProps {
   enemy: Character | null;

@@ -1,7 +1,12 @@
 // CARACTERIZAÇÃO: fixa o comportamento ATUAL da geração de atributos.
 // Decisão: ADR 0001 (dados físicos); a rolagem no app é uma conveniência opcional.
 import { describe, expect, it } from 'vitest';
-import { STANDARD_ARRAY, rollAttributeScore, rollAttributeScores } from './attributeGeneration';
+import {
+  STANDARD_ARRAY,
+  rollAttributeScore,
+  rollAttributeScores,
+} from '@/domain/attributeGeneration';
+import { createSeededRng } from '@/domain/rng';
 
 // d6 determinístico: random() = (face - 1) / 6 produz a face escolhida.
 const faces = (...values: number[]) => {
@@ -39,9 +44,10 @@ describe('rollAttributeScore: 4d6 descartando o menor', () => {
     expect(calls).toBe(4);
   });
 
-  it('com o sorteio padrão fica sempre entre 3 e 18', () => {
+  it('com sorteios de uma seed fica sempre entre 3 e 18', () => {
+    const rng = createSeededRng(99);
     for (let i = 0; i < 500; i++) {
-      const score = rollAttributeScore();
+      const score = rollAttributeScore(rng);
       expect(score).toBeGreaterThanOrEqual(3);
       expect(score).toBeLessThanOrEqual(18);
     }

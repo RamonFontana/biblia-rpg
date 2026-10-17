@@ -1,7 +1,7 @@
 // CARACTERIZAÇÃO: regras de Descanso Curto e Longo, extraídas de SessionRestControls sem alteração.
 // Decisões: ROADMAP.md, Onda 2 (bloco B): o 1d4 de Fé é digitado pelo Mestre (ADR 0001); Sustento.
 // Termos: CONTEXT.md (Descanso Curto, Descanso Longo, Sustento).
-import { getMaxPv, type VitalsLike } from './vitalsUtils';
+import { getMaxPv, type VitalsLike } from '@/domain/vitals';
 
 export const MAX_SHORT_RESTS_PER_DAY = 2;
 

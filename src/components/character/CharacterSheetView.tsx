@@ -9,12 +9,9 @@ import { InventoryList } from '../inventory/InventoryList';
 import { updateCharacterEquipment } from '@/lib/supabase';
 import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
 import { getCombatStats } from '@/lib/equipmentUtils';
-import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
-import {
-  calculateModifier,
-  calculateProficiency,
-  formatModifier,
-} from '@/features/character-management/utils/characterMath';
+import { getCurrentPv, getMaxPv } from '@/domain/vitals';
+import { formatModifier } from '@/features/character-management/utils/characterMath';
+import { calculateModifier, calculateProficiency } from '@/domain/attributes';
 import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { AbilityCard } from '../combat/AbilityCard';
 import { CharacterAvatar } from '../ui/CharacterAvatar';

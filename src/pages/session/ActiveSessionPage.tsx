@@ -29,7 +29,7 @@ import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
 import { useCombatStore } from '@/store/combatStore';
 import { getCombatStats } from '@/lib/equipmentUtils';
-import { getCurrentPv } from '@/lib/vitalsUtils';
+import { getCurrentPv } from '@/domain/vitals';
 import { Menu } from 'lucide-react';
 import {
   DropdownMenu,

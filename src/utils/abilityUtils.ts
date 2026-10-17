@@ -1,5 +1,5 @@
 import { ABILITIES, type AbilityDefinition } from '../data/abilities';
-import { canonicalVocation } from '../lib/vocation';
+import { canonicalVocation } from '@/domain/vocation';
 
 export function getAbilitiesForCharacter(
   tribe: string,

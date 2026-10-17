@@ -3,14 +3,14 @@
 // e item achado pelo UUID do banco ficam para a Onda 3.
 // Termos: CONTEXT.md (Resistência a Condição, Qualidade, Condição).
 import { describe, expect, it } from 'vitest';
-import { CONDITIONS } from '../data/conditions';
-import { ITEMS_DB } from '../data/itemsDb';
+import { CONDITIONS } from '@/data/conditions';
+import { ITEMS_DB } from '@/data/itemsDb';
 import {
   applyArmorResistance,
   findMaxResistanceLevel,
   resolveEquippedItems,
   type EquippedItem,
-} from './armorResistance';
+} from '@/domain/armorResistance';
 
 const equipment = (body: string | null) => ({ head: null, body, mainHand: null, offHand: null });
 const item = (level: number, ...conditionResistances: string[]): EquippedItem => ({

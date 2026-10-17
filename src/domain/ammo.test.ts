@@ -1,7 +1,8 @@
 // CARACTERIZAÇÃO: fixa o comportamento ATUAL da munição.
 // Termos: CONTEXT.md. Decisão: a recuperação de munição segue automática, 50% por unidade (ADR 0001).
 import { describe, expect, it } from 'vitest';
-import { calculateRecoveredQuantity, canConsumeAmmo, rollAmmoRecovery } from './ammo';
+import { calculateRecoveredQuantity, canConsumeAmmo, rollAmmoRecovery } from '@/domain/ammo';
+import { createSeededRng } from '@/domain/rng';
 
 // Sorteio determinístico: devolve os valores em ordem.
 const sequence = (...values: number[]) => {
@@ -39,10 +40,11 @@ describe('rollAmmoRecovery', () => {
     expect(calls).toBe(0);
   });
 
-  it('usa Math.random quando nenhum sorteio é informado', () => {
-    const result = rollAmmoRecovery(1000);
-    expect(result).toBeGreaterThan(400);
-    expect(result).toBeLessThan(600);
+  it('com seed fixa, a recuperação é reproduzível e fica perto de 50%', () => {
+    const result = rollAmmoRecovery(1000, createSeededRng(7));
+    expect(rollAmmoRecovery(1000, createSeededRng(7))).toBe(result);
+    expect(result).toBeGreaterThan(450);
+    expect(result).toBeLessThan(550);
   });
 });
 

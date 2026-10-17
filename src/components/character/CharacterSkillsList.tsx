@@ -1,10 +1,6 @@
 import { BookOpen } from 'lucide-react';
-import {
-  SKILLS_LIST,
-  calculateModifier,
-  calculateProficiency,
-  formatModifier,
-} from '@/features/character-management/utils/characterMath';
+import { SKILLS_LIST, formatModifier } from '@/features/character-management/utils/characterMath';
+import { calculateModifier, calculateProficiency } from '@/domain/attributes';
 
 interface CharacterSkillsListProps {
   attributes: any;

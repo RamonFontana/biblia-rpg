@@ -6,7 +6,12 @@ import {
   calculateFaithAfterFailure,
   isRegularTestApproved,
   toStoredDifficulty,
-} from './sessionTests';
+} from '@/domain/sessionTests';
+
+// Com a penalidade digitada o app não sorteia nada: um Rng que falha prova isso.
+const unusedRng = () => {
+  throw new Error('não deveria sortear');
+};
 
 describe('toStoredDifficulty', () => {
   it('no Teste de Fé, Misericórdia grava positivo e Punição grava negativo', () => {
@@ -35,7 +40,7 @@ describe('isRegularTestApproved', () => {
 
 describe('calculateFaithAfterFailure', () => {
   it('perde o valor que o jogador digitou (o d6 da mesa)', () => {
-    expect(calculateFaithAfterFailure(50, 4)).toEqual({ faithLoss: 4, newFaith: 46 });
+    expect(calculateFaithAfterFailure(50, 4, unusedRng)).toEqual({ faithLoss: 4, newFaith: 46 });
   });
 
   it('sem valor digitado, o app sorteia 1d6', () => {
@@ -50,7 +55,7 @@ describe('calculateFaithAfterFailure', () => {
   });
 
   it('a Fé não fica abaixo de 0', () => {
-    expect(calculateFaithAfterFailure(3, 6).newFaith).toBe(0);
+    expect(calculateFaithAfterFailure(3, 6, unusedRng).newFaith).toBe(0);
   });
 
   it('um valor digitado 0 é respeitado (não sorteia)', () => {
@@ -58,7 +63,7 @@ describe('calculateFaithAfterFailure', () => {
   });
 
   it('não valida o valor digitado: aceita acima de 6 e negativo', () => {
-    expect(calculateFaithAfterFailure(50, 20).newFaith).toBe(30);
-    expect(calculateFaithAfterFailure(50, -5).newFaith).toBe(55);
+    expect(calculateFaithAfterFailure(50, 20, unusedRng).newFaith).toBe(30);
+    expect(calculateFaithAfterFailure(50, -5, unusedRng).newFaith).toBe(55);
   });
 });

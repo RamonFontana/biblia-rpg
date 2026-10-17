@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
 import { Shield, Heart, Flame } from 'lucide-react';
-import { calculateInitialStats } from '../../utils/initialStats';
+import { calculateInitialStats } from '@/domain/initialStats';
 
 export function InitialStats() {
   const { draft, setStats, nextStep, prevStep } = useCharacterCreationStore();

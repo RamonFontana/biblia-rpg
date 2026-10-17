@@ -5,7 +5,7 @@ import { CharacterSheetView } from '../character/CharacterSheetView';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { getCombatStats } from '@/lib/equipmentUtils';
-import { getCurrentPv, getMaxPv } from '@/lib/vitalsUtils';
+import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { characterVitalsService } from '@/services/characterVitalsService';
 import { AddNPCModal } from './AddNPCModal';
 

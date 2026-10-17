@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalVocation } from './vocation';
+import { canonicalVocation } from '@/domain/vocation';
 
 describe('canonicalVocation', () => {
   it('Sábio é Sacerdote, com ou sem acento e em qualquer caixa', () => {

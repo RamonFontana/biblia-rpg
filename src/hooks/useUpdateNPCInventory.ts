@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { applyConsumableEffects } from '@/lib/consumables';
+import { applyConsumableEffects } from '@/domain/consumables';
 
 export function useUpdateNPCInventory() {
   const [isUpdating, setIsUpdating] = useState(false);

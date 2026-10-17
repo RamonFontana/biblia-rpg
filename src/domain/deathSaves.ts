@@ -1,7 +1,7 @@
 // CARACTERIZAÇÃO: regras dos Testes de Morte, extraídas de DeathSavesModal e useDeathSaves sem alteração.
 // Termos: CONTEXT.md (Teste de Morte, Morrendo, Estável, Morto). O 1 e o 20 naturais foram para o
 // doc sem pergunta explícita; confirmar (ROADMAP, pendências).
-import { getCurrentPv, type VitalsLike } from './vitalsUtils';
+import { getCurrentPv, type VitalsLike } from '@/domain/vitals';
 
 export type DeathSaveOutcome =
   { kind: 'failure'; count: 1 | 2 } | { kind: 'success' } | { kind: 'revive' } | { kind: 'none' };

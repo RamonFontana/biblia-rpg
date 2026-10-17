@@ -15,7 +15,7 @@ import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
 import { conditionsService } from '@/services/conditionsService';
 import { characterVitalsService } from '@/services/characterVitalsService';
-import { getCurrentPv } from '@/lib/vitalsUtils';
+import { getCurrentPv } from '@/domain/vitals';
 import type { ConditionEntry } from '@/types/combat';
 
 interface SessionParticipantListProps {

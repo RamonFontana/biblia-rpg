@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useDeathSaves } from '../../hooks/useDeathSaves';
-import { getDeathSaveOutcome } from '../../lib/deathSaves';
+import { getDeathSaveOutcome } from '@/domain/deathSaves';
 
 interface DeathSavesModalProps {
   character: any;

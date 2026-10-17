@@ -8,7 +8,7 @@ import {
   canTakeLongRest,
   canTakeShortRest,
   hasPriestInGroup,
-} from './rest';
+} from '@/domain/rest';
 
 describe('Descanso Curto', () => {
   it('permite até 2 por dia', () => {

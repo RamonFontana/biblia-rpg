@@ -8,7 +8,7 @@ import {
   deriveStatusLabel,
   deriveCombatEndState,
   applyMaxPvIncrease,
-} from './vitalsUtils';
+} from '@/domain/vitals';
 
 describe('vitalsUtils', () => {
   describe('getCurrentPv', () => {

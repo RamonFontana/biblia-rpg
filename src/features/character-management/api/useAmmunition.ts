@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/database.types';
-import { calculateRecoveredQuantity, canConsumeAmmo, rollAmmoRecovery } from '@/lib/ammo';
+import { calculateRecoveredQuantity, canConsumeAmmo, rollAmmoRecovery } from '@/domain/ammo';
+import { systemRng } from '@/lib/systemRng';
 
 export type CharacterItemWithDetails = Tables<'character_items'> & {
   items: Tables<'items'>;
@@ -49,7 +50,7 @@ export function useAmmunition() {
     maxCapacity: number,
   ): Promise<number> => {
     try {
-      const recoveredCount = rollAmmoRecovery(spentAmount);
+      const recoveredCount = rollAmmoRecovery(spentAmount, systemRng);
 
       if (recoveredCount === 0) return 0;
 

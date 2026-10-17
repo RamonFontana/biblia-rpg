@@ -8,7 +8,7 @@ import {
   addDeathSaveSuccess,
   getDeathSaveOutcome,
   isDying,
-} from './deathSaves';
+} from '@/domain/deathSaves';
 
 describe('getDeathSaveOutcome: o que o d20 causa', () => {
   it('1 natural conta duas falhas', () => {
