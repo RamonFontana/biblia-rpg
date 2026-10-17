@@ -498,6 +498,7 @@ export type Database = {
           is_approved: boolean | null
           player_id: string
           result_value: number | null
+          roll_value: number | null
           status: string
           test_id: string
           updated_at: string
@@ -509,6 +510,7 @@ export type Database = {
           is_approved?: boolean | null
           player_id: string
           result_value?: number | null
+          roll_value?: number | null
           status?: string
           test_id: string
           updated_at?: string
@@ -520,6 +522,7 @@ export type Database = {
           is_approved?: boolean | null
           player_id?: string
           result_value?: number | null
+          roll_value?: number | null
           status?: string
           test_id?: string
           updated_at?: string

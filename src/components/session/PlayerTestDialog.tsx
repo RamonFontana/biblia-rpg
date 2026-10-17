@@ -162,7 +162,12 @@ export function PlayerTestDialog({
                 )}
               </div>
               <p className="text-stone-400 font-mono text-sm mt-2">
-                {getTestBreakdown(activeTest.test_type, testResult.result_value, charData)}
+                {getTestBreakdown(
+                  activeTest.test_type,
+                  testResult.result_value,
+                  charData,
+                  testResult.roll_value,
+                )}
               </p>
             </div>
 
@@ -190,7 +195,7 @@ export function PlayerTestDialog({
     );
   }
 
-  const executeSubmit = async (val: number, penalty?: number) => {
+  const executeSubmit = async (val: number, penalty?: number, rollValue?: number) => {
     if (val < 0 || val > 100) {
       setError('Valor fora do intervalo aceitável (0-100).');
       return;
@@ -236,6 +241,7 @@ export function PlayerTestDialog({
         testResult.character_id,
         activeTest.test_type,
         penalty,
+        rollValue ?? val,
       );
       // The component will re-render in the 'submitted' state because of realtime update
     } catch (err: any) {
@@ -253,13 +259,14 @@ export function PlayerTestDialog({
       return;
     }
 
-    let finalResult = Number(resultValue);
+    const rolled = Number(resultValue);
+    let finalResult = rolled;
     if (activeTest.test_type !== 'Fé') {
       const { attrMod, profBonus } = getTestModifiers(activeTest.test_type, charData);
       finalResult += attrMod + profBonus;
     }
 
-    executeSubmit(finalResult);
+    executeSubmit(finalResult, undefined, rolled);
   };
 
   const handleSubmitPenalty = () => {
