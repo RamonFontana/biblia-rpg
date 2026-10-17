@@ -22,7 +22,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage'],
     slot: 'body',
     level: 1,
-    conditionResistances: ['poisoned'],
+    conditionResistances: ['envenenado'],
   },
   {
     id: 'tunica_sagrada',
@@ -34,7 +34,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'CA: 11 + Des. Abençoada contra medos.',
     slot: 'body',
     level: 2,
-    conditionResistances: ['frightened'],
+    conditionResistances: ['amedrontado'],
   },
   {
     id: 'couro_cru',
@@ -57,7 +57,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'CA: 12 + Des. Armadura leve reforçada',
     slot: 'body',
     level: 2,
-    conditionResistances: ['grappled'],
+    conditionResistances: ['agarrado'],
   },
   {
     id: 'cota_escamas',
@@ -70,7 +70,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage'],
     slot: 'body',
     level: 2,
-    conditionResistances: ['bleeding'],
+    conditionResistances: ['sangrando'],
   },
   {
     id: 'peitoral_bronze',
@@ -82,7 +82,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'CA: 14 + Des (máx 2). Proteção superior no peito',
     slot: 'body',
     level: 3,
-    conditionResistances: ['bleeding', 'poisoned'],
+    conditionResistances: ['sangrando', 'envenenado'],
   },
   {
     id: 'cota_malha',
@@ -95,7 +95,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage'],
     slot: 'body',
     level: 3,
-    conditionResistances: ['bleeding'],
+    conditionResistances: ['sangrando'],
   },
   {
     id: 'lorica',
@@ -108,7 +108,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['stealth_disadvantage', 'heavy'],
     slot: 'body',
     level: 4,
-    conditionResistances: ['bleeding', 'stunned'],
+    conditionResistances: ['sangrando', 'atordoado'],
   },
 
   // Elmos
@@ -122,7 +122,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: 'Proteção básica para a cabeça. CA +1',
     slot: 'head',
     level: 1,
-    conditionResistances: ['blinded'],
+    conditionResistances: ['cego'],
   },
   {
     id: 'elmo_bronze',
@@ -135,7 +135,7 @@ export const ITEMS_DB: ShopItem[] = [
     properties: ['perception_disadvantage'],
     slot: 'head',
     level: 3,
-    conditionResistances: ['stunned', 'blinded'],
+    conditionResistances: ['atordoado', 'cego'],
   },
 
   {
@@ -148,7 +148,7 @@ export const ITEMS_DB: ShopItem[] = [
     description: '+2 CA. Ocupa uma mão',
     slot: 'offHand',
     level: 2,
-    conditionResistances: ['restrained'],
+    conditionResistances: ['impedido'],
   },
 
   // Armas

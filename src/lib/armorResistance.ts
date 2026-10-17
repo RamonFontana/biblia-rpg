@@ -3,7 +3,6 @@
 // Problemas conhecidos (decisões em ROADMAP, Onda 2 bloco B e Onda 3):
 // - o item equipado é procurado em ITEMS_DB pelo item_id do banco, que é UUID, enquanto o catálogo
 //   usa slugs; na prática nenhum item é encontrado e a resistência nunca se aplica;
-// - o catálogo guarda resistências em inglês (`bleeding`) e as condições usam português (`sangrando`);
 // - o nível máximo de resistência é calculado sobre todas as condições da habilidade e depois
 //   aplicado a cada uma, mesmo às que nenhum item resiste;
 // - a duração é reduzida arredondando para cima.
