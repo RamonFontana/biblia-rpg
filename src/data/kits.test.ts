@@ -1,7 +1,11 @@
 // Fixa os itens iniciais e os textos de Sustento conforme docs/criacao-de-personagem.md e
 // docs/itens/consumiveis.md (decisão do autor): Odre e Ração são Sustento e não curam; o Caçador
 // começa com 20 flechas; Sábio usa o kit do Sacerdote.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// syncInventory cria o cliente do Supabase, que exige variáveis de ambiente (ausentes no CI).
+vi.mock('../lib/supabase', () => ({ supabase: {} }));
+
 import { VOCATION_KIT_ITEMS } from '../features/character-management/api/syncInventory';
 import { ITEMS_DB, KITS_DB } from './itemsDb';
 
