@@ -28,7 +28,7 @@ O código está migrando por ondas; o plano, as decisões tomadas e a dívida re
 
 Arquitetura alvo:
 - **`src/domain/`: motor do jogo puro.** Regras (atributos, PV, Fé, descanso, testes de morte, munição, consumíveis, level-up; CA e condições entram nos próximos passos) sem React, Supabase nem estado global. A aleatoriedade entra como parâmetro `Rng` (`src/domain/rng.ts`; teste com `createSeededRng(seed)`, app com `systemRng` de `src/lib/systemRng.ts`). O lint garante a pureza: o motor só importa de `src/domain`, `src/data` e `src/types`, e não usa `Math.random`.
-- **`src/content/`: itens, habilidades e condições como dados** tipados e validados por zod. O efeito de um item ou habilidade é um dado que o motor interpreta.
+- **`src/content/`: itens, habilidades e condições como dados** tipados e validados por zod (`schemas.ts`; os tipos saem dos esquemas). O efeito de um item ou habilidade é um dado que o motor interpreta. Hoje moram aqui Condições, itens, texto dos kits e proficiências; as habilidades ainda estão em `src/data/`. O `id` de um item é o `slug` da linha em `items` (nunca o renomeie). Mudou `src/content/items.ts`? Rode `npm run gen:items-seed` e confirme a migration antes de aplicar (um teste falha se esquecer).
 - **Camada de dados única** para o Supabase (hoje `src/services/` e `src/features/*/api/`; alvo `src/data-access/`), com os tipos gerados em `src/types/database.types.ts`. Componentes, hooks e stores consomem essa camada; o lint bloqueia novos imports de `@/lib/supabase` fora dela.
 - **UI segue `docs/DESIGN.md`**, cujo padrão de referência é a criação de personagem. Tela nova ou refatorada usa a paleta e os componentes de lá.
 
