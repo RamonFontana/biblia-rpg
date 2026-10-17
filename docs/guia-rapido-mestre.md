@@ -8,7 +8,8 @@ Este documento serve como um sumário e guia de consulta rápida durante a sess�
 - **Revisão de Fichas**: Verifique se todos os jogadores escolheram 1 Fortaleza e 1 Tentação da lista oficial.
 - **Barra de Fé**: Anote a Fé atual de todos os jogadores (Iniciam em 50, Levitas em 60).
 - **Sem Magia Arcana**: Lembre os jogadores de que curas e incentivos dependem estritamente de Pontos de Fé gastos por Sacerdotes/Sábios.
-- **Intervenções Divinas**: O Mestre nunca decide narrativamente ou gasta Fé para invocar um milagre. O jogador deve fazer um Clamor, e a Vontade Divina é resolvida com **1d100** contra a Fé Atual modificada pela Dificuldade que o Mestre impuser (ex: 0, -20, -50).
+- **Intervenções Divinas**: O Mestre nunca decide narrativamente ou gasta Fé para invocar um milagre. O jogador deve fazer um Clamor, e a Vontade Divina é resolvida com **1d100** contra a Fé Efetiva (Fé Atual menos as penalidades de Itens Profanos) somada ao Modificador de Fé que o Mestre impuser (0, -20 ou -50). Marque um Pedido Egoísta antes da rolagem: só nele a falha custa 1d6 de Fé.
+- **Sustento**: Antes de cada Descanso Longo, confira 1 Ração e 1 Odre por personagem. Sem eles, o personagem acorda Exausto (você pode dispensar se a história deu comida e água).
 
 ## 2. Consulta Rápida: Sistema de Fé
 A Fé dita o estado mental e espiritual do grupo.
@@ -18,16 +19,17 @@ A Fé dita o estado mental e espiritual do grupo.
 | **100–70** | Inabalável | Inspiração 1x/dia. |
 | **69–31** | Comum | Estado normal, sem penalidades. |
 | **30–11** | Abalado | Desvantagem em resistência de SAB/CAR. |
-| **10–1** | Vulnerável | Risco de possessão demoníaca e loucura. |
+| **10–1** | Vulnerável | Testemunhos frequentes; risco de possessão demoníaca e loucura. |
 | **0** | Ruptura | Morte espiritual ou possessão inevitável sem exorcismo. |
 
 **Recuperação**:
 - Ações Honrosas / Resistir Tentação: +1d4 de Fé.
-- Descanso Longo Devocional: +1d4 para o grupo (+1d4+2 se liderado por Sacerdote).
+- Descanso Longo Devocional: +1d4 para o grupo (+1d4+2 se liderado por Sacerdote). Exige Sustento.
+- Resistir à Tentação é um Teste de Fé; ceder por escolha não custa Fé.
 
 ## 3. Gestão de Combate e Condições
 O combate segue as mecânicas tradicionais de D&D 5e adaptadas (6 segundos por turno: Movimento + Ação + Bônus + Reação). 
-- **[Catálogo de Armas e Armaduras](./itens/README.md)**: As armas são de bronze/ferro. CA máxima depende da destreza e do tipo de armadura (sem itens +1/+2).
+- **[Catálogo de Armas e Armaduras](./itens/README.md)**: As armas são de bronze/ferro. CA máxima depende da destreza e do tipo de armadura (sem bônus sobrenaturais; a Qualidade do item soma +1 de CA por nível acima de 1).
 - **Condições Específicas**:
   - *Caído*: Ataques a 1,5m contra o alvo têm Vantagem; à distância têm Desvantagem. Levantar custa 1/2 movimento.
   - *Agarrado*: Deslocamento 0. Escapar exige Ação (Atletismo/Acrobacias vs Atletismo).

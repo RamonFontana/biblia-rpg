@@ -3,7 +3,7 @@
 O Caçador (ou Nômade) vive no limiar entre a civilização e os ermos agrestes do deserto e das montanhas. Excelentes atiradores (com arcos ou fundas, reminiscência dos fundibulários de Benjamim) e rastreadores inigualáveis.
 
 ## Características Base
-- **Dado de Vida (HP)**: 1d10 por nível.
+- **Dado de Vida (PV)**: 1d10 por nível.
 - **Proficiências**: Armaduras leves e médias, escudos, armas simples e marciais.
 - **Testes de Resistência**: Força e Destreza.
 
@@ -22,7 +22,7 @@ O Caçador (ou Nômade) vive no limiar entre a civilização e os ermos agrestes
 ### Nível 10: Tiro Multiplicado ou Besta Companheira
 *Escolha um dos dois focos:*
 - **Foco do Atirador**: Como ação, você pode realizar um ataque à distância contra qualquer número de criaturas a até 3 metros de um ponto que você possa ver dentro do alcance da arma (limitado à munição). Você rola um ataque separado para cada alvo.
-- **Besta Companheira**: Você treinou um cão selvagem, leão pequeno ou ave de rapina. Tem CA 14 + sua Proficiência, HP igual a 4x seu nível. Ela age no seu turno se você gastar uma Ação Bônus para comandá-la.
+- **Besta Companheira**: Você treinou um cão selvagem, leão pequeno ou ave de rapina. Tem CA 14 + sua Proficiência, PV igual a 4x seu nível. Ela age no seu turno se você gastar uma Ação Bônus para comandá-la.
 
 ### Nível 14: Ataque Rápido e Fuga
 - **Fuga Engenhosa**: Você pode usar a Ação de Esconder-se como ação bônus. Inimigos atacando você têm Desvantagem se você estiver em cobertura (mesmo que seja parcial).

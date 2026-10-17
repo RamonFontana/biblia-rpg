@@ -30,7 +30,7 @@
 ## Nível 8 — Aprimoramento
 
 ### Caminho A — Liderança
-- Se um aliado estiver com **menos de 20% do HP total**, os bônus do Grito de Guerra são **dobrados** (+4 em Força).
+- Se um aliado estiver com **menos de 20% do PV total**, os bônus do Grito de Guerra são **dobrados** (+4 em Força).
 
 ### Caminho B — Médico
 **Merape Miadi (Cura Imediata)**
@@ -61,7 +61,7 @@
 ### Caminho B — Médico
 **Cirurgia de Trincheira**
 - **Uso:** 1x/dia
-- **Efeito:** Reanima um aliado com **1/4 do HP máximo** em combate.
+- **Efeito:** Reanima um aliado com **1/4 do PV máximo** em combate.
 
 ---
 
@@ -70,11 +70,11 @@
 ### Caminho A — Liderança
 **O Rugido de Judá**
 - Inimigos em **18 metros** fogem amedrontados.
-- Aliados ganham **HP Temporário** e **+15 de Fé**.
+- Aliados ganham **PV Temporário** e **+15 de Fé**.
 
 ### Caminho B — Médico
 **O Sopro da Vida**
-- Restaura **100% do HP**.
+- Restaura **100% do PV**.
 - **Ressuscita** um alvo morto há menos de 2 rodadas.
 
 ---
@@ -87,11 +87,11 @@
 | Resistência Sólida | 1 | Passiva | - | - | Metade do dano de debuffs (sangramentos, venenos fracos). |
 | Qeriatt Haqerav | 4 (A) | Ação Bônus | - | 1 / Combate | Aliados visíveis ganham +2 FOR e +1 mov no prox turno. |
 | Conhecimento da Saúde | 4 (B) | Ação | 2d8 | - | Estabiliza e cura 2d8 + SAB. |
-| Grito Fortalecido | 8 (A) | Passiva | - | - | Se aliado <20% HP, bônus do Grito dobra (+4 FOR). |
+| Grito Fortalecido | 8 (A) | Passiva | - | - | Se aliado <20% PV, bônus do Grito dobra (+4 FOR). |
 | Merape Miadi | 8 (B) | Ação | 6d8 | 1 / D. Longo | Cura 6d8+SAB e remove debuff longo/maldição. |
 | Coração de Leão | 12 (A) | Passiva | - | - | Aliados até 9m ganham Vantagem contra medo e perda de Fé. |
 | Bálsamo de Gileade | 12 (B) | Passiva | - | - | Em Descanso Curto, curas atingem valor máximo dos dados. |
 | Estandarte de Judá | 16 (A) | Reação | - | 1 / Combate | Permite aliado usar reação p/ atacar ou mover. |
-| Cirurgia de Trincheira | 16 (B) | Ação | - | 1 / D. Longo | Reanima aliado com 1/4 do HP máx em combate. |
-| O Rugido de Judá | 20 (A) | Ação | - | 1 / Semana | Inimigos 18m fogem; aliados ganham HP Temp e +15 Fé. |
-| O Sopro da Vida | 20 (B) | Ação | - | 1 / Semana | Restaura 100% HP; ressuscita morto há <2 rodadas. |
+| Cirurgia de Trincheira | 16 (B) | Ação | - | 1 / D. Longo | Reanima aliado com 1/4 do PV máx em combate. |
+| O Rugido de Judá | 20 (A) | Ação | - | 1 / Semana | Inimigos 18m fogem; aliados ganham PV Temp e +15 Fé. |
+| O Sopro da Vida | 20 (B) | Ação | - | 1 / Semana | Restaura 100% PV; ressuscita morto há <2 rodadas. |

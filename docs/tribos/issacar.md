@@ -53,7 +53,7 @@
 - Pode **esconder-se** imediatamente após abater um alvo.
 
 ### Caminho B — Lavrador
-- **Dano máximo automático** quando estiver com **menos de 50% do HP**.
+- **Dano máximo automático** quando estiver com **menos de 50% do PV**.
 
 ---
 
@@ -82,6 +82,6 @@
 | Golpe Paralisante | 12 (A) | Passiva | - | - | Acerto crítico zera a velocidade do inimigo. |
 | Casca Grossa | 12 (B) | Passiva | - | - | Resistência a armas não-metálicas. |
 | Esconder-se Rápido | 16 (A) | Reação | - | - | Pode esconder-se imediatamente após abater alvo. |
-| Fúria do Lavrador | 16 (B) | Passiva | - | - | Dano máximo automático quando HP < 50%. |
+| Fúria do Lavrador | 16 (B) | Passiva | - | - | Dano máximo automático quando PV < 50%. |
 | A Ceifa | 20 (A) | Ação | - | 1 / Semana | Morte letal furtiva (ignora defesas). |
 | Guardião do Vale | 20 (B) | Ação | - | 1 / Semana | Cura e escudo em área p/ todos os aliados. |

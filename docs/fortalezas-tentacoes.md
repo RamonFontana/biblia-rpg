@@ -11,6 +11,7 @@ O Sistema de Fé é o pilar central do RPG Bíblico. Para conectar a personalida
 Fortalezas são traços virtuosos de caráter. Quando o seu personagem agir de forma alinhada à sua Fortaleza (especialmente se isso lhe trouxer alguma desvantagem tática ou pessoal), o Mestre pode recompensá-lo com:
 - **Recuperação de Fé**: 1d4 de Fé (ou mais, dependendo da magnitude da ação).
 - **Vantagem**: Vantagem em um teste que reflita essa virtude.
+- **Isenção de Testemunho**: se o Mestre julgar que a Fortaleza cobre a situação (Coragem diante de um gigante ou de um endemoniado, Zelo diante de um sacrifício a Baal), o personagem não faz o Teste de Fé de Testemunho.
 
 ### Lista de Fortalezas
 
@@ -30,8 +31,8 @@ Fortalezas são traços virtuosos de caráter. Quando o seu personagem agir de f
 ## Tentações (Falhas)
 
 Tentações são defeitos de caráter ou fraquezas carnais que assombram o personagem. Quando o Mestre apresentar uma situação que ative sua Tentação, você deve:
-- **Ceder à Tentação**: E interpretar as consequências de sua falha moral; ou
-- **Resistir**: Fazer um Teste de Sabedoria com a Dificuldade (CD) definida pelo Mestre. Se falhar, você não apenas cede à tentação contra a sua vontade, mas sofre um abalo espiritual perdendo **1d6 pontos de Fé**.
+- **Ceder à Tentação**: E interpretar as consequências de sua falha moral. Ceder por escolha não custa Fé; ou
+- **Resistir**: Fazer um **Teste de Fé** (1d100 contra a Fé Efetiva mais o Modificador de Fé definido pelo Mestre; veja [Testes de Fé](regras-base.md#44-testes-de-fé-clamor-tentação-e-testemunho)). Se falhar, você não apenas cede à tentação contra a sua vontade, mas sofre um abalo espiritual perdendo **1d6 pontos de Fé**.
 
 ### Lista de Tentações
 

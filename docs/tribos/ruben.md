@@ -39,7 +39,7 @@
 ## Nível 12 — Adaptação
 
 ### Caminho A — Mestre das Feras
-- Animal ganha **resistência** e **protege o rubenita** se ele cair a 0 HP.
+- Animal ganha **resistência** e **protege o rubenita** se ele cair a 0 PV.
 
 ### Caminho B — Lábia
 - Paga **exércitos inimigos desmotivados** para fugirem (teste de persuasão).
@@ -62,7 +62,7 @@
 
 ### Caminho A — Mestre das Feras
 **O Beemote**
-- O animal fica tamanho **Enorme**, dobrando HP e causando **terror em área**.
+- O animal fica tamanho **Enorme**, dobrando PV e causando **terror em área**.
 
 ### Caminho B — Lábia
 **Embaixador da Paz**
@@ -80,9 +80,9 @@
 | Hashikhenu'a | 4 (B) | Ação | - | - | Persuade e confunde inimigos ou negociantes. |
 | Fera Letal | 8 (A) | Passiva | - | - | Ataques do animal ignoram resistências não-mágicas. |
 | Suborno Tático | 8 (B) | Ação | - | - | Suborna cidades para obter rotas e milícias. |
-| Fera Protetora | 12 (A) | Passiva | - | - | Animal ganha resistência e protege dono a 0 HP. |
+| Fera Protetora | 12 (A) | Passiva | - | - | Animal ganha resistência e protege dono a 0 PV. |
 | Compra de Lealdade | 12 (B) | Ação | - | - | Paga exércitos desmotivados para fugirem. |
 | Chamado Selvagem | 16 (A) | Ação | - | 1 / Semana | Convoca temporariamente feras do deserto. |
 | Lábia Infalível | 16 (B) | Ação | - | 1 / D. Longo | Acerto Crítico automático em Persuasão p/ governantes. |
-| O Beemote | 20 (A) | Ação | - | 1 / Semana | Animal Enorme, dobro HP e causa terror em área. |
+| O Beemote | 20 (A) | Ação | - | 1 / Semana | Animal Enorme, dobro PV e causa terror em área. |
 | Embaixador da Paz | 20 (B) | Ação | - | 1 / Semana | Encerra guerras na lábia sem derramar sangue. |

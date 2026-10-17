@@ -24,7 +24,7 @@ Os zebulonitas são um povo adaptado às águas, ventos e ao comércio costeiro,
 *Foco em lutar em formação, prover defesa aos aliados e organização tática (como os guerreiros providos de todas as armas em 1 Crônicas).*
 
 - **Nível 4 - Treinamento Bélico Avançado**: Escolha uma arma marcial. Quando usar essa arma, suas rolagens de dano menores que 3 contam como 3.
-- **Nível 8 - Coração Intrépido**: "Não tinham coração dobre" (não eram inconstantes). Você tem Imunidade à condição Encantado e vantagem em resistência de Fé contra heresias que tentem corromper suas lealdades.
+- **Nível 8 - Coração Intrépido**: "Não tinham coração dobre" (não eram inconstantes). Você tem vantagem nos Testes de Fé de Tentação e nos Testes de Fé contra heresias que tentem corromper suas lealdades.
 - **Nível 12 - Formação Focada**: Inimigos não ganham Vantagem contra você ou aliados adjacentes caso tentem flanqueá-los (ataques pelas costas/lados).
 - **Nível 16 - Retribuição da Milícia (1/Descanso Curto)**: Se você ou um aliado adjacente receber dano de um ataque, você pode usar sua Reação para ordenar um revide. Você e o aliado realizam um ataque de corpo a corpo contra o atacante imediatamente.
 
@@ -42,7 +42,7 @@ Os zebulonitas são um povo adaptado às águas, ventos e ao comércio costeiro,
 | Reflexo das Ondas | 4 (A) | Reação | - | 1 / D. Curto | Atq c/c: reduz dano 1/2 e move 1,5m s/ atq oport. |
 | Treino Bélico Avançado| 4 (B) | Passiva | - | - | Arma marcial escolhida: rolagens de dano <3 viram 3. |
 | Visão Além do Horiz. | 8 (A) | Passiva | - | - | Percepção normal em nevoeiro/chuva/escuridão. |
-| Coração Intrépido | 8 (B) | Passiva | - | - | Imune a Encantado; Vantagem em TR Fé cont. heresia. |
+| Coração Intrépido | 8 (B) | Passiva | - | - | Vantagem em Testes de Fé de Tentação e contra heresia. |
 | Equilíbrio Perfeito | 12 (A) | Passiva | - | - | Vantagem p/ não cair/desarmar. Luta na água s/ penal. |
 | Formação Focada | 12 (B) | Passiva | - | - | Inimigos não ganham Vantagem flanqueando você/aliado adj. |
 | Tempestade de Golpes | 16 (A) | Passiva | 1d10 | - | Acertar >1 atq no mesmo alvo causa +1d10 dano extra. |

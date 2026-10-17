@@ -10,7 +10,7 @@
 | 15 (+2) | 12 (+1) | 16 (+3) | 6 (-2) | 10 (+0) | 10 (+0) |
 
 - **Perícias**: Furtividade +3, Intimidação +2
-- **Imunidades de Condição**: Encantado, Amedrontado
+- **Imunidades de Condição**: Amedrontado
 - **Vulnerabilidades**: Vulnerabilidade Espiritual (orações, rituais de Fé)
 - **Sentidos**: Percepção passiva 10
 - **Nível de Desafio / XP**: 2 (450 XP)

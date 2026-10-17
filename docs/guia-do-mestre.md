@@ -11,11 +11,12 @@ O RPG Bíblico não é alta fantasia. É um cenário *low magic* onde o sobrenat
 ## 2. Usando Fé, Fortalezas e Tentações
 O Sistema de Fé não é apenas uma barra de recurso, mas o motor narrativo do jogo. Os jogadores possuem Fortalezas (virtudes) e Tentações (falhas). Use-as ativamente:
 - **Gatilhos de Tentação**: Coloque um baú de prata não vigiado perto de alguém com "Avareza". Provoque a fúria do inimigo na frente de alguém com "Ira".
-- **Testes de Resistência**: Quando um gatilho ocorrer, peça um Teste de Sabedoria.
-  - **Fácil (CD 10)**: Oportunidade leve de desvio (ex: mentir para guardar um trocado).
-  - **Médio (CD 13)**: Confronto direto com o defeito (ex: ignorar um ferido para garantir lucro).
-  - **Difícil (CD 16)**: Risco de corrupção total (ex: idolatria extrema ou traição letal).
-  - *Falha = Perde 1d6 de Fé.*
+- **Testes de Tentação**: Quando um gatilho ocorrer, o jogador pode ceder (sem rolar e sem perder Fé) ou resistir com um **Teste de Fé**. Você define o Modificador de Fé conforme a força da tentação:
+  - **Fácil (Misericórdia, modificador positivo)**: Oportunidade leve de desvio (ex: mentir para guardar um trocado).
+  - **Médio (sem modificador)**: Confronto direto com o defeito (ex: ignorar um ferido para garantir lucro).
+  - **Difícil (Punição, modificador negativo)**: Risco de corrupção total (ex: idolatria extrema ou traição letal).
+  - *Falha = Cede à Tentação e perde 1d6 de Fé.*
+- **Testemunho**: Quando o grupo presenciar algo sobrenatural (um endemoniado, um prodígio, um culto pagão), peça um Teste de Fé a quem não tiver uma Fortaleza que cubra a cena. Falha: perde 1d6 de Fé, e você pode deixar o personagem Amedrontado.
 - **Cenas de Fortaleza**: Quando o jogador abraçar ativamente sua Fortaleza em sacrifício próprio (ex: proteger um inocente sendo "Protetor" e sofrer dano por isso), conceda-lhe Vantagem em sua próxima ação ou recupere **1d4 de Fé** para o grupo.
 
 ## 3. Recompensas por Nível de Desafio
