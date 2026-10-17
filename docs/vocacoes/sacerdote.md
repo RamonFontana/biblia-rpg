@@ -28,8 +28,8 @@ Membros dessa vocação são eruditos, profetas, médicos e clérigos. Em um sis
 - **Retribuição Divina (1/Descanso Curto)**: Ao ver um aliado cair a 0 HP, você pode orar como Reação. O agressor recebe dano radiante/trovejante igual a 2d10 + seu Modificador de Sabedoria e fica Amedrontado.
 
 ### Nível 18: Intervenção Divina Maior e Servo Consagrado
-- **Intervenção Divina Maior (1/Campanha ou à critério do Mestre)**: Você roga por um milagre extraordinário (chuva de meteoros/fogo, colapso de muralhas de Jericó, curas em massa absolutas). Siga as *Regras Base de Milagres* rolando **1d100** contra a sua Fé Atual. Devido à magnitude, o Mestre aplica um modificador de no mínimo -50 na sua Fé para esta rolagem. Se bem-sucedido, a Vontade de Deus atende ao seu clamor.
-- **Servo Consagrado**: Sua Fé não pode cair abaixo de 30 (Estado Comum/Abalado no máximo), e você é permanentemente imune a Amedrontado, Encantado e Possessão.
+- **Intervenção Divina Maior (1/Campanha ou à critério do Mestre)**: Você roga por um milagre extraordinário (chuva de meteoros/fogo, colapso de muralhas de Jericó, curas em massa absolutas). Siga as regras de Clamor (ver [regras-base](../regras-base.md)), rolando **1d100** contra a sua Fé Efetiva. Devido à magnitude, o Mestre aplica um modificador de no mínimo -50 na sua Fé para esta rolagem. Se bem-sucedido, a Vontade de Deus atende ao seu clamor.
+- **Servo Consagrado**: Sua Fé não pode cair abaixo de 30 (Estado Comum/Abalado no máximo), e você é permanentemente imune a Amedrontado e Possessão.
 
 ---
 
@@ -56,4 +56,4 @@ Sacerdotes não possuem o poder de criar eventos sobrenaturais à vontade. Em ve
 | Barreira de Fé | 14 | Passiva | - | - | Presença dá resistência psíquica/espiritual e +2 SAB (6m). |
 | Retribuição Divina| 14 | Reação | 2d10 | 1 / D. Curto | Aliado a 0 HP: causa 2d10+SAB dano e Amedronta agressor. |
 | Intervenção Maior | 18 | Ação | - | 1 / Campanha | Clama por intervenção definitiva. Rola 1d100 contra Fé. |
-| Servo Consagrado | 18 | Passiva | - | - | Fé nunca < 30. Imune a Amedrontado, Encantado e Possessão. |
+| Servo Consagrado | 18 | Passiva | - | - | Fé nunca < 30. Imune a Amedrontado e Possessão. |
