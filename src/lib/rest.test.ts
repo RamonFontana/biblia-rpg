@@ -8,7 +8,6 @@ import {
   canTakeLongRest,
   canTakeShortRest,
   hasPriestInGroup,
-  shouldApplyShortRestToCharacters,
 } from './rest';
 
 describe('Descanso Curto', () => {
@@ -16,13 +15,6 @@ describe('Descanso Curto', () => {
     expect(canTakeShortRest(0)).toBe(true);
     expect(canTakeShortRest(1)).toBe(true);
     expect(canTakeShortRest(2)).toBe(false);
-  });
-
-  it('BUG conhecido: sem informar PV recuperados, nem cura nem recarrega habilidades', () => {
-    // O Mestre digita quantos PV o grupo recupera; com 0 (ou em branco) nada é aplicado,
-    // inclusive a recarga das habilidades de Descanso Curto.
-    expect(shouldApplyShortRestToCharacters(0)).toBe(false);
-    expect(shouldApplyShortRestToCharacters(1)).toBe(true);
   });
 });
 
