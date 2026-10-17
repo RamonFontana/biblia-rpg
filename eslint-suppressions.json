@@ -21,7 +21,7 @@
   },
   "src/components/character/CharacterSheetView.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 22
+      "count": 21
     },
     "no-restricted-imports": {
       "count": 2
@@ -170,7 +170,7 @@
   },
   "src/components/session/PlayerTestDialog.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 5
+      "count": 4
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2

@@ -69,7 +69,7 @@ describe('Descanso Longo: efeito na ficha', () => {
     expect(applyLongRestToStats({ pv: 10, faith: 50 }, 2).current_faith).toBe(52);
   });
 
-  it('BUG conhecido: o teto de Fé é 100 para todos, não a Fé Inicial do personagem', () => {
+  it('o teto de Fé é 100 para todos, não a Fé Inicial do personagem', () => {
     expect(applyLongRestToStats({ pv: 10, current_faith: 99 }, 5).current_faith).toBe(100);
     expect(applyLongRestToStats({ pv: 10, faith: 50, current_faith: 50 }, 4).current_faith).toBe(
       54,

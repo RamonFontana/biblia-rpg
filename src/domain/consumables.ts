@@ -4,6 +4,7 @@
 // cura 1d4 PV, rolado pelo jogador na mesa (ADR 0001).
 // Problemas conhecidos: o dado de cura é exibido mas nunca rolado; o texto da descrição do item
 // vira regra de cura (a descrição do catálogo é a fonte).
+import { addFaith } from '@/domain/faith';
 import { applyHpDelta, getCurrentPv, getMaxPv, type VitalsLike } from '@/domain/vitals';
 
 /** Progressão do dado de cura: cada nível de Qualidade acima de 1 avança um degrau. */
@@ -80,7 +81,7 @@ export interface ConsumableEffects {
   restore_faith?: number;
 }
 
-/** Aplica cura fixa (até o PV máximo) e Fé (até a Fé Inicial gravada) às stats do alvo. */
+/** Aplica cura fixa (até o PV máximo) e Fé (até o teto de 100) às stats do alvo. */
 export function applyConsumableEffects<T extends ConsumableStats>(
   currentStats: T,
   effects: ConsumableEffects,
@@ -96,9 +97,7 @@ export function applyConsumableEffects<T extends ConsumableStats>(
   }
 
   if (effects.restore_faith) {
-    const maxFaith = newStats.faith || 0;
-    const currentFaith = newStats.current_faith ?? maxFaith;
-    newStats.current_faith = Math.min(currentFaith + effects.restore_faith, maxFaith);
+    newStats.current_faith = addFaith(newStats, effects.restore_faith);
     hasChanges = true;
   }
 

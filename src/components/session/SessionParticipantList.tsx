@@ -17,6 +17,7 @@ import { conditionsService } from '@/services/conditionsService';
 import { characterVitalsService } from '@/services/characterVitalsService';
 import { getCurrentPv } from '@/domain/vitals';
 import type { ConditionEntry } from '@/types/combat';
+import { addFaith } from '@/domain/faith';
 
 interface SessionParticipantListProps {
   onlineUsers: PresenceState[];
@@ -119,11 +120,7 @@ export function SessionParticipantList({
       return;
     }
 
-    const maxValue = 100;
-    const currentValue = character.stats.current_faith ?? character.stats.faith ?? 0;
-
-    let newValue = Math.max(0, currentValue + delta);
-    if (newValue > maxValue) newValue = maxValue;
+    const newValue = addFaith(character.stats, delta);
 
     const newStats = { ...character.stats, current_faith: newValue };
 

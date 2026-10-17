@@ -11,6 +11,7 @@ import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
 import { conditionsService } from '@/services/conditionsService';
 import type { ConditionEntry } from '@/types/combat';
+import { getCurrentFaith } from '@/domain/faith';
 interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
@@ -234,7 +235,7 @@ export function PlayerCard({
                   <Minus className="h-3 w-3" />
                 </button>
                 <span className="min-w-[3.25rem] text-center font-mono tabular-nums">
-                  {character.stats.current_faith ?? character.stats.faith}/100
+                  {getCurrentFaith(character.stats)}/100
                 </span>
                 <button
                   type="button"
@@ -249,9 +250,7 @@ export function PlayerCard({
                 </button>
               </div>
             ) : (
-              <span className="font-mono tabular-nums">
-                {character.stats.current_faith ?? character.stats.faith}/100
-              </span>
+              <span className="font-mono tabular-nums">{getCurrentFaith(character.stats)}/100</span>
             )}
           </div>
         </div>

@@ -20,6 +20,7 @@ import { CharacterSavingThrows } from './CharacterSavingThrows';
 import { updateCharacter } from '@/features/character-management/api/characterApi';
 import { updateWeaponEffects } from '@/services/characterItemService';
 import { useAmmunition } from '@/features/character-management/api/useAmmunition';
+import { getCurrentFaith, spendFaith } from '@/domain/faith';
 
 interface CharacterSheetViewProps {
   userId?: string;
@@ -188,12 +189,12 @@ export function CharacterSheetView({
 
       if (ability.faithCost) {
         const stats = (character.stats as any) || {};
-        const currentFaith = stats.current_faith ?? stats.faith ?? 0;
+        const faithLeft = spendFaith(stats, ability.faithCost);
 
-        if (currentFaith >= ability.faithCost) {
+        if (faithLeft !== null) {
           updates.stats = {
             ...stats,
-            current_faith: currentFaith - ability.faithCost,
+            current_faith: faithLeft,
           };
         } else {
           return;
@@ -499,9 +500,7 @@ export function CharacterSheetView({
             <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
             <Sparkles className="w-8 h-8 text-amber-500 mb-2" />
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-amber-100">
-                {stats?.current_faith ?? stats?.faith ?? 0}
-              </span>
+              <span className="text-3xl font-bold text-amber-100">{getCurrentFaith(stats)}</span>
               <span className="text-sm text-amber-500/50 font-medium">/100</span>
             </div>
             <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">
@@ -592,11 +591,7 @@ export function CharacterSheetView({
                   let disabledReason = '';
 
                   if (ability.faithCost) {
-                    const currentFaith =
-                      (character.stats as any)?.current_faith ??
-                      (character.stats as any)?.faith ??
-                      0;
-                    if (currentFaith < ability.faithCost) {
+                    if (spendFaith(character.stats as any, ability.faithCost) === null) {
                       disabled = true;
                       disabledReason = 'Fé Insuficiente';
                     }

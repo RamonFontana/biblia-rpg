@@ -94,17 +94,17 @@ describe('applyConsumableEffects', () => {
     expect(applyConsumableEffects({ pv: 20 }, { heal: 5 }).stats.current_pv).toBe(20);
   });
 
-  it('restaurar Fé não passa da Fé Inicial gravada', () => {
-    expect(
-      applyConsumableEffects({ faith: 50, current_faith: 45 }, { restore_faith: 10 }).stats
-        .current_faith,
-    ).toBe(50);
+  it('restaurar Fé vai até o teto de 100, não até a Fé Inicial', () => {
+    const restore = (stats: Record<string, number>, amount: number) =>
+      applyConsumableEffects(stats, { restore_faith: amount }).stats.current_faith;
+    expect(restore({ faith: 50, current_faith: 45 }, 10)).toBe(55);
+    expect(restore({ faith: 50, current_faith: 95 }, 10)).toBe(100);
   });
 
-  it('BUG conhecido: sem Fé Inicial gravada, a Fé restaurada vira 0 (teto 0)', () => {
+  it('sem Fé Inicial gravada, soma à Fé Atual', () => {
     expect(
       applyConsumableEffects({ current_faith: 10 }, { restore_faith: 5 }).stats.current_faith,
-    ).toBe(0);
+    ).toBe(15);
   });
 
   it('só marca mudança quando há cura ou Fé', () => {

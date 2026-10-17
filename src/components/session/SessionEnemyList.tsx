@@ -8,6 +8,7 @@ import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { characterVitalsService } from '@/services/characterVitalsService';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
+import { addFaith } from '@/domain/faith';
 
 interface SessionEnemyListProps {
   sessionId: string;
@@ -51,11 +52,7 @@ export function SessionEnemyList({
       return;
     }
 
-    const maxValue = enemy.stats.faith || 100;
-    const currentValue = enemy.stats.current_faith ?? enemy.stats.faith ?? 0;
-
-    let newValue = Math.max(0, currentValue + delta);
-    if (newValue > maxValue) newValue = maxValue;
+    const newValue = addFaith(enemy.stats, delta);
 
     const newStats = { ...enemy.stats, current_faith: newValue };
 
