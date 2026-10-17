@@ -18,9 +18,9 @@ export function canTakeShortRest(shortRestsTaken: number): boolean {
   return shortRestsTaken < MAX_SHORT_RESTS_PER_DAY;
 }
 
-/** Hoje exige 2 dias de jogo desde o último Descanso Longo. */
+/** 1 por dia de jogo: só a partir do dia seguinte ao último Descanso Longo. */
 export function canTakeLongRest(currentDay: number, lastLongRestDay: number): boolean {
-  return currentDay - lastLongRestDay >= 2;
+  return currentDay > lastLongRestDay;
 }
 
 /** O Descanso Curto só cura e recarrega habilidades quando o Mestre informa mais de 0 PV. */

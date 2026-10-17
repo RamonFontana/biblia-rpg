@@ -195,7 +195,7 @@ export function SessionRestControls({
           disabled={!canLongRest || isResting}
           variant="outline"
           className="bg-indigo-900/20 text-indigo-400 border-indigo-800 hover:bg-indigo-900/40 hover:text-indigo-300"
-          title={!canLongRest ? 'Necessário aguardar 2 dias de jogo.' : ''}
+          title={!canLongRest ? 'Só um Descanso Longo por dia de jogo.' : ''}
         >
           {isResting ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -207,7 +207,7 @@ export function SessionRestControls({
       </div>
       {!canLongRest && (
         <p className="text-xs text-stone-500 mt-2">
-          Descanso longo estará disponível a partir do dia {lastLongRestDay + 2}.
+          Descanso longo estará disponível a partir do dia {lastLongRestDay + 1}.
         </p>
       )}
     </div>
