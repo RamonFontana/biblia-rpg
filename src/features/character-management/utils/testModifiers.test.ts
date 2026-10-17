@@ -60,14 +60,11 @@ describe('getTestModifiers: TR (teste de resistência)', () => {
     );
   });
 
-  it('GAP conhecido: Vocação "Sábio" não tem proficiência em nenhum TR', () => {
-    // Sacerdote tem SAB e CAR; o nome "Sábio" não casa com nenhuma regra de Vocação.
-    expect(
-      getTestModifiers('Resistência (Sabedoria)', char({ vocation: 'Sacerdote' })).profBonus,
-    ).toBe(2);
-    expect(getTestModifiers('Resistência (Sabedoria)', char({ vocation: 'Sábio' })).profBonus).toBe(
-      0,
-    );
+  it('"Sábio" é alias de Sacerdote: tem proficiência em TR de SAB e CAR', () => {
+    for (const vocation of ['Sacerdote', 'Sábio']) {
+      expect(getTestModifiers('Resistência (Sabedoria)', char({ vocation })).profBonus).toBe(2);
+      expect(getTestModifiers('Resistência (Força)', char({ vocation })).profBonus).toBe(0);
+    }
   });
 });
 

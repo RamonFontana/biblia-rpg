@@ -20,6 +20,14 @@ describe('vocations rules', () => {
       expect(rules?.savingThrows).toContain('car');
     });
 
+    it('Sábio is an alias of Sacerdote', () => {
+      expect(getVocationRules('Sábio')).toEqual(getVocationRules('Sacerdote'));
+    });
+
+    it('Nobre is no longer a vocation', () => {
+      expect(getVocationRules('Nobre')).toBeNull();
+    });
+
     it('returns null for unknown or undefined vocation', () => {
       expect(getVocationRules('Desconhecido')).toBeNull();
       expect(getVocationRules(undefined)).toBeNull();

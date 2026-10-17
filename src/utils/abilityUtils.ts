@@ -1,4 +1,5 @@
 import { ABILITIES, type AbilityDefinition } from '../data/abilities';
+import { canonicalVocation } from '../lib/vocation';
 
 export function getAbilitiesForCharacter(
   tribe: string,
@@ -19,7 +20,7 @@ export function getAbilitiesForCharacter(
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-    const normalizedVocation = vocation
+    const normalizedVocation = canonicalVocation(vocation)
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');

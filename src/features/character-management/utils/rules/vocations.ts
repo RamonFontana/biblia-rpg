@@ -1,3 +1,4 @@
+import { canonicalVocation } from '@/lib/vocation';
 import type { SkillId } from '../characterMath';
 
 export interface VocationRules {
@@ -58,16 +59,9 @@ export const VOCATION_RULES: Record<string, VocationRules> = {
     eligibleSkills: ['religiao', 'historia', 'medicina', 'intuicao', 'persuasao', 'natureza'],
     savingThrows: ['sab', 'car'],
   },
-  Nobre: {
-    id: 'Nobre',
-    name: 'Nobre / Comerciante',
-    maxSkills: 3,
-    eligibleSkills: ['persuasao', 'enganacao', 'intuicao', 'historia', 'atuacao', 'investigacao'],
-    savingThrows: ['int', 'car'],
-  },
 };
 
 export function getVocationRules(vocationName: string | undefined | null): VocationRules | null {
   if (!vocationName) return null;
-  return VOCATION_RULES[vocationName] || null;
+  return VOCATION_RULES[canonicalVocation(vocationName)] || null;
 }
