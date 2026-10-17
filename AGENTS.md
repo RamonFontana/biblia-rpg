@@ -45,7 +45,7 @@ Ao refatorar uma regra, escreva antes um teste de caracterização do comportame
 | Tipos | `npm run typecheck` (`strict`) | 5 arquivos com `@ts-nocheck`, listados no ROADMAP |
 | Testes | `npm test` | — |
 | Dados do jogo | `npm run test:data` (`src/data/gameData.test.ts`) | `src/data/known-violations.json`. Violação nova falha; ao corrigir, apague a entrada |
-| RLS | `npm run check:rls` | Tabelas criadas fora das migrations (`characters`) não são cobertas |
+| RLS | `npm run check:rls` | — (cobre o schema inteiro desde a migration-base) |
 
 Cobertura (`npm run coverage`) e Dependabot são só informativos.
 
@@ -59,7 +59,7 @@ Feature ou mudança de regra: `/grill-with-docs` (atualiza `CONTEXT.md` e os ADR
 
 Commits seguem Conventional Commits em inglês (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`), um commit por mudança. Dependência nova só com aprovação do autor.
 
-Schema do banco muda só por migration versionada em `supabase/migrations/`, sempre com `enable row level security` para tabela nova.
+Schema do banco muda só por migration versionada em `supabase/migrations/` (`npx supabase migration new <nome>`), sempre com `enable row level security` para tabela nova. A primeira migration é a base com o schema real; `npx supabase db diff --linked` deve sair vazio depois de aplicar. Depois de mudar o schema, rode `npm run gen:types` (exige `npx supabase login` e `link` feitos uma vez; no Linux com Podman, `DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock`).
 
 ## Agent skills
 
