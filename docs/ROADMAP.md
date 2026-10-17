@@ -7,7 +7,7 @@
 | Onda | Estado |
 |---|---|
 | 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub |
-| 2 — Rede de segurança | em andamento (branch `docs/wave-2-domain-model`): grill feito; glossário, ADRs 0001–0002 e as correções de doc (bloco A) aplicados. Faltam os testes de caracterização e as correções de código (bloco B) |
+| 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização da maioria das regras (branch `test/wave-2-characterization`, ver abaixo). Falta: caracterizar consumíveis, perda de Fé e criação de NPC/sessão, e depois as correções de código (bloco B) |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
@@ -237,6 +237,40 @@ Em cada gate novo, provo que ele **falha** com uma violação temporária (um `a
 - **Técnica:** onde a lógica está num componente, primeiro extrair uma função pura sem alterar comportamento (refactor mecânico) e testar a função. Valores rolados entram como parâmetro (ADR 0001).
 - **Risco:** médio (extrações de componentes grandes).
 - **Pronto quando:** toda regra do mapa §2 tem pelo menos um teste e cada divergência tem a decisão aplicada ou registrada como pendente.
+
+#### Caracterização: situação (2026-10-17)
+Cada regra foi extraída sem mudar comportamento (commit `refactor:`) e fixada em teste (commit `test:`). Os testes marcados "BUG conhecido" descrevem comportamento que o bloco B vai mudar; quando a correção entrar, o teste vira vermelho de propósito e é reescrito na mesma mudança.
+
+| Regra | Módulo extraído | Teste |
+|---|---|---|
+| Teste de Fé (2 fórmulas que divergem) | `src/lib/faithTest.ts` | `faithTest.test.ts` |
+| CA total, Qualidade, precedência de campos, fórmula do slot | `src/lib/equipmentUtils.ts` (`getSlotAcBonus`) | `equipmentUtils.test.ts` |
+| Resistência a Condição da armadura (nunca se aplica) | `src/lib/armorResistance.ts` | `armorResistance.test.ts` |
+| Filtro e recarga de habilidades | `src/utils/abilityUtils.ts` (já puro) | `abilityUtils.test.ts` |
+| Modificadores de Teste, TR e detalhamento da rolagem | `characterMath.ts` (já puro) | `testModifiers.test.ts` |
+| PV do level-up e níveis de Aumento de Atributo | `utils/levelUp.ts` | `levelUp.test.ts` |
+| Testes de Morte (resultado do d20, contadores) | `src/lib/deathSaves.ts` | `deathSaves.test.ts` |
+| Descansos Curto e Longo | `src/lib/rest.ts` | `rest.test.ts` |
+| Munição (RNG injetável) | `src/lib/ammo.ts` | `ammo.test.ts` |
+| PV, CA e Fé iniciais; geração de atributos (RNG injetável) | `character-creation/utils/` | `initialStats.test.ts`, `attributeGeneration.test.ts` |
+| Lista de Condições (mesclar, remover, tique, limpeza) | `conditionsService` (puro, com mock do Supabase) | `conditionsService.test.ts` |
+| Morte por PV ≤ 0 ao fim do combate | `vitalsUtils.deriveDeathState` | já coberto em `vitalsUtils.test.ts` (o teste "marks dead when hp drops to 0" é o comportamento a mudar) |
+
+**Ainda sem teste de caracterização** (próxima fatia da Onda 2)
+- Consumíveis: `useUpdateNPCInventory` (`heal`, `restore_faith`) e o `heal_dice` que é exibido e nunca rolado (`InventoryList`).
+- Perda de 1d6 de Fé na falha e o nome `faithPenalty` com dois significados (`sessionTestService`).
+- Dificuldade do Mestre como número com sinal (`MasterTestDialog`, Misericórdia/Punição).
+- Criação de NPC jogável e de inimigo (`sessionService`): chaves `strength/dexterity` e `stats.armor_class` que nenhum leitor usa.
+- Encerramento da sessão: `pending_level_up` e a morte por PV ≤ 0 (`sessionService.endSession`).
+- Tique de condições por rodada e fim de combate no `combatStore`; troca de itens (`tradeService`).
+- O máximo de Fé com 4 valores diferentes e o `current_faith ?? faith ?? 0` repetido 16 vezes (será `getCurrentFaith` na Onda 3).
+
+**Por que a correção do Teste de Fé não entrou agora**: o serviço que grava `is_approved` não conhece a penalidade de Item Profano (quem a calcula é a tela, lendo os itens). Unificar exige que a camada de dados leia os itens do personagem, então a correção nasce junto com `src/domain/faith` na Onda 3. O mesmo vale para a resistência de armadura (depende do vocabulário de condições e de ler `items.condition_resistances` do banco).
+
+**Achados novos desta etapa**
+- A lista de perícias tem **Arcanismo** (`SKILLS_LIST`), num cenário que proíbe magia arcana. Decidir se sai ou se vira outra perícia (ex.: Conhecimento do Povo). Não mexi.
+- O `LevelUpWizard` mostra "+7 PV" no passo de PV e grava 11 quando a CON sobe; o jogador não vê o retroativo antes de confirmar.
+- `calculateModifier` tinha 4 cópias; 2 já foram unificadas (`LevelUpWizard`, `InitialStats`). Resta uma, em `EnemySheet.tsx:85`.
 
 #### Decisões do grill (2026-10-17)
 Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
