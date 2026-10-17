@@ -14,6 +14,20 @@ const VOCATION_HP_AVERAGE: Record<string, number> = {
   sabio: 5,
 };
 
+/** Nível máximo do jogo. A trava hoje existe só na tela de encerramento da sessão. */
+export const MAX_LEVEL = 20;
+
+/** Nível do personagem: a coluna `level` ou, nas fichas antigas, `stats.level`; senão 1. */
+export function getCharacterLevel(character: { level?: number | null; stats?: unknown }): number {
+  const statsLevel = (character.stats as { level?: number } | null | undefined)?.level;
+  return character.level || statsLevel || 1;
+}
+
+/** O Mestre só pode conceder level up a quem ainda não chegou ao nível máximo. */
+export function canGrantLevelUp(character: { level?: number | null; stats?: unknown }): boolean {
+  return getCharacterLevel(character) < MAX_LEVEL;
+}
+
 /** Níveis em que o personagem ganha 2 pontos de atributo. */
 export const ASI_LEVELS = [4, 8, 12, 16, 19];
 

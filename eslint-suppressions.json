@@ -147,7 +147,7 @@
   },
   "src/components/session/EndSessionDialog.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 2
+      "count": 1
     }
   },
   "src/components/session/MasterTestDialog.tsx": {
@@ -315,7 +315,7 @@
   },
   "src/features/character-management/components/LevelUpWizard.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 9
+      "count": 8
     }
   },
   "src/features/character-management/pages/CharacterEdit.tsx": {

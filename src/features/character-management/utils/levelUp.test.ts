@@ -2,7 +2,15 @@
 // Decisões: ROADMAP.md, Onda 2: Marco no lugar de XP; Aumento de Atributo nos níveis 4/8/12/16/19.
 // Termos: CONTEXT.md (PV, Vocação, Marco).
 import { describe, expect, it } from 'vitest';
-import { ASI_LEVELS, calculateLevelUpHp, getHpAverage, getLevelUpSteps } from './levelUp';
+import {
+  ASI_LEVELS,
+  MAX_LEVEL,
+  calculateLevelUpHp,
+  canGrantLevelUp,
+  getCharacterLevel,
+  getHpAverage,
+  getLevelUpSteps,
+} from './levelUp';
 
 const hp = (over: Partial<Parameters<typeof calculateLevelUpHp>[0]> = {}) =>
   calculateLevelUpHp({
@@ -102,5 +110,38 @@ describe('getLevelUpSteps: o passo de PV mostra o ganho final', () => {
 describe('Aumento de Atributo', () => {
   it('acontece nos níveis 4, 8, 12, 16 e 19', () => {
     expect(ASI_LEVELS).toEqual([4, 8, 12, 16, 19]);
+  });
+});
+
+describe('getCharacterLevel', () => {
+  it('usa a coluna level', () => {
+    expect(getCharacterLevel({ level: 5, stats: { level: 3 } })).toBe(5);
+  });
+
+  it('nas fichas antigas cai para stats.level', () => {
+    expect(getCharacterLevel({ level: null, stats: { level: 3 } })).toBe(3);
+    expect(getCharacterLevel({ stats: { level: 7 } })).toBe(7);
+  });
+
+  it('sem nenhum dos dois é nível 1', () => {
+    expect(getCharacterLevel({})).toBe(1);
+    expect(getCharacterLevel({ level: 0, stats: null })).toBe(1);
+  });
+});
+
+describe('canGrantLevelUp: teto de nível', () => {
+  it('o nível máximo é 20', () => {
+    expect(MAX_LEVEL).toBe(20);
+  });
+
+  it('permite até o nível 19 e bloqueia no 20', () => {
+    expect(canGrantLevelUp({ level: 19 })).toBe(true);
+    expect(canGrantLevelUp({ level: 20 })).toBe(false);
+    expect(canGrantLevelUp({ level: 21 })).toBe(false);
+  });
+
+  it('GAP conhecido: a trava existe só na tela de encerramento, nenhuma regra impede o salto no banco', () => {
+    // O LevelUpWizard calcula getCharacterLevel + 1 sem checar o teto.
+    expect(getCharacterLevel({ level: 20 }) + 1).toBe(21);
   });
 });

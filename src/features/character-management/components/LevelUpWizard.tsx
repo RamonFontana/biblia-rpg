@@ -3,7 +3,12 @@ import type { Character } from '../types';
 import { updateCharacter } from '../api/characterApi';
 import { applyMaxPvIncrease } from '@/lib/vitalsUtils';
 import { ABILITIES } from '../../../data/abilities';
-import { ASI_LEVELS, calculateLevelUpHp, getLevelUpSteps } from '../utils/levelUp';
+import {
+  ASI_LEVELS,
+  calculateLevelUpHp,
+  getCharacterLevel,
+  getLevelUpSteps,
+} from '../utils/levelUp';
 
 interface LevelUpWizardProps {
   character: Character;
@@ -23,7 +28,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const newLevel = (character.level || (character.stats as any)?.level || 1) + 1;
+  const newLevel = getCharacterLevel(character) + 1;
   const currentCon = (character.attributes as any)?.con || 10;
 
   // State for choices
