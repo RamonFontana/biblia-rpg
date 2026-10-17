@@ -6,7 +6,7 @@
 ## Status
 | Onda | Estado |
 |---|---|
-| 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub |
+| 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub (o sistema bloqueou a minha tentativa via `gh api`; o autor configura no GitHub) |
 | 2 — Rede de segurança | em andamento. Feito: grill, glossário, ADRs 0001–0002, correções de doc (bloco A, PR #9) e testes de caracterização da maioria das regras (branch `test/wave-2-characterization`, ver abaixo). Falta: caracterizar consumíveis, perda de Fé e criação de NPC/sessão, e depois as correções de código (bloco B) |
 | 3 — Motor e dados | pendente |
 | 4 — Restante + padronização visual | pendente |
@@ -360,9 +360,9 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 2. **GitHub:** proteger a branch `main`, exigindo o check `ci` e o deploy da Vercel antes do merge (sem isso o CI não bloqueia de fato). Ativar Dependabot alerts.
 3. **Supabase**
    - ~~Verificar se o projeto está pausado.~~ Estava pausado; reativado em 2026-10-17. O plano gratuito pausa por inatividade, então o app pode cair de novo.
-   - ~~Conferir RLS de `characters` e rodar o Security Advisor.~~ Feito (ver §4). Falta ligar a proteção contra senhas vazadas no dashboard (Auth → Passwords).
+   - ~~Conferir RLS de `characters` e rodar o Security Advisor.~~ Feito (ver §4). A proteção contra senhas vazadas não aparece no menu do plano gratuito (provável recurso do Pro, não confirmado); fica como risco aceito enquanto o projeto for gratuito.
    - Ter a senha do banco à mão para o `supabase db pull` na Onda 3.
-4. **Vercel:** confirmar que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estão em Production e Preview e que **nenhuma** `SUPABASE_SERVICE_ROLE_KEY` está lá (o app não precisa dela).
+4. **Vercel:** confirmar que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estão em Production e Preview e que **nenhuma** `SUPABASE_SERVICE_ROLE_KEY` está lá (o app não precisa dela). Não consegui conferir: o MCP da Vercel deu 403 no time e o CLI não está logado (`vercel login`).
 5. Revisar os 13 itens de conteúdo bíblico do §2.
 6. Preencher a lista de features novas.
 7. Revisar `docs/DESIGN.md` (Onda 1, passo 12) e dizer se falta algo do padrão da criação de personagem que você quer manter.
