@@ -67,9 +67,9 @@ describe('resolveHealing: itens do catálogo hoje', () => {
   const healing = (name: string) =>
     resolveHealing(undefined, undefined, ITEMS_DB.find((i) => i.name === name)?.description, 1);
 
-  it('BUG conhecido (decisão: Sustento): Odre e Ração aparecem como curativos', () => {
-    expect(healing('Odre (Água)')).toEqual({ heal: 2 });
-    expect(healing('Ração de Viagem')).toEqual({ healDice: '1d4' });
+  it('Odre e Ração são Sustento: não curam', () => {
+    expect(healing('Odre (Água)')).toEqual({});
+    expect(healing('Ração de Viagem')).toEqual({});
   });
 
   it('Bálsamo: o texto "Cura 1d4 HP em Descanso" vira dado de cura', () => {
