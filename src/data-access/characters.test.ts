@@ -38,13 +38,18 @@ import {
   findLatestCharacterOfUser,
   getActiveSessionCharacterIds,
   getCharacterById,
+  getCharacterDeathState,
+  getCharacterResistanceSource,
   getCharacters,
   getMyCharacters,
   listCampaignNpcs,
   saveCharacter,
   setCharacterVisible,
   subscribeToCharacterSheet,
+  subscribeToCharacterUpdates,
   updateCharacter,
+  updateCharacterDeathState,
+  updateCharacterSkills,
   updateCharacterEquipment,
   updateCharacterRest,
   updateCharacterStats,
@@ -403,6 +408,91 @@ describe('subscribeToCharacterSheet', () => {
   it('devolve o cancelamento da assinatura', () => {
     const { stop } = setup();
     expect(state.stopped).toBe(0);
+    stop();
+    expect(state.stopped).toBe(1);
+  });
+});
+
+describe('updateCharacterSkills', () => {
+  it('grava só as habilidades da ficha pedida', async () => {
+    const skills = { ability_uses: { golpe: 1 } };
+    await updateCharacterSkills('c1', skills);
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ skills });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(updateCharacterSkills('c1', {})).rejects.toBe(failure);
+  });
+});
+
+describe('getCharacterResistanceSource', () => {
+  it('lê o equipamento e os itens com o slug da ficha', async () => {
+    state.respond = () => ({ data: { equipment: {}, character_items: [] } });
+    await expect(getCharacterResistanceSource('c1')).resolves.toEqual({
+      equipment: {},
+      character_items: [],
+    });
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe('equipment, character_items(*, items(slug))');
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+    expect(call.single).toBe(true);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(getCharacterResistanceSource('c1')).rejects.toBe(failure);
+  });
+});
+
+describe('estado de morte', () => {
+  it('getCharacterDeathState lê os testes de morte, estável e morto', async () => {
+    const row = {
+      id: 'c1',
+      death_saves_successes: 1,
+      death_saves_failures: 0,
+      is_stable: false,
+      is_dead: false,
+    };
+    state.respond = () => ({ data: row });
+    await expect(getCharacterDeathState('c1')).resolves.toEqual(row);
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe(
+      'id, death_saves_successes, death_saves_failures, is_stable, is_dead',
+    );
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('updateCharacterDeathState grava só os campos pedidos', async () => {
+    await updateCharacterDeathState('c1', { is_stable: true, death_saves_successes: 3 });
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ is_stable: true, death_saves_successes: 3 });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('lançam o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(getCharacterDeathState('c1')).rejects.toBe(failure);
+    await expect(updateCharacterDeathState('c1', { is_dead: true })).rejects.toBe(failure);
+  });
+
+  it('subscribeToCharacterUpdates entrega a linha nova das atualizações da ficha', () => {
+    const onChange = vi.fn();
+    const stop = subscribeToCharacterUpdates('c1', onChange);
+    const [{ name, subscriptions }] = state.subscriptions;
+    const [sub] = subscriptions as {
+      table: string;
+      event: string;
+      filter: string;
+      onChange: (p: { new: unknown }) => void;
+    }[];
+    expect(name).toMatch(/^char_death_c1_/);
+    expect([sub.table, sub.event, sub.filter]).toEqual(['characters', 'UPDATE', 'id=eq.c1']);
+
+    sub.onChange({ new: { id: 'c1', is_dead: true } });
+    expect(onChange).toHaveBeenCalledWith({ id: 'c1', is_dead: true });
     stop();
     expect(state.stopped).toBe(1);
   });

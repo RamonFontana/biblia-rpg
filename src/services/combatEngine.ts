@@ -1,8 +1,8 @@
-import { conditionsService } from './conditionsService';
+import { mergeCondition } from '@/domain/conditions';
+import { getCharacterResistanceSource } from '@/data-access/characters';
 import type { AbilityDefinition } from '@/content/schemas';
 import { useCombatStore } from '../store/combatStore';
 import type { ConditionEntry, CharacterEquipment, WeaponEffect } from '../types/combat';
-import { supabase } from '../lib/supabase';
 import {
   applyConditionResistance,
   getConditionResistanceLevels,
@@ -59,16 +59,13 @@ export const combatEngine = {
     // Nível de Resistência a Condição do alvo, Condição por Condição, pelos itens equipados.
     let resistanceLevels: Record<string, number> = {};
     if (target.entity_type !== 'enemy' && target.entity_id) {
-      const { data: charData } = await supabase
-        .from('characters')
-        .select('equipment, character_items(*, items(slug))')
-        .eq('id', target.entity_id)
-        .single();
+      const charData = await getCharacterResistanceSource(target.entity_id).catch(() => null);
 
       if (charData) {
         const equipment = charData.equipment as unknown as CharacterEquipment;
-        const charItems = (charData.character_items as any[]) || [];
-        resistanceLevels = getConditionResistanceLevels(resolveEquippedItems(equipment, charItems));
+        resistanceLevels = getConditionResistanceLevels(
+          resolveEquippedItems(equipment, charData.character_items),
+        );
       }
     }
 
@@ -91,7 +88,7 @@ export const combatEngine = {
           conditionId: cond.conditionId,
           duration: outcome.duration,
         };
-        currentConditions = conditionsService.mergeCondition(currentConditions, newCond);
+        currentConditions = mergeCondition(currentConditions, newCond);
       }
     }
 
