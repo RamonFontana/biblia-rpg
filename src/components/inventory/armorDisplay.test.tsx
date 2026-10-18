@@ -22,13 +22,19 @@ describe('EquipmentSlots', () => {
     row('h', 'elmo_bronze', 'Elmo de Bronze Fechado', 3),
     row('b', 'cota_escamas', 'Cota de Escamas de Bronze', 2),
     row('s', 'escudo', 'Escudo (Madeira/Bronze)', 2),
+    row('l', 'lorica', 'Lorica de Escamas Pesada'),
   ];
 
-  const renderSlots = (equipment: object) =>
+  const renderSlots = (
+    equipment: object,
+    character: { vocation?: string; strength?: number } = {},
+  ) =>
     render(
       <EquipmentSlots
         equipment={{ head: null, body: null, mainHand: null, offHand: null, ...equipment }}
         inventoryItems={inventory}
+        characterVocation={character.vocation}
+        characterStrength={character.strength}
       />,
     );
 
@@ -43,6 +49,28 @@ describe('EquipmentSlots', () => {
   it('a armadura mostra a CA do item com a regra da DES e a Qualidade', () => {
     renderSlots({ body: 'b' });
     expect(screen.getByText(/CA 15 \+ DES \(máx \+2\)/)).toBeTruthy(); // 14 + 1 (Qualidade 2)
+  });
+
+  it('armadura equipada sem proficiência continua equipada e mostra o aviso', () => {
+    renderSlots({ body: 'b', offHand: 's' }, { vocation: 'Batedor' });
+    expect(screen.getByText('Sem proficiência em armadura média')).toBeTruthy();
+    expect(screen.getByText('Sem proficiência em escudo')).toBeTruthy();
+    expect(screen.getByText(/CA 15 \+ DES/)).toBeTruthy();
+  });
+
+  it('quem tem a proficiência não vê aviso no slot', () => {
+    renderSlots({ body: 'b', offHand: 's', head: 'h' }, { vocation: 'Guerreiro', strength: 14 });
+    expect(screen.queryByText(/Sem proficiência/)).toBeNull();
+  });
+
+  it('a Lorica avisa da FOR no slot do corpo', () => {
+    renderSlots({ body: 'l' }, { vocation: 'Guerreiro', strength: 10 });
+    expect(screen.getByText('Requer FOR 13 (você tem 10)')).toBeTruthy();
+  });
+
+  it('o elmo pesado avisa o Batedor', () => {
+    renderSlots({ head: 'h' }, { vocation: 'Batedor' });
+    expect(screen.getByText('Sem proficiência em armadura pesada')).toBeTruthy();
   });
 
   it('o escudo mostra o bônus com a Qualidade', () => {

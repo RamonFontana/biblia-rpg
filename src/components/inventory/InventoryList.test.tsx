@@ -16,11 +16,16 @@ const row = (slug: string, name: string, category: string) => ({
   items: { slug, name, category, effects: {}, description: '' },
 });
 
-function renderList(item: ReturnType<typeof row>) {
+function renderList(
+  item: ReturnType<typeof row>,
+  character: { vocation?: string; strength?: number } = {},
+) {
   const onEquip = vi.fn();
   render(
     <InventoryList
       inventoryItems={[item]}
+      vocation={character.vocation}
+      strength={character.strength}
       equipment={{ head: null, body: null, mainHand: null, offHand: null }}
       onEquip={onEquip}
       onUseConsumable={vi.fn()}
@@ -53,5 +58,50 @@ describe('InventoryList: o botão de equipar sai do catálogo', () => {
   it('corda e outros itens que não se equipam não têm botão', () => {
     renderList(row('corda', 'Corda de Cânhamo (15m)', 'Utilidade'));
     expect(screen.queryByRole('button', { name: 'Equipar' })).toBeNull();
+  });
+});
+
+describe('InventoryList: avisos ao equipar armadura e escudo', () => {
+  const cota = () => row('cota_escamas', 'Cota de Escamas de Bronze', 'Armadura');
+  const lorica = () => row('lorica', 'Lorica de Escamas Pesada', 'Armadura');
+
+  it('sem proficiência avisa, mas deixa equipar', () => {
+    const onEquip = renderList(cota(), { vocation: 'Batedor', strength: 10 });
+    expect(screen.getByText('Sem proficiência em armadura média')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Equipar' }));
+    expect(onEquip).toHaveBeenCalledOnce();
+  });
+
+  it('sem a FOR exigida avisa quanto falta', () => {
+    renderList(lorica(), { vocation: 'Guerreiro', strength: 10 });
+    expect(screen.getByText('Requer FOR 13 (você tem 10)')).toBeTruthy();
+    expect(screen.queryByText(/Sem proficiência/)).toBeNull();
+  });
+
+  it('quem tem a proficiência e a FOR não vê aviso', () => {
+    renderList(lorica(), { vocation: 'Guerreiro', strength: 14 });
+    expect(screen.queryByText(/Requer FOR/)).toBeNull();
+    expect(screen.queryByText(/Sem proficiência/)).toBeNull();
+  });
+
+  it('sem Vocação na ficha não há aviso', () => {
+    renderList(lorica());
+    expect(screen.queryByText(/Requer FOR/)).toBeNull();
+    expect(screen.queryByText(/Sem proficiência/)).toBeNull();
+  });
+
+  it('escudo e Túnica Sagrada avisam quem não pode usar', () => {
+    renderList(row('escudo', 'Escudo (Madeira/Bronze)', 'Escudo'), { vocation: 'Batedor' });
+    expect(screen.getByText('Sem proficiência em escudo')).toBeTruthy();
+    cleanup();
+    renderList(row('tunica_sagrada', 'Túnica Sagrada (Levita)', 'Armadura'), {
+      vocation: 'Guerreiro',
+    });
+    expect(screen.getByText('Armadura exclusiva de Sacerdote e Sábio')).toBeTruthy();
+  });
+
+  it('armas não recebem aviso de armadura', () => {
+    renderList(row('espada_curta', 'Espada Curta (Ferro)', 'Arma'), { vocation: 'Sacerdote' });
+    expect(screen.queryByText(/Sem proficiência/)).toBeNull();
   });
 });

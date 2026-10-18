@@ -98,6 +98,7 @@ export const ITEMS_DB: ContentItem[] = [
     category: 'Pesada',
     description: 'CA: 16. Desvantagem em Furtividade, Requer For 13',
     properties: ['stealth_disadvantage', 'heavy'],
+    requiresStrength: 13,
     slot: 'body',
     level: 4,
     conditionResistances: ['sangrando', 'atordoado'],

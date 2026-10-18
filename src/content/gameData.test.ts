@@ -68,6 +68,11 @@ function collectViolations(): string[] {
       if (!conditionIds.has(resistance)) violations.push(`${p}:unknown-condition:${resistance}`);
     }
 
+    // O texto "Requer For N" e o campo que o aviso de equipar lê têm de concordar.
+    const textRequirement = item.description.match(/Requer For (\d+)/i);
+    if ((textRequirement ? Number(textRequirement[1]) : undefined) !== item.requiresStrength)
+      violations.push(`${p}:requires-strength-differs-from-description`);
+
     if (item.type === 'Arma' && !item.damage) violations.push(`${p}:weapon-without-damage`);
     if ((item.type === 'Armadura' || item.type === 'Escudo') && item.armorClass === undefined)
       violations.push(`${p}:armor-without-ac`);

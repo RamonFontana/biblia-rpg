@@ -42,6 +42,8 @@ export const itemSchema = z.strictObject({
   slot: z.enum(['body', 'head', 'offHand', 'mainHand']).optional(),
   properties: z.array(z.string().min(1)).optional(),
   conditionResistances: z.array(z.string().min(1)).optional(),
+  /** FOR mínima para usar sem aviso (a Lorica pede 13). Equipar abaixo disso é permitido. */
+  requiresStrength: z.number().int().min(1).max(30).optional(),
   statPenalty: z
     .strictObject({ stat: z.string().min(1), value: z.number(), type: z.string().min(1) })
     .optional(),

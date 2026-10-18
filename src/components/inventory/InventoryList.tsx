@@ -14,6 +14,7 @@ import { formatItemArmorClass } from '@/domain/armorClass';
 import { getEquipSlot } from '@/domain/equipment';
 import { getItemConditionResistances } from '@/domain/armorResistance';
 import { ItemResistances } from './ItemResistances';
+import { EquipWarnings } from './EquipWarnings';
 
 interface InventoryListProps {
   inventoryItems: any[];
@@ -29,6 +30,9 @@ interface InventoryListProps {
   onRecoverAmmunition?: (characterItemId: string, spentAmount: number, maxCapacity: number) => void;
   onAddCharges?: (characterItemId: string, amount: number) => void;
   onRemoveItem?: (characterItemId: string) => void;
+  /** Vocação e FOR da ficha, para avisar de armadura e escudo ao equipar. */
+  vocation?: string | null;
+  strength?: number | null;
 }
 
 /** Dica do botão Equipar: o que o item dá, com o elmo avisando que não dá CA. */
@@ -58,6 +62,8 @@ export function InventoryList({
   onRecoverAmmunition,
   onAddCharges,
   onRemoveItem,
+  vocation,
+  strength,
 }: InventoryListProps) {
   if (inventoryItems.length === 0) {
     return (
@@ -444,6 +450,11 @@ export function InventoryList({
                         ) : null;
                       })()}
                       <ItemResistances slug={item.items?.slug} />
+                      <EquipWarnings
+                        slug={item.items?.slug}
+                        vocation={vocation}
+                        strength={strength}
+                      />
                       {item.custom_condition_resistances &&
                         item.custom_condition_resistances.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">

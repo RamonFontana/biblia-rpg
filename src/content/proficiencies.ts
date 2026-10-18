@@ -1,10 +1,14 @@
 import type { ItemCategory } from './schemas';
 
-// Categorias de equipamento que cada Vocação sabe usar (proficiência de armas e armaduras).
+const SACERDOTE: ItemCategory[] = ['Simples', 'Leve', 'Média', 'Escudo', 'Sagrada', 'Todas'];
+
+// Categorias de equipamento que cada Vocação sabe usar (proficiência de armas, armaduras e
+// escudos). As armaduras e escudos seguem a linha "Proficiências" de docs/vocacoes (conferido por
+// proficiencies.test.ts); a Sagrada é a Túnica Sagrada, exclusiva de Sacerdote e Sábio.
 export const VOCATION_PROFICIENCIES: Record<string, ItemCategory[]> = {
   Guerreiro: ['Simples', 'Marcial', 'Leve', 'Média', 'Pesada', 'Escudo', 'Todas'],
-  Caçador: ['Simples', 'Marcial', 'Leve', 'Média', 'Todas'],
-  Batedor: ['Simples', 'Marcial', 'Leve', 'Média', 'Todas'],
-  Sacerdote: ['Simples', 'Leve', 'Sagrada', 'Todas'],
-  Sábio: ['Simples', 'Leve', 'Sagrada', 'Todas'],
+  Caçador: ['Simples', 'Marcial', 'Leve', 'Média', 'Escudo', 'Todas'],
+  Batedor: ['Simples', 'Marcial', 'Leve', 'Todas'],
+  Sacerdote: SACERDOTE,
+  Sábio: SACERDOTE,
 };
