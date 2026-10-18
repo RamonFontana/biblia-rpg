@@ -113,7 +113,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const entityIds = setupParticipants
       .filter((p) => p.entityType !== 'enemy')
       .map((p) => p.entityId);
-    let charactersConditions: Record<string, any[]> = {};
+    const charactersConditions: Record<string, any[]> = {};
     if (entityIds.length > 0) {
       const { data: chars } = await supabase
         .from('characters')

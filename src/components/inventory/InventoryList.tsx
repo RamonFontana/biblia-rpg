@@ -198,12 +198,7 @@ export function InventoryList({
                 const fullyEquipped =
                   equippedCount >= item.quantity || (itemSlot !== '1h' && equippedCount >= 1);
 
-                const isEquippable =
-                  !!itemSlot &&
-                  canEquipItem(
-                    normalizedEffects,
-                    equipment || { head: null, body: null, mainHand: null, offHand: null },
-                  );
+                const isEquippable = !!itemSlot && canEquipItem(normalizedEffects);
 
                 return (
                   <div

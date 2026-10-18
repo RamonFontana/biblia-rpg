@@ -7,10 +7,7 @@ import {
   resolveEquippedItems,
 } from '@/domain/armorResistance';
 
-export function canEquipItem(
-  itemEffects: ItemEffects,
-  _currentEquipment: CharacterEquipment,
-): boolean {
+export function canEquipItem(itemEffects: ItemEffects): boolean {
   if (!itemEffects.slot) return false;
 
   switch (itemEffects.slot) {
@@ -149,7 +146,7 @@ export function getCombatStats(character: any) {
   if (typeof equipment === 'string') {
     try {
       parsedEquipment = JSON.parse(equipment);
-    } catch (e) {
+    } catch {
       parsedEquipment = {};
     }
   }
@@ -187,7 +184,7 @@ export function getCombatStats(character: any) {
       return [...baseResistances, ...customResistances];
     };
 
-    let allResistances: string[] = [];
+    const allResistances: string[] = [];
 
     allResistances.push(...getResistances(headItem));
 
