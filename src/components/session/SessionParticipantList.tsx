@@ -14,7 +14,7 @@ import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
 import { getCombatStats } from '@/lib/equipmentUtils';
-import { conditionsService } from '@/services/conditionsService';
+import { applyConditionToCharacter, removeConditionFromCharacter } from '@/data-access/conditions';
 import { characterVitalsService } from '@/data-access/vitals';
 import { getCurrentPv } from '@/domain/vitals';
 import type { ConditionEntry } from '@/types/combat';
@@ -145,7 +145,7 @@ export function SessionParticipantList({
     const updated = [...current.filter((c) => c.conditionId !== conditionId), newCond];
     if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
 
-    await conditionsService.applyToCharacter(npcId, current, newCond);
+    await applyConditionToCharacter(npcId, current, newCond);
   };
 
   const handleRemoveNPCCondition = async (npcId: string, conditionId: string) => {
@@ -156,7 +156,7 @@ export function SessionParticipantList({
     const updated = current.filter((c) => c.conditionId !== conditionId);
     if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
 
-    await conditionsService.removeFromCharacter(npcId, current, conditionId);
+    await removeConditionFromCharacter(npcId, current, conditionId);
   };
 
   const gmUser = onlineUsers.find((u) => u.user_id === gmId);
