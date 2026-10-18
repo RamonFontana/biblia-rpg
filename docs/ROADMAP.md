@@ -9,7 +9,7 @@
 | 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub (o sistema bloqueou a minha tentativa via `gh api`; o autor configura no GitHub) |
 | 2 — Rede de segurança | concluída: grill, glossário, ADRs 0001–0002, correções de doc (PR #9), caracterização das regras (PRs #10, #11 e #13) e correções do bloco B (PR #14). O que sobrou do bloco B (Teste de Fé unificado, CA, Resistência a Condição) entrou nos passos da Onda 3 |
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
-| 4 — Restante + padronização visual | pendente |
+| 4 — Restante + padronização visual | em andamento desde 2026-10-18 (passos abaixo, um PR cada) |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
 
 
@@ -399,6 +399,16 @@ Achados do passo 4(a) (leitura do banco em 2026-10-17):
 - **Avaliar:** 1–2 smoke tests E2E contra o preview da Vercel (login → abrir ficha), só se as regressões de UI incomodarem.
 - **Pronto quando:** `eslint-suppressions.json` está vazio ou próximo disso.
 
+#### Passos da Onda 4 (planejados em 2026-10-18)
+A ordem põe a camada de dados antes de quebrar os componentes, porque eles passam a consumi-la; os tokens visuais vêm cedo porque são independentes e baratos de desfazer.
+1. **Limpeza.** `useItem` → `consumeItem` (era um falso positivo do `rules-of-hooks`, não um bug: é uma mutação assíncrona, não um hook); parâmetro sem uso e `let`/`catch` triviais; código morto (`ActiveSession/index.tsx`, `WelcomeCard.tsx`, `store/index.ts`, `scripts/check-sessions.js`). `PhysicalRollForm` fica: é a tela do ataque físico, da Onda 5. As variáveis sem uso que sobram estão em arquivos que os passos 4 e 5 reescrevem.
+2. **Tokens visuais.** As variáveis CSS do shadcn passam aos valores da paleta de `docs/DESIGN.md`, com captura de tela antes e depois.
+3. **Camada de dados** (`src/data-access/`), por área: autenticação e sessão; personagem e inventário; combate (`combatStore` deixa de escrever no banco); testes e trocas. Cada área tipa as linhas com `database.types.ts`, o que tira os `any` do caminho, e zera as suas supressões de `no-restricted-imports`.
+4. **Criação de personagem.** Tira os 5 `@ts-nocheck`, leva as regras para o motor e preserva o visual, que é a referência.
+5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
+6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
+7. **Resíduo** de `any`, `set-state-in-effect` e `only-export-components`.
+
 ### Onda 5 em diante: features novas
 Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, e só começa depois que a área que ela toca foi refatorada. A lista de features do prompt estava vazia; preencher no ROADMAP.
 
@@ -426,17 +436,15 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (298 em 2026-10-17)
+### Lint: `eslint-suppressions.json` (278 em 2026-10-18)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 223 |
+| `@typescript-eslint/no-explicit-any` | 213 |
 | `no-restricted-imports` (Supabase fora da camada de dados) | 29 |
-| `@typescript-eslint/no-unused-vars` | 22 |
+| `@typescript-eslint/no-unused-vars` | 19 |
 | `react-hooks/set-state-in-effect` | 8 |
-| `prefer-const` | 6 |
 | `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |
 | `react-refresh/only-export-components` | 3 |
-| `react-hooks/rules-of-hooks` (**possível bug real, ver na Onda 4**) | 1 |
 | `react-hooks/immutability` | 1 |
 
 Ao corrigir uma violação, rode `npm run lint:prune`; o lint falha enquanto houver supressão órfã.
