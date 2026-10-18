@@ -11,6 +11,7 @@ import { ITEMS_DB } from '@/content/items';
 import { CONDITIONS } from '@/content/conditions';
 import { resolveHealing } from '@/domain/consumables';
 import { formatItemArmorClass } from '@/domain/armorClass';
+import { getEquipSlot } from '@/domain/equipment';
 import { getItemConditionResistances } from '@/domain/armorResistance';
 import { ItemResistances } from './ItemResistances';
 
@@ -107,7 +108,8 @@ export function InventoryList({
                 const itemEffects = item.items?.effects || {};
                 const dbItem = ITEMS_DB.find((i) => i.name === item.items?.name);
                 const itemType = dbItem?.type || item.items?.category;
-                let itemSlot = itemEffects.slot || dbItem?.slot;
+                // O lugar vem do catálogo; o que está gravado no item só vale para item fora dele.
+                let itemSlot = getEquipSlot(item.items?.slug) ?? itemEffects.slot;
 
                 // Infer slot from category if missing
                 if (!itemSlot) {
