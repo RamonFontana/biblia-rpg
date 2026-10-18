@@ -1,128 +1,156 @@
-// CARACTERIZAÇÃO: fixa o comportamento ATUAL da CA e do equipamento, inclusive o que será mudado.
-// Decisões: ROADMAP.md, Onda 2 (bloco B): teto de DES por peso de armadura e CA única.
-// Termos: CONTEXT.md (Qualidade, Resistência a Condição).
+// CA de quem tem ficha, calculada pelo motor (src/domain/armorClass) a partir dos atributos e do que
+// está equipado. Inimigos e NPCs simples seguem com a CA que o Mestre digitou (stats.ca).
+// Decisões: ROADMAP.md, Onda 3 (passo 5). Termos: CONTEXT.md (CA, Elmo, Qualidade).
 import { describe, expect, it } from 'vitest';
-import { getCombatStats, getSlotAcBonus } from './equipmentUtils';
+import { getCombatStats } from './equipmentUtils';
 
-// Monta um personagem com itens no inventário e nos slots indicados.
+// Monta um personagem com ficha: DES nos atributos, itens no inventário e nos slots indicados.
 type Slots = { head?: string; body?: string; mainHand?: string; offHand?: string };
-function character(
-  ca: number | undefined,
-  slots: Slots,
-  items: Record<string, { effects?: object; name?: string; level?: number; res?: string[] }>,
-) {
+type ItemSpec = { slug?: string; effects?: object; name?: string; level?: number; res?: string[] };
+function character(des: number, slots: Slots, items: Record<string, ItemSpec>, statsCa?: number) {
   return {
-    stats: { ca },
+    attributes: { for: 10, des, con: 10, int: 10, sab: 10, car: 10 },
+    stats: { ca: statsCa },
     equipment: slots,
     character_items: Object.entries(items).map(([id, it]) => ({
       id,
       level: it.level,
       custom_condition_resistances: [],
-      items: { name: it.name, effects: it.effects, condition_resistances: it.res ?? [] },
+      items: {
+        slug: it.slug,
+        name: it.name,
+        effects: it.effects,
+        condition_resistances: it.res ?? [],
+      },
     })),
   };
 }
 
-describe('getCombatStats: CA total', () => {
-  it('sem equipamento a CA é a base gravada na ficha', () => {
-    expect(getCombatStats(character(13, {}, {})).totalAc).toBe(13);
+describe('getCombatStats: CA de quem tem ficha vem dos atributos', () => {
+  it('sem equipamento é 10 + modificador de DES', () => {
+    const c = character(14, {}, {}); // DES 14 => +2
+    expect(getCombatStats(c)).toMatchObject({ totalAc: 12, baseAc: 12, bonusAc: 0 });
   });
 
-  it('base 0 ou ausente vira 10 (não 0)', () => {
-    expect(getCombatStats(character(undefined, {}, {})).baseAc).toBe(10);
-    expect(getCombatStats(character(0, {}, {})).baseAc).toBe(10);
+  it('mudar a DES muda a CA: o stats.ca gravado na criação não é lido', () => {
+    expect(getCombatStats(character(18, {}, {}, 10)).totalAc).toBe(14);
+    expect(getCombatStats(character(8, {}, {}, 99)).totalAc).toBe(9);
   });
 
-  it('armadura soma (CA da armadura - 10)', () => {
-    const c = character(10, { body: 'a' }, { a: { effects: { armorClass: 12 } } });
-    expect(getCombatStats(c).bonusAc).toBe(2);
+  it('atributo ausente ou inválido vale 10 (modificador 0)', () => {
+    const c = character(10, {}, {});
+    (c as { attributes: unknown }).attributes = { strength: 14, dexterity: 18 };
+    expect(getCombatStats(c).totalAc).toBe(10);
+  });
+
+  it('DES gravada como texto também conta', () => {
+    const c = character(10, {}, {});
+    (c.attributes as { des: unknown }).des = '16';
+    expect(getCombatStats(c).totalAc).toBe(13);
+  });
+});
+
+describe('getCombatStats: inimigos e NPCs simples usam a CA digitada', () => {
+  it('inimigo usa stats.ca, mesmo com atributos', () => {
+    const enemy = { ...character(18, {}, {}), is_enemy: true, stats: { ca: 15 } };
+    expect(getCombatStats(enemy)).toMatchObject({ totalAc: 15, baseAc: 15 });
+  });
+
+  it('NPC simples (sem atributos) usa stats.ca', () => {
+    expect(getCombatStats({ stats: { ca: 13 } }).totalAc).toBe(13);
+  });
+
+  it('CA digitada 0 ou ausente vira 10 (não 0)', () => {
+    expect(getCombatStats({ stats: {} }).baseAc).toBe(10);
+    expect(getCombatStats({ stats: { ca: 0 } }).baseAc).toBe(10);
+    expect(getCombatStats({}).baseAc).toBe(10);
+  });
+});
+
+describe('getCombatStats: armadura, escudo e elmo', () => {
+  it('armadura leve soma a DES inteira', () => {
+    const c = character(14, { body: 'a' }, { a: { slug: 'couro_cru' } });
+    expect(getCombatStats(c)).toMatchObject({ totalAc: 13, baseAc: 12, bonusAc: 1 });
+  });
+
+  it('armadura média tem teto de +2 na DES e a pesada ignora a DES', () => {
+    const media = character(18, { body: 'a' }, { a: { slug: 'cota_escamas' } }); // DES +4
+    expect(getCombatStats(media).totalAc).toBe(16);
+    const pesada = character(18, { body: 'a' }, { a: { slug: 'lorica' } });
+    expect(getCombatStats(pesada).totalAc).toBe(16);
+  });
+
+  it('escudo na mão secundária soma +2', () => {
+    const c = character(10, { offHand: 's' }, { s: { slug: 'escudo' } });
     expect(getCombatStats(c).totalAc).toBe(12);
   });
 
-  it('escudo soma o acBonus inteiro', () => {
-    const c = character(10, { offHand: 's' }, { s: { effects: { acBonus: 2 } } });
-    expect(getCombatStats(c).totalAc).toBe(12);
+  it('arma de duas mãos nas duas mãos não dá CA', () => {
+    const c = character(10, { mainHand: 'w', offHand: 'w' }, { w: { slug: 'espada_grande' } });
+    expect(getCombatStats(c).totalAc).toBe(10);
   });
 
-  it('cabeça, corpo e escudo somam juntos', () => {
+  it('elmo não dá CA, mas a Resistência a Condição dele continua listada', () => {
+    const c = character(
+      10,
+      { head: 'h' },
+      { h: { slug: 'elmo_bronze', res: ['atordoado', 'cego'] } },
+    );
+    expect(getCombatStats(c)).toMatchObject({ totalAc: 10, resistances: ['atordoado', 'cego'] });
+  });
+
+  it('elmo que caiu no slot do corpo (dado antigo) também não dá CA', () => {
+    const c = character(10, { body: 'h' }, { h: { slug: 'chapeu_couro' } });
+    expect(getCombatStats(c).totalAc).toBe(10);
+  });
+
+  it('corpo, cabeça e escudo juntos: só corpo e escudo entram', () => {
     const c = character(
       12,
       { head: 'h', body: 'b', offHand: 's' },
-      {
-        h: { effects: { armorClass: 11 } },
-        b: { effects: { armorClass: 14 } },
-        s: { effects: { acBonus: 2 } },
-      },
-    );
-    expect(getCombatStats(c).totalAc).toBe(12 + 1 + 4 + 2);
-  });
-
-  it('um item na mão principal e na secundária conta uma vez só', () => {
-    const c = character(10, { mainHand: 's', offHand: 's' }, { s: { effects: { acBonus: 2 } } });
-    expect(getCombatStats(c).totalAc).toBe(12);
+      { h: { slug: 'elmo_bronze' }, b: { slug: 'couro_batido' }, s: { slug: 'escudo' } },
+    ); // DES +1: 12 + 1 + 2
+    expect(getCombatStats(c).totalAc).toBe(15);
   });
 
   it('equipment em string JSON é interpretado', () => {
-    const c = { ...character(10, {}, { a: { effects: { armorClass: 12 } } }) };
+    const c = character(10, {}, { a: { slug: 'couro_cru' } });
     (c as { equipment: unknown }).equipment = JSON.stringify({ body: 'a' });
-    expect(getCombatStats(c).totalAc).toBe(12);
+    expect(getCombatStats(c).totalAc).toBe(11);
   });
 });
 
 describe('getCombatStats: Qualidade do item (nível)', () => {
-  it('cada nível acima de 1 soma +1 de CA (ADR 0002)', () => {
-    const level3 = character(10, { body: 'a' }, { a: { level: 3, effects: { armorClass: 12 } } });
-    expect(getCombatStats(level3).bonusAc).toBe(2 + 2);
-  });
-
-  it('o nível só conta quando o item já dá CA', () => {
-    const c = character(10, { body: 'a' }, { a: { level: 4, effects: { armorClass: 10 } } });
-    expect(getCombatStats(c).bonusAc).toBe(0);
+  it('cada nível acima de 1 soma +1 de CA na armadura e no escudo (ADR 0002)', () => {
+    const armadura = character(10, { body: 'a' }, { a: { slug: 'couro_cru', level: 3 } });
+    expect(getCombatStats(armadura).totalAc).toBe(13);
+    const escudo = character(10, { offHand: 's' }, { s: { slug: 'escudo', level: 4 } });
+    expect(getCombatStats(escudo).totalAc).toBe(15);
   });
 
   it('nível ausente vale 1', () => {
-    const c = character(10, { body: 'a' }, { a: { effects: { armorClass: 12 } } });
-    expect(getCombatStats(c).bonusAc).toBe(2);
+    const c = character(10, { body: 'a' }, { a: { slug: 'couro_cru' } });
+    expect(getCombatStats(c).totalAc).toBe(11);
   });
 });
 
-describe('getCombatStats: de onde vem o bônus de CA do item', () => {
-  it('com vários campos usa um só, na ordem acBonus, ca, armorClass', () => {
-    const all = { acBonus: 1, ca: 2, armorClass: 14 };
-    expect(getCombatStats(character(10, { body: 'a' }, { a: { effects: all } })).bonusAc).toBe(1);
-    expect(
-      getCombatStats(character(10, { body: 'a' }, { a: { effects: { ca: 2, armorClass: 14 } } }))
-        .bonusAc,
-    ).toBe(2);
-  });
-
-  it('item sem efeitos usa o catálogo (ITEMS_DB) pelo nome', () => {
-    const couro = character(10, { body: 'a' }, { a: { name: 'Couro Cru', effects: {} } });
-    expect(getCombatStats(couro).bonusAc).toBe(1); // CA 11 no catálogo
-    const escudo = character(
+describe('getCombatStats: a CA vem do catálogo, não dos efeitos gravados no item', () => {
+  it('efeitos de CA gravados em items.effects são ignorados', () => {
+    const c = character(
       10,
-      { offHand: 's' },
-      { s: { name: 'Escudo (Madeira/Bronze)', effects: {} } },
+      { body: 'a' },
+      { a: { slug: 'couro_cru', effects: { armorClass: 20, acBonus: 5, ca: 9 } } },
     );
-    expect(getCombatStats(escudo).bonusAc).toBe(2);
+    expect(getCombatStats(c).totalAc).toBe(11);
   });
 
-  it('item desconhecido e sem efeitos não dá CA', () => {
-    const c = character(10, { body: 'a' }, { a: { name: 'Coisa Estranha', effects: {} } });
-    expect(getCombatStats(c).bonusAc).toBe(0);
-  });
-});
-
-describe('getCombatStats: o que NÃO existe hoje (decisões do grill ainda não aplicadas)', () => {
-  it('não há teto de DES: armadura média e pesada somam a DES inteira', () => {
-    // Lorica (CA 16, pesada) deveria ignorar a DES; a base 14 já embute DES +4.
-    const lorica = character(14, { body: 'a' }, { a: { effects: { armorClass: 16 } } });
-    expect(getCombatStats(lorica).totalAc).toBe(14 + 6);
-  });
-
-  it('a CA base é a gravada na criação: mudar DES depois não recalcula', () => {
-    // O código só lê stats.ca; nada aqui recebe os atributos.
-    expect(getCombatStats(character(12, {}, {})).baseAc).toBe(12);
+  it('item sem slug no catálogo não dá CA', () => {
+    const c = character(
+      10,
+      { body: 'a' },
+      { a: { slug: 'coisa_estranha', effects: { armorClass: 15 } } },
+    );
+    expect(getCombatStats(c).totalAc).toBe(10);
   });
 });
 
@@ -132,8 +160,8 @@ describe('getCombatStats: resistências e arma', () => {
       10,
       { body: 'a', head: 'h' },
       {
-        a: { effects: { armorClass: 12 }, res: ['sangrando', 'envenenado'] },
-        h: { effects: { armorClass: 11 }, res: ['sangrando'] },
+        a: { slug: 'cota_escamas', res: ['sangrando', 'envenenado'] },
+        h: { slug: 'chapeu_couro', res: ['sangrando'] },
       },
     );
     c.character_items[0].custom_condition_resistances = ['Corte'] as never[];
@@ -144,35 +172,8 @@ describe('getCombatStats: resistências e arma', () => {
     const c = character(
       10,
       { mainHand: 'w' },
-      { w: { name: 'Espada Curta (Ferro)', effects: { damageDie: '1d6' } } },
+      { w: { slug: 'espada_curta', name: 'Espada Curta (Ferro)', effects: { damageDie: '1d6' } } },
     );
     expect(getCombatStats(c).weapon).toEqual({ name: 'Espada Curta (Ferro)', damageDie: '1d6' });
-  });
-});
-
-describe('getSlotAcBonus: fórmula do cartão de slot', () => {
-  it('soma acBonus, ca e (armorClass - 10), ao contrário de getCombatStats', () => {
-    const effects = { acBonus: 1, ca: 2, armorClass: 14 };
-    expect(getSlotAcBonus(effects).baseCaBonus).toBe(1 + 2 + 4);
-  });
-
-  it('BUG conhecido: o slot mostra mais CA do que o total da ficha para o mesmo item', () => {
-    const effects = { acBonus: 1, ca: 2, armorClass: 14 };
-    const sheet = getCombatStats(character(10, { body: 'a' }, { a: { effects } })).bonusAc;
-    expect(sheet).toBe(1);
-    expect(getSlotAcBonus(effects).totalCaBonus).toBe(7);
-  });
-
-  it('com um único campo as duas fórmulas concordam, inclusive com Qualidade', () => {
-    const effects = { armorClass: 13 };
-    const sheet = getCombatStats(
-      character(10, { body: 'a' }, { a: { effects, level: 3 } }),
-    ).bonusAc;
-    expect(getSlotAcBonus(effects, 3).totalCaBonus).toBe(sheet);
-    expect(sheet).toBe(3 + 2);
-  });
-
-  it('o bônus de nível só aparece quando há CA de base', () => {
-    expect(getSlotAcBonus({}, 5)).toEqual({ baseCaBonus: 0, levelBonus: 0, totalCaBonus: 0 });
   });
 });

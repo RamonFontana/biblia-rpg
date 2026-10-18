@@ -1,5 +1,6 @@
 import type { CharacterEquipment, ItemEffects } from '../types/combat';
-import { ITEMS_DB } from '../content/items';
+import { calculateArmorClass, UNARMORED_AC, type EquippedItemRef } from '@/domain/armorClass';
+import { calculateModifier } from '@/domain/attributes';
 
 export function canEquipItem(
   itemEffects: ItemEffects,
@@ -114,31 +115,28 @@ export function checkWeaponProficiency(weapon: any, vocation: string): boolean {
   return true;
 }
 
+/** Modificador de DES da ficha. Atributo ausente ou inválido vale 10 (modificador 0). */
+function dexModifierOf(attributes: { des?: unknown } | null | undefined): number {
+  const raw = attributes?.des;
+  const value = typeof raw === 'string' ? Number(raw) : raw;
+  return calculateModifier(typeof value === 'number' && Number.isFinite(value) ? value : null);
+}
+
 /**
- * CARACTERIZAÇÃO: fórmula de CA do cartão de slot (EquipmentSlots), extraída sem alteração.
- * Ela SOMA acBonus, ca e (armorClass - 10), enquanto getCombatStats usa só um dos três
- * (precedência acBonus > ca > armorClass). Um item com mais de um campo mostra mais CA no
- * slot do que entra no total da ficha. Decisão: ROADMAP, Onda 2 (CA com teto de DES) e Onda 3.
+ * Inimigos e NPCs simples não têm ficha: a CA é a que o Mestre digitou (`stats.ca`). Quem tem
+ * ficha (jogador e NPC jogável) tem a CA calculada.
  */
-export function getSlotAcBonus(
-  effects: { acBonus?: unknown; ca?: unknown; armorClass?: unknown },
-  level?: number,
-) {
-  const { acBonus, ca, armorClass } = effects;
-  const baseCaBonus =
-    (acBonus ? Number(acBonus) : 0) +
-    (ca ? Number(ca) : 0) +
-    (armorClass ? Math.max(0, Number(armorClass) - 10) : 0);
-  const levelBonus = baseCaBonus > 0 ? (level || 1) - 1 : 0;
-  return { baseCaBonus, levelBonus, totalCaBonus: baseCaBonus + levelBonus };
+function hasSheet(character: { attributes?: unknown; is_enemy?: boolean | null } | null) {
+  return (
+    !character?.is_enemy && !!character?.attributes && typeof character.attributes === 'object'
+  );
 }
 
 export function getCombatStats(character: any) {
   const { stats, equipment, character_items: inventoryItems = [] } = character || {};
-  const baseAc = Number(stats?.ca) || 10;
-  let bonusAc = 0;
   let resistances: string[] = [];
   let weapon: { name: string; damageDie: string } | undefined = undefined;
+  let armor: { body?: EquippedItemRef; shield?: EquippedItemRef } = {};
 
   // Ensure equipment is an object (sometimes JSONB can be stringified)
   let parsedEquipment = equipment;
@@ -149,27 +147,6 @@ export function getCombatStats(character: any) {
       parsedEquipment = {};
     }
   }
-
-  const getAcModifier = (invItem: any) => {
-    if (!invItem) return 0;
-    const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
-    let effects = itemData?.effects;
-
-    // Fallback for items in DB without effects
-    if (!effects || Object.keys(effects).length === 0) {
-      const staticItem = ITEMS_DB.find((i) => i.name === itemData?.name);
-      if (staticItem?.armorClass) {
-        if (staticItem.type === 'Escudo') return Number(staticItem.armorClass);
-        return Math.max(0, Number(staticItem.armorClass) - 10);
-      }
-    }
-
-    if (!effects) return 0;
-    if (effects.acBonus !== undefined) return Number(effects.acBonus);
-    if (effects.ca !== undefined) return Number(effects.ca);
-    if (effects.armorClass !== undefined) return Math.max(0, Number(effects.armorClass) - 10);
-    return 0;
-  };
 
   if (parsedEquipment) {
     const findItem = (slotId: string | null | undefined) => {
@@ -184,15 +161,13 @@ export function getCombatStats(character: any) {
     const mainHandItem = findItem(parsedEquipment.mainHand);
     const offHandItem = findItem(parsedEquipment.offHand);
 
-    const getItemAc = (invItem: any) => {
-      if (!invItem) return 0;
-      const baseModifier = getAcModifier(invItem);
-      if (baseModifier > 0) {
-        const level = invItem.level || 1;
-        return baseModifier + (level - 1);
-      }
-      return baseModifier;
+    // O motor decide o que é armadura e escudo pelo catálogo; o elmo só entra nas resistências.
+    const itemRef = (invItem: any): EquippedItemRef | undefined => {
+      if (!invItem) return undefined;
+      const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
+      return { slug: itemData?.slug, level: invItem.level };
     };
+    armor = { body: itemRef(bodyItem), shield: itemRef(offHandItem) };
 
     const getResistances = (invItem: any) => {
       if (!invItem) return [];
@@ -206,17 +181,13 @@ export function getCombatStats(character: any) {
 
     let allResistances: string[] = [];
 
-    bonusAc += getItemAc(headItem);
     allResistances.push(...getResistances(headItem));
 
-    bonusAc += getItemAc(bodyItem);
     allResistances.push(...getResistances(bodyItem));
 
-    bonusAc += getItemAc(mainHandItem);
     allResistances.push(...getResistances(mainHandItem));
 
     if (parsedEquipment.offHand !== parsedEquipment.mainHand) {
-      bonusAc += getItemAc(offHandItem);
       allResistances.push(...getResistances(offHandItem));
     }
 
@@ -233,7 +204,14 @@ export function getCombatStats(character: any) {
     }
   }
 
-  const totalAc = baseAc + bonusAc;
+  if (hasSheet(character)) {
+    const { total, base, bonus } = calculateArmorClass({
+      dexModifier: dexModifierOf(character.attributes),
+      ...armor,
+    });
+    return { totalAc: total, baseAc: base, bonusAc: bonus, weapon, resistances };
+  }
 
-  return { totalAc, baseAc, bonusAc, weapon, resistances };
+  const baseAc = Number(stats?.ca) || UNARMORED_AC;
+  return { totalAc: baseAc, baseAc, bonusAc: 0, weapon, resistances };
 }

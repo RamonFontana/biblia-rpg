@@ -1,5 +1,6 @@
 import type { Character } from '../types';
 import { getCurrentFaith } from '@/domain/faith';
+import { getCombatStats } from '@/lib/equipmentUtils';
 
 interface CharacterCardProps {
   character: Character;
@@ -52,7 +53,7 @@ export function CharacterCard({
           <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
             CA
           </span>
-          <span className="font-bold text-stone-200">{character.stats?.ca || 0}</span>
+          <span className="font-bold text-stone-200">{getCombatStats(character).totalAc}</span>
         </div>
         <div className="text-center p-2 bg-stone-950 border border-stone-800/50 rounded-md shadow-inner">
           <span className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">

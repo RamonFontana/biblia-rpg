@@ -13,9 +13,13 @@ function withActiveCharacterFilters<T extends { or: (filters: string) => T }>(qu
     .or('is_dead.eq.false,is_dead.is.null');
 }
 
+// A CA do cartão é calculada a partir do que o personagem tem equipado, então a lista traz o
+// inventário junto.
+const CHARACTER_WITH_ITEMS = '*, character_items(*, items(*))';
+
 export const getCharacters = async (): Promise<Character[]> => {
   const { data, error } = await withActiveCharacterFilters(
-    supabase.from('characters').select('*'),
+    supabase.from('characters').select(CHARACTER_WITH_ITEMS),
   ).order('created_at', { ascending: false });
 
   if (error) {
@@ -36,7 +40,7 @@ export const getMyCharacters = async (): Promise<Character[]> => {
   }
 
   const { data, error } = await withActiveCharacterFilters(
-    supabase.from('characters').select('*').eq('user_id', session.user.id),
+    supabase.from('characters').select(CHARACTER_WITH_ITEMS).eq('user_id', session.user.id),
   ).order('created_at', { ascending: false });
 
   if (error) {
