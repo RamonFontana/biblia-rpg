@@ -4,11 +4,13 @@ import { checkWeaponProficiency } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
 import { formatItemArmorClass } from '@/domain/armorClass';
 import { ItemResistances } from './ItemResistances';
+import { EquipWarnings } from './EquipWarnings';
 
 interface EquipmentSlotsProps {
   equipment: CharacterEquipment | null;
   inventoryItems: any[];
   characterVocation?: string;
+  characterStrength?: number | null;
   onUnequip?: (slot: keyof CharacterEquipment) => void;
 }
 
@@ -16,6 +18,7 @@ export function EquipmentSlots({
   equipment,
   inventoryItems,
   characterVocation = '',
+  characterStrength,
   onUnequip,
 }: EquipmentSlotsProps) {
   // Find the actual item objects based on character_item_id
@@ -51,7 +54,17 @@ export function EquipmentSlots({
     }
 
     const armorClass = formatItemArmorClass({ slug, level: item.level });
-    if (!damageDie && !armorClass) return <ItemResistances slug={slug} />;
+    const warnings = (
+      <EquipWarnings slug={slug} vocation={characterVocation} strength={characterStrength} />
+    );
+    if (!damageDie && !armorClass) {
+      return (
+        <>
+          <ItemResistances slug={slug} />
+          {warnings}
+        </>
+      );
+    }
 
     return (
       <>
@@ -64,6 +77,7 @@ export function EquipmentSlots({
           )}
         </div>
         <ItemResistances slug={slug} />
+        {warnings}
       </>
     );
   };

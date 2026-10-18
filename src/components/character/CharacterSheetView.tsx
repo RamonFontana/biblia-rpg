@@ -660,6 +660,7 @@ export function CharacterSheetView({
               }
               inventoryItems={inventoryItems}
               characterVocation={vocation}
+              characterStrength={Number(attributes?.for) || null}
               onUnequip={handleUnequip}
             />
           </div>
@@ -670,6 +671,8 @@ export function CharacterSheetView({
                 character.equipment || { head: null, body: null, mainHand: null, offHand: null }
               }
               onEquip={handleEquip}
+              vocation={vocation}
+              strength={Number(attributes?.for) || null}
               onUseConsumable={(item) =>
                 useItem(
                   character!.id,
