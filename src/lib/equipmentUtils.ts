@@ -1,6 +1,11 @@
 import type { CharacterEquipment, ItemEffects } from '../types/combat';
 import { calculateArmorClass, UNARMORED_AC, type EquippedItemRef } from '@/domain/armorClass';
 import { calculateModifier } from '@/domain/attributes';
+import {
+  getConditionResistanceLevels,
+  getItemConditionResistances,
+  resolveEquippedItems,
+} from '@/domain/armorResistance';
 
 export function canEquipItem(
   itemEffects: ItemEffects,
@@ -135,6 +140,7 @@ function hasSheet(character: { attributes?: unknown; is_enemy?: boolean | null }
 export function getCombatStats(character: any) {
   const { stats, equipment, character_items: inventoryItems = [] } = character || {};
   let resistances: string[] = [];
+  let conditionResistanceLevels: Record<string, number> = {};
   let weapon: { name: string; damageDie: string } | undefined = undefined;
   let armor: { body?: EquippedItemRef; shield?: EquippedItemRef } = {};
 
@@ -169,11 +175,13 @@ export function getCombatStats(character: any) {
     };
     armor = { body: itemRef(bodyItem), shield: itemRef(offHandItem) };
 
+    // As Condições a que o item resiste vêm do catálogo pelo slug; as personalizadas do inventário
+    // (tipos de dano, outro vocabulário) só se juntam para exibição.
     const getResistances = (invItem: any) => {
       if (!invItem) return [];
       const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
 
-      const baseResistances = itemData?.condition_resistances || [];
+      const baseResistances = getItemConditionResistances(itemData?.slug);
       const customResistances = invItem.custom_condition_resistances || [];
 
       return [...baseResistances, ...customResistances];
@@ -192,6 +200,9 @@ export function getCombatStats(character: any) {
     }
 
     resistances = [...new Set(allResistances)];
+    conditionResistanceLevels = getConditionResistanceLevels(
+      resolveEquippedItems(parsedEquipment, inventoryItems),
+    );
 
     const mainHandData = Array.isArray(mainHandItem?.items)
       ? mainHandItem.items[0]
@@ -209,9 +220,16 @@ export function getCombatStats(character: any) {
       dexModifier: dexModifierOf(character.attributes),
       ...armor,
     });
-    return { totalAc: total, baseAc: base, bonusAc: bonus, weapon, resistances };
+    return {
+      totalAc: total,
+      baseAc: base,
+      bonusAc: bonus,
+      weapon,
+      resistances,
+      conditionResistanceLevels,
+    };
   }
 
   const baseAc = Number(stats?.ca) || UNARMORED_AC;
-  return { totalAc: baseAc, baseAc, bonusAc: 0, weapon, resistances };
+  return { totalAc: baseAc, baseAc, bonusAc: 0, weapon, resistances, conditionResistanceLevels };
 }

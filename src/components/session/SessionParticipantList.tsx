@@ -13,6 +13,7 @@ import type { TradeWithItems } from '@/types/trade';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
+import { getCombatStats } from '@/lib/equipmentUtils';
 import { conditionsService } from '@/services/conditionsService';
 import { characterVitalsService } from '@/services/characterVitalsService';
 import { getCurrentPv } from '@/domain/vitals';
@@ -323,6 +324,7 @@ export function SessionParticipantList({
                         )}
                         {isGM && (
                           <ConditionSelector
+                            resistanceLevels={getCombatStats(npc).conditionResistanceLevels}
                             onAddCondition={(cId, dur) => handleAddNPCCondition(npc.id, cId, dur)}
                           />
                         )}

@@ -4,7 +4,7 @@ Este documento lista as opções de proteção da Idade do Bronze/Ferro, bem com
 As armaduras também definem seu nível de resistência a certas condições, conforme o Sistema de Resistência.
 
 ### Sistema de Resistência de Armadura
-Certos equipamentos provêm proteção física natural contra determinadas condições durante o combate. Em vez de acúmulo de níveis, o sistema sempre **utiliza o maior nível** (Max Level) equipado para ditar a proteção:
+Certos equipamentos provêm proteção física natural contra determinadas condições durante o combate. Em vez de acúmulo de níveis, o sistema sempre **utiliza o maior nível** (Max Level) equipado **para cada condição**: um item de nível 4 contra Sangrando não protege contra Envenenado. O nível de um item é o da tabela abaixo mais 1 por nível de Qualidade acima de 1, no máximo 4:
 
 - **Nível 1**: Vantagem nos testes de resistência contra a condição.
 - **Nível 2**: Duração da condição reduzida pela metade (arredondada para cima).

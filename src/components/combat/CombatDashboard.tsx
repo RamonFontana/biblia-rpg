@@ -18,6 +18,7 @@ interface CombatDashboardProps {
     hpCurrent: number;
     totalAc?: number;
     weapon?: { name: string; damageDie: string };
+    conditionResistanceLevels?: Record<string, number>;
   }[];
 }
 
@@ -145,6 +146,7 @@ export function CombatDashboard({
                         />
                       ))}
                     <ConditionSelector
+                      resistanceLevels={entityDetails?.conditionResistanceLevels}
                       onAddCondition={async (conditionId, duration) => {
                         const newCond: ConditionEntry = {
                           conditionId,

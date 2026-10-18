@@ -9,6 +9,7 @@ import { InventoryList } from '../inventory/InventoryList';
 import { updateCharacterEquipment } from '@/lib/supabase';
 import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
 import { getCombatStats } from '@/lib/equipmentUtils';
+import { describeConditionResistances } from '@/domain/armorResistance';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { formatModifier } from '@/features/character-management/utils/characterMath';
 import { calculateModifier, calculateProficiency } from '@/domain/attributes';
@@ -415,6 +416,7 @@ export function CharacterSheetView({
     baseAc,
     bonusAc,
     resistances = [],
+    conditionResistanceLevels = {},
   } = getCombatStats({
     ...character,
     character_items: inventoryItems,
@@ -489,7 +491,10 @@ export function CharacterSheetView({
               <div className="absolute bottom-1 w-full text-center">
                 <span
                   className="text-[9px] text-indigo-300 bg-indigo-900/50 px-1 rounded"
-                  title={resistances.join(', ')}
+                  title={[
+                    ...describeConditionResistances(conditionResistanceLevels),
+                    ...resistances.filter((r) => !(r in conditionResistanceLevels)),
+                  ].join(', ')}
                 >
                   Resistência
                 </span>
