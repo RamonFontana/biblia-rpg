@@ -1,125 +1,64 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { applyConsumableEffects } from '@/domain/consumables';
+import {
+  addInventoryItem,
+  consumeInventoryItem,
+  removeInventoryItem,
+  setInventoryQuantity,
+} from '@/data-access/inventory';
+import { getErrorMessage } from '@/lib/errorMessage';
+
+type ConsumeInput = Parameters<typeof consumeInventoryItem>[0];
 
 export function useUpdateNPCInventory() {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const addItem = async (characterId: string, itemId: string, quantity: number = 1) => {
+  // Liga `isUpdating` durante a operação e devolve `{ success, error }` em vez de lançar.
+  const run = async (label: string, operation: () => Promise<void>) => {
     setIsUpdating(true);
     try {
-      // Check if item already exists
-      const { data: existing } = await supabase
-        .from('character_items')
-        .select('id, quantity')
-        .eq('character_id', characterId)
-        .eq('item_id', itemId)
-        .maybeSingle();
-
-      if (existing) {
-        // Update quantity
-        const { error } = await supabase
-          .from('character_items')
-          .update({ quantity: (existing.quantity ?? 0) + quantity })
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        // Insert new item
-        const { error } = await supabase.from('character_items').insert({
-          character_id: characterId,
-          item_id: itemId,
-          quantity: quantity,
-        });
-        if (error) throw error;
-      }
+      await operation();
       return { success: true };
-    } catch (error: any) {
-      console.error('Error adding item:', error);
-      return { success: false, error: error.message };
+    } catch (error) {
+      console.error(label, error);
+      return { success: false, error: getErrorMessage(error, '') };
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const removeItem = async (characterItemId: string) => {
-    setIsUpdating(true);
-    try {
-      const { error } = await supabase.from('character_items').delete().eq('id', characterItemId);
-      if (error) throw error;
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error removing item:', error);
-      return { success: false, error: error.message };
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const addItem = (characterId: string, itemId: string, quantity: number = 1) =>
+    run('Error adding item:', () => addInventoryItem(characterId, itemId, quantity));
 
-  const updateQuantity = async (characterItemId: string, quantity: number) => {
+  const removeItem = (characterItemId: string) =>
+    run('Error removing item:', () => removeInventoryItem(characterItemId));
+
+  const updateQuantity = (characterItemId: string, quantity: number) => {
     if (quantity <= 0) {
       return removeItem(characterItemId);
     }
-
-    setIsUpdating(true);
-    try {
-      const { error } = await supabase
-        .from('character_items')
-        .update({ quantity })
-        .eq('id', characterItemId);
-      if (error) throw error;
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error updating item quantity:', error);
-      return { success: false, error: error.message };
-    } finally {
-      setIsUpdating(false);
-    }
+    return run('Error updating item quantity:', () =>
+      setInventoryQuantity(characterItemId, quantity),
+    );
   };
 
-  const consumeItem = async (
+  const consumeItem = (
     characterId: string,
     characterItemId: string,
     currentQuantity: number,
-    itemEffects: any,
-    currentStats: any,
+    itemEffects: ConsumeInput['itemEffects'],
+    currentStats: ConsumeInput['currentStats'],
     isPlayable: boolean,
-  ) => {
-    setIsUpdating(true);
-    try {
-      // 1. Decrease quantity or remove item
-      if (currentQuantity <= 1) {
-        const { error } = await supabase.from('character_items').delete().eq('id', characterItemId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('character_items')
-          .update({ quantity: currentQuantity - 1 })
-          .eq('id', characterItemId);
-        if (error) throw error;
-      }
-
-      // 2. Apply effects if any
-      if (itemEffects && Object.keys(itemEffects).length > 0) {
-        const { stats: newStats, hasChanges } = applyConsumableEffects(currentStats, itemEffects);
-
-        if (hasChanges) {
-          const table = isPlayable ? 'characters' : 'session_npcs';
-          const { error: statsError } = await supabase
-            .from(table)
-            .update({ stats: newStats })
-            .eq('id', characterId);
-          if (statsError) throw statsError;
-        }
-      }
-
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error using item:', error);
-      return { success: false, error: error.message };
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  ) =>
+    run('Error using item:', () =>
+      consumeInventoryItem({
+        characterId,
+        characterItemId,
+        currentQuantity,
+        itemEffects,
+        currentStats,
+        isPlayable,
+      }),
+    );
 
   return {
     addItem,

@@ -31,6 +31,7 @@ import {
   addSessionParticipant,
   fetchSessionRoster,
   findGmActiveSessionId,
+  findParticipantCharacterId,
   getGameSession,
   groupSessionRoster,
   listPlayerActiveSessions,
@@ -282,5 +283,24 @@ describe('groupSessionRoster', () => {
     ).npcs;
     expect(npc.vocation).toBe('');
     expect(npc.stats).toEqual({ pv: 10, current_pv: 10, ca: 10, faith: 0, current_faith: 0 });
+  });
+});
+
+describe('findParticipantCharacterId', () => {
+  it('devolve a ficha com que o usuário joga na sessão', async () => {
+    state.respond = () => ({ data: { character_id: 'c1' } });
+    await expect(findParticipantCharacterId('s1', 'u1')).resolves.toBe('c1');
+    const [call] = callsOf(state.calls, 'session_participants', 'select');
+    expect(call.columns).toBe('character_id');
+    expect(filterOf(call, 'eq', 'session_id')).toBe('s1');
+    expect(filterOf(call, 'eq', 'user_id')).toBe('u1');
+    expect(call.filters).toContainEqual(['limit', 1]);
+  });
+
+  it('devolve nulo quando o usuário não está na sessão e lança o erro quando falha', async () => {
+    state.respond = () => ({ data: null });
+    await expect(findParticipantCharacterId('s1', 'u1')).resolves.toBeNull();
+    state.respond = () => ({ error: failure });
+    await expect(findParticipantCharacterId('s1', 'u1')).rejects.toBe(failure);
   });
 });

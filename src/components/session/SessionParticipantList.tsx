@@ -15,7 +15,7 @@ import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { conditionsService } from '@/services/conditionsService';
-import { characterVitalsService } from '@/services/characterVitalsService';
+import { characterVitalsService } from '@/data-access/vitals';
 import { getCurrentPv } from '@/domain/vitals';
 import type { ConditionEntry } from '@/types/combat';
 import { addFaith } from '@/domain/faith';

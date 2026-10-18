@@ -5,7 +5,7 @@ import { Label } from '../ui/label';
 // import { Button } from '../ui/button';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { useMemo, useState } from 'react';
-import { updateCharacter } from '../../features/character-management/api/characterApi';
+import { updateCharacter } from '@/data-access/characters';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
 import { getAbilitiesForCharacter } from '../../utils/abilityUtils';

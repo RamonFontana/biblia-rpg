@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCharacterById } from '../api/characterApi';
+import { getCharacterById } from '@/data-access/characters';
 import { WizardLayout } from '../../character-creation/components/WizardLayout';
 import { useCharacterCreationStore } from '../../character-creation/store/useCharacterCreationStore';
 import type { DraftCharacter } from '../../character-creation/types';

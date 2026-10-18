@@ -11,7 +11,7 @@ import {
   canTakeShortRest,
   hasPriestInGroup,
 } from '@/domain/rest';
-import { characterVitalsService } from '@/services/characterVitalsService';
+import { characterVitalsService } from '@/data-access/vitals';
 
 interface SessionRestControlsProps {
   sessionId: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { listCatalogItems } from '@/data-access/inventory';
 import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
 import { Plus, Minus, Trash2 } from 'lucide-react';
 
@@ -16,8 +16,11 @@ export function NPCInventoryManager({ characterId, items }: NPCInventoryManagerP
 
   useEffect(() => {
     async function fetchAvailableItems() {
-      const { data } = await supabase.from('items').select('id, name, category').order('name');
-      if (data) setAvailableItems(data);
+      try {
+        setAvailableItems(await listCatalogItems());
+      } catch (error) {
+        console.error('Error fetching available items:', error);
+      }
     }
     fetchAvailableItems();
   }, []);

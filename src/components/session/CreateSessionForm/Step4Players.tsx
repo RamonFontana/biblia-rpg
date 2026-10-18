@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getCharacters } from '@/features/character-management/api/characterApi';
+import { getCharacters } from '@/data-access/characters';
 import { useSessionDraftStore } from '@/store/createSessionStore';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';

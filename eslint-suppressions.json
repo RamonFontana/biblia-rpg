@@ -6,10 +6,7 @@
   },
   "src/components/character/CharacterSheetView.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 21
-    },
-    "no-restricted-imports": {
-      "count": 2
+      "count": 19
     }
   },
   "src/components/character/CharacterSkillsList.tsx": {
@@ -20,9 +17,6 @@
   "src/components/character/NPCInventoryManager.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/combat/CombatDashboard.tsx": {
@@ -157,9 +151,6 @@
   "src/components/session/TokenContextMenu.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/session/TradeDialog.tsx": {
@@ -193,11 +184,6 @@
       "count": 1
     }
   },
-  "src/features/character-creation/api/saveCharacter.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    }
-  },
   "src/features/character-creation/components/steps/AttributeGeneration.tsx": {
     "@typescript-eslint/ban-ts-comment": {
       "count": 1
@@ -227,10 +213,7 @@
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
-    "no-restricted-imports": {
-      "count": 1
+      "count": 2
     }
   },
   "src/features/character-creation/hooks/useQuickSave.ts": {
@@ -244,11 +227,6 @@
   "src/features/character-creation/types/index.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/character-management/api/characterApi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
     }
   },
   "src/features/character-management/components/LevelUpWizard.tsx": {
@@ -296,22 +274,9 @@
       "count": 1
     }
   },
-  "src/hooks/useUpdateNPCInventory.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/lib/equipmentUtils.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    }
-  },
-  "src/lib/supabase.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/pages/CharacterCreationPage.tsx": {
@@ -325,11 +290,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "src/services/characterVitalsService.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
     }
   },
   "src/services/combatEngine.ts": {
