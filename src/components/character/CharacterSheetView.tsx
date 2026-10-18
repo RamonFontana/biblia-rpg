@@ -40,7 +40,7 @@ export function CharacterSheetView({
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { useItem, removeItem, isUpdating } = useUpdateNPCInventory();
+  const { consumeItem, removeItem, isUpdating } = useUpdateNPCInventory();
   const [isEquipping, setIsEquipping] = useState(false);
   const { consume, recover, addCharges } = useAmmunition();
 
@@ -679,7 +679,7 @@ export function CharacterSheetView({
               vocation={vocation}
               strength={Number(attributes?.for) || null}
               onUseConsumable={(item) =>
-                useItem(
+                consumeItem(
                   character!.id,
                   item.id,
                   item.quantity,
