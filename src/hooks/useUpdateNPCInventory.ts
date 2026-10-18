@@ -76,7 +76,7 @@ export function useUpdateNPCInventory() {
     }
   };
 
-  const useItem = async (
+  const consumeItem = async (
     characterId: string,
     characterItemId: string,
     currentQuantity: number,
@@ -125,7 +125,7 @@ export function useUpdateNPCInventory() {
     addItem,
     removeItem,
     updateQuantity,
-    useItem,
+    consumeItem,
     isUpdating,
   };
 }
