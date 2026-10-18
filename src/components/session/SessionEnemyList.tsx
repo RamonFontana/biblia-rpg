@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Character } from '@/features/character-management/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
-import { supabase } from '@/lib/supabase';
+import { updateCharacterStats } from '@/data-access/characters';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
@@ -57,7 +57,7 @@ export function SessionEnemyList({
     const newStats = { ...enemy.stats, current_faith: newValue };
 
     try {
-      await supabase.from('characters').update({ stats: newStats }).eq('id', enemy.id);
+      await updateCharacterStats(enemy.id, newStats);
 
       updateLocalEnemy(enemy.id, { stats: newStats });
     } catch (e) {

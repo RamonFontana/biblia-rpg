@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getCurrentUser } from '@/data-access/auth';
+import { addSessionParticipant } from '@/data-access/sessions';
 import { useCampaignNPCs } from '@/hooks/useCampaignNPCs';
 import {
   Dialog,
@@ -26,23 +27,17 @@ export function AddNPCModal({ sessionId, onAdded }: AddNPCModalProps) {
     try {
       // GM's user id isn't strictly required for NPCs in session_participants if they are just linked.
       // We can get the current user (GM) to satisfy the user_id requirement if needed.
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return;
 
-      const { error } = await supabase.from('session_participants').insert({
-        session_id: sessionId,
-        character_id: npcId,
-        user_id: user.id, // Using GM's user_id since they control the NPC
+      await addSessionParticipant({
+        sessionId,
+        characterId: npcId,
+        userId: user.id, // Using GM's user_id since they control the NPC
       });
 
-      if (!error) {
-        if (onAdded) onAdded();
-        setIsOpen(false);
-      } else {
-        console.error('Error adding NPC to session:', error);
-      }
+      if (onAdded) onAdded();
+      setIsOpen(false);
     } catch (err) {
       console.error('Failed to add NPC:', err);
     } finally {

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getCurrentUser } from '@/data-access/auth';
+import { createEnemyCharacter } from '@/data-access/characters';
+import { addSessionParticipant } from '@/data-access/sessions';
 import {
   Dialog,
   DialogContent,
@@ -26,14 +28,12 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
     setIsCreating(true);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return;
 
       const newCharacter = {
         name: formData.name,
-        vocation: formData.vocation,
+        vocation: formData.vocation ?? '',
         tribe: 'Inimigo',
         is_enemy: true,
         user_id: user.id,
@@ -53,31 +53,13 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
       };
 
       // 1. Create character
-      const { data: charData, error: charError } = await supabase
-        .from('characters')
-        .insert(newCharacter as any)
-        .select()
-        .single();
-
-      if (charError) {
-        console.error('Error creating enemy character:', charError);
-        return;
-      }
+      const enemy = await createEnemyCharacter(newCharacter);
 
       // 2. Add to session
-      const { error: sessionError } = await supabase.from('session_participants').insert({
-        session_id: sessionId,
-        character_id: charData.id,
-        user_id: user.id,
-      });
-
-      if (sessionError) {
-        console.error('Error adding enemy to session:', sessionError);
-        return;
-      }
+      await addSessionParticipant({ sessionId, characterId: enemy.id, userId: user.id });
 
       if (onEnemyCreated) {
-        onEnemyCreated(charData as any);
+        onEnemyCreated(enemy);
       }
 
       setIsOpen(false);

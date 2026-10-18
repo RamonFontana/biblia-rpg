@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PresenceState } from '@/hooks/useSupabasePresence';
+import type { PresenceState } from '@/data-access/realtime';
 import { PlayerCard } from './PlayerCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
@@ -7,7 +7,7 @@ import { TokenContextMenu } from './TokenContextMenu';
 import { TradeRequestNotification } from './TradeRequestNotification';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { updateCharacterStats } from '@/data-access/characters';
 import type { Character } from '@/features/character-management/types';
 import type { TradeWithItems } from '@/types/trade';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
@@ -126,7 +126,7 @@ export function SessionParticipantList({
     const newStats = { ...character.stats, current_faith: newValue };
 
     try {
-      await supabase.from('characters').update({ stats: newStats }).eq('id', character.id);
+      await updateCharacterStats(character.id, newStats);
 
       if (onUpdatePlayerData) {
         onUpdatePlayerData(character.id, { stats: newStats });

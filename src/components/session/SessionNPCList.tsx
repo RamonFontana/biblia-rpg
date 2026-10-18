@@ -3,7 +3,8 @@ import type { Character } from '@/features/character-management/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { setCharacterVisible, updateCharacterStats } from '@/data-access/characters';
+import { setSimpleNpcVisible } from '@/data-access/sessions';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { characterVitalsService } from '@/services/characterVitalsService';
@@ -66,7 +67,7 @@ export function SessionNPCList({
     const newStats = { ...npc.stats, current_faith: newValue };
 
     try {
-      await supabase.from('characters').update({ stats: newStats }).eq('id', npc.id);
+      await updateCharacterStats(npc.id, newStats);
 
       if (onUpdateNPCData) {
         onUpdateNPCData(npc.id, { stats: newStats });
@@ -86,12 +87,9 @@ export function SessionNPCList({
 
     try {
       if (npc.is_playable) {
-        await supabase.from('characters').update({ is_visible: !npc.is_visible }).eq('id', npc.id);
+        await setCharacterVisible(npc.id, !npc.is_visible);
       } else {
-        await supabase
-          .from('session_npcs')
-          .update({ is_visible: !npc.is_visible })
-          .eq('id', npc.id);
+        await setSimpleNpcVisible(npc.id, !npc.is_visible);
       }
     } catch (err) {
       console.error('Erro ao atualizar visibilidade do NPC:', err);
