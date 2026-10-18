@@ -10,6 +10,7 @@ import type {
   EnemySkill,
 } from '@/features/character-creation/types';
 import { getCurrentUser, getSession } from './auth';
+import { subscribeToTables } from './realtime';
 import { syncInventoryItems } from './inventory';
 
 export type CharacterRow = Tables<'characters'>;
@@ -255,4 +256,33 @@ export async function saveCharacter(draft: DraftCharacter) {
   }
 
   return data;
+}
+
+/**
+ * Acompanha a ficha aberta: `onInventoryChange` a cada mudança nos itens do personagem e
+ * `onCharacterUpdate` com a linha nova quando a ficha é atualizada. Devolve a função que cancela.
+ */
+export function subscribeToCharacterSheet(
+  characterId: string,
+  handlers: {
+    onInventoryChange: () => void;
+    onCharacterUpdate: (row: Partial<Character>) => void;
+  },
+): () => void {
+  return subscribeToTables(
+    `character_sheet_updates_${characterId}_${Math.random().toString(36).substring(7)}`,
+    [
+      {
+        table: 'character_items',
+        filter: `character_id=eq.${characterId}`,
+        onChange: () => handlers.onInventoryChange(),
+      },
+      {
+        table: 'characters',
+        event: 'UPDATE',
+        filter: `id=eq.${characterId}`,
+        onChange: (payload) => handlers.onCharacterUpdate(payload.new as Partial<Character>),
+      },
+    ],
+  );
 }

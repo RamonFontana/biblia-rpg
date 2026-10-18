@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import type { Character } from '@/features/character-management/types';
 import { Shield, Coins, Heart, Star, Sparkles, Activity, Zap } from 'lucide-react';
 import { NPCInventoryManager } from './NPCInventoryManager';
@@ -17,9 +16,22 @@ import { AbilityCard } from '../combat/AbilityCard';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { CharacterSkillsList } from './CharacterSkillsList';
 import { CharacterSavingThrows } from './CharacterSavingThrows';
-import { updateCharacter, updateCharacterEquipment } from '@/data-access/characters';
-import { updateWeaponEffects } from '@/services/characterItemService';
-import { useAmmunition } from '@/features/character-management/api/useAmmunition';
+import {
+  findLatestCharacterOfUser,
+  getCharacterById,
+  subscribeToCharacterSheet,
+  updateCharacter,
+  updateCharacterEquipment,
+} from '@/data-access/characters';
+import { findParticipantCharacterId } from '@/data-access/sessions';
+import { getErrorMessage } from '@/lib/errorMessage';
+import {
+  getCharacterInventory,
+  updateItemLevel,
+  updateItemResistances,
+  updateWeaponEffects,
+} from '@/data-access/inventory';
+import { useAmmunition } from '@/hooks/useAmmunition';
 import { getCurrentFaith, spendFaith } from '@/domain/faith';
 
 interface CharacterSheetViewProps {
@@ -128,11 +140,7 @@ export function CharacterSheetView({
   const handleUpdateItemLevel = async (characterItemId: string, newLevel: number) => {
     setIsEquipping(true);
     try {
-      const { error } = await supabase
-        .from('character_items')
-        .update({ level: newLevel })
-        .eq('id', characterItemId);
-      if (error) throw error;
+      await updateItemLevel(characterItemId, newLevel);
       // Realtime listener will automatically pick up the change and update state
     } catch (err) {
       console.error('Error updating item level:', err);
@@ -144,11 +152,7 @@ export function CharacterSheetView({
   const handleUpdateItemResistances = async (characterItemId: string, newResistances: string[]) => {
     setIsEquipping(true);
     try {
-      const { error } = await supabase
-        .from('character_items')
-        .update({ custom_condition_resistances: newResistances } as any)
-        .eq('id', characterItemId);
-      if (error) throw error;
+      await updateItemResistances(characterItemId, newResistances);
       // Realtime listener will automatically pick up the change and update state
     } catch (err) {
       console.error('Error updating item resistances:', err);
@@ -237,87 +241,38 @@ export function CharacterSheetView({
 
         // Try to find the assigned character for this session if characterId is not provided
         if (!characterIdToFetch && sessionId && userId) {
-          const { data: participantData } = await supabase
-            .from('session_participants')
-            .select('character_id')
-            .eq('session_id', sessionId)
-            .eq('user_id', userId)
-            .limit(1)
-            .maybeSingle();
-
-          if (participantData?.character_id) {
-            characterIdToFetch = participantData.character_id;
-          }
+          characterIdToFetch = await findParticipantCharacterId(sessionId, userId);
         }
 
-        let charData = null;
-        let charError = null;
+        let charData: Character | null;
 
         if (characterIdToFetch) {
           // Fetch the specific assigned character
-          const { data, error } = await supabase
-            .from('characters')
-            .select('*')
-            .eq('id', characterIdToFetch)
-            .single();
-          charData = data;
-          charError = error;
+          charData = await getCharacterById(characterIdToFetch);
         } else if (userId) {
           // Fallback to the latest character if not explicitly assigned
-          const { data, error } = await supabase
-            .from('characters')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-          charData = data;
-          charError = error;
+          charData = await findLatestCharacterOfUser(userId);
         } else {
-          charError = { message: 'Identificador de personagem ou jogador não fornecido.' };
+          throw new Error('Identificador de personagem ou jogador não fornecido.');
         }
 
-        if (charError) {
-          if (charError.code === 'PGRST116') {
-            setError('Personagem não encontrado para este jogador.');
-          } else {
-            throw charError;
-          }
-        } else if (charData) {
-          setCharacter(charData as unknown as Character);
+        if (!charData) {
+          setError('Personagem não encontrado para este jogador.');
+        } else {
+          setCharacter(charData);
 
           // Fetch inventory items
-          const { data: itemsData, error: itemsError } = await supabase
-            .from('character_items')
-            .select(
-              `
-              id,
-              quantity,
-              level,
-              custom_condition_resistances,
-              weapon_effects,
-              items (
-                id,
-                name,
-                description,
-                category,
-                is_consumable,
-                requires_target,
-                weight,
-                effects
-              )
-            `,
-            )
-            .eq('character_id', charData.id);
-
-          if (!itemsError && itemsData) {
-            setInventoryItems(itemsData);
+          try {
+            setInventoryItems(await getCharacterInventory(charData.id));
+          } catch (inventoryError) {
+            // Sem inventário a ficha abre assim mesmo, como antes.
+            console.error('Error fetching inventory:', inventoryError);
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching character:', err);
         setError(
-          `Ocorreu um erro ao carregar a ficha. Detalhes: ${err?.message || JSON.stringify(err)}`,
+          `Ocorreu um erro ao carregar a ficha. Detalhes: ${getErrorMessage(err, JSON.stringify(err))}`,
         );
       } finally {
         setIsLoading(false);
@@ -333,60 +288,19 @@ export function CharacterSheetView({
   useEffect(() => {
     if (!character?.id) return;
 
-    const channelId = Math.random().toString(36).substring(7);
-    const channel = supabase
-      .channel(`character_sheet_updates_${character.id}_${channelId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'character_items',
-          filter: `character_id=eq.${character.id}`,
-        },
-        async () => {
-          // Refetch inventory items
-          const { data: itemsData } = await supabase
-            .from('character_items')
-            .select(
-              `
-              id,
-              quantity,
-              level,
-              custom_condition_resistances,
-              weapon_effects,
-              items (
-                id,
-                name,
-                description,
-                category,
-                is_consumable,
-                requires_target,
-                weight,
-                effects
-              )
-            `,
-            )
-            .eq('character_id', character.id);
-
-          if (itemsData) {
-            setInventoryItems(itemsData);
-          }
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'characters', filter: `id=eq.${character.id}` },
-        (payload) => {
-          // Atualiza a ficha local com as novas alterações do banco
-          setCharacter((prev) => (prev ? ({ ...prev, ...payload.new } as Character) : null));
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeToCharacterSheet(character.id, {
+      onInventoryChange: async () => {
+        // Refetch inventory items
+        try {
+          setInventoryItems(await getCharacterInventory(character.id));
+        } catch (inventoryError) {
+          // Mantém o inventário que já está na tela.
+          console.error('Error fetching inventory:', inventoryError);
+        }
+      },
+      // Atualiza a ficha local com as novas alterações do banco
+      onCharacterUpdate: (row) => setCharacter((prev) => (prev ? { ...prev, ...row } : null)),
+    });
   }, [character?.id]);
 
   if (isLoading) {
@@ -683,7 +597,7 @@ export function CharacterSheetView({
                   item.id,
                   item.quantity,
                   item.items.effects,
-                  character!.stats,
+                  character!.stats ?? {},
                   !character!.is_npc,
                 )
               }

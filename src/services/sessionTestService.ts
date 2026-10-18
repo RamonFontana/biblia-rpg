@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { getCurrentFaith, getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
-import { getItemFaithPenalty } from '@/services/characterItemService';
+import { getItemFaithPenalty } from '@/data-access/inventory';
 import { calculateFaithAfterFailure, isRegularTestApproved } from '@/domain/sessionTests';
 import { systemRng } from '@/lib/systemRng';
 

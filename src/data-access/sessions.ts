@@ -110,6 +110,22 @@ export async function addSessionParticipant(input: {
   if (error) throw error;
 }
 
+/** A ficha com que o usuário joga na sessão, ou nulo se ele ainda não escolheu. */
+export async function findParticipantCharacterId(
+  sessionId: string,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('session_participants')
+    .select('character_id')
+    .eq('session_id', sessionId)
+    .eq('user_id', userId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.character_id ?? null;
+}
+
 export async function setSimpleNpcVisible(id: string, isVisible: boolean): Promise<void> {
   const { error } = await supabase
     .from('session_npcs')

@@ -9,7 +9,7 @@ import {
   getTestBreakdown,
 } from '@/features/character-management/utils/characterMath';
 import { getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
-import { getItemFaithPenalty } from '@/services/characterItemService';
+import { getItemFaithPenalty } from '@/data-access/inventory';
 import { rollDie } from '@/domain/dice';
 import { systemRng } from '@/lib/systemRng';
 

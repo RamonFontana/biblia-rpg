@@ -6,10 +6,7 @@
   },
   "src/components/character/CharacterSheetView.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 21
-    },
-    "no-restricted-imports": {
-      "count": 1
+      "count": 19
     }
   },
   "src/components/character/CharacterSkillsList.tsx": {
@@ -20,9 +17,6 @@
   "src/components/character/NPCInventoryManager.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/combat/CombatDashboard.tsx": {
@@ -157,9 +151,6 @@
   "src/components/session/TokenContextMenu.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/session/TradeDialog.tsx": {
@@ -280,14 +271,6 @@
   },
   "src/hooks/useSessionTrades.ts": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/hooks/useUpdateNPCInventory.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    },
-    "no-restricted-imports": {
       "count": 1
     }
   },

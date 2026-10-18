@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { findLatestCharacterOfUser } from '@/data-access/characters';
+import { consumeItemViaRpc, getInventoryForMenu } from '@/data-access/inventory';
+import { findParticipantCharacterId } from '@/data-access/sessions';
 
 interface TokenContextMenuProps {
   userId: string;
@@ -56,51 +58,15 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
         let characterIdToFetch: string | null = null;
 
         if (sessionId) {
-          const { data: participantData } = await supabase
-            .from('session_participants')
-            .select('character_id')
-            .eq('session_id', sessionId)
-            .eq('user_id', userId)
-            .limit(1)
-            .maybeSingle();
-
-          if (participantData?.character_id) {
-            characterIdToFetch = participantData.character_id;
-          }
+          characterIdToFetch = await findParticipantCharacterId(sessionId, userId);
         }
 
         if (!characterIdToFetch) {
-          const { data: charData } = await supabase
-            .from('characters')
-            .select('id')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (charData) {
-            characterIdToFetch = charData.id;
-          }
+          characterIdToFetch = (await findLatestCharacterOfUser(userId))?.id ?? null;
         }
 
         if (characterIdToFetch) {
-          const { data: itemsData } = await supabase
-            .from('character_items')
-            .select(
-              `
-              id,
-              quantity,
-              items (
-                id,
-                name,
-                is_consumable,
-                requires_target
-              )
-            `,
-            )
-            .eq('character_id', characterIdToFetch);
-
-          if (itemsData) setInventoryItems(itemsData);
+          setInventoryItems(await getInventoryForMenu(characterIdToFetch));
         }
       } catch (err) {
         console.error(err);
@@ -115,9 +81,11 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
     if (!isConsumable) return;
 
     // Call RPC to use item
-    await supabase.rpc('use_consumable_item', {
-      p_character_item_id: characterItemId,
-    });
+    try {
+      await consumeItemViaRpc(characterItemId);
+    } catch (error) {
+      console.error('Error using item:', error);
+    }
 
     onClose();
   };

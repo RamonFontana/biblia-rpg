@@ -7,6 +7,8 @@ const state = vi.hoisted(() => ({
   respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
   userId: 'user-1' as string | null,
   syncInventoryItems: vi.fn(),
+  subscriptions: [] as { name: string; subscriptions: unknown[] }[],
+  stopped: 0,
 }));
 
 vi.mock('@/lib/supabase', async () => {
@@ -21,6 +23,14 @@ vi.mock('@/lib/supabase', async () => {
 });
 
 vi.mock('./inventory', () => ({ syncInventoryItems: state.syncInventoryItems }));
+vi.mock('./realtime', () => ({
+  subscribeToTables: (name: string, subscriptions: unknown[]) => {
+    state.subscriptions.push({ name, subscriptions });
+    return () => {
+      state.stopped += 1;
+    };
+  },
+}));
 
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
@@ -33,6 +43,7 @@ import {
   listCampaignNpcs,
   saveCharacter,
   setCharacterVisible,
+  subscribeToCharacterSheet,
   updateCharacter,
   updateCharacterEquipment,
   updateCharacterRest,
@@ -47,6 +58,8 @@ beforeEach(() => {
   state.respond = undefined;
   state.userId = 'user-1';
   state.syncInventoryItems.mockReset();
+  state.subscriptions.length = 0;
+  state.stopped = 0;
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -347,5 +360,50 @@ describe('saveCharacter', () => {
     state.respond = () => ({ error: failure });
     await expect(saveCharacter({ ...draft, equipment: [{ id: 'x' }] })).rejects.toBe(failure);
     expect(state.syncInventoryItems).not.toHaveBeenCalled();
+  });
+});
+
+describe('subscribeToCharacterSheet', () => {
+  type Sub = {
+    table: string;
+    event?: string;
+    filter: string;
+    onChange: (payload: { new: unknown }) => void;
+  };
+  const setup = () => {
+    const handlers = { onInventoryChange: vi.fn(), onCharacterUpdate: vi.fn() };
+    const stop = subscribeToCharacterSheet('c1', handlers);
+    const [{ name, subscriptions }] = state.subscriptions;
+    return { handlers, stop, name, subs: subscriptions as Sub[] };
+  };
+
+  it('assina os itens do personagem e as atualizações da ficha', () => {
+    const { name, subs } = setup();
+    expect(name).toMatch(/^character_sheet_updates_c1_/);
+    expect(subs.map((s) => [s.table, s.event, s.filter])).toEqual([
+      ['character_items', undefined, 'character_id=eq.c1'],
+      ['characters', 'UPDATE', 'id=eq.c1'],
+    ]);
+  });
+
+  it('avisa quando o inventário muda, sem repassar o payload', () => {
+    const { handlers, subs } = setup();
+    subs[0].onChange({ new: { id: 'ci1' } });
+    expect(handlers.onInventoryChange).toHaveBeenCalledWith();
+    expect(handlers.onCharacterUpdate).not.toHaveBeenCalled();
+  });
+
+  it('entrega a linha nova quando a ficha é atualizada', () => {
+    const { handlers, subs } = setup();
+    subs[1].onChange({ new: { id: 'c1', level: 2 } });
+    expect(handlers.onCharacterUpdate).toHaveBeenCalledWith({ id: 'c1', level: 2 });
+    expect(handlers.onInventoryChange).not.toHaveBeenCalled();
+  });
+
+  it('devolve o cancelamento da assinatura', () => {
+    const { stop } = setup();
+    expect(state.stopped).toBe(0);
+    stop();
+    expect(state.stopped).toBe(1);
   });
 });
