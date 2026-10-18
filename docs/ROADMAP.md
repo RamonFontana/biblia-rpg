@@ -436,12 +436,12 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (278 em 2026-10-18)
+### Lint: `eslint-suppressions.json` (275 em 2026-10-18)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 213 |
-| `no-restricted-imports` (Supabase fora da camada de dados) | 29 |
-| `@typescript-eslint/no-unused-vars` | 19 |
+| `@typescript-eslint/no-explicit-any` | 212 |
+| `no-restricted-imports` (Supabase fora da camada de dados) | 28 |
+| `@typescript-eslint/no-unused-vars` | 18 |
 | `react-hooks/set-state-in-effect` | 8 |
 | `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |
 | `react-refresh/only-export-components` | 3 |
