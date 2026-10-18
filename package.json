@@ -20,6 +20,7 @@
     "test:data": "vitest run src/content",
     "coverage": "vitest run --coverage",
     "check:rls": "node scripts/check-rls.mjs",
+    "test:rls-db": "bash scripts/test-rls-db.sh",
     "gen:items-seed": "node scripts/gen-items-seed.ts",
     "gen:types": "supabase gen types typescript --linked --schema public > src/types/database.types.ts"
   },
