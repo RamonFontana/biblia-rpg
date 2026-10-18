@@ -45,9 +45,11 @@ Ao refatorar uma regra, escreva antes um teste de caracterização do comportame
 | Tipos | `npm run typecheck` (`strict`) | 5 arquivos com `@ts-nocheck`, listados no ROADMAP |
 | Testes | `npm test` | — |
 | Dados do jogo | `npm run test:data` (`src/content/gameData.test.ts`) | `src/content/known-violations.json`. Violação nova falha; ao corrigir, apague a entrada |
-| RLS | `npm run check:rls` | — (cobre o schema inteiro desde a migration-base) |
+| RLS | `npm run check:rls` | — (toda tabela com RLS e toda função `SECURITY DEFINER` com `revoke execute ... from public, anon`) |
 
 Cobertura (`npm run coverage`) e Dependabot são só informativos.
+
+O comportamento do RLS e das funções por papel (anon, jogador, outro jogador, Mestre) tem teste em `supabase/tests/rls.sql`: `npm run test:rls-db` sobe um Postgres descartável (Podman ou Docker), aplica as migrations e roda o teste. Não roda no CI; rode ao mexer em política, função ou grant.
 
 Dívida existente só diminui: para um gate passar, corrija a causa. Supressão nova, `any`, `@ts-ignore`/`@ts-nocheck`, regra desligada ou teste pulado não entram.
 
