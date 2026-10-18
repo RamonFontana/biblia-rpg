@@ -1,6 +1,6 @@
 // CARACTERIZAÇÃO: valores iniciais do personagem, extraídos de InitialStats sem alteração.
-// Decisões: ROADMAP.md, Onda 2 (bloco B): a CA com teto de DES por peso de armadura vem depois;
-// hoje a CA base é gravada aqui e nunca mais recalculada.
+// Decisões: ROADMAP.md, Onda 3 (passo 5): a CA de quem tem ficha é calculada por armorClass.ts a cada
+// leitura; o `ca` devolvido aqui é só o valor sem armadura exibido no resumo da criação.
 // Termos: CONTEXT.md (PV, Fé Inicial).
 import { calculateModifier } from '@/domain/attributes';
 
