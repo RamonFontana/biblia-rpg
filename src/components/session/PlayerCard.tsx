@@ -271,7 +271,12 @@ export function PlayerCard({
               readonly={!viewerIsGM}
             />
           ))}
-          {viewerIsGM && <ConditionSelector onAddCondition={handleAddCondition} />}
+          {viewerIsGM && (
+            <ConditionSelector
+              onAddCondition={handleAddCondition}
+              resistanceLevels={getCombatStats(character).conditionResistanceLevels}
+            />
+          )}
         </div>
       )}
 

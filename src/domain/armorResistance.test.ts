@@ -7,6 +7,7 @@ import { CONDITIONS } from '@/content/conditions';
 import { ITEMS_DB } from '@/content/items';
 import {
   applyConditionResistance,
+  describeConditionResistances,
   getConditionResistanceLevels,
   getItemResistanceLevel,
   resolveEquippedItems,
@@ -93,6 +94,20 @@ describe('getConditionResistanceLevels: o maior nível por Condição', () => {
 
   it('sem itens equipados não há resistência', () => {
     expect(getConditionResistanceLevels([])).toEqual({});
+  });
+});
+
+describe('describeConditionResistances', () => {
+  it('lista cada Condição com o nível, em ordem alfabética, com o nome em português', () => {
+    expect(describeConditionResistances({ sangrando: 4, atordoado: 3, cego: 1 })).toEqual([
+      'Atordoado Nv3',
+      'Cego Nv1',
+      'Sangrando Nv4',
+    ]);
+  });
+
+  it('sem resistência a lista é vazia', () => {
+    expect(describeConditionResistances({})).toEqual([]);
   });
 });
 

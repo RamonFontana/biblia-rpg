@@ -48,6 +48,13 @@ export function getConditionResistanceLevels(equipped: EquippedItem[]): Record<s
   return levels;
 }
 
+/** "Sangrando Nv4": a resistência de cada Condição com o nível, na ordem alfabética dos nomes. */
+export function describeConditionResistances(levels: Record<string, number>): string[] {
+  return Object.entries(levels)
+    .map(([conditionId, level]) => `${CONDITIONS[conditionId]?.name ?? conditionId} Nv${level}`)
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
 type ItemSlug = { slug?: string | null };
 
 export interface InventoryItemRow {
