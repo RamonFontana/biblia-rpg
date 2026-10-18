@@ -1,6 +1,6 @@
 // Fichas (`characters`) usadas pelas telas de sessão. As funções lançam o erro do Supabase.
 import { supabase } from '@/lib/supabase';
-import type { Json, Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
 import type { CharacterEquipment } from '@/types/combat';
 import type { Character } from '@/features/character-management/types';
 import type {
@@ -10,6 +10,7 @@ import type {
   EnemySkill,
 } from '@/features/character-creation/types';
 import { getCurrentUser, getSession } from './auth';
+import { toJson } from './json';
 import { subscribeToTables } from './realtime';
 import { syncInventoryItems } from './inventory';
 
@@ -22,11 +23,6 @@ export type CharacterRow = Tables<'characters'>;
  */
 export function toCharacter(row: CharacterRow): Character {
   return row as unknown as Character;
-}
-
-/** Valor `jsonb` a partir de um tipo do app (interfaces não são atribuíveis a `Json`). */
-function toJson(value: unknown): Json {
-  return value as Json;
 }
 
 /** Todas as fichas de NPC da campanha, por nome. */

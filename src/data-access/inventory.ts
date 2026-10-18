@@ -6,8 +6,8 @@ import { canConsumeAmmo, calculateRecoveredQuantity, rollAmmoRecovery } from '@/
 import { applyConsumableEffects, type ConsumableEffects } from '@/domain/consumables';
 import { sumItemFaithPenalty } from '@/domain/faith';
 import type { Rng } from '@/domain/rng';
-import type { Json } from '@/types/database.types';
 import type { WeaponEffect } from '@/types/combat';
+import { toJson } from './json';
 import type { EquipmentItem } from '@/features/character-creation/types';
 
 /**
@@ -160,7 +160,7 @@ export async function updateWeaponEffects(
 ): Promise<void> {
   const { error } = await supabase
     .from('character_items')
-    .update({ weapon_effects: effects as unknown as Json })
+    .update({ weapon_effects: toJson(effects) })
     .eq('id', characterItemId);
 
   if (error) {
@@ -259,7 +259,7 @@ export async function consumeInventoryItem(input: ConsumeInventoryItemInput): Pr
     const { stats: newStats, hasChanges } = applyConsumableEffects(currentStats, itemEffects);
 
     if (hasChanges) {
-      const stats = newStats as unknown as Json;
+      const stats = toJson(newStats);
       const { error } = isPlayable
         ? await supabase.from('characters').update({ stats }).eq('id', characterId)
         : await supabase.from('session_npcs').update({ stats }).eq('id', characterId);

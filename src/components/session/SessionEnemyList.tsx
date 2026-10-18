@@ -6,7 +6,7 @@ import { updateCharacterStats } from '@/data-access/characters';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
-import { characterVitalsService } from '@/services/characterVitalsService';
+import { characterVitalsService } from '@/data-access/vitals';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { addFaith } from '@/domain/faith';
 

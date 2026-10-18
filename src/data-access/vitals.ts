@@ -1,5 +1,6 @@
+// Vida e Fé das fichas: cada operação calcula o novo valor com `domain/vitals` e grava.
 import { supabase } from '@/lib/supabase';
-import type { Database } from '@/types/database.types';
+import type { Database, TablesUpdate } from '@/types/database.types';
 import type { ConditionEntry } from '@/types/combat';
 import {
   type VitalsLike,
@@ -12,6 +13,7 @@ import {
   deriveCombatEndState,
   applyMaxPvIncrease,
 } from '@/domain/vitals';
+import { toJson } from './json';
 
 type CombatParticipantRow = Database['public']['Tables']['combat_participants']['Row'];
 
@@ -42,6 +44,48 @@ async function resolveMaxPvForEntity(entityId: string, entityType: string): Prom
     .eq('id', entityId)
     .maybeSingle();
   return getMaxPv(npcData?.stats as VitalsLike | null | undefined);
+}
+
+// Sobrecargas: `session_npcs` não tem os campos extras de `characters`.
+async function healCurrentPv(
+  table: 'characters',
+  characterId: string,
+  currentStats: VitalsLike,
+  amount: number,
+  extra?: TablesUpdate<'characters'>,
+): Promise<Record<string, unknown>>;
+async function healCurrentPv(
+  table: 'session_npcs',
+  characterId: string,
+  currentStats: VitalsLike,
+  amount: number,
+): Promise<Record<string, unknown>>;
+async function healCurrentPv(
+  table: 'characters' | 'session_npcs',
+  characterId: string,
+  currentStats: VitalsLike,
+  amount: number,
+  extra?: TablesUpdate<'characters'>,
+): Promise<Record<string, unknown>> {
+  const max = getMaxPv(currentStats);
+  const current = getCurrentPv(currentStats, max);
+  const newPv = applyHpDelta(current, max, amount);
+  const newStats = { ...currentStats, current_pv: newPv };
+
+  const stats = toJson(newStats);
+  const { error } =
+    table === 'characters'
+      ? await supabase
+          .from('characters')
+          .update({ stats, ...extra })
+          .eq('id', characterId)
+      : await supabase.from('session_npcs').update({ stats }).eq('id', characterId);
+
+  if (error) {
+    console.error('Failed to heal current PV', error);
+    throw error;
+  }
+  return newStats;
 }
 
 export const characterVitalsService = {
@@ -84,7 +128,11 @@ export const characterVitalsService = {
 
     const { error } = await supabase
       .from('characters')
-      .update({ stats: newStats as any, conditions: permanentConditions as any, is_dead: isDead })
+      .update({
+        stats: toJson(newStats),
+        conditions: toJson(permanentConditions),
+        is_dead: isDead,
+      })
       .eq('id', characterId);
 
     if (error) {
@@ -108,7 +156,7 @@ export const characterVitalsService = {
 
     const { error } = await supabase
       .from('characters')
-      .update({ stats: newStats as any })
+      .update({ stats: toJson(newStats) })
       .eq('id', characterId);
     if (error) {
       console.error('Failed to adjust current PV', error);
@@ -132,7 +180,7 @@ export const characterVitalsService = {
 
     const { error } = await supabase
       .from('characters')
-      .update({ stats: newStats as any })
+      .update({ stats: toJson(newStats) })
       .eq('id', characterId);
     if (error) {
       console.error('Failed to adjust current PV', error);
@@ -145,30 +193,9 @@ export const characterVitalsService = {
   // deliberately untouched — resting/potions don't revive a dead character here, and
   // neither call site did that before. `table` exists because lightweight NPCs live in
   // session_npcs, not characters. `extra` merges unrelated bundled fields (e.g.
-  // recharged ability uses) into the same write these call sites already made.
-  async healCurrentPv(
-    table: 'characters' | 'session_npcs',
-    characterId: string,
-    currentStats: VitalsLike,
-    amount: number,
-    extra?: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    const max = getMaxPv(currentStats);
-    const current = getCurrentPv(currentStats, max);
-    const newPv = applyHpDelta(current, max, amount);
-    const newStats = { ...currentStats, current_pv: newPv };
-
-    const { error } = await (supabase as any)
-      .from(table)
-      .update({ stats: newStats, ...extra })
-      .eq('id', characterId);
-
-    if (error) {
-      console.error('Failed to heal current PV', error);
-      throw error;
-    }
-    return newStats;
-  },
+  // recharged ability uses) into the same write these call sites already made; only the
+  // `characters` table has such fields.
+  healCurrentPv,
 
   // Level-up retroactive max-PV bump. No current caller (LevelUpWizard reuses the
   // pure applyMaxPvIncrease directly, through its own existing write path) — kept here
@@ -177,14 +204,14 @@ export const characterVitalsService = {
     characterId: string,
     currentStats: VitalsLike,
     amount: number,
-    extra?: Record<string, unknown>,
+    extra?: TablesUpdate<'characters'>,
   ): Promise<Record<string, unknown>> {
     const { pv, current_pv } = applyMaxPvIncrease(currentStats, amount);
     const newStats = { ...currentStats, pv, current_pv };
 
     const { error } = await supabase
       .from('characters')
-      .update({ stats: newStats as any, ...extra })
+      .update({ stats: toJson(newStats), ...extra })
       .eq('id', characterId);
 
     if (error) {
@@ -202,7 +229,7 @@ export const characterVitalsService = {
   async reviveWithHp(
     characterId: string,
     newHp: number,
-    extra?: Record<string, unknown>,
+    extra?: TablesUpdate<'characters'>,
     participantId?: string,
   ): Promise<Record<string, unknown>> {
     const { data: char, error: fetchError } = await supabase
@@ -222,7 +249,7 @@ export const characterVitalsService = {
 
     const { error } = await supabase
       .from('characters')
-      .update({ stats: newStats as any, is_dead: false, ...extra })
+      .update({ stats: toJson(newStats), is_dead: false, ...extra })
       .eq('id', characterId);
 
     if (error) {

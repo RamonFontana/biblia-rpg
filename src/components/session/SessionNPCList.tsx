@@ -7,7 +7,7 @@ import { setCharacterVisible, updateCharacterStats } from '@/data-access/charact
 import { setSimpleNpcVisible } from '@/data-access/sessions';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
-import { characterVitalsService } from '@/services/characterVitalsService';
+import { characterVitalsService } from '@/data-access/vitals';
 import { AddNPCModal } from './AddNPCModal';
 import { addFaith, getCurrentFaith } from '@/domain/faith';
 

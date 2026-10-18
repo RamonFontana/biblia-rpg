@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { characterVitalsService } from '@/services/characterVitalsService';
+import { characterVitalsService } from '@/data-access/vitals';
 import { addDeathSaveFailure, addDeathSaveSuccess } from '@/domain/deathSaves';
 
 export const useDeathSaves = () => {

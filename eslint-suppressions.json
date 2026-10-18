@@ -292,11 +292,6 @@
       "count": 1
     }
   },
-  "src/services/characterVitalsService.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    }
-  },
   "src/services/combatEngine.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2

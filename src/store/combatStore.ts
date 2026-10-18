@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
 import { resetCombatAbilities } from '../utils/abilityUtils';
 import { conditionsService } from '../services/conditionsService';
-import { characterVitalsService } from '../services/characterVitalsService';
+import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import type { ConditionEntry } from '../types/combat';
 
