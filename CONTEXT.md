@@ -122,7 +122,7 @@ _Avoid_: exaustão em níveis, cansado
 A natureza de um dano (Corte, Perfuração, Concussão); não é uma Condição.
 
 **Resistência a Condição**:
-Proteção de um item contra uma Condição, que cresce com a Qualidade do item: vantagem, metade da duração, as duas, imunidade.
+Proteção de um item contra uma Condição. O nível de cada resistência é o nível da tabela do item (docs/itens/armaduras.md) mais 1 por nível de Qualidade acima de 1, no máximo 4; entre os itens equipados vale o maior nível, Condição por Condição, sem somar. Nível 1: vantagem no teste de resistência; 2: metade da duração (para cima); 3: as duas; 4: imunidade. Ao aplicar uma Condição, o Mestre vê o efeito e pode ignorá-lo.
 
 ## Equipamento
 
