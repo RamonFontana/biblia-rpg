@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '../ui/button';
 import { useDeathSaves } from '../../hooks/useDeathSaves';
-import { supabase } from '@/lib/supabase';
+import {
+  getCharacterDeathState,
+  subscribeToCharacterUpdates,
+  type DeathState,
+} from '@/data-access/characters';
 
 interface MasterDeathControlsProps {
   characterId: string;
@@ -11,34 +15,14 @@ interface MasterDeathControlsProps {
 
 export function MasterDeathControls({ characterId, participantId }: MasterDeathControlsProps) {
   const { addSuccess, addFailure, healAndAwake, killInstant } = useDeathSaves();
-  const [characterState, setCharacterState] = useState<any>(null);
+  const [characterState, setCharacterState] = useState<DeathState | null>(null);
 
   useEffect(() => {
-    const fetchChar = async () => {
-      const { data } = await supabase
-        .from('characters')
-        .select('id, death_saves_successes, death_saves_failures, is_stable, is_dead')
-        .eq('id', characterId)
-        .single();
-      if (data) setCharacterState(data);
-    };
-    fetchChar();
+    getCharacterDeathState(characterId)
+      .then(setCharacterState)
+      .catch((error) => console.error('Error fetching death state:', error));
 
-    const channelId = Math.random().toString(36).substring(7);
-    const channel = supabase
-      .channel(`char_death_${characterId}_${channelId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'characters', filter: `id=eq.${characterId}` },
-        (payload) => {
-          setCharacterState(payload.new);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeToCharacterUpdates(characterId, setCharacterState);
   }, [characterId]);
 
   if (!characterState) return null;
