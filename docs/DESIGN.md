@@ -2,27 +2,27 @@
 
 **Referência:** a criação de personagem (`src/features/character-creation/`, moldura em `WizardLayout.tsx`). Toda tela nova ou refatorada segue este padrão; as demais convergem aos poucos (plano em `docs/ROADMAP.md`, Onda 4).
 
-Este documento descreve o padrão **como ele está implementado hoje**, com classes Tailwind fixas (`stone`/`amber`). Na Onda 4, essas cores viram tokens (variáveis CSS do shadcn) e os blocos abaixo viram componentes em `src/components/ui/`. Até lá, copie as receitas daqui.
+Este documento descreve o padrão **como ele está implementado hoje**, com classes Tailwind fixas (`stone`/`amber`). Desde o passo 2 da Onda 4, os tokens do shadcn (variáveis CSS em `src/index.css`) já têm os valores desta paleta: `bg-background`, `bg-card`, `text-muted-foreground`, `bg-primary` e companhia dão o mesmo resultado que as classes fixas. Os blocos abaixo viram componentes em `src/components/ui/` no passo 6; até lá, copie as receitas daqui.
 
 ## Clima
 Tema escuro e único: pedra e bronze. Fundo de pedra quente (`stone`), acento de bronze/ouro (`amber`), títulos em serifa. Sóbrio, sem gradientes e sem cores saturadas fora dos estados (erro, aviso).
 
 ## Paleta
-| Papel | Classe hoje | Token alvo (Onda 4) |
+| Papel | Classe fixa | Token (`src/index.css`) |
 |---|---|---|
 | Fundo da página | `bg-stone-900` | `--background` |
 | Superfície (cartão, painel) | `bg-stone-800` | `--card` |
-| Superfície elevada / botão secundário | `bg-stone-700`, hover `bg-stone-600` | `--secondary` |
+| Superfície elevada / botão secundário / fundo de hover | `bg-stone-700`, hover `bg-stone-600` | `--secondary`, `--muted`, `--accent` |
 | Borda padrão | `border-stone-700` (divisória interna: `border-stone-800`) | `--border` |
 | Borda de controle | `border-stone-600` | `--input` |
 | Texto principal | `text-stone-100` | `--foreground` |
 | Texto de rótulo | `text-stone-300` | — |
 | Texto secundário | `text-stone-400`; terciário/ícone `text-stone-500` | `--muted-foreground` |
-| Acento (títulos, foco, seleção) | `text-amber-500`, `border-amber-500` | `--primary` / `--ring` |
-| Ação primária | `bg-amber-600`, hover `bg-amber-500`, texto `text-stone-900` | `--primary` |
-| Seleção (fundo) | `bg-amber-500/10` com `border-amber-500` | `--accent` |
+| Acento (títulos, foco, seleção) | `text-amber-500`, `border-amber-500` | `--ring` (foco); `--primary` (amber-600) no texto e no destaque |
+| Ação primária | `bg-amber-600`, hover `bg-amber-500`, texto `text-stone-900` | `--primary` e `--primary-foreground` (hover é `primary/90`) |
+| Seleção (fundo) | `bg-amber-500/10` com `border-amber-500` | `bg-primary/10` com `border-primary` |
 | Aviso | `bg-amber-900/50 border-amber-500/50 text-amber-200` | — |
-| Erro | `text-red-400`; botão destrutivo `bg-red-900/30 border-red-700/50 text-red-400` | `--destructive` |
+| Erro | `text-red-400`; botão destrutivo `bg-red-900/30 border-red-700/50 text-red-400` | `--destructive` (red-500, serve ao texto e ao botão cheio com texto `stone-900`) |
 
 Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`…) não fazem parte do padrão. As exceções são as cores semânticas de condição em `src/content/conditions.ts`.
 
