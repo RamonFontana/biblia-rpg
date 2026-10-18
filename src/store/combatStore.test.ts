@@ -22,7 +22,7 @@ vi.mock('../lib/supabase', async () => {
 });
 
 import { callsOf, filterOf } from '../test/fakeSupabase';
-import { ABILITIES } from '../data/abilities';
+import { ABILITIES } from '@/content/abilities';
 import { useCombatStore, type Combat, type CombatParticipant } from './combatStore';
 
 const combat = (over: Partial<Combat> = {}): Combat => ({

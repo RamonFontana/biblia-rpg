@@ -10,7 +10,7 @@ import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
 import { getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
-import type { AbilityDefinition } from '../../data/abilities';
+import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
 import { spendFaith } from '@/domain/faith';
 

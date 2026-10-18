@@ -1,35 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { KITS_DB } from '@/content/kits';
 import type { EquipmentItem } from '../../character-creation/types';
-
-interface KitEntry {
-  /** Slug do item em src/content/items.ts (o mesmo de `items.slug`). */
-  slug: string;
-  quantity?: number;
-}
-
-const SACERDOTE_KIT: KitEntry[] = [{ slug: 'cajado' }, { slug: 'balsamo', quantity: 3 }];
-
-/** Itens iniciais de cada Vocação. O texto do kit exibido na criação está em src/content/kits.ts. */
-export const VOCATION_KIT_ITEMS: Record<string, KitEntry[]> = {
-  Guerreiro: [
-    { slug: 'espada_curta' },
-    { slug: 'couro_cru' },
-    { slug: 'escudo' },
-    { slug: 'racao', quantity: 5 },
-    { slug: 'odre' },
-    { slug: 'adaga' },
-  ],
-  Caçador: [
-    { slug: 'arco_curto' },
-    { slug: 'adaga' },
-    { slug: 'couro_cru' },
-    { slug: 'corda' },
-    { slug: 'flechas', quantity: 20 },
-  ],
-  Batedor: [{ slug: 'adaga', quantity: 2 }, { slug: 'couro_cru' }, { slug: 'corda' }],
-  Sacerdote: SACERDOTE_KIT,
-  Sábio: SACERDOTE_KIT,
-};
 
 /**
  * Troca o inventário do personagem pelos itens do equipamento e do kit. Cada item é procurado em
@@ -44,7 +15,7 @@ export async function syncInventoryItems(
     const wanted: { slug: string; quantity: number }[] = [];
     for (const eq of equipment) {
       if (eq.id === 'kit_basico') {
-        for (const kitItem of VOCATION_KIT_ITEMS[vocation] ?? []) {
+        for (const kitItem of KITS_DB[vocation]?.items ?? []) {
           wanted.push({ slug: kitItem.slug, quantity: kitItem.quantity ?? 1 });
         }
       } else {

@@ -1,4 +1,5 @@
-import { ABILITIES, type AbilityDefinition } from '../data/abilities';
+import { ABILITIES } from '@/content/abilities';
+import type { AbilityDefinition } from '@/content/schemas';
 import { canonicalVocation } from '@/domain/vocation';
 
 export function getAbilitiesForCharacter(

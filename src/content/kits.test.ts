@@ -1,12 +1,7 @@
 // Fixa os itens iniciais e os textos de Sustento conforme docs/criacao-de-personagem.md e
 // docs/itens/consumiveis.md (decisão do autor): Odre e Ração são Sustento e não curam; o Caçador
 // começa com 20 flechas; Sábio usa o kit do Sacerdote.
-import { describe, expect, it, vi } from 'vitest';
-
-// syncInventory cria o cliente do Supabase, que exige variáveis de ambiente (ausentes no CI).
-vi.mock('../lib/supabase', () => ({ supabase: {} }));
-
-import { VOCATION_KIT_ITEMS } from '../features/character-management/api/syncInventory';
+import { describe, expect, it } from 'vitest';
 import { ITEMS_DB } from './items';
 import { KITS_DB } from './kits';
 
@@ -22,23 +17,25 @@ describe('Sustento: Odre e Ração', () => {
 });
 
 describe('itens iniciais por Vocação', () => {
-  it('todo item de kit existe no catálogo', () => {
-    const slugs = new Set(ITEMS_DB.map((i) => i.id));
-    for (const [vocation, items] of Object.entries(VOCATION_KIT_ITEMS)) {
-      for (const item of items) {
-        expect(slugs.has(item.slug), `${vocation}: ${item.slug}`).toBe(true);
-      }
-    }
-  });
+  const quantityOf = (vocation: string, slug: string) =>
+    KITS_DB[vocation].items.find((i) => i.slug === slug)?.quantity ?? 1;
 
   it('o Caçador começa com 20 flechas', () => {
-    const arrows = VOCATION_KIT_ITEMS['Caçador'].find((i) => i.slug === 'flechas');
-    expect(arrows?.quantity).toBe(20);
+    expect(quantityOf('Caçador', 'flechas')).toBe(20);
   });
 
   it('o Sábio recebe o mesmo que o Sacerdote', () => {
-    expect(VOCATION_KIT_ITEMS['Sábio']).toEqual(VOCATION_KIT_ITEMS['Sacerdote']);
     expect(KITS_DB['Sábio']).toEqual(KITS_DB['Sacerdote']);
+  });
+
+  it.each([
+    ['Guerreiro', 'racao', 5, /5 rações/],
+    ['Caçador', 'flechas', 20, /20 flechas/],
+    ['Batedor', 'adaga', 2, /Duas facas/],
+    ['Sacerdote', 'balsamo', 3, /3 Bálsamos/],
+  ])('%s: o texto e os itens concordam sobre %s', (vocation, slug, quantity, text) => {
+    expect(quantityOf(vocation, slug)).toBe(quantity);
+    expect(KITS_DB[vocation].markdown).toMatch(text);
   });
 });
 

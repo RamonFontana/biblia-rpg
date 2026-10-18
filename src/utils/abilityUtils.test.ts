@@ -2,7 +2,8 @@
 // Decisões: ROADMAP.md, Onda 2 (bloco B): "Sábio" é alias de Sacerdote.
 // Termos: CONTEXT.md (Tribo, Vocação, Caminho, Descanso Curto/Longo).
 import { describe, expect, it } from 'vitest';
-import { ABILITIES, type AbilityDefinition } from '../data/abilities';
+import { ABILITIES } from '@/content/abilities';
+import type { AbilityDefinition } from '@/content/schemas';
 import {
   calculateRechargedAbilities,
   getAbilitiesForCharacter,

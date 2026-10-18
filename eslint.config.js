@@ -63,7 +63,7 @@ export default defineConfig([
                 '**/store/**',
               ],
               message:
-                'src/domain só importa de src/domain, src/content, src/data e src/types. O que precisa do app fica fora do motor.',
+                'src/domain só importa de src/domain, src/content e src/types. O que precisa do app fica fora do motor.',
             },
           ],
         },

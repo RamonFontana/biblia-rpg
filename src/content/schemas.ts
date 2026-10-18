@@ -1,5 +1,5 @@
 // Esquemas do conteúdo do jogo. Os tipos saem daqui (z.infer), então esquema e tipo não divergem.
-// O gate de dados (src/data/gameData.test.ts) valida cada entrada contra estes esquemas.
+// O gate de dados (src/content/gameData.test.ts) valida cada entrada contra estes esquemas.
 import { z } from 'zod';
 
 export const conditionSchema = z.strictObject({
@@ -48,3 +48,54 @@ export const itemSchema = z.strictObject({
 });
 
 export type ContentItem = z.infer<typeof itemSchema>;
+
+export const abilitySchema = z.strictObject({
+  id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
+  name: z.string().min(1),
+  sourceType: z.enum(['tribe', 'vocation']),
+  sourceId: z.string().regex(/^[a-z]+$/),
+  minLevel: z.number().int().min(1).max(20),
+  path: z.enum(['A', 'B']).optional(),
+  actionType: z.enum(['passive', 'action', 'bonus_action', 'reaction', 'free_action']),
+  usageType: z.enum([
+    'unlimited',
+    'short_rest',
+    'long_rest',
+    'combat',
+    'week',
+    'campaign',
+    'faith_cost',
+  ]),
+  maxUses: z.number().int().min(1).max(10).optional(),
+  faithCost: z.number().int().min(1).max(100).optional(),
+  effect: z.string().min(1),
+  applyConditions: z
+    .array(
+      z.strictObject({
+        conditionId: z.string().min(1),
+        duration: z.number().int().min(1).optional(),
+      }),
+    )
+    .optional(),
+});
+
+export type AbilityDefinition = z.infer<typeof abilitySchema>;
+
+/** Kit inicial de uma Vocação: o texto da criação de personagem e os itens que o personagem recebe. */
+export const kitSchema = z.strictObject({
+  name: z.string().min(1),
+  cost: z.number().int().min(0),
+  leftover: z.number().int().min(0),
+  markdown: z.string().min(1),
+  /** Itens do kit pelo slug do catálogo (src/content/items.ts). */
+  items: z
+    .array(
+      z.strictObject({
+        slug: z.string().regex(/^[a-z_]+$/),
+        quantity: z.number().int().min(1).optional(),
+      }),
+    )
+    .min(1),
+});
+
+export type Kit = z.infer<typeof kitSchema>;
