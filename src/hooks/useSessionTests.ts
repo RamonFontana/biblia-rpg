@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { subscribeToTables } from '@/lib/realtimeSubscriptions';
+import { subscribeToTables } from '@/data-access/realtime';
 import {
   type SessionTest,
   type SessionTestResult,

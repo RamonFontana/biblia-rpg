@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { subscribeToTables } from '@/lib/realtimeSubscriptions';
+import { subscribeToTables } from '@/data-access/realtime';
 import { tradeService } from '@/services/tradeService';
 import type { TradeWithItems } from '@/types/trade';
 
