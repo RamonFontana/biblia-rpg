@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 // Gate: toda tabela do schema public criada em supabase/migrations precisa ter
 // RLS habilitado em alguma migration, e nenhuma migration pode desabilitar RLS.
+// Também: toda função SECURITY DEFINER do schema public precisa de um `revoke execute ... from
+// anon` (ou public), porque o Postgres dá EXECUTE a todos por padrão e a função roda com os
+// privilégios do dono (Onda 3, passo 7).
 // Cobre o schema inteiro desde a migration-base (Onda 3, passo 1). Texto entre aspas e
 // corpos de função ($$ ... $$) são ignorados, para que SQL citado não conte como tabela.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -24,7 +27,16 @@ const stripComments = (sql) => sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.
 const stripQuoted = (sql) =>
   sql.replace(/\$(\w*)\$[\s\S]*?\$\1\$/g, '').replace(/'(?:[^']|'')*'/g, "''");
 
+const createFnRe = new RegExp(
+  String.raw`^create\s+(?:or\s+replace\s+)?function\s+${ident}\s*\(`,
+  'i',
+);
+const dropFnRe = new RegExp(String.raw`^drop\s+function\s+(?:if\s+exists\s+)?${ident}\s*\(`, 'i');
+const revokeFnRe = /^revoke\s+(?:all|execute)\s+on\s+function\s+(.+?)\s+from\s+(.+)$/is;
+
 const created = new Map(); // tabela -> migration que a criou
+const definerFns = new Map(); // função SECURITY DEFINER -> migration que a criou
+const revokedFns = new Set(); // funções sem EXECUTE para anon
 const enabled = new Set();
 const errors = [];
 
@@ -39,6 +51,27 @@ for (const file of files) {
   for (const [, name] of sql.matchAll(enableRe)) enabled.add(qualify(name));
   if (disableRe.test(sql)) errors.push(`${file}: desabilita RLS`);
   disableRe.lastIndex = 0;
+
+  for (const statement of sql.split(';').map((st) => st.trim())) {
+    const create = statement.match(createFnRe);
+    if (create && /security\s+definer/i.test(statement)) {
+      const name = qualify(create[1]);
+      if (name.startsWith('public.')) definerFns.set(name, file);
+      continue;
+    }
+    const drop = statement.match(dropFnRe);
+    if (drop) {
+      definerFns.delete(qualify(drop[1]));
+      revokedFns.delete(qualify(drop[1]));
+      continue;
+    }
+    const revoke = statement.match(revokeFnRe);
+    if (revoke && /\b(anon|public)\b/i.test(revoke[2])) {
+      for (const [, name] of revoke[1].matchAll(new RegExp(String.raw`${ident}\s*\(`, 'g'))) {
+        revokedFns.add(qualify(name));
+      }
+    }
+  }
 }
 
 for (const [table, file] of created) {
@@ -47,8 +80,18 @@ for (const [table, file] of created) {
   }
 }
 
+for (const [fn, file] of definerFns) {
+  if (!revokedFns.has(fn)) {
+    errors.push(
+      `${file}: função SECURITY DEFINER ${fn} sem "revoke execute ... from public, anon"`,
+    );
+  }
+}
+
 if (errors.length > 0) {
   console.error('RLS check falhou:\n' + errors.map((e) => `  - ${e}`).join('\n'));
   process.exit(1);
 }
-console.log(`RLS check ok: ${created.size} tabelas em ${files.length} migrations.`);
+console.log(
+  `RLS check ok: ${created.size} tabelas e ${definerFns.size} funções SECURITY DEFINER em ${files.length} migrations.`,
+);
