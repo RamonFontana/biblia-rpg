@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useActiveSession } from '@/hooks/useActiveSession';
-import { supabase } from '@/lib/supabase';
+import { findGmActiveSessionId } from '@/data-access/sessions';
 
 function Home() {
   const { signOut, user } = useAuthStore();
@@ -26,17 +26,11 @@ function Home() {
 
   useEffect(() => {
     if (user) {
-      supabase
-        .from('game_sessions')
-        .select('id')
-        .eq('gm_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) setActiveSessionId(data.id);
-        });
+      findGmActiveSessionId(user.id)
+        .then((sessionId) => {
+          if (sessionId) setActiveSessionId(sessionId);
+        })
+        .catch((error) => console.error('Error fetching the GM active session:', error));
     }
   }, [user]);
 

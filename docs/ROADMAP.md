@@ -404,6 +404,9 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
 1. **Limpeza.** `useItem` → `consumeItem` (era um falso positivo do `rules-of-hooks`, não um bug: é uma mutação assíncrona, não um hook); parâmetro sem uso e `let`/`catch` triviais; código morto (`ActiveSession/index.tsx`, `WelcomeCard.tsx`, `store/index.ts`, `scripts/check-sessions.js`). `PhysicalRollForm` fica: é a tela do ataque físico, da Onda 5. As variáveis sem uso que sobram estão em arquivos que os passos 4 e 5 reescrevem.
 2. **Tokens visuais.** As variáveis CSS do shadcn passam aos valores da paleta de `docs/DESIGN.md`, com captura de tela antes e depois. Feito: `--background` stone-900, `--card` e `--popover` stone-800, `--primary` amber-600 (texto `stone-900`), `--secondary`, `--muted`, `--accent` e `--border` stone-700, `--input` stone-600, `--ring` amber-500, `--destructive` red-500. Cores avulsas (`slate`, `gray`, `blue`…) só saem na migração por módulo (passo 6).
 3. **Camada de dados** (`src/data-access/`), por área: autenticação e sessão; personagem e inventário; combate (`combatStore` deixa de escrever no banco); testes e trocas. Cada área tipa as linhas com `database.types.ts`, o que tira os `any` do caminho, e zera as suas supressões de `no-restricted-imports`.
+   - **3a, autenticação e sessão (feito):** `src/data-access/{auth,sessions,characters,realtime}.ts`; o `realtimeSubscriptions` de `src/lib` virou `realtime.ts`. As funções lançam o erro do Supabase e quem chama decide a mensagem (`getErrorMessage` em `src/lib/errorMessage.ts`). Saíram do Supabase direto: `authStore`, as 5 páginas de autenticação, o `Home`, `ActiveSessionPage`, os hooks da sessão e 6 componentes de `components/session`. O elenco da mesa agora tem tipo (`SessionPlayer`, `SessionNpc`, `SessionCharacter`); a asserção de `Json` para os tipos do app fica em `toCharacter`, num lugar só.
+   - **Mudanças de comportamento da 3a (todas em caminho de erro):** os updates de Fé, visibilidade e descanso longo eram `await` sem checar o erro, então a tela mostrava sucesso mesmo com o banco recusando; agora o erro cai no `catch` que já existia (e o descanso longo avisa). `AuthCallbackPage` passa a cancelar o listener ao sair. A consulta da sessão ativa do Mestre na `Home` registra o erro em vez de engolir.
+   - **Falta migrar:** `src/services/*` e `src/features/*/api/*` (ainda importam o cliente, com a regra de lint desligada para essas pastas) e os componentes `CharacterSheetView`, `NPCInventoryManager`, `MasterDeathControls`, `TokenContextMenu`, `PhysicalRollForm`, `Summary`, `useDeathSaves`, `useUpdateNPCInventory`, `combatStore`. **Lacuna do gate:** `no-restricted-imports` não enxerga `await import('@/lib/supabase')`, e `PlayerTestDialog` usa isso em dois lugares; fica para a área de testes e trocas, com uma regra que cubra o import dinâmico.
 4. **Criação de personagem.** Tira os 5 `@ts-nocheck`, leva as regras para o motor e preserva o visual, que é a referência.
 5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
@@ -436,11 +439,11 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (275 em 2026-10-18)
+### Lint: `eslint-suppressions.json` (235 em 2026-10-18)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 212 |
-| `no-restricted-imports` (Supabase fora da camada de dados) | 28 |
+| `@typescript-eslint/no-explicit-any` | 190 |
+| `no-restricted-imports` (Supabase fora da camada de dados) | 10 |
 | `@typescript-eslint/no-unused-vars` | 18 |
 | `react-hooks/set-state-in-effect` | 8 |
 | `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |

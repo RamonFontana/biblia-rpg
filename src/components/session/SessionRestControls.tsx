@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { updateCharacterRest } from '@/data-access/characters';
+import { updateGameSession } from '@/data-access/sessions';
 import { Button } from '@/components/ui/button';
 import { Coffee, Moon, Loader2 } from 'lucide-react';
 import { calculateRechargedAbilities } from '@/utils/abilityUtils';
@@ -56,12 +57,7 @@ export function SessionRestControls({
 
     try {
       // 1. Update session tracking
-      const { error: sessionError } = await supabase
-        .from('game_sessions')
-        .update({ short_rests_today: shortRestsTaken + 1 })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
+      await updateGameSession(sessionId, { short_rests_today: shortRestsTaken + 1 });
 
       // 2. Heal (possibly 0 PV) and recharge short-rest abilities for everyone
       const allCharacters = [
@@ -107,15 +103,10 @@ export function SessionRestControls({
 
     try {
       // 1. Update session tracking
-      const { error: sessionError } = await supabase
-        .from('game_sessions')
-        .update({
-          last_long_rest_day: currentDay,
-          short_rests_today: 0, // Reset short rests just in case
-        })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
+      await updateGameSession(sessionId, {
+        last_long_rest_day: currentDay,
+        short_rests_today: 0, // Reset short rests just in case
+      });
 
       // 2. Check if there's a Priest for the Faith bonus
       const hasPriest = hasPriestInGroup(playerCharacters.map((pc) => pc.character?.vocation));
@@ -144,13 +135,10 @@ export function SessionRestControls({
           ability_uses: newAbilityUses,
         };
 
-        return supabase
-          .from('characters')
-          .update({
-            stats: applyLongRestToStats(currentStats, faithRecovered),
-            skills: newSkills,
-          })
-          .eq('id', char.id);
+        return updateCharacterRest(char.id, {
+          stats: applyLongRestToStats(currentStats, faithRecovered),
+          skills: newSkills,
+        });
       });
 
       await Promise.all(updates);

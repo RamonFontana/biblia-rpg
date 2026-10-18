@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { listCampaignNpcs } from '@/data-access/characters';
 import type { Character } from '@/features/character-management/types';
 
 export function useCampaignNPCs() {
@@ -9,15 +9,9 @@ export function useCampaignNPCs() {
   useEffect(() => {
     const fetchNPCs = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('characters')
-        .select('*')
-        .eq('is_npc' as any, true)
-        .order('name');
-
-      if (!error && data) {
-        setNpcs(data as any as Character[]);
-      } else if (error) {
+      try {
+        setNpcs(await listCampaignNpcs());
+      } catch (error) {
         console.error('Error fetching campaign NPCs:', error);
       }
       setIsLoading(false);

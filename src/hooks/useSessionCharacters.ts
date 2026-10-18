@@ -1,66 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { subscribeToTables } from '@/lib/realtimeSubscriptions';
-import type { Character } from '@/features/character-management/types';
+import { subscribeToTables } from '@/data-access/realtime';
+import {
+  fetchSessionRoster,
+  groupSessionRoster,
+  type SessionCharacter,
+  type SessionNpc,
+  type SessionPlayer,
+} from '@/data-access/sessions';
 
 export function useSessionCharacters(sessionId: string | undefined) {
-  const [playerCharacters, setPlayerCharacters] = useState<any[]>([]);
-  const [npcs, setNpcs] = useState<Character[]>([]);
-  const [enemies, setEnemies] = useState<Character[]>([]);
+  const [playerCharacters, setPlayerCharacters] = useState<SessionPlayer[]>([]);
+  const [npcs, setNpcs] = useState<SessionNpc[]>([]);
+  const [enemies, setEnemies] = useState<SessionCharacter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCharacters = useCallback(async () => {
     if (!sessionId) return;
     setIsLoading(true);
 
-    const { data: participantsData, error: participantsError } = await supabase
-      .from('session_participants')
-      .select(
-        `
-        user_id,
-        characters (*, character_items(*, items(*)))
-      `,
-      )
-      .eq('session_id', sessionId);
-
-    const { data: simpleNpcsData, error: simpleNpcsError } = await supabase
-      .from('session_npcs')
-      .select('*')
-      .eq('session_id', sessionId);
-
-    if (!participantsError && !simpleNpcsError) {
-      const pChars: any[] = [];
-      const sessionNpcs: Character[] = [];
-      const sessionEnemies: Character[] = [];
-
-      (participantsData || []).forEach((p: any) => {
-        const char = p.characters;
-        if (!char) return;
-
-        if (char.is_enemy) {
-          sessionEnemies.push(char);
-        } else if (char.is_npc) {
-          sessionNpcs.push({ ...char, is_playable: true });
-        } else {
-          pChars.push({ user_id: p.user_id, character: char, profile: null });
-        }
-      });
-
-      const simpleSessionNpcs = (simpleNpcsData || []).map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        tribe: 'NPC Simples',
-        vocation: d.description || '',
-        stats: d.stats || { pv: 10, current_pv: 10, ca: 10, faith: 0, current_faith: 0 },
-        is_playable: false,
-        is_visible: d.is_visible,
-      }));
-
-      setPlayerCharacters(pChars);
-      setNpcs([...sessionNpcs, ...simpleSessionNpcs] as any);
-      setEnemies(sessionEnemies as any);
-    } else {
-      console.error('Error fetching session characters:', participantsError || simpleNpcsError);
+    try {
+      const roster = groupSessionRoster(await fetchSessionRoster(sessionId));
+      setPlayerCharacters(roster.players);
+      setNpcs(roster.npcs);
+      setEnemies(roster.enemies);
+    } catch (error) {
+      console.error('Error fetching session characters:', error);
     }
 
     setIsLoading(false);
@@ -87,7 +51,7 @@ export function useSessionCharacters(sessionId: string | undefined) {
         event: 'UPDATE',
         filter: `session_id=eq.${sessionId}`,
         onChange: (payload) => {
-          if (payload.new.status === 'finished') {
+          if ('status' in payload.new && payload.new.status === 'finished') {
             fetchCharacters();
           }
         },
@@ -99,7 +63,7 @@ export function useSessionCharacters(sessionId: string | undefined) {
   // { user_id, character } wrapper rows, so their patch merges one level deeper
   // (into .character); NPCs and enemies are stored as the entity itself.
   const updateLocal = useCallback(
-    (kind: 'player' | 'npc' | 'enemy', id: string, patch: Record<string, unknown>) => {
+    (kind: 'player' | 'npc' | 'enemy', id: string, patch: Partial<SessionNpc>) => {
       if (kind === 'player') {
         setPlayerCharacters((prev) => {
           const index = prev.findIndex((p) => p.character?.id === id);
@@ -111,14 +75,19 @@ export function useSessionCharacters(sessionId: string | undefined) {
         return;
       }
 
-      const setEntities = kind === 'npc' ? setNpcs : setEnemies;
-      setEntities((prev) => {
+      const patchEntity = <T extends SessionNpc>(prev: T[]): T[] => {
         const index = prev.findIndex((entity) => entity.id === id);
         if (index === -1) return prev;
         const next = [...prev];
         next[index] = { ...next[index], ...patch };
         return next;
-      });
+      };
+
+      if (kind === 'npc') {
+        setNpcs(patchEntity);
+      } else {
+        setEnemies(patchEntity);
+      }
     },
     [],
   );

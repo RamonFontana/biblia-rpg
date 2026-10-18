@@ -35,6 +35,7 @@ interface FakeBuilder extends PromiseLike<{ data: unknown; error: unknown }> {
   in: (...args: unknown[]) => FakeBuilder;
   or: (...args: unknown[]) => FakeBuilder;
   order: (...args: unknown[]) => FakeBuilder;
+  limit: (...args: unknown[]) => FakeBuilder;
   single: () => FakeBuilder;
   maybeSingle: () => FakeBuilder;
 }
@@ -81,6 +82,10 @@ function newBuilder(call: FakeCall, options: FakeOptions): FakeBuilder {
     },
     order: (...args) => {
       call.filters.push(['order', ...args]);
+      return builder;
+    },
+    limit: (...args) => {
+      call.filters.push(['limit', ...args]);
       return builder;
     },
     single: () => {

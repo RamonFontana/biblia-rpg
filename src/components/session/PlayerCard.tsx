@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PresenceState } from '@/hooks/useSupabasePresence';
+import type { PresenceState } from '@/data-access/realtime';
 import type { Character } from '@/features/character-management/types';
 import { Button } from '@/components/ui/button';
 import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucide-react';

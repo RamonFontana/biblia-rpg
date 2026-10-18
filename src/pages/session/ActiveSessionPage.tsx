@@ -2,12 +2,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { useAuthStore } from '@/store/authStore';
-import { useSupabasePresence, type PresenceState } from '@/hooks/useSupabasePresence';
+import { useSupabasePresence } from '@/hooks/useSupabasePresence';
+import type { PresenceState } from '@/data-access/realtime';
 
 import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { SessionEnemyList } from '@/components/session/SessionEnemyList';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import {
+  getGameSession,
+  subscribeToGameSession,
+  updateGameSession,
+  type GameSession,
+} from '@/data-access/sessions';
 import { Button } from '@/components/ui/button';
 import { useSessionTests } from '@/hooks/useSessionTests';
 import { useSessionCharacters } from '@/hooks/useSessionCharacters';
@@ -43,7 +49,7 @@ export function ActiveSessionPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [payload, setPayload] = useState<PresenceState | undefined>();
-  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<GameSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const { activeTests, testResults } = useSessionTests(id!);
@@ -104,15 +110,9 @@ export function ActiveSessionPage() {
     if (!id) return;
 
     const fetchSession = async () => {
-      const { data, error } = await supabase
-        .from('game_sessions')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (!error && data) {
-        setSessionData(data);
-      } else if (error) {
+      try {
+        setSessionData(await getGameSession(id));
+      } catch (error) {
         console.error('Erro ao buscar sessão:', error);
       }
       setIsLoading(false);
@@ -120,30 +120,18 @@ export function ActiveSessionPage() {
 
     fetchSession();
 
-    const channel = supabase
-      .channel(`session-${id}-${Math.random()}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${id}` },
-        (payload) => {
-          setSessionData((current: any) => {
-            const newSession = payload.new as any;
-            if (
-              current &&
-              current.current_period === 'Noite' &&
-              newSession.current_period === 'Manhã'
-            ) {
-              setIsNewDayDialogOpen(true);
-            }
-            return payload.new;
-          });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeToGameSession(id, (newSession) => {
+      setSessionData((current) => {
+        if (
+          current &&
+          current.current_period === 'Noite' &&
+          newSession.current_period === 'Manhã'
+        ) {
+          setIsNewDayDialogOpen(true);
+        }
+        return newSession;
+      });
+    });
   }, [id]);
 
   const isGM = user?.id === sessionData?.gm_id;
@@ -308,16 +296,13 @@ export function ActiveSessionPage() {
       nextDay += 1;
     }
 
-    const { error } = await supabase
-      .from('game_sessions')
-      .update({
+    try {
+      await updateGameSession(id, {
         current_period: nextPeriod,
         current_day: nextDay,
         ...(sessionData.current_period === 'Noite' ? { short_rests_today: 0 } : {}),
-      })
-      .eq('id', id);
-
-    if (error) {
+      });
+    } catch (error) {
       console.error('Erro ao avançar o tempo:', error);
     }
   };

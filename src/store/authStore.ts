@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from './../lib/supabase';
+import { getSession, onAuthStateChange, signOut as signOutUser } from '@/data-access/auth';
 
 interface AuthState {
   session: Session | null;
@@ -14,16 +14,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   setSession: (session) => set({ session, user: session?.user || null }),
   signOut: async () => {
-    await supabase.auth.signOut();
+    await signOutUser();
     set({ session: null, user: null });
   },
 }));
 
 // Inicializa o listener de auth do Supabase
-supabase.auth.onAuthStateChange((_event, session) => {
+onAuthStateChange((session) => {
   useAuthStore.getState().setSession(session);
 });
 
-supabase.auth.getSession().then(({ data: { session } }) => {
+getSession().then((session) => {
   useAuthStore.getState().setSession(session);
 });

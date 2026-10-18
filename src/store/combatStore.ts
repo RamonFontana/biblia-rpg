@@ -4,7 +4,7 @@ import type { Database } from '../types/database.types';
 import { resetCombatAbilities } from '../utils/abilityUtils';
 import { conditionsService } from '../services/conditionsService';
 import { characterVitalsService } from '../services/characterVitalsService';
-import { subscribeToTables } from '../lib/realtimeSubscriptions';
+import { subscribeToTables } from '@/data-access/realtime';
 import type { ConditionEntry } from '../types/combat';
 
 export type Combat = Database['public']['Tables']['combats']['Row'];

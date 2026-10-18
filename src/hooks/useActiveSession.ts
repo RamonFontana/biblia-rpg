@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { listPlayerActiveSessions, type ActivePlayerSession } from '@/data-access/sessions';
 import { useAuthStore } from '@/store/authStore';
 
-export interface ActivePlayerSession {
-  session_id: string;
-  character_id: string;
-  session_name: string;
-  gm_id: string;
-}
+export type { ActivePlayerSession };
 
 export const useActiveSession = () => {
   const { user } = useAuthStore();
@@ -23,37 +18,7 @@ export const useActiveSession = () => {
     const fetchActiveSessions = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('session_participants')
-          .select(
-            `
-            session_id,
-            character_id,
-            game_sessions!inner (
-              id,
-              name,
-              status,
-              gm_id
-            )
-          `,
-          )
-          .eq('user_id', user.id)
-          .eq('game_sessions.status', 'active');
-
-        if (error) throw error;
-
-        if (data) {
-          const sessions = data.map((d: any) => ({
-            session_id: d.session_id,
-            character_id: d.character_id,
-            session_name: d.game_sessions?.name || 'Sessão Ativa',
-            gm_id: d.game_sessions?.gm_id || '',
-          }));
-          const uniqueSessions = Array.from(
-            new Map(sessions.map((item: any) => [item.session_id, item])).values(),
-          ) as ActivePlayerSession[];
-          setActiveSessions(uniqueSessions);
-        }
+        setActiveSessions(await listPlayerActiveSessions(user.id));
       } catch (err) {
         console.error('Error fetching active sessions:', err);
       } finally {
