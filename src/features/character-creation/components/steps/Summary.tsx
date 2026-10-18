@@ -1,11 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
-import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router';
 
-import { saveCharacter } from '../../api/saveCharacter';
-import { updateCharacter } from '../../../character-management/api/characterApi';
+import { saveCharacter, updateCharacter } from '@/data-access/characters';
 
 export function Summary() {
   const { draft, prevStep, editingId } = useCharacterCreationStore();

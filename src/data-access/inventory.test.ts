@@ -1,15 +1,15 @@
 // Fixa como o inventário inicial é gravado: cada item é procurado em `items` pelo slug do
 // conteúdo (ADR 0003) e o app nunca insere em `items`. Decisões: ROADMAP.md, Onda 3 (passo 4).
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FakeCall, FakeResult } from '../../../test/fakeSupabase';
+import type { FakeCall, FakeResult } from '../test/fakeSupabase';
 
 const state = vi.hoisted(() => ({
   calls: [] as FakeCall[],
   respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
 }));
 
-vi.mock('../../../lib/supabase', async () => {
-  const { createFakeSupabase } = await import('../../../test/fakeSupabase');
+vi.mock('@/lib/supabase', async () => {
+  const { createFakeSupabase } = await import('../test/fakeSupabase');
   return {
     supabase: createFakeSupabase({
       calls: state.calls,
@@ -18,8 +18,8 @@ vi.mock('../../../lib/supabase', async () => {
   };
 });
 
-import { callsOf, filterOf } from '../../../test/fakeSupabase';
-import { syncInventoryItems } from './syncInventory';
+import { callsOf, filterOf } from '../test/fakeSupabase';
+import { syncInventoryItems } from './inventory';
 
 const rowId = (slug: string) => `row-${slug}`;
 

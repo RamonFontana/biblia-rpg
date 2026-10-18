@@ -1,6 +1,8 @@
+// Inventário (`character_items`) e catálogo (`items`). O app nunca insere em `items`: o seed
+// cria as linhas (ADR 0003).
 import { supabase } from '@/lib/supabase';
 import { KITS_DB } from '@/content/kits';
-import type { EquipmentItem } from '../../character-creation/types';
+import type { EquipmentItem } from '@/features/character-creation/types';
 
 /**
  * Troca o inventário do personagem pelos itens do equipamento e do kit. Cada item é procurado em

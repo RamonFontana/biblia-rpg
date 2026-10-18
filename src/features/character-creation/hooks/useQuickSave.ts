@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useCharacterCreationStore } from '../store/useCharacterCreationStore';
-import { updateCharacter } from '../../character-management/api/characterApi';
+import { updateCharacter } from '@/data-access/characters';
 
 import type { DraftCharacter } from '../types';
 

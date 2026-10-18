@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Character } from '../types';
-import { updateCharacter } from '../api/characterApi';
+import { updateCharacter } from '@/data-access/characters';
 import { applyMaxPvIncrease } from '@/domain/vitals';
 import { ABILITIES } from '@/content/abilities';
 import {

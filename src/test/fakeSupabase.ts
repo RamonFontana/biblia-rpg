@@ -122,6 +122,10 @@ export function createFakeSupabase(options: FakeOptions) {
         const id = currentUser();
         return { data: { user: id ? { id } : null } };
       },
+      getSession: async () => {
+        const id = currentUser();
+        return { data: { session: id ? { user: { id } } : null } };
+      },
     },
   };
 }

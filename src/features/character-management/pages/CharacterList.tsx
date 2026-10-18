@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyCharacters, getActiveSessionCharacterIds } from '../api/characterApi';
+import { getMyCharacters, getActiveSessionCharacterIds } from '@/data-access/characters';
 import type { Character } from '../types';
 import { CharacterCard } from '../components/CharacterCard';
 import { LevelUpWizard } from '../components/LevelUpWizard';

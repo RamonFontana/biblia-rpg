@@ -5,6 +5,8 @@ import type { FakeCall, FakeResult } from '../test/fakeSupabase';
 const state = vi.hoisted(() => ({
   calls: [] as FakeCall[],
   respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
+  userId: 'user-1' as string | null,
+  syncInventoryItems: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', async () => {
@@ -13,15 +15,26 @@ vi.mock('@/lib/supabase', async () => {
     supabase: createFakeSupabase({
       calls: state.calls,
       respond: (call) => state.respond?.(call),
+      userId: () => state.userId,
     }),
   };
 });
 
+vi.mock('./inventory', () => ({ syncInventoryItems: state.syncInventoryItems }));
+
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
   createEnemyCharacter,
+  findLatestCharacterOfUser,
+  getActiveSessionCharacterIds,
+  getCharacterById,
+  getCharacters,
+  getMyCharacters,
   listCampaignNpcs,
+  saveCharacter,
   setCharacterVisible,
+  updateCharacter,
+  updateCharacterEquipment,
   updateCharacterRest,
   updateCharacterStats,
 } from './characters';
@@ -32,6 +45,9 @@ const stats = { pv: 20, ca: 12, faith: 10, current_pv: 7, current_faith: 4 };
 beforeEach(() => {
   state.calls.length = 0;
   state.respond = undefined;
+  state.userId = 'user-1';
+  state.syncInventoryItems.mockReset();
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 describe('listCampaignNpcs', () => {
@@ -111,5 +127,225 @@ describe('createEnemyCharacter', () => {
   it('lança o erro ao inserir', async () => {
     state.respond = () => ({ error: failure });
     await expect(createEnemyCharacter(row)).rejects.toBe(failure);
+  });
+});
+
+describe('getCharacters e getMyCharacters', () => {
+  const activeFilters = [
+    ['or', 'is_npc.eq.false,is_npc.is.null'],
+    ['or', 'is_enemy.eq.false,is_enemy.is.null'],
+    ['or', 'is_deleted.eq.false,is_deleted.is.null'],
+    ['or', 'is_dead.eq.false,is_dead.is.null'],
+  ];
+
+  it('listam só fichas jogáveis e ativas, com o inventário, da mais nova para a mais antiga', async () => {
+    state.respond = () => ({ data: [{ id: 'c1' }] });
+    await expect(getCharacters()).resolves.toEqual([{ id: 'c1' }]);
+
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe('*, character_items(*, items(*))');
+    expect(call.filters).toEqual([...activeFilters, ['order', 'created_at', { ascending: false }]]);
+  });
+
+  it('getMyCharacters acrescenta o filtro do usuário logado', async () => {
+    state.respond = () => ({ data: [{ id: 'c1' }] });
+    await expect(getMyCharacters()).resolves.toEqual([{ id: 'c1' }]);
+
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(filterOf(call, 'eq', 'user_id')).toBe('user-1');
+    expect(call.filters).toContainEqual(['order', 'created_at', { ascending: false }]);
+  });
+
+  it('getMyCharacters exige usuário logado', async () => {
+    state.userId = null;
+    await expect(getMyCharacters()).rejects.toThrow('Usuário não autenticado');
+    expect(callsOf(state.calls, 'characters')).toHaveLength(0);
+  });
+
+  it('registram e lançam o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(getCharacters()).rejects.toBe(failure);
+    await expect(getMyCharacters()).rejects.toBe(failure);
+    expect(console.error).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('getCharacterById e findLatestCharacterOfUser', () => {
+  it('getCharacterById lê uma ficha pelo id', async () => {
+    state.respond = () => ({ data: { id: 'c1' } });
+    await expect(getCharacterById('c1')).resolves.toEqual({ id: 'c1' });
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe('*');
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+    expect(call.single).toBe(true);
+  });
+
+  it('devolvem nulo quando não há linha (PGRST116) e lançam os outros erros', async () => {
+    state.respond = () => ({ error: { code: 'PGRST116', message: 'sem linha' } });
+    await expect(getCharacterById('c1')).resolves.toBeNull();
+    await expect(findLatestCharacterOfUser('u1')).resolves.toBeNull();
+
+    state.respond = () => ({ error: failure });
+    await expect(getCharacterById('c1')).rejects.toBe(failure);
+    await expect(findLatestCharacterOfUser('u1')).rejects.toBe(failure);
+  });
+
+  it('findLatestCharacterOfUser pega a ficha mais nova do usuário', async () => {
+    state.respond = () => ({ data: { id: 'c9' } });
+    await expect(findLatestCharacterOfUser('u1')).resolves.toEqual({ id: 'c9' });
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(filterOf(call, 'eq', 'user_id')).toBe('u1');
+    expect(call.filters).toContainEqual(['order', 'created_at', { ascending: false }]);
+    expect(call.filters).toContainEqual(['limit', 1]);
+    expect(call.single).toBe(true);
+  });
+});
+
+describe('updateCharacter', () => {
+  it('grava só o que veio e devolve a ficha gravada', async () => {
+    state.respond = () => ({ data: { id: 'c1', vocation: 'Batedor' } });
+    await expect(updateCharacter('c1', { level: 2 })).resolves.toEqual({
+      id: 'c1',
+      vocation: 'Batedor',
+    });
+
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ level: 2 });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+    expect(call.single).toBe(true);
+    expect(state.syncInventoryItems).not.toHaveBeenCalled();
+  });
+
+  it('refaz o inventário quando o equipamento muda, com a vocação enviada', async () => {
+    state.respond = () => ({ data: { id: 'c1', vocation: 'Batedor' } });
+    const equipment = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
+    await updateCharacter('c1', { equipment, vocation: 'Guerreiro' });
+    expect(state.syncInventoryItems).toHaveBeenCalledWith('c1', equipment, 'Guerreiro');
+  });
+
+  it('sem vocação enviada usa a da ficha, e sem ela usa Guerreiro', async () => {
+    const equipment = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
+    state.respond = () => ({ data: { id: 'c1', vocation: 'Batedor' } });
+    await updateCharacter('c1', { equipment });
+    expect(state.syncInventoryItems).toHaveBeenLastCalledWith('c1', equipment, 'Batedor');
+
+    state.respond = () => ({ data: { id: 'c1', vocation: '' } });
+    await updateCharacter('c1', { equipment });
+    expect(state.syncInventoryItems).toHaveBeenLastCalledWith('c1', equipment, 'Guerreiro');
+  });
+
+  it('registra e lança o erro do Supabase sem mexer no inventário', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(updateCharacter('c1', { equipment: [{}] })).rejects.toBe(failure);
+    expect(console.error).toHaveBeenCalled();
+    expect(state.syncInventoryItems).not.toHaveBeenCalled();
+  });
+});
+
+describe('getActiveSessionCharacterIds', () => {
+  it('devolve os personagens do usuário em sessões ativas', async () => {
+    state.respond = () => ({ data: [{ character_id: 'c1' }, { character_id: 'c2' }] });
+    await expect(getActiveSessionCharacterIds()).resolves.toEqual(new Set(['c1', 'c2']));
+
+    const [call] = callsOf(state.calls, 'session_participants', 'select');
+    expect(filterOf(call, 'eq', 'game_sessions.status')).toBe('active');
+    expect(filterOf(call, 'eq', 'user_id')).toBe('user-1');
+  });
+
+  it('sem usuário logado ou com erro, devolve um conjunto vazio', async () => {
+    state.userId = null;
+    await expect(getActiveSessionCharacterIds()).resolves.toEqual(new Set());
+    expect(callsOf(state.calls, 'session_participants')).toHaveLength(0);
+
+    state.userId = 'user-1';
+    state.respond = () => ({ error: failure });
+    await expect(getActiveSessionCharacterIds()).resolves.toEqual(new Set());
+    expect(console.error).toHaveBeenCalled();
+  });
+});
+
+describe('updateCharacterEquipment', () => {
+  const equipment = { head: null, body: 'ci-1', mainHand: 'ci-2', offHand: null };
+
+  it('grava as quatro posições na ficha pedida', async () => {
+    await updateCharacterEquipment('c1', equipment);
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ equipment });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('registra e lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(updateCharacterEquipment('c1', equipment)).rejects.toBe(failure);
+    expect(console.error).toHaveBeenCalled();
+  });
+});
+
+describe('saveCharacter', () => {
+  const draft = {
+    name: 'Eli',
+    tribe: 'Judá',
+    vocation: 'Guerreiro',
+    attributes: { for: 14, des: 12, con: 13, int: 10, sab: 10, car: 8 },
+    stats: { pv: 12, ca: 11, faith: 10 },
+  };
+
+  it('exige usuário logado', async () => {
+    state.userId = null;
+    await expect(saveCharacter(draft)).rejects.toThrow('Usuário não autenticado');
+    expect(callsOf(state.calls, 'characters')).toHaveLength(0);
+  });
+
+  it.each(['name', 'tribe', 'vocation', 'attributes', 'stats'] as const)(
+    'recusa a ficha sem %s',
+    async (field) => {
+      await expect(saveCharacter({ ...draft, [field]: undefined })).rejects.toThrow(
+        'Ficha incompleta',
+      );
+      expect(callsOf(state.calls, 'characters')).toHaveLength(0);
+    },
+  );
+
+  it('grava a ficha com os padrões das colunas opcionais', async () => {
+    state.respond = () => ({ data: { id: 'c1' } });
+    await expect(saveCharacter(draft)).resolves.toEqual({ id: 'c1' });
+
+    const [call] = callsOf(state.calls, 'characters', 'insert');
+    expect(call.payload).toEqual({
+      user_id: 'user-1',
+      name: 'Eli',
+      tribe: 'Judá',
+      vocation: 'Guerreiro',
+      attributes: draft.attributes,
+      fortress: null,
+      temptation: null,
+      stats: draft.stats,
+      proficiencies: null,
+      equipment: [],
+      coins: 0,
+      narrative: null,
+    });
+    expect(state.syncInventoryItems).not.toHaveBeenCalled();
+  });
+
+  it('refaz o inventário com o equipamento e a vocação da ficha', async () => {
+    state.respond = () => ({ data: { id: 'c1' } });
+    const equipment = [{ id: 'kit_basico', name: 'Kit', type: 'kit' }];
+    await saveCharacter({ ...draft, equipment, coins: 5, fortress: 'Coragem', temptation: 'Ira' });
+
+    const [call] = callsOf(state.calls, 'characters', 'insert');
+    expect(call.payload).toMatchObject({
+      equipment,
+      coins: 5,
+      fortress: 'Coragem',
+      temptation: 'Ira',
+    });
+    expect(state.syncInventoryItems).toHaveBeenCalledWith('c1', equipment, 'Guerreiro');
+  });
+
+  it('lança o erro do Supabase sem mexer no inventário', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(saveCharacter({ ...draft, equipment: [{ id: 'x' }] })).rejects.toBe(failure);
+    expect(state.syncInventoryItems).not.toHaveBeenCalled();
   });
 });
