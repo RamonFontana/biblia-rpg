@@ -718,9 +718,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_kit_to_character: {
-        Args: { p_character_id: string; p_kit_id: string }
-        Returns: undefined
+      can_manage_character: {
+        Args: { check_character_id: string }
+        Returns: boolean
       }
       cancel_session_trades: {
         Args: { p_session_id: string }
