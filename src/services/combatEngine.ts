@@ -4,8 +4,8 @@ import { useCombatStore } from '../store/combatStore';
 import type { ConditionEntry, CharacterEquipment, WeaponEffect } from '../types/combat';
 import { supabase } from '../lib/supabase';
 import {
-  applyArmorResistance,
-  findMaxResistanceLevel,
+  applyConditionResistance,
+  getConditionResistanceLevels,
   resolveEquippedItems,
 } from '@/domain/armorResistance';
 
@@ -56,45 +56,40 @@ export const combatEngine = {
 
     let currentConditions = (target.conditions as unknown as ConditionEntry[]) || [];
 
-    // Fetch target equipment to check for condition resistances
-    let maxResistanceLevel = 0;
+    // Nível de Resistência a Condição do alvo, Condição por Condição, pelos itens equipados.
+    let resistanceLevels: Record<string, number> = {};
     if (target.entity_type !== 'enemy' && target.entity_id) {
       const { data: charData } = await supabase
         .from('characters')
-        .select('equipment, character_items(*)')
+        .select('equipment, character_items(*, items(slug))')
         .eq('id', target.entity_id)
         .single();
 
       if (charData) {
         const equipment = charData.equipment as unknown as CharacterEquipment;
         const charItems = (charData.character_items as any[]) || [];
-
-        const equippedItemsData = resolveEquippedItems(equipment, charItems);
-
-        // Evaluate incoming conditions against resistances
-        maxResistanceLevel = findMaxResistanceLevel(
-          ability.applyConditions.map((c) => c.conditionId),
-          equippedItemsData,
-        );
+        resistanceLevels = getConditionResistanceLevels(resolveEquippedItems(equipment, charItems));
       }
     }
 
     for (const cond of ability.applyConditions) {
-      const {
-        duration: finalDuration,
-        immune: isImmune,
-        toast: toastMsg,
-      } = applyArmorResistance(cond.conditionId, cond.duration ?? null, maxResistanceLevel);
+      const outcome = applyConditionResistance(
+        cond.conditionId,
+        cond.duration ?? null,
+        resistanceLevels[cond.conditionId] ?? 0,
+      );
 
       // Dispatch simple global event for toast notification
-      if (maxResistanceLevel > 0 && typeof window !== 'undefined' && toastMsg) {
-        window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message: toastMsg } }));
+      if (outcome.message && typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('combat-toast', { detail: { message: outcome.message } }),
+        );
       }
 
-      if (!isImmune) {
+      if (!outcome.immune) {
         const newCond: ConditionEntry = {
           conditionId: cond.conditionId,
-          duration: finalDuration,
+          duration: outcome.duration,
         };
         currentConditions = conditionsService.mergeCondition(currentConditions, newCond);
       }

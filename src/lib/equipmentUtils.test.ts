@@ -154,20 +154,54 @@ describe('getCombatStats: a CA vem do catálogo, não dos efeitos gravados no it
   });
 });
 
-describe('getCombatStats: resistências e arma', () => {
-  it('une as resistências do item com as personalizadas, sem repetir', () => {
+describe('getCombatStats: resistências', () => {
+  it('lista as Condições do catálogo pelo slug e as personalizadas, sem repetir', () => {
     const c = character(
       10,
       { body: 'a', head: 'h' },
       {
-        a: { slug: 'cota_escamas', res: ['sangrando', 'envenenado'] },
-        h: { slug: 'chapeu_couro', res: ['sangrando'] },
+        a: { slug: 'peitoral_bronze' }, // sangrando, envenenado
+        h: { slug: 'elmo_bronze' }, // atordoado, cego
       },
     );
-    c.character_items[0].custom_condition_resistances = ['Corte'] as never[];
-    expect(getCombatStats(c).resistances.sort()).toEqual(['Corte', 'envenenado', 'sangrando']);
+    c.character_items[0].custom_condition_resistances = ['Corte', 'sangrando'] as never[];
+    expect(getCombatStats(c).resistances.sort()).toEqual(
+      ['Corte', 'atordoado', 'cego', 'envenenado', 'sangrando'].sort(),
+    );
   });
 
+  it('o catálogo manda: a coluna condition_resistances do item não conta', () => {
+    const c = character(10, { body: 'a' }, { a: { slug: 'couro_cru', res: ['cego'] } });
+    expect(getCombatStats(c).resistances).toEqual([]);
+  });
+
+  it('dá o nível de resistência por Condição: tabela + Qualidade - 1, o maior entre os itens', () => {
+    const c = character(
+      10,
+      { body: 'b', head: 'h', offHand: 's' },
+      {
+        b: { slug: 'lorica' }, // Nv4 vs sangrando, atordoado
+        h: { slug: 'elmo_bronze' }, // Nv3 vs atordoado, cego
+        s: { slug: 'escudo', level: 2 }, // Nv2 + 1 = 3 vs impedido
+      },
+    );
+    expect(getCombatStats(c).conditionResistanceLevels).toEqual({
+      sangrando: 4,
+      atordoado: 4,
+      cego: 3,
+      impedido: 3,
+    });
+  });
+
+  it('sem itens com resistência equipados o mapa é vazio, e inimigos também não têm', () => {
+    expect(getCombatStats(character(10, {}, {})).conditionResistanceLevels).toEqual({});
+    expect(getCombatStats({ stats: { ca: 12 }, is_enemy: true }).conditionResistanceLevels).toEqual(
+      {},
+    );
+  });
+});
+
+describe('getCombatStats: arma', () => {
   it('a arma vem da mão principal e usa o damageDie dos efeitos', () => {
     const c = character(
       10,
