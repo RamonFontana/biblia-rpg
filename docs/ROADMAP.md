@@ -406,7 +406,11 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
 3. **Camada de dados** (`src/data-access/`), por área: autenticação e sessão; personagem e inventário; combate (`combatStore` deixa de escrever no banco); testes e trocas. Cada área tipa as linhas com `database.types.ts`, o que tira os `any` do caminho, e zera as suas supressões de `no-restricted-imports`.
    - **3a, autenticação e sessão (feito):** `src/data-access/{auth,sessions,characters,realtime}.ts`; o `realtimeSubscriptions` de `src/lib` virou `realtime.ts`. As funções lançam o erro do Supabase e quem chama decide a mensagem (`getErrorMessage` em `src/lib/errorMessage.ts`). Saíram do Supabase direto: `authStore`, as 5 páginas de autenticação, o `Home`, `ActiveSessionPage`, os hooks da sessão e 6 componentes de `components/session`. O elenco da mesa agora tem tipo (`SessionPlayer`, `SessionNpc`, `SessionCharacter`); a asserção de `Json` para os tipos do app fica em `toCharacter`, num lugar só.
    - **Mudanças de comportamento da 3a (todas em caminho de erro):** os updates de Fé, visibilidade e descanso longo eram `await` sem checar o erro, então a tela mostrava sucesso mesmo com o banco recusando; agora o erro cai no `catch` que já existia (e o descanso longo avisa). `AuthCallbackPage` passa a cancelar o listener ao sair. A consulta da sessão ativa do Mestre na `Home` registra o erro em vez de engolir.
-   - **Falta migrar:** `src/services/*` e `src/features/*/api/*` (ainda importam o cliente, com a regra de lint desligada para essas pastas) e os componentes `CharacterSheetView`, `NPCInventoryManager`, `MasterDeathControls`, `TokenContextMenu`, `PhysicalRollForm`, `Summary`, `useDeathSaves`, `useUpdateNPCInventory`, `combatStore`. **Lacuna do gate:** `no-restricted-imports` não enxerga `await import('@/lib/supabase')`, e `PlayerTestDialog` usa isso em dois lugares; fica para a área de testes e trocas, com uma regra que cubra o import dinâmico.
+   - **3b, personagem e inventário (feito):** `data-access/characters.ts` ganhou o que era `characterApi` e `saveCharacter` (e `updateCharacterEquipment`, que morava em `lib/supabase`); `data-access/inventory.ts` (novo) tem a sincronização do inventário, o catálogo, as gravações num item, o consumo, a munição e `getItemFaithPenalty`; `data-access/vitals.ts` é o antigo `characterVitalsService` (agora com testes). `useAmmunition` foi para `src/hooks` e as duas hooks de inventário ficaram só com o estado. `CharacterSheetView`, `NPCInventoryManager` e `TokenContextMenu` não importam mais o cliente. Os dois `services` e a pasta `features/character-management/api` deixaram de existir.
+   - **Achado da 3b, corrigido num `fix:` separado:** a consulta do inventário da ficha (`CharacterSheetView`) listava as colunas à mão e não trazia `items.slug`. Sem o slug, a CA de armadura, a Resistência a Condição, os avisos de equipar e o texto de CA/resistência por item (Onda 3) não apareciam na ficha; só funcionavam onde a linha vinha de `select('*')` (lista de personagens, mesa do Mestre). Agora `getCharacterInventory` traz o slug, com teste.
+   - **Observado, não mexi:** o ramo de `updateCharacter` que refaz o inventário quando `equipment` muda não tem chamador (a ficha grava o equipamento por `updateCharacterEquipment`, e `Summary`/`useQuickSave` tiram `equipment` do envio). Fica como código parado.
+   - **Mudanças de comportamento da 3b (caminhos de erro):** a busca da ficha do jogador na sessão (`findParticipantCharacterId`) agora lança o erro do Supabase em vez de ignorar e cair na ficha mais recente; `TokenContextMenu` registra a falha do uso do item em vez de descartá-la.
+   - **Falta migrar:** `src/services/*` (`combatEngine`, `conditionsService`, `combatStore`, `useDeathSaves` e `MasterDeathControls` na 3c; `sessionService`, `sessionTestService`, `tradeService` e `PlayerTestDialog` na 3d) e `PhysicalRollForm`, parado. A regra de lint segue desligada para `src/services/` até a 3d acabar. **Lacuna do gate:** `no-restricted-imports` não enxerga `await import('@/lib/supabase')`, e `PlayerTestDialog` usa isso em dois lugares; fica para a 3d, com uma regra que cubra o import dinâmico.
 4. **Criação de personagem.** Tira os 5 `@ts-nocheck`, leva as regras para o motor e preserva o visual, que é a referência.
 5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
@@ -439,12 +443,12 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (235 em 2026-10-18)
+### Lint: `eslint-suppressions.json` (205 em 2026-10-18)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 190 |
-| `no-restricted-imports` (Supabase fora da camada de dados) | 10 |
-| `@typescript-eslint/no-unused-vars` | 18 |
+| `@typescript-eslint/no-explicit-any` | 167 |
+| `no-restricted-imports` (Supabase fora da camada de dados) | 4 |
+| `@typescript-eslint/no-unused-vars` | 17 |
 | `react-hooks/set-state-in-effect` | 8 |
 | `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |
 | `react-refresh/only-export-components` | 3 |
