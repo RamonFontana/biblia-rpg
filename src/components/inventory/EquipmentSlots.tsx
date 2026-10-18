@@ -1,7 +1,9 @@
 import { Shield, Sword, User } from 'lucide-react';
 import type { CharacterEquipment } from '@/types/combat';
-import { checkWeaponProficiency, getSlotAcBonus } from '@/lib/equipmentUtils';
+import { checkWeaponProficiency } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
+import { formatItemArmorClass } from '@/domain/armorClass';
+import { ItemResistances } from './ItemResistances';
 
 interface EquipmentSlotsProps {
   equipment: CharacterEquipment | null;
@@ -40,37 +42,29 @@ export function EquipmentSlots({
     : true;
 
   const renderItemStats = (item: any) => {
-    let effects = item?.items?.effects || {};
+    const slug = item?.items?.slug;
+    let damageDie = item?.items?.effects?.damageDie;
 
     // Fallback if DB item doesn't have effects populated
-    if (Object.keys(effects).length === 0) {
-      const staticItem = ITEMS_DB.find((i) => i.name === item?.items?.name);
-      if (staticItem) {
-        if (staticItem.damage) effects.damageDie = staticItem.damage;
-        if (staticItem.armorClass) {
-          if (staticItem.type === 'Escudo') effects.acBonus = staticItem.armorClass;
-          else effects.armorClass = staticItem.armorClass;
-        }
-      }
+    if (!damageDie) {
+      damageDie = ITEMS_DB.find((i) => i.id === slug)?.damage;
     }
 
-    if (Object.keys(effects).length === 0) return null;
-
-    const { damageDie } = effects;
-    const { baseCaBonus, levelBonus, totalCaBonus } = getSlotAcBonus(effects, item.level);
+    const armorClass = formatItemArmorClass({ slug, level: item.level });
+    if (!damageDie && !armorClass) return <ItemResistances slug={slug} />;
 
     return (
-      <div className="flex gap-2 mt-1 text-[11px] font-medium">
-        {damageDie && <span className="text-red-400 flex items-center gap-1">⚔️ {damageDie}</span>}
-        {totalCaBonus > 0 && (
-          <span
-            className="text-blue-400 flex items-center gap-1"
-            title={levelBonus > 0 ? `+${baseCaBonus} (base) +${levelBonus} (nível)` : undefined}
-          >
-            🛡️ +{totalCaBonus} CA
-          </span>
-        )}
-      </div>
+      <>
+        <div className="flex gap-2 mt-1 text-[11px] font-medium">
+          {damageDie && (
+            <span className="text-red-400 flex items-center gap-1">⚔️ {damageDie}</span>
+          )}
+          {armorClass && (
+            <span className="text-blue-400 flex items-center gap-1">🛡️ {armorClass}</span>
+          )}
+        </div>
+        <ItemResistances slug={slug} />
+      </>
     );
   };
 

@@ -9,6 +9,11 @@
 import { ITEMS_DB } from '@/content/items';
 import type { CharacterEquipment } from '@/types/combat';
 
+/** Condições a que o item do catálogo resiste (Resistência a Condição), pelo slug. */
+export function getItemConditionResistances(slug: string | null | undefined): string[] {
+  return ITEMS_DB.find((item) => item.id === slug)?.conditionResistances ?? [];
+}
+
 export interface InventoryItemRow {
   id?: string;
   item_id?: string;

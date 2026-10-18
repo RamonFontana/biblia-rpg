@@ -10,6 +10,9 @@ import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
 import { CONDITIONS } from '@/content/conditions';
 import { resolveHealing } from '@/domain/consumables';
+import { formatItemArmorClass } from '@/domain/armorClass';
+import { getItemConditionResistances } from '@/domain/armorResistance';
+import { ItemResistances } from './ItemResistances';
 
 interface InventoryListProps {
   inventoryItems: any[];
@@ -25,6 +28,17 @@ interface InventoryListProps {
   onRecoverAmmunition?: (characterItemId: string, spentAmount: number, maxCapacity: number) => void;
   onAddCharges?: (characterItemId: string, amount: number) => void;
   onRemoveItem?: (characterItemId: string) => void;
+}
+
+/** Dica do botão Equipar: o que o item dá, com o elmo avisando que não dá CA. */
+function equipTitle(slug?: string | null): string | undefined {
+  const armorClass = formatItemArmorClass({ slug });
+  const resistances = getItemConditionResistances(slug).map((id) => CONDITIONS[id]?.name ?? id);
+  const parts = [
+    armorClass ?? (resistances.length > 0 ? 'Não dá CA' : null),
+    resistances.length > 0 ? `Resiste: ${resistances.join(', ')}` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
 const AVAILABLE_RESISTANCES = ['Corte', 'Perfuração', 'Impacto', 'Fogo', 'Frio', 'Ácido', 'Veneno'];
@@ -417,32 +431,17 @@ export function InventoryList({
                         </span>
                       )}
                       {(() => {
-                        let bonus = 0;
-                        if (normalizedEffects.acBonus !== undefined)
-                          bonus = Number(normalizedEffects.acBonus);
-                        else if (normalizedEffects.ca !== undefined)
-                          bonus = Number(normalizedEffects.ca);
-                        else if (normalizedEffects.armorClass !== undefined)
-                          bonus = Math.max(0, Number(normalizedEffects.armorClass) - 10);
-
-                        if (bonus > 0) {
-                          const levelBonus = (item.level || 1) - 1;
-                          const totalBonus = bonus + levelBonus;
-                          return (
-                            <span
-                              className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold"
-                              title={
-                                levelBonus > 0
-                                  ? `+${bonus} (base) +${levelBonus} (nível)`
-                                  : undefined
-                              }
-                            >
-                              CA +{totalBonus}
-                            </span>
-                          );
-                        }
-                        return null;
+                        const armorClass = formatItemArmorClass({
+                          slug: item.items?.slug,
+                          level: item.level,
+                        });
+                        return armorClass ? (
+                          <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold">
+                            {armorClass}
+                          </span>
+                        ) : null;
                       })()}
+                      <ItemResistances slug={item.items?.slug} />
                       {item.custom_condition_resistances &&
                         item.custom_condition_resistances.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -572,6 +571,7 @@ export function InventoryList({
                             <button
                               onClick={() => onEquip(item.id, normalizedEffects)}
                               disabled={isUpdating}
+                              title={equipTitle(item.items?.slug)}
                               className="text-xs px-2 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold rounded border border-stone-700 transition-colors disabled:opacity-50"
                             >
                               Equipar
