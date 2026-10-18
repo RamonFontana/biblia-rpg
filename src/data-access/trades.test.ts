@@ -22,7 +22,24 @@ vi.mock('../lib/supabase', async () => {
 });
 
 import { callsOf, filterOf } from '../test/fakeSupabase';
-import { tradeService } from './tradeService';
+import {
+  acceptTrade,
+  addTradeItem,
+  cancelSessionTrades,
+  cancelTrade,
+  createTrade,
+  executeTrade,
+  getActiveTradesForSession,
+  getTradeInventory,
+  listTradeableItems,
+  removeTradeItem,
+  setReady,
+  updateTradeCoins,
+  updateTradeItemLevel,
+  updateTradeItemQuantity,
+  updateTradeItemResistances,
+  updateTradeItemWeaponEffects,
+} from './trades';
 
 const resetFlags = { initiator_ready: false, target_ready: false };
 const ops = () => state.calls.map((c) => `${c.table}:${c.op}`);
@@ -35,7 +52,7 @@ beforeEach(() => {
 describe('createTrade', () => {
   it('começa pendente, sem moedas, e preenche só o lado que veio', async () => {
     state.respond = () => ({ data: { id: 't1' } });
-    await tradeService.createTrade({
+    await createTrade({
       sessionId: 's1',
       type: 'player_trade',
       initiatorUserId: 'u1',
@@ -55,7 +72,7 @@ describe('createTrade', () => {
 
   it('uma loja pode nascer já ativa', async () => {
     state.respond = () => ({ data: { id: 't1' } });
-    await tradeService.createTrade({
+    await createTrade({
       sessionId: 's1',
       type: 'shop',
       status: 'active',
@@ -73,7 +90,7 @@ describe('createTrade', () => {
 describe('acceptTrade e cancelTrade', () => {
   it('aceitar só vale para uma troca pendente', async () => {
     state.respond = () => ({ data: { id: 't1' } });
-    await tradeService.acceptTrade('t1');
+    await acceptTrade('t1');
     const update = callsOf(state.calls, 'trades', 'update')[0];
     expect(update.payload).toEqual({ status: 'active' });
     expect(update.filters).toEqual([
@@ -83,7 +100,7 @@ describe('acceptTrade e cancelTrade', () => {
   });
 
   it('cancelar grava o estado e a hora, qualquer que seja o estado anterior', async () => {
-    await tradeService.cancelTrade('t1');
+    await cancelTrade('t1');
     const update = callsOf(state.calls, 'trades', 'update')[0];
     expect(update.payload).toMatchObject({ status: 'cancelled' });
     expect(typeof (update.payload as { completed_at: unknown }).completed_at).toBe('string');
@@ -92,20 +109,20 @@ describe('acceptTrade e cancelTrade', () => {
 
   it('erros do banco são lançados', async () => {
     state.respond = () => ({ error: new Error('falhou') });
-    await expect(tradeService.acceptTrade('t1')).rejects.toThrow('falhou');
-    await expect(tradeService.cancelTrade('t1')).rejects.toThrow('falhou');
+    await expect(acceptTrade('t1')).rejects.toThrow('falhou');
+    await expect(cancelTrade('t1')).rejects.toThrow('falhou');
   });
 });
 
 describe('moedas e "pronto"', () => {
   it('mudar as moedas de um lado desmarca "pronto" dos DOIS lados', async () => {
     state.respond = () => ({ data: { id: 't1' } });
-    await tradeService.updateTradeCoins('t1', 'initiator', 30);
+    await updateTradeCoins('t1', 'initiator', 30);
     expect(callsOf(state.calls, 'trades', 'update')[0].payload).toEqual({
       initiator_coins: 30,
       ...resetFlags,
     });
-    await tradeService.updateTradeCoins('t1', 'target', 5);
+    await updateTradeCoins('t1', 'target', 5);
     expect(callsOf(state.calls, 'trades', 'update')[1].payload).toEqual({
       target_coins: 5,
       ...resetFlags,
@@ -114,8 +131,8 @@ describe('moedas e "pronto"', () => {
 
   it('GAP conhecido: o serviço aceita moedas negativas ou fracionadas e deixa a validação ao banco', async () => {
     state.respond = () => ({ data: { id: 't1' } });
-    await tradeService.updateTradeCoins('t1', 'initiator', -10);
-    await tradeService.updateTradeCoins('t1', 'initiator', 2.5);
+    await updateTradeCoins('t1', 'initiator', -10);
+    await updateTradeCoins('t1', 'initiator', 2.5);
     const sent = callsOf(state.calls, 'trades', 'update').map(
       (c) => (c.payload as { initiator_coins: number }).initiator_coins,
     );
@@ -124,9 +141,9 @@ describe('moedas e "pronto"', () => {
 
   it('marcar "pronto" mexe só no lado de quem marcou', async () => {
     state.respond = () => ({ data: { id: 't1' } });
-    await tradeService.setReady('t1', 'target', true);
+    await setReady('t1', 'target', true);
     expect(callsOf(state.calls, 'trades', 'update')[0].payload).toEqual({ target_ready: true });
-    await tradeService.setReady('t1', 'initiator', false);
+    await setReady('t1', 'initiator', false);
     expect(callsOf(state.calls, 'trades', 'update')[1].payload).toEqual({
       initiator_ready: false,
     });
@@ -141,7 +158,7 @@ describe('addTradeItem', () => {
         : call.table === 'trade_items'
           ? { data: { id: 'ti1' } }
           : undefined;
-    await tradeService.addTradeItem('t1', 'initiator', 'item-a', 2);
+    await addTradeItem('t1', 'initiator', 'item-a', 2);
     expect(callsOf(state.calls, 'trade_items', 'insert')[0].payload).toEqual({
       trade_id: 't1',
       side: 'initiator',
@@ -158,7 +175,7 @@ describe('addTradeItem', () => {
         : call.table === 'trade_items'
           ? { data: { id: 'ti1' } }
           : undefined;
-    await tradeService.addTradeItem('t1', 'initiator', 'item-a', 2);
+    await addTradeItem('t1', 'initiator', 'item-a', 2);
     expect(callsOf(state.calls, 'trade_items', 'insert')).toEqual([]);
     const update = callsOf(state.calls, 'trade_items', 'update')[0];
     expect(update.payload).toEqual({ quantity: 5 });
@@ -167,7 +184,7 @@ describe('addTradeItem', () => {
 
   it('a busca do item existente procura por troca, lado e item', async () => {
     state.respond = () => ({ data: null });
-    await tradeService.addTradeItem('t1', 'target', 'item-a', 1);
+    await addTradeItem('t1', 'target', 'item-a', 1);
     expect(callsOf(state.calls, 'trade_items', 'select')[0].filters).toEqual([
       ['eq', 'trade_id', 't1'],
       ['eq', 'side', 'target'],
@@ -177,7 +194,7 @@ describe('addTradeItem', () => {
 
   it('GAP conhecido: não confere se o personagem tem o item nem a quantidade', async () => {
     state.respond = () => ({ data: null });
-    await tradeService.addTradeItem('t1', 'initiator', 'item-a', 999);
+    await addTradeItem('t1', 'initiator', 'item-a', 999);
     expect(callsOf(state.calls, 'character_items')).toEqual([]);
     expect(callsOf(state.calls, 'trade_items', 'insert')[0].payload).toMatchObject({
       quantity: 999,
@@ -191,7 +208,7 @@ describe('alterar um item da troca', () => {
 
   it('quantidade positiva atualiza a linha e desmarca "pronto" da troca dona do item', async () => {
     state.respond = parent;
-    await tradeService.updateTradeItemQuantity('ti1', 4);
+    await updateTradeItemQuantity('ti1', 4);
     expect(ops()).toEqual(['trade_items:select', 'trade_items:update', 'trades:update']);
     expect(callsOf(state.calls, 'trade_items', 'update')[0].payload).toEqual({ quantity: 4 });
     const reset = callsOf(state.calls, 'trades', 'update')[0];
@@ -201,21 +218,21 @@ describe('alterar um item da troca', () => {
 
   it('quantidade 0 ou negativa apaga o item da troca', async () => {
     state.respond = parent;
-    await tradeService.updateTradeItemQuantity('ti1', 0);
-    await tradeService.updateTradeItemQuantity('ti1', -2);
+    await updateTradeItemQuantity('ti1', 0);
+    await updateTradeItemQuantity('ti1', -2);
     expect(callsOf(state.calls, 'trade_items', 'delete')).toHaveLength(2);
     expect(callsOf(state.calls, 'trade_items', 'update')).toEqual([]);
   });
 
   it('remover apaga o item e desmarca "pronto"', async () => {
     state.respond = parent;
-    await tradeService.removeTradeItem('ti1');
+    await removeTradeItem('ti1');
     expect(ops()).toEqual(['trade_items:select', 'trade_items:delete', 'trades:update']);
   });
 
   it('a Qualidade fica entre 1 e 5', async () => {
     state.respond = parent;
-    for (const level of [0, -3, 3, 7]) await tradeService.updateTradeItemLevel('ti1', level);
+    for (const level of [0, -3, 3, 7]) await updateTradeItemLevel('ti1', level);
     const sent = callsOf(state.calls, 'trade_items', 'update').map(
       (c) => (c.payload as { level: number }).level,
     );
@@ -224,17 +241,19 @@ describe('alterar um item da troca', () => {
 
   it('GAP conhecido: Qualidade fracionada passa sem ser arredondada', async () => {
     state.respond = parent;
-    await tradeService.updateTradeItemLevel('ti1', 2.5);
+    await updateTradeItemLevel('ti1', 2.5);
     expect(callsOf(state.calls, 'trade_items', 'update')[0].payload).toEqual({ level: 2.5 });
   });
 
   it('resistências e efeitos de arma personalizados também desmarcam "pronto"', async () => {
     state.respond = parent;
-    await tradeService.updateTradeItemResistances('ti1', ['sangrando']);
-    await tradeService.updateTradeItemWeaponEffects('ti1', [{ conditionId: 'cego' }]);
+    await updateTradeItemResistances('ti1', ['sangrando']);
+    await updateTradeItemWeaponEffects('ti1', [
+      { conditionId: 'cego', trigger: 'natural_18_plus' },
+    ]);
     expect(callsOf(state.calls, 'trade_items', 'update').map((c) => c.payload)).toEqual([
       { custom_condition_resistances: ['sangrando'] },
-      { weapon_effects: [{ conditionId: 'cego' }] },
+      { weapon_effects: [{ conditionId: 'cego', trigger: 'natural_18_plus' }] },
     ]);
     expect(callsOf(state.calls, 'trades', 'update')).toHaveLength(2);
   });
@@ -244,7 +263,7 @@ describe('alterar um item da troca', () => {
       call.table === 'trade_items' && call.op === 'select'
         ? { error: new Error('não achou') }
         : undefined;
-    await expect(tradeService.removeTradeItem('ti1')).rejects.toThrow('não achou');
+    await expect(removeTradeItem('ti1')).rejects.toThrow('não achou');
     expect(ops()).toEqual(['trade_items:select']);
   });
 
@@ -254,7 +273,7 @@ describe('alterar um item da troca', () => {
       if (call.table === 'trade_items') return { error: new Error('falhou') };
       return undefined;
     };
-    await expect(tradeService.updateTradeItemQuantity('ti1', 2)).rejects.toThrow('falhou');
+    await expect(updateTradeItemQuantity('ti1', 2)).rejects.toThrow('falhou');
     expect(callsOf(state.calls, 'trades')).toEqual([]);
   });
 });
@@ -262,7 +281,7 @@ describe('alterar um item da troca', () => {
 describe('executeTrade', () => {
   it('chama a função SQL e devolve o resultado dela, inclusive recusas', async () => {
     state.respond = () => ({ data: { success: false, error: 'Itens insuficientes' } });
-    const result = await tradeService.executeTrade('t1');
+    const result = await executeTrade('t1');
     expect(result).toEqual({ success: false, error: 'Itens insuficientes' });
     const call = callsOf(state.calls, 'execute_trade', 'rpc')[0];
     expect(call.payload).toEqual({ p_trade_id: 't1' });
@@ -270,14 +289,14 @@ describe('executeTrade', () => {
 
   it('erro de rede ou de permissão é lançado', async () => {
     state.respond = () => ({ error: new Error('sem permissão') });
-    await expect(tradeService.executeTrade('t1')).rejects.toThrow('sem permissão');
+    await expect(executeTrade('t1')).rejects.toThrow('sem permissão');
   });
 });
 
 describe('getActiveTradesForSession', () => {
   it('busca só trocas pendentes ou ativas da sessão, mais novas primeiro', async () => {
     state.respond = () => ({ data: [] });
-    await tradeService.getActiveTradesForSession('s1');
+    await getActiveTradesForSession('s1');
     const select = callsOf(state.calls, 'trades', 'select')[0];
     expect(select.filters).toEqual([
       ['eq', 'session_id', 's1'],
@@ -288,7 +307,7 @@ describe('getActiveTradesForSession', () => {
 
   it('sem trocas, nem consulta os itens', async () => {
     state.respond = () => ({ data: [] });
-    expect(await tradeService.getActiveTradesForSession('s1')).toEqual([]);
+    expect(await getActiveTradesForSession('s1')).toEqual([]);
     expect(callsOf(state.calls, 'trade_items')).toEqual([]);
   });
 
@@ -303,7 +322,7 @@ describe('getActiveTradesForSession', () => {
               { id: 'i3', trade_id: 't1' },
             ],
           };
-    const result = await tradeService.getActiveTradesForSession('s1');
+    const result = await getActiveTradesForSession('s1');
     expect(result.map((t) => [t.id, t.trade_items.map((i) => i.id)])).toEqual([
       ['t1', ['i1', 'i3']],
       ['t2', ['i2']],
@@ -317,11 +336,38 @@ describe('getActiveTradesForSession', () => {
 
 describe('cancelSessionTrades', () => {
   it('chama a função SQL com a sessão e lança se ela falhar', async () => {
-    await tradeService.cancelSessionTrades('s1');
+    await cancelSessionTrades('s1');
     expect(callsOf(state.calls, 'cancel_session_trades', 'rpc')[0].payload).toEqual({
       p_session_id: 's1',
     });
     state.respond = () => ({ error: new Error('falhou') });
-    await expect(tradeService.cancelSessionTrades('s1')).rejects.toThrow('falhou');
+    await expect(cancelSessionTrades('s1')).rejects.toThrow('falhou');
+  });
+});
+
+describe('getTradeInventory', () => {
+  it('lê os itens do personagem com os dados do catálogo e devolve vazio sem linhas', async () => {
+    state.respond = () => ({ data: null });
+    expect(await getTradeInventory('c1')).toEqual([]);
+    const [call] = callsOf(state.calls, 'character_items', 'select');
+    expect(filterOf(call, 'eq', 'character_id')).toBe('c1');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: new Error('falhou') });
+    await expect(getTradeInventory('c1')).rejects.toThrow('falhou');
+  });
+});
+
+describe('listTradeableItems', () => {
+  it('lista o catálogo por nome', async () => {
+    state.respond = () => ({ data: [{ id: 'i1', name: 'Pão' }] });
+    expect(await listTradeableItems()).toEqual([{ id: 'i1', name: 'Pão' }]);
+    expect(callsOf(state.calls, 'items', 'select')).toHaveLength(1);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: new Error('falhou') });
+    await expect(listTradeableItems()).rejects.toThrow('falhou');
   });
 });

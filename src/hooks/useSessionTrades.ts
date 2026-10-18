@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { subscribeToTables } from '@/data-access/realtime';
-import { tradeService } from '@/services/tradeService';
+import { getActiveTradesForSession } from '@/data-access/trades';
 import type { TradeWithItems } from '@/types/trade';
 
 export function useSessionTrades(sessionId: string | undefined) {
@@ -12,7 +12,7 @@ export function useSessionTrades(sessionId: string | undefined) {
 
     try {
       setLoading(true);
-      const trades = await tradeService.getActiveTradesForSession(sessionId);
+      const trades = await getActiveTradesForSession(sessionId);
       setActiveTrades(trades);
     } catch (error) {
       console.error('Error fetching session trades:', error);

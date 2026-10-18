@@ -2,7 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TradeItemSelector, type SelectableItem } from './TradeItemSelector';
 import type { TradeItemWithDetails, TradeSide as TradeSideType } from '@/types/trade';
-import { tradeService } from '@/services/tradeService';
+import {
+  addTradeItem,
+  getTradeInventory,
+  listTradeableItems,
+  removeTradeItem,
+  updateTradeCoins,
+  updateTradeItemLevel,
+  updateTradeItemQuantity,
+  updateTradeItemResistances,
+  updateTradeItemWeaponEffects,
+} from '@/data-access/trades';
 import { ShieldPlus, Zap } from 'lucide-react';
 import {
   DropdownMenu,
@@ -65,7 +75,7 @@ export function TradeSide({
 
   useEffect(() => {
     if (useCatalog) {
-      tradeService.getAllItems().then((items) => {
+      listTradeableItems().then((items) => {
         setCatalogItems(
           (items as SelectableItem[]).map((i) => ({
             ...i,
@@ -74,7 +84,7 @@ export function TradeSide({
         );
       });
     } else if (characterId) {
-      tradeService.getCharacterInventory(characterId).then((data) => {
+      getTradeInventory(characterId).then((data) => {
         setInventoryItems(
           data.map((row: any) => ({
             id: row.items.id,
@@ -97,7 +107,7 @@ export function TradeSide({
   const handleAddItem = async (itemId: string, quantity: number) => {
     if (!canEdit) return;
     try {
-      await tradeService.addTradeItem(tradeId, side, itemId, quantity);
+      await addTradeItem(tradeId, side, itemId, quantity);
       onItemsChanged();
     } catch (e) {
       console.error('Erro ao adicionar item:', e);
@@ -109,7 +119,7 @@ export function TradeSide({
     const tradeItem = sideItems.find((ti) => ti.item_id === itemId);
     if (!tradeItem) return;
     try {
-      await tradeService.removeTradeItem(tradeItem.id);
+      await removeTradeItem(tradeItem.id);
       onItemsChanged();
     } catch (e) {
       console.error('Erro ao remover item:', e);
@@ -121,7 +131,7 @@ export function TradeSide({
     const tradeItem = sideItems.find((ti) => ti.item_id === itemId);
     if (!tradeItem) return;
     try {
-      await tradeService.updateTradeItemQuantity(tradeItem.id, quantity);
+      await updateTradeItemQuantity(tradeItem.id, quantity);
       onItemsChanged();
     } catch (e) {
       console.error('Erro ao atualizar quantidade:', e);
@@ -138,7 +148,7 @@ export function TradeSide({
       if (value !== coins) {
         try {
           setIsSavingCoins(true);
-          await tradeService.updateTradeCoins(tradeId, side, value);
+          await updateTradeCoins(tradeId, side, value);
           onCoinsChange(value);
           onItemsChanged();
         } catch (e) {
@@ -247,10 +257,7 @@ export function TradeSide({
                       <button
                         type="button"
                         onClick={async () => {
-                          await tradeService.updateTradeItemLevel(
-                            ti.id,
-                            Math.max(1, (ti.level || 1) - 1),
-                          );
+                          await updateTradeItemLevel(ti.id, Math.max(1, (ti.level || 1) - 1));
                           onItemsChanged();
                         }}
                         className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
@@ -267,10 +274,7 @@ export function TradeSide({
                       <button
                         type="button"
                         onClick={async () => {
-                          await tradeService.updateTradeItemLevel(
-                            ti.id,
-                            Math.min(5, (ti.level || 1) + 1),
-                          );
+                          await updateTradeItemLevel(ti.id, Math.min(5, (ti.level || 1) + 1));
                           onItemsChanged();
                         }}
                         className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
@@ -306,7 +310,7 @@ export function TradeSide({
                                   let current = [...(ti.custom_condition_resistances || [])];
                                   if (checked) current.push(res);
                                   else current = current.filter((r) => r !== res);
-                                  await tradeService.updateTradeItemResistances(ti.id, current);
+                                  await updateTradeItemResistances(ti.id, current);
                                   onItemsChanged();
                                 }}
                                 className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"
@@ -355,7 +359,7 @@ export function TradeSide({
                                       (e: WeaponEffect) => e.conditionId !== cond.id,
                                     );
                                   }
-                                  await tradeService.updateTradeItemWeaponEffects(ti.id, current);
+                                  await updateTradeItemWeaponEffects(ti.id, current);
                                   onItemsChanged();
                                 }}
                                 className="text-sm focus:bg-stone-800 focus:text-stone-100 cursor-pointer"

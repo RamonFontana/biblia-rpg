@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { TradeSide } from './TradeSide';
 import type { TradeWithItems, TradeType } from '@/types/trade';
-import { tradeService } from '@/services/tradeService';
+import { cancelTrade, executeTrade, setReady } from '@/data-access/trades';
 import type { Character } from '@/features/character-management/types';
 
 interface TradeDialogProps {
@@ -81,11 +81,11 @@ export function TradeDialog({
     setExecuting(true);
     setError(null);
     try {
-      const result = await tradeService.executeTrade(trade.id);
+      const result = await executeTrade(trade.id);
       if (!result.success) {
         setError(result.error ?? 'Erro ao executar a transação.');
-        await tradeService.setReady(trade.id, 'initiator', false);
-        await tradeService.setReady(trade.id, 'target', false);
+        await setReady(trade.id, 'initiator', false);
+        await setReady(trade.id, 'target', false);
         onTradeUpdated();
       } else {
         onTradeUpdated();
@@ -100,7 +100,7 @@ export function TradeDialog({
 
   const handleCancel = async () => {
     try {
-      await tradeService.cancelTrade(trade.id);
+      await cancelTrade(trade.id);
       onTradeUpdated();
       onClose();
     } catch (e) {
@@ -110,7 +110,7 @@ export function TradeDialog({
 
   const handleReady = async (side: 'initiator' | 'target', ready: boolean) => {
     try {
-      await tradeService.setReady(trade.id, side, ready);
+      await setReady(trade.id, side, ready);
       onTradeUpdated();
     } catch (e) {
       console.error('Erro ao marcar pronto:', e);
