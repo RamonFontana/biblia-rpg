@@ -180,7 +180,9 @@ describe('consultas do inventário e do catálogo', () => {
     await expect(getCharacterInventory('c1')).resolves.toEqual([{ id: 'ci1' }]);
     const [call] = itemWrites('select');
     expect(filterOf(call, 'eq', 'character_id')).toBe('c1');
+    // O slug é o que liga a linha ao conteúdo (CA de armadura, Resistência a Condição, avisos).
     for (const column of [
+      'slug',
       'quantity',
       'level',
       'custom_condition_resistances',

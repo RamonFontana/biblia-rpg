@@ -93,6 +93,7 @@ const SHEET_INVENTORY = `
   weapon_effects,
   items (
     id,
+    slug,
     name,
     description,
     category,
