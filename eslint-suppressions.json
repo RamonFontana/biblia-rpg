@@ -1,9 +1,4 @@
 {
-  "src/App.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/components/character/CharacterSavingThrows.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -90,19 +85,6 @@
       "count": 6
     }
   },
-  "src/components/session/AddNPCModal.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/components/session/CreateEnemyDialog.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/components/session/CreateSessionForm/NPCCharacterSheetModal.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -155,33 +137,21 @@
   "src/components/session/SessionEnemyList.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/session/SessionNPCList.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "no-restricted-imports": {
       "count": 1
     }
   },
   "src/components/session/SessionParticipantList.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 14
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/session/SessionRestControls.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/components/session/TokenContextMenu.tsx": {
@@ -302,21 +272,7 @@
     }
   },
   "src/hooks/useActiveSession.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "no-restricted-imports": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/hooks/useCampaignNPCs.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "no-restricted-imports": {
       "count": 1
     }
   },
@@ -326,12 +282,6 @@
     }
   },
   "src/hooks/useSessionCharacters.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    },
-    "no-restricted-imports": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -343,11 +293,6 @@
   },
   "src/hooks/useSessionTrades.ts": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/hooks/useSupabasePresence.ts": {
-    "no-restricted-imports": {
       "count": 1
     }
   },
@@ -364,11 +309,6 @@
       "count": 5
     }
   },
-  "src/lib/realtimeSubscriptions.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/lib/supabase.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -379,48 +319,8 @@
       "count": 1
     }
   },
-  "src/pages/auth/AuthCallbackPage.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/pages/auth/ForgotPasswordPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/pages/auth/LoginPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/pages/auth/RegisterPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/pages/auth/ResetPasswordPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/pages/session/ActiveSessionPage.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "no-restricted-imports": {
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
@@ -455,11 +355,6 @@
   "src/services/tradeService.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 23
-    }
-  },
-  "src/store/authStore.ts": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/store/combatStore.ts": {
