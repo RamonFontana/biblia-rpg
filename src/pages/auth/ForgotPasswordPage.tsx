@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { requestPasswordReset } from '@/data-access/auth';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -47,17 +48,11 @@ export function ForgotPasswordPage() {
     setError(null);
     setSuccess(false);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        throw error;
-      }
+      await requestPasswordReset(values.email, `${window.location.origin}/reset-password`);
 
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao solicitar a redefinição de senha.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ocorreu um erro ao solicitar a redefinição de senha.'));
     } finally {
       setLoading(false);
     }

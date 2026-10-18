@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { signInWithGoogle, signInWithPassword } from '@/data-access/auth';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -48,20 +49,13 @@ export function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
+      const session = await signInWithPassword(values.email, values.password);
 
-      if (error) {
-        throw error;
-      }
-
-      if (data.session) {
+      if (session) {
         navigate('/');
       }
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao fazer login.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ocorreu um erro ao fazer login.'));
     } finally {
       setLoading(false);
     }
@@ -129,15 +123,9 @@ export function LoginPage() {
             onClick={async () => {
               setLoading(true);
               try {
-                const { error } = await supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
-                  },
-                });
-                if (error) throw error;
-              } catch (err: any) {
-                setError(err.message || 'Erro ao conectar com Google.');
+                await signInWithGoogle(`${window.location.origin}/auth/callback`);
+              } catch (err) {
+                setError(getErrorMessage(err, 'Erro ao conectar com Google.'));
                 setLoading(false);
               }
             }}

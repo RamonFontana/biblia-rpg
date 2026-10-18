@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { updatePassword } from '@/data-access/auth';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -48,17 +49,11 @@ export function ResetPasswordPage() {
     setError(null);
     setSuccess(false);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: values.password,
-      });
-
-      if (error) {
-        throw error;
-      }
+      await updatePassword(values.password);
 
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao redefinir a senha.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ocorreu um erro ao redefinir a senha.'));
     } finally {
       setLoading(false);
     }

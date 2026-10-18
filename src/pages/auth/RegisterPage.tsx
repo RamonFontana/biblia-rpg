@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { signUp } from '@/data-access/auth';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -57,24 +58,17 @@ export function RegisterPage() {
     setError(null);
     setSuccess(false);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-      });
+      const { user, session } = await signUp(values.email, values.password);
 
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
+      if (user) {
         setSuccess(true);
         // Se a configuração de email confirmation estiver desligada, redirecionar
-        if (data.session) {
+        if (session) {
           navigate('/');
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao fazer cadastro.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ocorreu um erro ao fazer cadastro.'));
     } finally {
       setLoading(false);
     }
