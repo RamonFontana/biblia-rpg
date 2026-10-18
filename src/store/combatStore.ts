@@ -1,14 +1,28 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../types/database.types';
 import { resetCombatAbilities } from '../utils/abilityUtils';
-import { conditionsService } from '../services/conditionsService';
+import { cleanTemporaryConditions, tickConditions } from '@/domain/conditions';
+import type { VitalsLike } from '@/domain/vitals';
+import { updateCharacterSkills } from '@/data-access/characters';
+import {
+  createCombat,
+  finishCombat,
+  findSessionCombat,
+  getCharacterConditions,
+  getCharacterSkills,
+  getCharactersForCombatEnd,
+  insertCombatParticipants,
+  listCombatParticipants,
+  setParticipantConditions,
+  softDeleteCharacters,
+  updateCombatTurn,
+  type Combat,
+  type CombatParticipant,
+} from '@/data-access/combat';
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import type { ConditionEntry } from '../types/combat';
 
-export type Combat = Database['public']['Tables']['combats']['Row'];
-export type CombatParticipant = Database['public']['Tables']['combat_participants']['Row'];
+export type { Combat, CombatParticipant };
 
 interface PlayerCombatState {
   hasUsedMovement: boolean;
@@ -98,79 +112,51 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   startCombat: async (sessionId, setupParticipants) => {
     // Insert combat
-    const { data: combat, error: combatError } = await supabase
-      .from('combats')
-      .insert({ session_id: sessionId, status: 'active', current_turn_index: 0, round_number: 1 })
-      .select('*')
-      .single();
-
-    if (combatError) {
-      console.error('Failed to create combat', combatError);
-      throw combatError;
-    }
+    const combat = await createCombat(sessionId);
 
     // Fetch existing conditions for characters
     const entityIds = setupParticipants
       .filter((p) => p.entityType !== 'enemy')
       .map((p) => p.entityId);
-    const charactersConditions: Record<string, any[]> = {};
+    let charactersConditions: Record<string, ConditionEntry[]> = {};
     if (entityIds.length > 0) {
-      const { data: chars } = await supabase
-        .from('characters')
-        .select('id, conditions')
-        .in('id', entityIds);
-      if (chars) {
-        chars.forEach((c) => {
-          charactersConditions[c.id] = (c.conditions as any[]) || [];
-        });
+      try {
+        charactersConditions = await getCharacterConditions(entityIds);
+      } catch (error) {
+        console.error('Error fetching character conditions:', error);
       }
     }
 
     // Insert participants
-    const participantsData = setupParticipants.map((p) => ({
-      combat_id: combat.id,
-      entity_id: p.entityId,
-      entity_type: p.entityType,
-      initiative: p.initiative,
-      hp_current: p.hpCurrent,
-      conditions: charactersConditions[p.entityId] || [],
-    }));
-
-    const { error: participantsError } = await supabase
-      .from('combat_participants')
-      .insert(participantsData);
-
-    if (participantsError) {
-      console.error('Failed to insert participants', participantsError);
-      throw participantsError;
-    }
+    await insertCombatParticipants(
+      setupParticipants.map((p) => ({
+        combat_id: combat.id,
+        entity_id: p.entityId,
+        entity_type: p.entityType,
+        initiative: p.initiative,
+        hp_current: p.hpCurrent,
+        conditions: charactersConditions[p.entityId] || [],
+      })),
+    );
 
     // Reset combat abilities for all non-enemy participants
     if (entityIds.length > 0) {
-      const { data: chars } = await supabase
-        .from('characters')
-        .select('id, skills')
-        .in('id', entityIds);
-      if (chars) {
-        const updates = chars.map((char) => {
-          const currentSkills = (char.skills as any) || {};
-          const abilityUses = currentSkills.ability_uses || {};
-          const newAbilityUses = resetCombatAbilities(abilityUses);
+      try {
+        const chars = await getCharacterSkills(entityIds);
+        await Promise.all(
+          chars.map((char) => {
+            const currentSkills = char.skills;
+            const abilityUses = currentSkills.ability_uses || {};
+            const newAbilityUses = resetCombatAbilities(abilityUses);
 
-          return supabase
-            .from('characters')
-            .update({
-              skills: {
-                ...currentSkills,
-                ability_uses: newAbilityUses,
-              },
-            })
-            .eq('id', char.id);
-        });
-
-        await Promise.all(updates).catch((e) =>
-          console.error('Error resetting combat abilities:', e),
+            return updateCharacterSkills(char.id, {
+              ...currentSkills,
+              ability_uses: newAbilityUses,
+            });
+          }),
         );
+      } catch (error) {
+        console.error('Error resetting combat abilities:', error);
       }
     }
   },
@@ -180,36 +166,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     get().combatUnsubscribe?.();
 
     // Initial fetch
-    supabase
-      .from('combats')
-      .select('*')
-      .eq('session_id', sessionId)
-      .eq('status', 'active')
-      .maybeSingle()
-      .then(async ({ data: combat }) => {
-        if (combat) {
-          const { data: participants } = await supabase
-            .from('combat_participants')
-            .select('*')
-            .eq('combat_id', combat.id);
-          get().setCombatState(combat, participants || []);
-        } else {
-          // Maybe there's a setup combat
-          const { data: setupCombat } = await supabase
-            .from('combats')
-            .select('*')
-            .eq('session_id', sessionId)
-            .eq('status', 'setup')
-            .maybeSingle();
-          if (setupCombat) {
-            const { data: participants } = await supabase
-              .from('combat_participants')
-              .select('*')
-              .eq('combat_id', setupCombat.id);
-            get().setCombatState(setupCombat, participants || []);
-          }
-        }
-      });
+    (async () => {
+      // Maybe there's a setup combat
+      const combat =
+        (await findSessionCombat(sessionId, 'active')) ??
+        (await findSessionCombat(sessionId, 'setup'));
+      if (combat) {
+        get().setCombatState(combat, await listCombatParticipants(combat.id));
+      }
+    })().catch((error) => console.error('Failed to load the combat', error));
 
     const channelId = Math.random().toString(36).substring(7);
     const unsubscribe = subscribeToTables(`combat:session-${sessionId}-${channelId}`, [
@@ -285,27 +250,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       // Tick conditions on round change
       const conditionUpdates = participants.map(async (p) => {
-        const currentConds = ((p as any).conditions as unknown as ConditionEntry[]) || [];
+        const currentConds = (p.conditions as unknown as ConditionEntry[] | null) || [];
         if (currentConds.length > 0) {
-          const ticked = conditionsService.tickConditions(currentConds);
-          await supabase
-            .from('combat_participants')
-            .update({ conditions: ticked as any })
-            .eq('id', p.id);
+          try {
+            await setParticipantConditions(p.id, tickConditions(currentConds));
+          } catch {
+            // Já registrado; a rodada avança mesmo se uma gravação falhar, como antes.
+          }
         }
       });
       await Promise.all(conditionUpdates);
     }
 
-    const { error } = await supabase
-      .from('combats')
-      .update({ current_turn_index: newIndex, round_number: newRound })
-      .eq('id', activeCombat.id);
-
-    if (error) {
-      console.error('Failed to update turn', error);
-      throw error;
-    }
+    await updateCombatTurn(activeCombat.id, newIndex, newRound);
   },
 
   endCombat: async () => {
@@ -317,25 +274,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (participants.length > 0) {
       const charIds = participants.map((p) => p.entity_id);
 
-      const { data: chars } = await supabase
-        .from('characters')
-        .select('id, stats, is_dead, is_enemy')
-        .in('id', charIds);
+      let chars: Awaited<ReturnType<typeof getCharactersForCombatEnd>> | null = null;
+      try {
+        chars = await getCharactersForCombatEnd(charIds);
+      } catch (error) {
+        console.error('Failed to load the characters for the end of combat', error);
+      }
 
       if (chars) {
-        const deadCharIds: string[] = [];
         const deadEnemyIds: string[] = [];
 
         for (const char of chars) {
           const participant = participants.find((p) => p.entity_id === char.id);
           if (participant) {
-            const currentStats = (char.stats as any) || {};
+            const currentStats = (char.stats as VitalsLike | null) || {};
 
             // Clean temporary conditions and keep permanent ones
             const currentConditions =
-              ((participant as any).conditions as unknown as ConditionEntry[]) || [];
-            const permanentConditions =
-              conditionsService.cleanTemporaryConditions(currentConditions);
+              (participant.conditions as unknown as ConditionEntry[] | null) || [];
+            const permanentConditions = cleanTemporaryConditions(currentConditions);
 
             await characterVitalsService.syncFromCombatEnd(
               char.id,
@@ -349,24 +306,17 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             // Soft-delete list is driven by "died in this combat" (hp <= 0 now),
             // not by the sticky is_dead result — a character already dead before
             // this combat but currently above 0 HP should not be swept up here.
-            if (participant.hp_current <= 0) {
-              if (char.is_enemy) {
-                deadEnemyIds.push(char.id);
-              } else {
-                deadCharIds.push(char.id);
-              }
+            if (participant.hp_current <= 0 && char.is_enemy) {
+              deadEnemyIds.push(char.id);
             }
           }
         }
 
         // Soft delete dead enemies
         if (deadEnemyIds.length > 0) {
-          const { error: deleteError } = await supabase
-            .from('characters')
-            .update({ is_deleted: true })
-            .in('id', deadEnemyIds);
-
-          if (deleteError) {
+          try {
+            await softDeleteCharacters(deadEnemyIds);
+          } catch (deleteError) {
             console.error('Failed to soft delete dead enemies', deleteError);
           }
         }
@@ -374,15 +324,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     // 2. Mark combat as finished
-    const { error: combatError } = await supabase
-      .from('combats')
-      .update({ status: 'finished' })
-      .eq('id', activeCombat.id);
-
-    if (combatError) {
-      console.error('Failed to end combat', combatError);
-      throw combatError;
-    }
+    await finishCombat(activeCombat.id);
 
     get().cleanupSubscriptions();
   },
@@ -400,14 +342,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   updateConditions: async (participantId: string, conditions: ConditionEntry[]) => {
-    const { error } = await supabase
-      .from('combat_participants')
-      .update({ conditions: conditions as any })
-      .eq('id', participantId);
-
-    if (error) {
-      console.error('Failed to update conditions', error);
-      throw error;
-    }
+    await setParticipantConditions(participantId, conditions);
   },
 }));

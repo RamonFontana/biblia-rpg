@@ -410,7 +410,9 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    - **Achado da 3b, corrigido num `fix:` separado:** a consulta do inventário da ficha (`CharacterSheetView`) listava as colunas à mão e não trazia `items.slug`. Sem o slug, a CA de armadura, a Resistência a Condição, os avisos de equipar e o texto de CA/resistência por item (Onda 3) não apareciam na ficha; só funcionavam onde a linha vinha de `select('*')` (lista de personagens, mesa do Mestre). Agora `getCharacterInventory` traz o slug, com teste.
    - **Observado, não mexi:** o ramo de `updateCharacter` que refaz o inventário quando `equipment` muda não tem chamador (a ficha grava o equipamento por `updateCharacterEquipment`, e `Summary`/`useQuickSave` tiram `equipment` do envio). Fica como código parado.
    - **Mudanças de comportamento da 3b (caminhos de erro):** a busca da ficha do jogador na sessão (`findParticipantCharacterId`) agora lança o erro do Supabase em vez de ignorar e cair na ficha mais recente; `TokenContextMenu` registra a falha do uso do item em vez de descartá-la.
-   - **Falta migrar:** `src/services/*` (`combatEngine`, `conditionsService`, `combatStore`, `useDeathSaves` e `MasterDeathControls` na 3c; `sessionService`, `sessionTestService`, `tradeService` e `PlayerTestDialog` na 3d) e `PhysicalRollForm`, parado. A regra de lint segue desligada para `src/services/` até a 3d acabar. **Lacuna do gate:** `no-restricted-imports` não enxerga `await import('@/lib/supabase')`, e `PlayerTestDialog` usa isso em dois lugares; fica para a 3d, com uma regra que cubra o import dinâmico.
+   - **3c, combate (feito):** `data-access/combat.ts` (novo) tem as leituras e gravações de `combats` e `combat_participants`; `data-access/conditions.ts` grava as Condições; `characters.ts` ganhou habilidades, estado de morte e a fonte da Resistência a Condição. As funções puras de Condição (`mergeCondition`, `removeCondition`, `tickConditions`, `cleanTemporaryConditions`) foram para `src/domain/conditions.ts`, o que fecha parte do "duração e tique das Condições ainda estão fora do motor". `combatStore`, `combatEngine`, `useDeathSaves` e `MasterDeathControls` não importam mais o cliente; o teste de caracterização do `combatStore` passou sem mudança. `conditionsService` deixou de existir.
+   - **Mudanças de comportamento da 3c (caminhos de erro):** as leituras que eram ignoradas no início e no fim do combate (Condições, habilidades, fichas) continuam tolerantes, mas agora registram o erro; a rodada ainda avança se o tique de uma Condição falhar. O reset das habilidades de combate agora também registra falhas de gravação, que antes passavam sem aviso.
+   - **Falta migrar (3d):** `sessionService`, `sessionTestService`, `tradeService` e o `PlayerTestDialog` (que usa `await import('@/lib/supabase')`, invisível para a regra `no-restricted-imports`; a 3d fecha essa lacuna com uma regra que cubra o import dinâmico). `PhysicalRollForm` fica, parado, com a única supressão de import que sobra fora de `src/services`. A regra de lint segue desligada para `src/services/` até a 3d acabar.
 4. **Criação de personagem.** Tira os 5 `@ts-nocheck`, leva as regras para o motor e preserva o visual, que é a referência.
 5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
@@ -443,11 +445,11 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (205 em 2026-10-18)
+### Lint: `eslint-suppressions.json` (188 em 2026-10-18)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 167 |
-| `no-restricted-imports` (Supabase fora da camada de dados) | 4 |
+| `@typescript-eslint/no-explicit-any` | 153 |
+| `no-restricted-imports` (Supabase fora da camada de dados) | 1 |
 | `@typescript-eslint/no-unused-vars` | 17 |
 | `react-hooks/set-state-in-effect` | 8 |
 | `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |

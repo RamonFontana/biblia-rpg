@@ -9,7 +9,7 @@ import { getCurrentPv } from '@/domain/vitals';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
-import { conditionsService } from '@/services/conditionsService';
+import { applyConditionToCharacter, removeConditionFromCharacter } from '@/data-access/conditions';
 import type { ConditionEntry } from '@/types/combat';
 import { getCurrentFaith } from '@/domain/faith';
 interface PlayerCardProps {
@@ -58,7 +58,7 @@ export function PlayerCard({
       onUpdateConditions(character.id, updated);
     }
 
-    await conditionsService.applyToCharacter(character.id, current, newCond);
+    await applyConditionToCharacter(character.id, current, newCond);
   };
 
   const handleRemoveCondition = async (conditionId: string) => {
@@ -71,7 +71,7 @@ export function PlayerCard({
       onUpdateConditions(character.id, updated);
     }
 
-    await conditionsService.removeFromCharacter(character.id, current, conditionId);
+    await removeConditionFromCharacter(character.id, current, conditionId);
   };
 
   const currentConditions = ((character as any)?.conditions as unknown as ConditionEntry[]) || [];

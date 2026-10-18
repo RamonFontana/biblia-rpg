@@ -6,7 +6,7 @@ import { HealthModificationModal } from './HealthModificationModal';
 import { MasterDeathControls } from './MasterDeathControls';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
-import { conditionsService } from '../../services/conditionsService';
+import { mergeCondition, removeCondition } from '@/domain/conditions';
 import type { ConditionEntry } from '../../types/combat';
 
 interface CombatDashboardProps {
@@ -135,7 +135,7 @@ export function CombatDashboard({
                           conditionId={condObj.conditionId}
                           duration={condObj.duration || undefined}
                           onRemove={async (conditionId) => {
-                            const newConditions = conditionsService.removeCondition(
+                            const newConditions = removeCondition(
                               (participant as any).conditions as unknown as ConditionEntry[],
                               conditionId,
                             );
@@ -154,7 +154,7 @@ export function CombatDashboard({
                         };
                         const current =
                           ((participant as any).conditions as unknown as ConditionEntry[]) || [];
-                        const newConditions = conditionsService.mergeCondition(current, newCond);
+                        const newConditions = mergeCondition(current, newCond);
                         await useCombatStore
                           .getState()
                           .updateConditions(participant.id, newConditions);

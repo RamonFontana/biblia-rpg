@@ -42,14 +42,6 @@
       "count": 4
     }
   },
-  "src/components/combat/MasterDeathControls.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/components/combat/PhysicalRollForm.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -254,11 +246,6 @@
       "count": 1
     }
   },
-  "src/hooks/useDeathSaves.ts": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/hooks/useSessionCharacters.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -294,12 +281,7 @@
   },
   "src/services/combatEngine.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/services/conditionsService.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
+      "count": 1
     }
   },
   "src/services/sessionService.ts": {
@@ -315,14 +297,6 @@
   "src/services/tradeService.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 23
-    }
-  },
-  "src/store/combatStore.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/store/createSessionStore.ts": {

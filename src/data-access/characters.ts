@@ -282,3 +282,67 @@ export function subscribeToCharacterSheet(
     ],
   );
 }
+
+export async function updateCharacterSkills(
+  id: string,
+  skills: CharacterSkills | EnemySkill[],
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ skills: toJson(skills) })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/** O que a Resistência a Condição precisa de uma ficha: o equipamento vestido e os itens com slug. */
+export async function getCharacterResistanceSource(characterId: string) {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('equipment, character_items(*, items(slug))')
+    .eq('id', characterId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export type DeathState = Pick<
+  CharacterRow,
+  'id' | 'death_saves_successes' | 'death_saves_failures' | 'is_stable' | 'is_dead'
+>;
+
+/** Testes de morte, estabilidade e morte de uma ficha. */
+export async function getCharacterDeathState(id: string): Promise<DeathState> {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('id, death_saves_successes, death_saves_failures, is_stable, is_dead')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Grava os campos de morte pedidos (testes de morte, estável, morto). */
+export async function updateCharacterDeathState(
+  id: string,
+  patch: Partial<
+    Pick<DeathState, 'death_saves_successes' | 'death_saves_failures' | 'is_stable' | 'is_dead'>
+  >,
+): Promise<void> {
+  const { error } = await supabase.from('characters').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+/** Chama `onChange` com a linha nova a cada atualização da ficha. Devolve a função que cancela. */
+export function subscribeToCharacterUpdates(
+  id: string,
+  onChange: (row: CharacterRow) => void,
+): () => void {
+  return subscribeToTables(`char_death_${id}_${Math.random().toString(36).substring(7)}`, [
+    {
+      table: 'characters',
+      event: 'UPDATE',
+      filter: `id=eq.${id}`,
+      onChange: (payload) => onChange(payload.new as CharacterRow),
+    },
+  ]);
+}
