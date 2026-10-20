@@ -421,6 +421,9 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    - **Observado, não mexi (GAP):** (1) Pegar o Pacote Inicial **troca a bolsa inteira**; hoje ninguém perde item, porque o botão exige os 50 Siclos inteiros e nenhum item custa 0, mas a função não protege a bolsa se isso mudar. (2) Vender o kit devolve 50 fixos, não o `cost` gravado na linha; hoje os dois valem 50. (3) Os preços fracionados (0,5, 0,025…) entram na conta sem arredondar, então a carteira pode mostrar valores como `49.975`. (4) O Pacote Inicial só existe para as Vocações com kit em `KITS_DB`; uma Vocação fora da tabela (`Nobre`) vê a loja sem a aba e só com itens da categoria "Todas". Decidir se algum desses deve mudar.
    - **Fica para o passo 5:** `DraftCharacter.equipment` continua `any`. Na criação é uma lista de compras (`EquipmentItem[]`); na edição vem o `CharacterEquipment` (espaços vestidos) de `CharacterEdit`. Tipar como união estoura em `CharacterSheetView` e em `data-access/characters`, que tratam o campo de um jeito só.
 5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
+   Um PR por tela, cada um com teste de caracterização antes de dividir e comparação do HTML antes e depois.
+   - **5a, `PlayerTestDialog` (feito):** 574 → 245 linhas. `useTestCharacterContext` lê a ficha, a Desvantagem de furtividade e a penalidade de Itens Profanos; `ChallengeCard`, `RollForm`, `BonusBreakdown`, `FaithPenaltyForm` e `SubmittedResult` (em `components/session/player-test/`) só desenham. As regras do dado do Teste (d100 na Fé, d20 nos demais), do total enviado, do intervalo 0–100 e do d6 da punição foram para `domain/sessionTests.ts`; a animação do dado virtual virou `lib/rollAnimation.ts`. O dado virtual deixou de usar `Math.random` direto e passa pelo `Rng` injetado (mesma fórmula). O HTML renderizado ficou idêntico ao antigo em oito estados (inicial, digitado, avisos, tela da punição, enviado aprovado e reprovado). Saíram os props `playerCharacters` e `onClose`, que ninguém lia.
+   - **Observado, não mexi:** `Math.random` direto em regra ainda existe em `DeathSavesModal` (d20), `DiceRollerDialog` (dado livre) e `SessionRestControls` (1d4 da Fé do descanso). `getTestModifiers` e `getTestBreakdown` seguem em `features/character-management/utils/characterMath` com `any`; levar para o motor pede tipar a ficha primeiro (5c). A Desvantagem de furtividade só aparece como aviso; o app não rola 2 dados (ver Onda 2).
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
 7. **Resíduo** de `any`, `set-state-in-effect` e `only-export-components`.
 
@@ -451,12 +454,12 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (132 em 2026-10-20)
+### Lint: `eslint-suppressions.json` (128 em 2026-10-20)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 113 |
+| `@typescript-eslint/no-explicit-any` | 111 |
 | `no-restricted-imports` (Supabase fora da camada de dados) | 1 |
-| `@typescript-eslint/no-unused-vars` | 6 |
+| `@typescript-eslint/no-unused-vars` | 4 |
 | `react-hooks/set-state-in-effect` | 8 |
 | `react-refresh/only-export-components` | 3 |
 | `react-hooks/immutability` | 1 |
