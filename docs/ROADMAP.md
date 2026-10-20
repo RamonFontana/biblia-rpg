@@ -417,6 +417,9 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    - **Mudanças de comportamento da 3d (caminhos de erro):** no `endSession`, as gravações que ignoravam o erro (apagar NPCs e inimigos, conceder level-up) agora caem no `catch` que já existia e registram a falha; o fluxo segue igual. O Teste que não é de Fé não lê mais os `stats` da ficha (a leitura nunca era usada). As leituras do `PlayerTestDialog` e do Teste de Fé registram a falha.
    - **Observado, não mexi (GAP):** se a leitura dos `stats` falha num Teste de Fé, o serviço cai na regra do teste comum (`resultado >= CD`) em vez de falhar, e a perda de Fé não é aplicada. Antes o erro passava em silêncio; agora é registrado. Decidir se a falha deve interromper o envio do resultado.
 4. **Criação de personagem.** Tira os 5 `@ts-nocheck`, leva as regras para o motor e preserva o visual, que é a referência.
+   - **Feito:** os 5 `@ts-nocheck` saíram. Quase tudo já tipava; o que faltava era código morto (um estado `rolls`, um `handleAssign` vazio, imports sem uso). As regras de atributos e de valores iniciais já estavam no motor desde a Onda 3; faltava a **loja inicial**, que agora é `src/domain/startingEquipment.ts` (carteira de 50 Siclos, compra, venda, Pacote Inicial, filtro por proficiência). `Summary` e `useQuickSave` dividem `withoutShop`. O markup não mudou (só um nome de constante no JSX). Cada passo ganhou teste de caracterização escrito antes da extração (loja, atributos, valores iniciais, resumo, salvar rápido); o da loja passou sem mudança depois de a regra sair do componente.
+   - **Observado, não mexi (GAP):** (1) Pegar o Pacote Inicial **troca a bolsa inteira**; hoje ninguém perde item, porque o botão exige os 50 Siclos inteiros e nenhum item custa 0, mas a função não protege a bolsa se isso mudar. (2) Vender o kit devolve 50 fixos, não o `cost` gravado na linha; hoje os dois valem 50. (3) Os preços fracionados (0,5, 0,025…) entram na conta sem arredondar, então a carteira pode mostrar valores como `49.975`. (4) O Pacote Inicial só existe para as Vocações com kit em `KITS_DB`; uma Vocação fora da tabela (`Nobre`) vê a loja sem a aba e só com itens da categoria "Todas". Decidir se algum desses deve mudar.
+   - **Fica para o passo 5:** `DraftCharacter.equipment` continua `any`. Na criação é uma lista de compras (`EquipmentItem[]`); na edição vem o `CharacterEquipment` (espaços vestidos) de `CharacterEdit`. Tipar como união estoura em `CharacterSheetView` e em `data-access/characters`, que tratam o campo de um jeito só.
 5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
 7. **Resíduo** de `any`, `set-state-in-effect` e `only-export-components`.
@@ -448,26 +451,20 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (150 em 2026-10-20)
+### Lint: `eslint-suppressions.json` (132 em 2026-10-20)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 115 |
+| `@typescript-eslint/no-explicit-any` | 113 |
 | `no-restricted-imports` (Supabase fora da camada de dados) | 1 |
-| `@typescript-eslint/no-unused-vars` | 17 |
+| `@typescript-eslint/no-unused-vars` | 6 |
 | `react-hooks/set-state-in-effect` | 8 |
-| `@typescript-eslint/ban-ts-comment` (os `@ts-nocheck` abaixo) | 5 |
 | `react-refresh/only-export-components` | 3 |
 | `react-hooks/immutability` | 1 |
 
 Ao corrigir uma violação, rode `npm run lint:prune`; o lint falha enquanto houver supressão órfã.
 
-### Typecheck: arquivos com `// @ts-nocheck`
-O `tsc` passa com `strict`, mas estes arquivos não são checados (todos da criação de personagem, tratados na Onda 4):
-- `src/pages/CharacterCreationPage.tsx`
-- `src/features/character-creation/components/steps/AttributeGeneration.tsx`
-- `src/features/character-creation/components/steps/EquipmentMerchant.tsx`
-- `src/features/character-creation/components/steps/InitialStats.tsx`
-- `src/features/character-creation/components/steps/Summary.tsx`
+### Typecheck
+Nenhum arquivo com `@ts-nocheck` (os 5 da criação de personagem saíram no passo 4 da Onda 4).
 
 `scripts/*.ts` não entram em nenhum tsconfig (só no lint).
 

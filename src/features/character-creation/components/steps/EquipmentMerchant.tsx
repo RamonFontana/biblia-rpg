@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,31 +5,34 @@ import { equipmentSchema } from '../../schemas/characterSchema';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
 import { useQuickSave } from '../../hooks/useQuickSave';
 import type { EquipmentItem } from '../../types';
-import { Coins, Package, Shield, Sword, HelpCircle } from 'lucide-react';
+import { Coins, Package, Shield, HelpCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
-import { ITEMS_DB } from '@/content/items';
 import { KITS_DB } from '@/content/kits';
-import { VOCATION_PROFICIENCIES } from '@/content/proficiencies';
-
-const INITIAL_COINS = 50;
+import {
+  STARTING_COINS,
+  buyItem,
+  buyStarterKit,
+  canBuyItem,
+  canBuyStarterKit,
+  getStoreItems,
+  sellItem,
+  sellValue,
+  startingCoins,
+  type Purse,
+} from '@/domain/startingEquipment';
 
 export function EquipmentMerchant() {
   const { draft, setEquipment, nextStep, prevStep, isLocked } = useCharacterCreationStore();
   const { quickSave, saving, message, isEditing } = useQuickSave();
 
-  const [wallet, setWallet] = useState<number>(draft.coins || INITIAL_COINS);
-  const [cart, setCart] = useState<EquipmentItem[]>(
-    Array.isArray(draft.equipment) ? draft.equipment : [],
-  );
+  const [purse, setPurse] = useState<Purse<EquipmentItem>>({
+    coins: startingCoins(draft.coins),
+    items: Array.isArray(draft.equipment) ? draft.equipment : [],
+  });
+  const { coins: wallet, items: cart } = purse;
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeDetails, setActiveDetails] = useState<{ title: string; markdown: string } | null>(
@@ -44,8 +46,7 @@ export function EquipmentMerchant() {
   const vocationKit = KITS_DB[vocationId];
 
   // Filtra itens permitidos pela proficiência da classe
-  const allowedCategories = VOCATION_PROFICIENCIES[vocationId] || ['Todas'];
-  const availableItems = ITEMS_DB.filter((item) => allowedCategories.includes(item.category));
+  const availableItems = getStoreItems(vocationId);
 
   const { handleSubmit } = useForm({
     resolver: zodResolver(equipmentSchema),
@@ -55,39 +56,14 @@ export function EquipmentMerchant() {
     },
   });
 
-  const handleBuy = (item: EquipmentItem) => {
-    if (wallet >= (item.cost || 0)) {
-      setWallet((prev) => prev - (item.cost || 0));
-      setCart((prev) => [...prev, item]);
-    }
-  };
+  const handleBuy = (item: EquipmentItem) => setPurse((prev) => buyItem(prev, item));
 
   const handleBuyKit = () => {
     if (!vocationKit) return;
-    setCart([
-      {
-        id: 'kit_basico',
-        name: vocationKit.name,
-        type: 'Kit',
-        cost: 50,
-        description: 'Pacote inicial de equipamentos.',
-      },
-    ]);
-    setWallet(vocationKit.leftover);
+    setPurse(buyStarterKit(vocationKit));
   };
 
-  const handleSell = (item: EquipmentItem, index: number) => {
-    setWallet((prev) => {
-      // Se for um kit, ele devolve os 50 integrais (assumindo que o kit gastou 50)
-      if (item.id === 'kit_basico') return INITIAL_COINS;
-      return prev + (item.cost || 0);
-    });
-    setCart((prev) => {
-      const newCart = [...prev];
-      newCart.splice(index, 1);
-      return newCart;
-    });
-  };
+  const handleSell = (index: number) => setPurse((prev) => sellItem(prev, index));
 
   const handleOpenSheet = (e: React.MouseEvent, title: string, markdown: string) => {
     e.preventDefault();
@@ -186,13 +162,13 @@ export function EquipmentMerchant() {
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <span className="text-xs text-stone-400 bg-stone-900 px-3 py-1.5 rounded-full border border-stone-700">
-                    Custa: <strong className="text-amber-500">{INITIAL_COINS} SP</strong> (Sobra{' '}
+                    Custa: <strong className="text-amber-500">{STARTING_COINS} SP</strong> (Sobra{' '}
                     {vocationKit.leftover} SP)
                   </span>
                   <button
                     type="button"
                     onClick={handleBuyKit}
-                    disabled={isLocked || wallet < INITIAL_COINS}
+                    disabled={isLocked || !canBuyStarterKit(wallet)}
                     className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-stone-900 font-bold rounded-lg transition-colors w-full sm:w-auto text-center"
                   >
                     Pegar Pacote
@@ -238,11 +214,7 @@ export function EquipmentMerchant() {
                       <button
                         type="button"
                         onClick={() => handleBuy(item)}
-                        disabled={
-                          isLocked ||
-                          wallet < (item.cost || 0) ||
-                          cart.some((c) => c.id === 'kit_basico')
-                        }
+                        disabled={isLocked || !canBuyItem(purse, item)}
                         className="px-4 py-2 bg-stone-800 hover:bg-stone-700 disabled:opacity-50 disabled:hover:bg-stone-800 border border-stone-600 rounded-lg text-amber-500 font-bold transition-colors shrink-0 whitespace-nowrap"
                       >
                         {item.cost} SP
@@ -285,11 +257,11 @@ export function EquipmentMerchant() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleSell(item, index)}
+                      onClick={() => handleSell(index)}
                       disabled={isLocked}
                       className="text-xs text-red-400 opacity-80 group-hover:opacity-100 disabled:opacity-50 hover:text-red-300 px-2 py-1 bg-red-400/10 rounded transition-all"
                     >
-                      Vender (+{item.id === 'kit_basico' ? INITIAL_COINS : item.cost} SP)
+                      Vender (+{sellValue(item)} SP)
                     </button>
                   </div>
                 ))}

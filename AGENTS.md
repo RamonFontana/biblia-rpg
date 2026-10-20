@@ -27,7 +27,7 @@ Quando código e doc divergirem, registre a divergência em `docs/ROADMAP.md` e 
 O código está migrando por ondas; o plano, as decisões tomadas e a dívida registrada estão em `docs/ROADMAP.md`. Leia a seção da onda em andamento antes de refatorar.
 
 Arquitetura alvo:
-- **`src/domain/`: motor do jogo puro.** Regras (atributos, PV, Fé, descanso, testes de morte, munição, consumíveis, level-up, CA, Resistência a Condição, lista de Condições; quem dispara o tique por rodada ainda é o `combatStore`) sem React, Supabase nem estado global. A aleatoriedade entra como parâmetro `Rng` (`src/domain/rng.ts`; teste com `createSeededRng(seed)`, app com `systemRng` de `src/lib/systemRng.ts`). O lint garante a pureza: o motor só importa de `src/domain`, `src/content` e `src/types`, e não usa `Math.random`.
+- **`src/domain/`: motor do jogo puro.** Regras (atributos, PV, Fé, descanso, testes de morte, munição, consumíveis, level-up, CA, Resistência a Condição, lista de Condições, loja inicial da criação; quem dispara o tique por rodada ainda é o `combatStore`) sem React, Supabase nem estado global. A aleatoriedade entra como parâmetro `Rng` (`src/domain/rng.ts`; teste com `createSeededRng(seed)`, app com `systemRng` de `src/lib/systemRng.ts`). O lint garante a pureza: o motor só importa de `src/domain`, `src/content` e `src/types`, e não usa `Math.random`.
 - **`src/content/`: itens, habilidades e condições como dados** tipados e validados por zod (`schemas.ts`; os tipos saem dos esquemas). O efeito de um item ou habilidade é um dado que o motor interpreta. Hoje moram aqui Condições, itens, kits, proficiências e habilidades. O `id` de um item é o `slug` da linha em `items` e o de uma habilidade é a chave gravada em `ability_uses`: nunca os renomeie. Mudou `src/content/items.ts`? Rode `npm run gen:items-seed` e confirme a migration antes de aplicar (um teste falha se esquecer).
 - **Camada de dados única** para o Supabase: `src/data-access/` (autenticação, sessões, fichas, inventário, combate, Testes de sessão, trocas e realtime já estão lá; `src/services/` guarda só orquestração que chama essa camada), com os tipos gerados em `src/types/database.types.ts`. As funções lançam o erro do Supabase. Componentes, hooks e stores consomem essa camada; o lint bloqueia `@/lib/supabase` fora dela, inclusive `import()` dinâmico.
 - **UI segue `docs/DESIGN.md`**, cujo padrão de referência é a criação de personagem. Tela nova ou refatorada usa a paleta e os componentes de lá.
@@ -42,7 +42,7 @@ Ao refatorar uma regra, escreva antes um teste de caracterização do comportame
 |---|---|---|
 | Formatação | `npm run format:check` (corrigir: `npm run format`) | — |
 | Lint | `npm run lint` | Congelada em `eslint-suppressions.json`. Erro novo falha; ao corrigir um antigo, rode `npm run lint:prune` (o lint falha enquanto houver supressão órfã) |
-| Tipos | `npm run typecheck` (`strict`) | 5 arquivos com `@ts-nocheck`, listados no ROADMAP |
+| Tipos | `npm run typecheck` (`strict`) | — |
 | Testes | `npm test` | — |
 | Dados do jogo | `npm run test:data` (`src/content/gameData.test.ts`) | `src/content/known-violations.json`. Violação nova falha; ao corrigir, apague a entrada |
 | RLS | `npm run check:rls` | — (toda tabela com RLS e toda função `SECURITY DEFINER` com `revoke execute ... from public, anon`) |

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,7 +25,6 @@ export function AttributeGeneration() {
 
   const [method, setMethod] = useState<'array' | 'dice' | null>(null);
   const [availableValues, setAvailableValues] = useState<number[]>(STANDARD_ARRAY);
-  const [rolls, setRolls] = useState<number[]>([]);
 
   const {
     register,
@@ -53,7 +51,6 @@ export function AttributeGeneration() {
 
   const handleRollDice = () => {
     const newRolls = rollAttributeScores(systemRng);
-    setRolls(newRolls);
     setAvailableValues([...newRolls]);
     setMethod('dice');
 
@@ -70,11 +67,6 @@ export function AttributeGeneration() {
     ATTRIBUTES_KEYS.forEach((attr) => {
       setValue(`attributes.${attr}`, 0);
     });
-  };
-
-  const handleAssign = (attr: keyof CharacterAttributes, value: number) => {
-    // Basic logic to swap or assign (simplified for brevity, a real drag-and-drop or select is better)
-    // We will just use a native select for simplicity here
   };
 
   const onSubmit = (data: { attributes: CharacterAttributes }) => {

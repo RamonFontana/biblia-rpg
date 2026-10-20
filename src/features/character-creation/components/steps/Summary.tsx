@@ -1,9 +1,10 @@
-// @ts-nocheck
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 
 import { saveCharacter, updateCharacter } from '@/data-access/characters';
+import { getErrorMessage } from '@/lib/errorMessage';
+import { withoutShop } from '../../utils/draft';
 
 export function Summary() {
   const { draft, prevStep, editingId } = useCharacterCreationStore();
@@ -17,15 +18,14 @@ export function Summary() {
 
     try {
       if (editingId) {
-        const { equipment, coins, ...draftWithoutEquipment } = draft;
-        await updateCharacter(editingId, draftWithoutEquipment);
+        await updateCharacter(editingId, withoutShop(draft));
       } else {
         await saveCharacter(draft);
       }
       // Success, redirect to home or character view
       navigate('/characters');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar personagem.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao salvar personagem.'));
     } finally {
       setSaving(false);
     }

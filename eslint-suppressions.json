@@ -176,46 +176,6 @@
       "count": 1
     }
   },
-  "src/features/character-creation/components/steps/AttributeGeneration.tsx": {
-    "@typescript-eslint/ban-ts-comment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    }
-  },
-  "src/features/character-creation/components/steps/EquipmentMerchant.tsx": {
-    "@typescript-eslint/ban-ts-comment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/features/character-creation/components/steps/InitialStats.tsx": {
-    "@typescript-eslint/ban-ts-comment": {
-      "count": 1
-    }
-  },
-  "src/features/character-creation/components/steps/Summary.tsx": {
-    "@typescript-eslint/ban-ts-comment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/features/character-creation/hooks/useQuickSave.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    }
-  },
   "src/features/character-creation/types/index.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -264,11 +224,6 @@
   "src/lib/equipmentUtils.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    }
-  },
-  "src/pages/CharacterCreationPage.tsx": {
-    "@typescript-eslint/ban-ts-comment": {
-      "count": 1
     }
   },
   "src/pages/session/ActiveSessionPage.tsx": {
