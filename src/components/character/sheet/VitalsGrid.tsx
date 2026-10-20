@@ -44,7 +44,7 @@ export function VitalsGrid({
           <span className="text-3xl font-bold text-stone-100">{totalAc}</span>
           {bonusAc > 0 && (
             <span
-              className="text-sm text-blue-400 font-medium"
+              className="text-sm text-amber-500 font-medium"
               title={`Base ${baseAc} + Bônus ${bonusAc}`}
             >
               (+{bonusAc})
@@ -57,7 +57,7 @@ export function VitalsGrid({
         {resistances.length > 0 && (
           <div className="absolute bottom-1 w-full text-center">
             <span
-              className="text-[9px] text-indigo-300 bg-indigo-900/50 px-1 rounded"
+              className="text-[9px] text-stone-300 bg-stone-700 px-1 rounded"
               title={[
                 ...describeConditionResistances(conditionResistanceLevels),
                 ...resistances.filter((r) => !(r in conditionResistanceLevels)),
@@ -79,11 +79,11 @@ export function VitalsGrid({
           Fé
         </span>
       </div>
-      <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-yellow-900/50 rounded-xl shadow-inner relative overflow-hidden group">
-        <div className="absolute inset-0 bg-yellow-500/5 group-hover:bg-yellow-500/10 transition-colors"></div>
-        <Coins className="w-8 h-8 text-yellow-500 mb-2" />
-        <span className="text-3xl font-bold text-yellow-100">{coins ?? 0}</span>
-        <span className="text-xs text-yellow-500/70 uppercase tracking-wider font-semibold mt-1">
+      <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-amber-900/50 rounded-xl shadow-inner relative overflow-hidden group">
+        <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
+        <Coins className="w-8 h-8 text-amber-500 mb-2" />
+        <span className="text-3xl font-bold text-amber-100">{coins ?? 0}</span>
+        <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">
           SP
         </span>
       </div>

@@ -88,7 +88,7 @@ function Home() {
                 <Link
                   key={session.session_id}
                   to={`/session/${session.session_id}`}
-                  className="px-6 py-3 bg-blue-700 text-stone-100 font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20"
+                  className="px-6 py-3 bg-stone-700 text-amber-500 font-bold rounded-lg border border-stone-600 hover:bg-stone-600 transition-colors shadow-lg shadow-stone-900/20"
                 >
                   Entrar: {session.session_name}
                 </Link>
