@@ -2,7 +2,7 @@
 
 **Referência:** a criação de personagem (`src/features/character-creation/`, moldura em `WizardLayout.tsx`). Toda tela nova ou refatorada segue este padrão; as demais convergem aos poucos (plano em `docs/ROADMAP.md`, Onda 4).
 
-Este documento descreve o padrão **como ele está implementado hoje**, com classes Tailwind fixas (`stone`/`amber`). Desde o passo 2 da Onda 4, os tokens do shadcn (variáveis CSS em `src/index.css`) já têm os valores desta paleta: `bg-background`, `bg-card`, `text-muted-foreground`, `bg-primary` e companhia dão o mesmo resultado que as classes fixas. Os blocos abaixo viram componentes em `src/components/ui/` no passo 6; até lá, copie as receitas daqui.
+Este documento descreve o padrão **como ele está implementado hoje**, com classes Tailwind fixas (`stone`/`amber`). Desde o passo 2 da Onda 4, os tokens do shadcn (variáveis CSS em `src/index.css`) já têm os valores desta paleta: `bg-background`, `bg-card`, `text-muted-foreground`, `bg-primary` e companhia dão o mesmo resultado que as classes fixas. Cinco blocos já são componentes em `src/components/ui/` (Onda 4, passo 6) e a criação de personagem os usa: `PageShell`, `Panel`, `PageHeader`, `ProgressBar` e `ChipToggle`. Use o componente em vez de copiar a receita; os demais blocos (botões, cartão de escolha, campo, aviso, painel lateral) ainda são receitas para copiar daqui.
 
 ## Clima
 Tema escuro e único: pedra e bronze. Fundo de pedra quente (`stone`), acento de bronze/ouro (`amber`), títulos em serifa. Sóbrio, sem gradientes e sem cores saturadas fora dos estados (erro, aviso).
@@ -36,11 +36,12 @@ Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`…)
 - **Markdown** (fichas de tribo/vocação): `prose prose-invert prose-stone prose-sm max-w-none`.
 
 ## Layout
-- **Moldura de página** (`WizardLayout.tsx`):
-  - Externo: `min-h-screen bg-stone-900 text-stone-100 p-0 sm:p-4 md:p-8`.
-  - Painel: `max-w-4xl mx-auto bg-stone-800 p-4 sm:p-6 rounded-none sm:rounded-xl shadow-none sm:shadow-lg border-0 sm:border border-stone-700 min-h-screen sm:min-h-0`.
+- **Moldura de página** (`WizardLayout.tsx`): `<PageShell><Panel>…</Panel></PageShell>`.
+  - `PageShell`: `min-h-screen bg-stone-900 text-stone-100 p-0 sm:p-4 md:p-8`.
+  - `Panel`: `max-w-4xl mx-auto bg-stone-800 p-4 sm:p-6 rounded-none sm:rounded-xl shadow-none sm:shadow-lg border-0 sm:border border-stone-700 min-h-screen sm:min-h-0`.
   - **Mobile primeiro:** no celular o painel ocupa a tela inteira, sem borda nem cantos; a moldura aparece a partir de `sm`.
-- **Cabeçalho de página:** `mb-8 border-b border-stone-700 pb-4`; título, linha `text-stone-400 mt-2` ("Passo X de 9") e barra de progresso.
+  - Uma classe passada em `className` vence a da receita (`<Panel className="max-w-6xl">`). Para um bloco menor dentro da página, use `Card`.
+- **Cabeçalho de página** (`PageHeader`): `mb-8 border-b border-stone-700 pb-4`; título (`title`), linha `text-stone-400 mt-2` (`subtitle`, por exemplo "Passo X de 9") e, nos filhos, a barra de progresso e os chips.
 - **Ritmo vertical:** `space-y-6` entre blocos de um formulário; `space-y-4` dentro de um bloco.
 - **Grades de escolha:** `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`.
 - **Rodapé de ações:** `flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-4 border-t border-stone-700`. No celular os botões empilham com largura total (`w-full sm:w-auto`); com "Voltar", usar `flex-col-reverse` para a ação primária ficar no topo.
@@ -70,11 +71,11 @@ Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`…)
 **Aviso** (ex.: personagem bloqueado em sessão)
 `bg-amber-900/50 border border-amber-500/50 p-4 rounded text-amber-200`, começando com `<strong>Atenção:</strong>`.
 
-**Barra de progresso**
-Trilho `w-full bg-stone-700 h-2 rounded-full overflow-hidden`; preenchimento `bg-amber-500 h-full transition-all duration-300`.
+**Barra de progresso** (`ProgressBar value max`)
+Trilho `w-full bg-stone-700 h-2 rounded-full overflow-hidden`; preenchimento `bg-amber-500 h-full transition-all duration-300`. A largura é `value / max`, presa entre 0 e 100%; o trilho leva `role="progressbar"`.
 
-**Chips de navegação** (modo edição)
-`px-3 py-1 rounded text-sm`; ativo `bg-amber-600 text-stone-900 font-bold`; inativo `bg-stone-700 text-stone-300 hover:bg-stone-600`.
+**Chips de navegação** (`ChipToggle active`, modo edição)
+`px-3 py-1 rounded text-sm`; ativo `bg-amber-600 text-stone-900 font-bold`; inativo `bg-stone-700 text-stone-300 hover:bg-stone-600`. É um `button type="button"` com `aria-pressed`.
 
 **Painel lateral de detalhes** (`Sheet` do shadcn)
 `SheetContent` com `bg-stone-900 border-l border-stone-700 text-stone-100 overflow-y-auto sm:max-w-md w-full`; título `text-2xl font-serif text-amber-500`; corpo separado por `mt-8 pt-6 border-t border-stone-800`.
