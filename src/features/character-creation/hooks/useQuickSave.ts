@@ -3,6 +3,7 @@ import { useCharacterCreationStore } from '../store/useCharacterCreationStore';
 import { updateCharacter } from '@/data-access/characters';
 
 import type { DraftCharacter } from '../types';
+import { withoutShop } from '../utils/draft';
 
 export function useQuickSave() {
   const { draft, editingId } = useCharacterCreationStore();
@@ -14,12 +15,10 @@ export function useQuickSave() {
     setSaving(true);
     setMessage(null);
     try {
-      const payload = { ...draft, ...partialData };
-      const { equipment, coins, ...draftWithoutEquipment } = payload;
-      await updateCharacter(editingId, draftWithoutEquipment as any);
+      await updateCharacter(editingId, withoutShop({ ...draft, ...partialData }));
       setMessage('Salvo!');
       setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
+    } catch {
       setMessage('Erro ao salvar');
       setTimeout(() => setMessage(null), 3000);
     } finally {
