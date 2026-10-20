@@ -88,7 +88,6 @@ describe('CombatDashboard', () => {
   it('o alvo com resistência aparece na janela de aplicar Condição', () => {
     render(
       <CombatDashboard
-        sessionId="s"
         availableEntities={[
           {
             id: 'char-1',

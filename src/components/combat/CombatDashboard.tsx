@@ -10,7 +10,6 @@ import { mergeCondition, removeCondition } from '@/domain/conditions';
 import type { ConditionEntry } from '../../types/combat';
 
 interface CombatDashboardProps {
-  sessionId: string;
   availableEntities?: {
     id: string;
     name: string;
@@ -22,10 +21,7 @@ interface CombatDashboardProps {
   }[];
 }
 
-export function CombatDashboard({
-  sessionId: _sessionId,
-  availableEntities = [],
-}: CombatDashboardProps) {
+export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps) {
   const { activeCombat, participants, currentTurnParticipant, nextTurn, endCombat } =
     useCombatStore();
 

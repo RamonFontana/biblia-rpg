@@ -15,18 +15,12 @@ import type { Character } from '../../features/character-management/types';
 import { spendFaith } from '@/domain/faith';
 
 interface PlayerCombatViewProps {
-  sessionId: string;
   character: any; // The current player character data
   enemies: Character[];
   isLoading: boolean;
 }
 
-export function PlayerCombatView({
-  sessionId: _sessionId,
-  character,
-  enemies,
-  isLoading,
-}: PlayerCombatViewProps) {
+export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombatViewProps) {
   const playerId = character?.id;
   const [isUpdating, setIsUpdating] = useState(false);
   const {

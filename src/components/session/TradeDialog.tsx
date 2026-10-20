@@ -5,6 +5,7 @@ import { TradeSide } from './TradeSide';
 import type { TradeWithItems, TradeType } from '@/types/trade';
 import { cancelTrade, executeTrade, setReady } from '@/data-access/trades';
 import type { Character } from '@/features/character-management/types';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 interface TradeDialogProps {
   trade: TradeWithItems;
@@ -91,8 +92,8 @@ export function TradeDialog({
         onTradeUpdated();
         onClose();
       }
-    } catch (e: any) {
-      setError(e?.message ?? 'Erro ao executar a transação.');
+    } catch (e) {
+      setError(getErrorMessage(e, 'Erro ao executar a transação.'));
     } finally {
       setExecuting(false);
     }

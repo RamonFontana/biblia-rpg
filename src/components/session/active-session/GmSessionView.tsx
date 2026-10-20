@@ -78,7 +78,7 @@ export function GmSessionView({
 
       {hasActiveCombat && (
         <div className="mb-6 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-          <CombatDashboard sessionId={sessionId} availableEntities={availableEntities} />
+          <CombatDashboard availableEntities={availableEntities} />
         </div>
       )}
 
