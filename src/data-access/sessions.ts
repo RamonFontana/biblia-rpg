@@ -5,6 +5,7 @@ import type { Tables, TablesUpdate } from '@/types/database.types';
 import type { Character } from '@/features/character-management/types';
 import { subscribeToTables } from './realtime';
 import { toCharacter } from './characters';
+import { toJson } from './json';
 
 export type GameSession = Tables<'game_sessions'>;
 export type SessionNpcRow = Tables<'session_npcs'>;
@@ -21,6 +22,34 @@ export async function updateGameSession(
 ): Promise<void> {
   const { error } = await supabase.from('game_sessions').update(patch).eq('id', id);
   if (error) throw error;
+}
+
+/** Cria a sessão, o Mestre e os participantes numa só chamada (RPC `create_game_session`). */
+export async function createGameSessionRecord(input: {
+  name: string;
+  description: string;
+  npcs: { name: string; description: string; stats: unknown }[];
+  participantCharacterIds: string[];
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('create_game_session', {
+    session_name: input.name,
+    session_description: input.description,
+    enemies: [], // No longer use session_enemies table
+    npcs: toJson(input.npcs),
+    participant_character_ids: input.participantCharacterIds,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Os `character_id` de todos os participantes da sessão (sem os vazios). */
+export async function listSessionParticipantCharacterIds(sessionId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('session_participants')
+    .select('character_id')
+    .eq('session_id', sessionId);
+  if (error) throw error;
+  return data.map((p) => p.character_id).filter(Boolean);
 }
 
 /** Chama `onChange` com a linha nova a cada mudança da sessão. Devolve a função que cancela. */

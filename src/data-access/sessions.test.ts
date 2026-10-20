@@ -29,11 +29,13 @@ vi.mock('./realtime', () => ({
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
   addSessionParticipant,
+  createGameSessionRecord,
   fetchSessionRoster,
   findGmActiveSessionId,
   findParticipantCharacterId,
   getGameSession,
   groupSessionRoster,
+  listSessionParticipantCharacterIds,
   listPlayerActiveSessions,
   setSimpleNpcVisible,
   subscribeToGameSession,
@@ -302,5 +304,52 @@ describe('findParticipantCharacterId', () => {
     await expect(findParticipantCharacterId('s1', 'u1')).resolves.toBeNull();
     state.respond = () => ({ error: failure });
     await expect(findParticipantCharacterId('s1', 'u1')).rejects.toBe(failure);
+  });
+});
+
+describe('criação e fim de uma sessão', () => {
+  it('createGameSessionRecord chama a RPC com os NPCs simples e os participantes', async () => {
+    state.respond = () => ({ data: 'sessao-1' });
+    const id = await createGameSessionRecord({
+      name: 'Mesa',
+      description: 'Deserto',
+      npcs: [{ name: 'Mercador', description: 'Vende pão', stats: { pv: 5 } }],
+      participantCharacterIds: ['a', 'b'],
+    });
+    expect(id).toBe('sessao-1');
+    const [call] = callsOf(state.calls, 'create_game_session', 'rpc');
+    expect(call.payload).toEqual({
+      session_name: 'Mesa',
+      session_description: 'Deserto',
+      enemies: [],
+      npcs: [{ name: 'Mercador', description: 'Vende pão', stats: { pv: 5 } }],
+      participant_character_ids: ['a', 'b'],
+    });
+  });
+
+  it('createGameSessionRecord lança o erro da RPC', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(
+      createGameSessionRecord({
+        name: 'x',
+        description: '',
+        npcs: [],
+        participantCharacterIds: [],
+      }),
+    ).rejects.toBe(failure);
+  });
+
+  it('listSessionParticipantCharacterIds devolve os ids sem os vazios', async () => {
+    state.respond = () => ({
+      data: [{ character_id: 'a' }, { character_id: null }, { character_id: 'b' }],
+    });
+    await expect(listSessionParticipantCharacterIds('s1')).resolves.toEqual(['a', 'b']);
+    const [call] = callsOf(state.calls, 'session_participants', 'select');
+    expect(filterOf(call, 'eq', 'session_id')).toBe('s1');
+  });
+
+  it('listSessionParticipantCharacterIds lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(listSessionParticipantCharacterIds('s1')).rejects.toBe(failure);
   });
 });
