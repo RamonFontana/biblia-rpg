@@ -40,3 +40,37 @@ export function calculateFaithAfterFailure(
   const faithLoss = faithPenalty !== undefined ? faithPenalty : rollDie(6, rng);
   return { faithLoss, newFaith: Math.max(0, currentFaith - faithLoss) };
 }
+
+/** Faces do dado do Teste: d100 no Teste de Fé, d20 nos demais. */
+export function getTestDieSides(testType: string): number {
+  return testType === 'Fé' ? 100 : 20;
+}
+
+/** Rolagem Virtual do Teste (opcional; os dados da mesa são físicos, ADR 0001). */
+export function rollTestDie(testType: string, rng: Rng): number {
+  return rollDie(getTestDieSides(testType), rng);
+}
+
+/**
+ * O que o jogador envia: no Teste de Fé, o dado como saiu; nos demais, o dado somado ao
+ * modificador do atributo e ao bônus de proficiência.
+ */
+export function calculateSubmittedTotal(
+  testType: string,
+  rolled: number,
+  modifiers: { attrMod: number; profBonus: number },
+): number {
+  return testType === 'Fé' ? rolled : rolled + modifiers.attrMod + modifiers.profBonus;
+}
+
+/** O valor enviado (já com bônus) cabe de 0 a 100. */
+export function isSubmittableResult(value: number): boolean {
+  return value >= 0 && value <= 100;
+}
+
+/** O d6 da punição de Fé: vazio ou fora de 1 a 6 é recusado. */
+export function checkFaithPenaltyDie(value: number | ''): 'empty' | 'range' | null {
+  if (value === '' || isNaN(value)) return 'empty';
+  if (value < 1 || value > 6) return 'range';
+  return null;
+}
