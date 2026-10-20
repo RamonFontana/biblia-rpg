@@ -466,6 +466,8 @@ describe('Habilidades', () => {
       await callCard(sacerdote.oracao, 'onUse');
     });
     expect(h.updateCharacter).not.toHaveBeenCalled();
+    // Recusar por falta de Fé não é um erro.
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it('enquanto o inventário está atualizando, usar não faz nada', async () => {
