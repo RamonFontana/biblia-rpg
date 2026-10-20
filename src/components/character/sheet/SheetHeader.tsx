@@ -34,7 +34,7 @@ export function SheetHeader({ name, tribe, vocation, level, imageUrl }: SheetHea
             Vocação: <span className="text-stone-200 font-medium">{vocation || 'Nenhuma'}</span>
           </span>
           <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm flex items-center gap-1">
-            <Zap className="w-3 h-3 text-blue-400" />
+            <Zap className="w-3 h-3 text-amber-500" />
             Proficiência:{' '}
             <span className="text-stone-200 font-medium">+{calculateProficiency(level)}</span>
           </span>
