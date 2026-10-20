@@ -1,38 +1,16 @@
-import { useEffect, useState } from 'react';
-import type { Character } from '@/features/character-management/types';
-import { Shield, Coins, Heart, Star, Sparkles, Activity, Zap } from 'lucide-react';
 import { NPCInventoryManager } from './NPCInventoryManager';
 import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
-import { EquipmentSlots } from '../inventory/EquipmentSlots';
-import { InventoryList } from '../inventory/InventoryList';
-import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
+import { useCharacterSheet } from '@/hooks/useCharacterSheet';
+import { useSheetActions } from '@/hooks/useSheetActions';
 import { getCombatStats } from '@/lib/equipmentUtils';
-import { describeConditionResistances } from '@/domain/armorResistance';
-import { getCurrentPv, getMaxPv } from '@/domain/vitals';
-import { formatModifier } from '@/features/character-management/utils/characterMath';
-import { calculateModifier, calculateProficiency } from '@/domain/attributes';
-import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
-import { AbilityCard } from '../combat/AbilityCard';
-import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { CharacterSkillsList } from './CharacterSkillsList';
 import { CharacterSavingThrows } from './CharacterSavingThrows';
-import {
-  findLatestCharacterOfUser,
-  getCharacterById,
-  subscribeToCharacterSheet,
-  updateCharacter,
-  updateCharacterEquipment,
-} from '@/data-access/characters';
-import { findParticipantCharacterId } from '@/data-access/sessions';
-import { getErrorMessage } from '@/lib/errorMessage';
-import {
-  getCharacterInventory,
-  updateItemLevel,
-  updateItemResistances,
-  updateWeaponEffects,
-} from '@/data-access/inventory';
-import { useAmmunition } from '@/hooks/useAmmunition';
-import { getCurrentFaith, spendFaith } from '@/domain/faith';
+import { SheetHeader } from './sheet/SheetHeader';
+import { VitalsGrid } from './sheet/VitalsGrid';
+import { AttributesGrid } from './sheet/AttributesGrid';
+import { AbilitiesSection } from './sheet/AbilitiesSection';
+import { NarrativeSection } from './sheet/NarrativeSection';
+import { EquipmentSection } from './sheet/EquipmentSection';
 
 interface CharacterSheetViewProps {
   userId?: string;
@@ -47,261 +25,18 @@ export function CharacterSheetView({
   characterId,
   isGM,
 }: CharacterSheetViewProps) {
-  const [character, setCharacter] = useState<Character | null>(null);
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { character, setCharacter, inventoryItems, isLoading, error } = useCharacterSheet({
+    userId,
+    sessionId,
+    characterId,
+  });
   const { consumeItem, removeItem, isUpdating } = useUpdateNPCInventory();
-  const [isEquipping, setIsEquipping] = useState(false);
-  const { consume, recover, addCharges } = useAmmunition();
-
-  const handleConsumeAmmunition = async (characterItemId: string) => {
-    setIsEquipping(true);
-    try {
-      await consume(characterItemId, 1);
-    } catch (err) {
-      console.error('Error consuming ammunition:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleRecoverAmmunition = async (
-    characterItemId: string,
-    spentAmount: number,
-    maxCapacity: number,
-  ) => {
-    setIsEquipping(true);
-    try {
-      await recover(characterItemId, spentAmount, maxCapacity);
-    } catch (err) {
-      console.error('Error recovering ammunition:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleAddAmmunitionCharges = async (characterItemId: string, amount: number) => {
-    setIsEquipping(true);
-    try {
-      await addCharges(characterItemId, amount);
-    } catch (err) {
-      console.error('Error adding charges:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleEquip = async (
-    characterItemId: string,
-    itemEffects: any,
-    targetHand?: 'mainHand' | 'offHand',
-  ) => {
-    if (!character) return;
-    setIsEquipping(true);
-    try {
-      const currentEquipment = character.equipment || {
-        head: null,
-        body: null,
-        mainHand: null,
-        offHand: null,
-      };
-      const newEquipment = equipItem(characterItemId, itemEffects, currentEquipment, targetHand);
-      await updateCharacterEquipment(character.id, newEquipment);
-      setCharacter({ ...character, equipment: newEquipment });
-    } catch (err) {
-      console.error('Error equipping item:', err);
-      // Optional: add a toast or error state here
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleUnequip = async (slot: 'head' | 'body' | 'mainHand' | 'offHand') => {
-    if (!character) return;
-    setIsEquipping(true);
-    try {
-      const currentEquipment = character.equipment || {
-        head: null,
-        body: null,
-        mainHand: null,
-        offHand: null,
-      };
-      const newEquipment = unequipSlot(slot, currentEquipment);
-      await updateCharacterEquipment(character.id, newEquipment);
-      setCharacter({ ...character, equipment: newEquipment });
-    } catch (err) {
-      console.error('Error unequipping item:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleUpdateItemLevel = async (characterItemId: string, newLevel: number) => {
-    setIsEquipping(true);
-    try {
-      await updateItemLevel(characterItemId, newLevel);
-      // Realtime listener will automatically pick up the change and update state
-    } catch (err) {
-      console.error('Error updating item level:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleUpdateItemResistances = async (characterItemId: string, newResistances: string[]) => {
-    setIsEquipping(true);
-    try {
-      await updateItemResistances(characterItemId, newResistances);
-      // Realtime listener will automatically pick up the change and update state
-    } catch (err) {
-      console.error('Error updating item resistances:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleUpdateWeaponEffects = async (characterItemId: string, newEffects: any[]) => {
-    setIsEquipping(true);
-    try {
-      await updateWeaponEffects(characterItemId, newEffects);
-      // Realtime listener will automatically pick up the change and update state
-    } catch (err) {
-      console.error('Error updating weapon effects:', err);
-    } finally {
-      setIsEquipping(false);
-    }
-  };
-
-  const handleUseAbility = async (ability: any) => {
-    if (!character || isUpdating) return;
-
-    try {
-      const skills = (character.skills as any) || {};
-      const abilityUses = skills.ability_uses || {};
-      const currentUsed = abilityUses[ability.id] || 0;
-
-      const newSkills = {
-        ...skills,
-        ability_uses: {
-          ...abilityUses,
-          [ability.id]: currentUsed + 1,
-        },
-      };
-
-      const updates: any = { skills: newSkills };
-
-      if (ability.faithCost) {
-        const stats = (character.stats as any) || {};
-        const faithLeft = spendFaith(stats, ability.faithCost);
-
-        if (faithLeft !== null) {
-          updates.stats = {
-            ...stats,
-            current_faith: faithLeft,
-          };
-        } else {
-          return;
-        }
-      }
-
-      await updateCharacter(character.id, updates);
-    } catch (error) {
-      console.error('Failed to use ability:', error);
-    }
-  };
-
-  const handleRestoreAbility = async (ability: any) => {
-    if (!character || !isGM || isUpdating) return;
-
-    try {
-      const skills = (character.skills as any) || {};
-      const abilityUses = skills.ability_uses || {};
-
-      const newAbilityUses = { ...abilityUses };
-      delete newAbilityUses[ability.id];
-
-      const newSkills = {
-        ...skills,
-        ability_uses: newAbilityUses,
-      };
-
-      await updateCharacter(character.id, { skills: newSkills });
-    } catch (error) {
-      console.error('Failed to restore ability:', error);
-    }
-  };
-
-  useEffect(() => {
-    async function fetchCharacter() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        let characterIdToFetch: string | null = characterId || null;
-
-        // Try to find the assigned character for this session if characterId is not provided
-        if (!characterIdToFetch && sessionId && userId) {
-          characterIdToFetch = await findParticipantCharacterId(sessionId, userId);
-        }
-
-        let charData: Character | null;
-
-        if (characterIdToFetch) {
-          // Fetch the specific assigned character
-          charData = await getCharacterById(characterIdToFetch);
-        } else if (userId) {
-          // Fallback to the latest character if not explicitly assigned
-          charData = await findLatestCharacterOfUser(userId);
-        } else {
-          throw new Error('Identificador de personagem ou jogador não fornecido.');
-        }
-
-        if (!charData) {
-          setError('Personagem não encontrado para este jogador.');
-        } else {
-          setCharacter(charData);
-
-          // Fetch inventory items
-          try {
-            setInventoryItems(await getCharacterInventory(charData.id));
-          } catch (inventoryError) {
-            // Sem inventário a ficha abre assim mesmo, como antes.
-            console.error('Error fetching inventory:', inventoryError);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching character:', err);
-        setError(
-          `Ocorreu um erro ao carregar a ficha. Detalhes: ${getErrorMessage(err, JSON.stringify(err))}`,
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    if (userId || characterId) {
-      fetchCharacter();
-    }
-  }, [userId, characterId, sessionId]);
-
-  // Realtime updates for inventory and character stats
-  useEffect(() => {
-    if (!character?.id) return;
-
-    return subscribeToCharacterSheet(character.id, {
-      onInventoryChange: async () => {
-        // Refetch inventory items
-        try {
-          setInventoryItems(await getCharacterInventory(character.id));
-        } catch (inventoryError) {
-          // Mantém o inventário que já está na tela.
-          console.error('Error fetching inventory:', inventoryError);
-        }
-      },
-      // Atualiza a ficha local com as novas alterações do banco
-      onCharacterUpdate: (row) => setCharacter((prev) => (prev ? { ...prev, ...row } : null)),
-    });
-  }, [character?.id]);
+  const actions = useSheetActions({
+    character,
+    setCharacter,
+    isGM,
+    isInventoryBusy: isUpdating,
+  });
 
   if (isLoading) {
     return (
@@ -322,6 +57,7 @@ export function CharacterSheetView({
   }
 
   const { attributes, stats, narrative, tribe, vocation, name } = character;
+  const level = character.level || 1;
 
   // Calculate dynamic AC using getCombatStats to properly include item level bonuses
   const {
@@ -337,284 +73,73 @@ export function CharacterSheetView({
 
   return (
     <div className="flex flex-col bg-stone-950 text-stone-200 overflow-y-auto custom-scrollbar">
-      {/* Header Profile */}
-      <div className="relative p-4 md:p-6 border-b border-stone-800 bg-gradient-to-b from-stone-900 to-stone-950 flex gap-4 md:gap-6 items-center">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -z-10"></div>
-
-        <CharacterAvatar
-          imageUrl={narrative?.imageUrl}
-          name={name || 'Desconhecido'}
-          className="w-24 h-24 border-4 border-stone-800 shadow-xl"
-        />
-
-        <div className="flex-1">
-          <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 mb-2">
-            {name || 'Desconhecido'}
-          </h2>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-stone-400">
-            <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
-              Tribo: <span className="text-stone-200 font-medium">{tribe || 'Nenhuma'}</span>
-            </span>
-            <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm">
-              Vocação: <span className="text-stone-200 font-medium">{vocation || 'Nenhuma'}</span>
-            </span>
-            <span className="px-2 py-1 rounded-md bg-stone-800 border border-stone-700 shadow-sm flex items-center gap-1">
-              <Zap className="w-3 h-3 text-blue-400" />
-              Proficiência:{' '}
-              <span className="text-stone-200 font-medium">
-                +{calculateProficiency((character as any).level || 1)}
-              </span>
-            </span>
-          </div>
-        </div>
-      </div>
+      <SheetHeader
+        name={name}
+        tribe={tribe}
+        vocation={vocation}
+        level={level}
+        imageUrl={narrative?.imageUrl}
+      />
 
       <div className="p-3 sm:p-4 md:p-6 space-y-6 md:space-y-8">
-        {/* Vitals / Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
-            <div className="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
-            <Heart className="w-8 h-8 text-red-500 mb-2" />
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-stone-100">{getCurrentPv(stats, 10)}</span>
-              <span className="text-sm text-stone-500 font-medium">/{getMaxPv(stats, 10)}</span>
-            </div>
-            <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">
-              PV
-            </span>
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-stone-800 rounded-xl shadow-inner relative overflow-hidden group">
-            <div className="absolute inset-0 bg-stone-500/5 group-hover:bg-stone-500/10 transition-colors"></div>
-            <Shield className="w-8 h-8 text-stone-400 mb-2" />
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-stone-100">{totalAc}</span>
-              {bonusAc > 0 && (
-                <span
-                  className="text-sm text-blue-400 font-medium"
-                  title={`Base ${baseAc} + Bônus ${bonusAc}`}
-                >
-                  (+{bonusAc})
-                </span>
-              )}
-            </div>
-            <span className="text-xs text-stone-400 uppercase tracking-wider font-semibold mt-1">
-              CA
-            </span>
-            {resistances.length > 0 && (
-              <div className="absolute bottom-1 w-full text-center">
-                <span
-                  className="text-[9px] text-indigo-300 bg-indigo-900/50 px-1 rounded"
-                  title={[
-                    ...describeConditionResistances(conditionResistanceLevels),
-                    ...resistances.filter((r) => !(r in conditionResistanceLevels)),
-                  ].join(', ')}
-                >
-                  Resistência
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-amber-900/50 rounded-xl shadow-inner relative overflow-hidden group">
-            <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
-            <Sparkles className="w-8 h-8 text-amber-500 mb-2" />
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-amber-100">{getCurrentFaith(stats)}</span>
-              <span className="text-sm text-amber-500/50 font-medium">/100</span>
-            </div>
-            <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">
-              Fé
-            </span>
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-yellow-900/50 rounded-xl shadow-inner relative overflow-hidden group">
-            <div className="absolute inset-0 bg-yellow-500/5 group-hover:bg-yellow-500/10 transition-colors"></div>
-            <Coins className="w-8 h-8 text-yellow-500 mb-2" />
-            <span className="text-3xl font-bold text-yellow-100">{character.coins ?? 0}</span>
-            <span className="text-xs text-yellow-500/70 uppercase tracking-wider font-semibold mt-1">
-              SP
-            </span>
-          </div>
-        </div>
+        <VitalsGrid
+          stats={stats}
+          coins={character.coins}
+          totalAc={totalAc}
+          baseAc={baseAc}
+          bonusAc={bonusAc}
+          resistances={resistances}
+          conditionResistanceLevels={conditionResistanceLevels}
+        />
 
-        {/* Attributes */}
-        <div>
-          <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
-            <Activity className="w-5 h-5 text-amber-500" />
-            Atributos
-          </h3>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {[
-              { label: 'FOR', value: attributes?.for },
-              { label: 'DES', value: attributes?.des },
-              { label: 'CON', value: attributes?.con },
-              { label: 'INT', value: attributes?.int },
-              { label: 'SAB', value: attributes?.sab },
-              { label: 'CAR', value: attributes?.car },
-            ].map((attr) => (
-              <div
-                key={attr.label}
-                className="bg-stone-900 border border-stone-800 rounded-lg p-3 text-center flex flex-col items-center relative"
-              >
-                <span className="text-stone-500 text-xs font-bold mb-1">{attr.label}</span>
-                <span className="text-2xl font-bold text-stone-100">
-                  {formatModifier(calculateModifier(attr.value))}
-                </span>
-                <span className="text-[10px] text-stone-500 font-mono mt-1 px-1.5 py-0.5 bg-stone-800 rounded">
-                  {attr.value ?? 10}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AttributesGrid attributes={attributes} />
 
         {/* Saving Throws */}
-        <CharacterSavingThrows
-          attributes={attributes}
-          level={(character as any).level || 1}
-          vocation={vocation || ''}
-        />
+        <CharacterSavingThrows attributes={attributes} level={level} vocation={vocation || ''} />
 
         {/* Perícias */}
         <CharacterSkillsList
           attributes={attributes}
-          level={(character as any).level || 1}
-          proficiencies={(character.proficiencies as any)?.skill_proficiencies || []}
+          level={level}
+          proficiencies={character.proficiencies?.skill_proficiencies || []}
         />
 
-        {/* Habilidades */}
-        {character &&
-          (!Array.isArray(character.skills) || character.skills.length === 0) &&
-          getAbilitiesForCharacter(
-            character.tribe || '',
-            character.vocation || '',
-            (character as any).level || 1,
-            (character.skills as any)?.path_choices,
-          ).length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
-                <Zap className="w-5 h-5 text-amber-500" />
-                Habilidades
-              </h3>
-              <div className="space-y-3">
-                {getAbilitiesForCharacter(
-                  character.tribe || '',
-                  character.vocation || '',
-                  (character as any).level || 1,
-                  (character.skills as any)?.path_choices,
-                ).map((ability, index) => {
-                  const currentUsed = (character.skills as any)?.ability_uses?.[ability.id] || 0;
-                  const remainingUses = ability.maxUses
-                    ? Math.max(0, ability.maxUses - currentUsed)
-                    : undefined;
-                  let disabled = false;
-                  let disabledReason = '';
+        <AbilitiesSection
+          character={character}
+          isGM={isGM}
+          onUse={actions.handleUseAbility}
+          onRestore={actions.handleRestoreAbility}
+        />
 
-                  if (ability.faithCost) {
-                    if (spendFaith(character.stats as any, ability.faithCost) === null) {
-                      disabled = true;
-                      disabledReason = 'Fé Insuficiente';
-                    }
-                  }
+        <NarrativeSection narrative={narrative} />
 
-                  if (!disabled && ability.maxUses) {
-                    if (currentUsed >= ability.maxUses) {
-                      disabled = true;
-                      disabledReason = 'Sem Usos';
-                    }
-                  }
+        <EquipmentSection
+          character={character}
+          inventoryItems={inventoryItems}
+          isGM={isGM}
+          isBusy={isUpdating || actions.isEquipping}
+          onEquip={actions.handleEquip}
+          onUnequip={actions.handleUnequip}
+          onUseConsumable={(item) =>
+            consumeItem(
+              character.id,
+              item.id,
+              item.quantity,
+              item.items.effects,
+              character.stats ?? {},
+              !character.is_npc,
+            )
+          }
+          onChangeLevel={actions.handleUpdateItemLevel}
+          onChangeResistances={actions.handleUpdateItemResistances}
+          onChangeWeaponEffects={actions.handleUpdateWeaponEffects}
+          onConsumeAmmunition={actions.handleConsumeAmmunition}
+          onRecoverAmmunition={actions.handleRecoverAmmunition}
+          onAddCharges={actions.handleAddAmmunitionCharges}
+          onRemoveItem={removeItem}
+        />
 
-                  return (
-                    <AbilityCard
-                      key={index}
-                      ability={ability}
-                      currentUses={remainingUses}
-                      onUse={() => handleUseAbility(ability)}
-                      onRestore={() => handleRestoreAbility(ability)}
-                      isGM={isGM}
-                      disabled={disabled && !isGM}
-                      disabledReason={disabled && !isGM ? disabledReason : ''}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-        {/* Narrative / Description */}
-        {narrative && (narrative.history || narrative.physicalDesc || narrative.personality) && (
-          <div>
-            <h3 className="text-lg font-semibold text-stone-300 mb-4 flex items-center gap-2 border-b border-stone-800 pb-2">
-              <Star className="w-5 h-5 text-amber-500" />
-              Características
-            </h3>
-            <div className="space-y-4 bg-stone-900/50 p-4 rounded-xl border border-stone-800/50">
-              {narrative.physicalDesc && (
-                <div>
-                  <h4 className="text-sm font-semibold text-stone-400 mb-1">Aparência</h4>
-                  <p className="text-sm text-stone-300 leading-relaxed">{narrative.physicalDesc}</p>
-                </div>
-              )}
-              {narrative.personality && (
-                <div>
-                  <h4 className="text-sm font-semibold text-stone-400 mb-1">Personalidade</h4>
-                  <p className="text-sm text-stone-300 leading-relaxed">{narrative.personality}</p>
-                </div>
-              )}
-              {narrative.history && (
-                <div>
-                  <h4 className="text-sm font-semibold text-stone-400 mb-1">História</h4>
-                  <p className="text-sm text-stone-300 leading-relaxed">{narrative.history}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Equipment & Inventory */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <EquipmentSlots
-              equipment={
-                character.equipment || { head: null, body: null, mainHand: null, offHand: null }
-              }
-              inventoryItems={inventoryItems}
-              characterVocation={vocation}
-              characterStrength={Number(attributes?.for) || null}
-              onUnequip={handleUnequip}
-            />
-          </div>
-          <div className="lg:col-span-2">
-            <InventoryList
-              inventoryItems={inventoryItems}
-              equipment={
-                character.equipment || { head: null, body: null, mainHand: null, offHand: null }
-              }
-              onEquip={handleEquip}
-              vocation={vocation}
-              strength={Number(attributes?.for) || null}
-              onUseConsumable={(item) =>
-                consumeItem(
-                  character!.id,
-                  item.id,
-                  item.quantity,
-                  item.items.effects,
-                  character!.stats ?? {},
-                  !character!.is_npc,
-                )
-              }
-              isUpdating={isUpdating || isEquipping}
-              isGM={isGM}
-              onChangeLevel={handleUpdateItemLevel}
-              onChangeResistances={handleUpdateItemResistances}
-              onChangeWeaponEffects={handleUpdateWeaponEffects}
-              onConsumeAmmunition={handleConsumeAmmunition}
-              onRecoverAmmunition={handleRecoverAmmunition}
-              onAddCharges={isGM ? handleAddAmmunitionCharges : undefined}
-              onRemoveItem={removeItem}
-            />
-          </div>
-        </div>
-
-        {isGM && character?.id && (
+        {isGM && character.id && (
           <div className="mt-8 pt-6 border-t border-stone-800">
             <NPCInventoryManager characterId={character.id} items={inventoryItems} />
           </div>
