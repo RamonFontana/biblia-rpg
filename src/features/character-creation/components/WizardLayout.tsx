@@ -1,4 +1,9 @@
 import React from 'react';
+import { ChipToggle } from '@/components/ui/chip-toggle';
+import { PageHeader } from '@/components/ui/page-header';
+import { PageShell } from '@/components/ui/page-shell';
+import { Panel } from '@/components/ui/panel';
+import { ProgressBar } from '@/components/ui/progress-bar';
 import { useCharacterCreationStore } from '../store/useCharacterCreationStore';
 import { TribeSelection } from './steps/TribeSelection';
 import { VocationSelection } from './steps/VocationSelection';
@@ -55,36 +60,30 @@ export const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-stone-900 text-stone-100 p-0 sm:p-4 md:p-8">
-      <div className="max-w-4xl mx-auto bg-stone-800 p-4 sm:p-6 rounded-none sm:rounded-xl shadow-none sm:shadow-lg border-0 sm:border border-stone-700 min-h-screen sm:min-h-0">
-        <header className="mb-8 border-b border-stone-700 pb-4">
-          <h1 className="text-3xl font-serif text-amber-500">
-            {editingId ? 'Edição de Personagem' : 'Criação de Personagem'}
-          </h1>
-          <p className="text-stone-400 mt-2">Passo {currentStep} de 9</p>
-          <div className="w-full bg-stone-700 h-2 mt-4 rounded-full overflow-hidden">
-            <div
-              className="bg-amber-500 h-full transition-all duration-300"
-              style={{ width: `${(currentStep / 9) * 100}%` }}
-            />
-          </div>
+    <PageShell>
+      <Panel>
+        <PageHeader
+          title={editingId ? 'Edição de Personagem' : 'Criação de Personagem'}
+          subtitle={`Passo ${currentStep} de 9`}
+        >
+          <ProgressBar value={currentStep} max={9} className="mt-4" />
           {editingId && (
             <div className="flex flex-wrap gap-2 mt-6">
               {stepsLabels.map((label, idx) => (
-                <button
+                <ChipToggle
                   key={idx}
+                  active={currentStep === idx + 1}
                   onClick={() => setStep(idx + 1)}
-                  className={`px-3 py-1 rounded text-sm ${currentStep === idx + 1 ? 'bg-amber-600 text-stone-900 font-bold' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'}`}
                 >
                   {label}
-                </button>
+                </ChipToggle>
               ))}
             </div>
           )}
-        </header>
+        </PageHeader>
 
         <main className="min-h-[400px]">{children || renderStep()}</main>
-      </div>
-    </div>
+      </Panel>
+    </PageShell>
   );
 };
