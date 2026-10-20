@@ -363,7 +363,8 @@ describe('listTradeableItems', () => {
   it('lista o catálogo por nome', async () => {
     state.respond = () => ({ data: [{ id: 'i1', name: 'Pão' }] });
     expect(await listTradeableItems()).toEqual([{ id: 'i1', name: 'Pão' }]);
-    expect(callsOf(state.calls, 'items', 'select')).toHaveLength(1);
+    const [call] = callsOf(state.calls, 'items', 'select');
+    expect(call.filters).toContainEqual(['order', 'name']);
   });
 
   it('lança o erro do Supabase', async () => {
