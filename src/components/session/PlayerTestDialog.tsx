@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import {
-  type SessionTest,
-  type SessionTestResult,
-  sessionTestService,
-} from '@/services/sessionTestService';
+import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
+import { submitTestResult } from '@/services/sessionTestService';
 import {
   getTestModifiers,
   getTestBreakdown,
 } from '@/features/character-management/utils/characterMath';
 import { getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
-import { getItemFaithPenalty } from '@/data-access/inventory';
+import {
+  getCharacterStats,
+  getCharacterTestContext,
+  type CharacterTestContext,
+} from '@/data-access/characters';
+import { getItemFaithPenalty, listCharacterItemEffects } from '@/data-access/inventory';
 import { rollDie } from '@/domain/dice';
 import { systemRng } from '@/lib/systemRng';
 
@@ -41,7 +43,7 @@ export function PlayerTestDialog({
   // Equipment and passive effects
   const [hasStealthDisadvantage, setHasStealthDisadvantage] = useState(false);
   const [faithPenalty, setFaithPenalty] = useState(0);
-  const [charData, setCharData] = useState<any>(null);
+  const [charData, setCharData] = useState<CharacterTestContext | null>(null);
 
   // Faith test penalty state
   const [showPenaltyScreen, setShowPenaltyScreen] = useState(false);
@@ -75,23 +77,20 @@ export function PlayerTestDialog({
     if (activeTest && testResult) {
       // Fetch character stats, equipment, and items
       const fetchCharContext = async () => {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: cData } = await supabase
-          .from('characters')
-          .select('stats, equipment, level, proficiencies, attributes, vocation')
-          .eq('id', testResult.character_id)
-          .single();
-
-        const { data: charItems } = await supabase
-          .from('character_items')
-          .select(`id, items!inner(effects)`)
-          .eq('character_id', testResult.character_id);
+        // Se uma leitura falhar, a tela segue sem esse dado; quem decide a aprovação é o serviço.
+        const cData = await getCharacterTestContext(testResult.character_id).catch((error) => {
+          console.error('Error reading the character for the test:', error);
+          return null;
+        });
+        const charItems = await listCharacterItemEffects(testResult.character_id).catch((error) => {
+          console.error('Error reading the character items for the test:', error);
+          return null;
+        });
 
         const effectsOf = (cItem: { items: unknown }) =>
           (cItem.items as { effects?: DialogItemEffects } | null)?.effects;
 
         let stealthDis = false;
-        // Se a leitura falhar, a tela segue sem a penalidade; quem decide a aprovação é o serviço.
         const penaltyF = await getItemFaithPenalty(testResult.character_id).catch(() => 0);
 
         if (cData && charItems) {
@@ -210,13 +209,10 @@ export function PlayerTestDialog({
     let isFailedFaithTest = false;
     if (activeTest.test_type === 'Fé') {
       // Busca a fé atual do personagem direto do banco para garantir o valor correto
-      const { supabase } = await import('@/lib/supabase');
-      const { data: charData } = await supabase
-        .from('characters')
-        .select('stats')
-        .eq('id', testResult.character_id)
-        .single();
-      const stats = charData?.stats as Record<string, any> | undefined;
+      const stats = await getCharacterStats(testResult.character_id).catch((error) => {
+        console.error('Error reading the character Faith for the test:', error);
+        return null;
+      });
       // faithPenalty é a soma (negativa) dos Itens Profanos; a mesma regra grava is_approved.
       isFailedFaithTest = !isFaithTestPassed(
         val,
@@ -237,7 +233,7 @@ export function PlayerTestDialog({
     setIsSubmitting(true);
 
     try {
-      await sessionTestService.submitTestResult(
+      await submitTestResult(
         testResult.id,
         val,
         activeTest.difficulty,

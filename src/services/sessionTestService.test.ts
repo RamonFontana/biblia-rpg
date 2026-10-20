@@ -20,7 +20,7 @@ vi.mock('../lib/supabase', async () => {
 });
 
 import { callsOf, filterOf } from '../test/fakeSupabase';
-import { sessionTestService } from './sessionTestService';
+import { submitTestResult } from './sessionTestService';
 
 // Como em produção: a linha do amuleto tem `effects` vazio; a penalidade vem do conteúdo (slug).
 const amulet = { items: { slug: 'simbolo_proibido', effects: {} } };
@@ -47,7 +47,7 @@ beforeEach(() => {
 describe('submitTestResult: Teste de Fé', () => {
   it('sem Item Profano, passa quando o dado é menor ou igual à Fé', async () => {
     world({ faith: 50 });
-    await sessionTestService.submitTestResult('r1', 45, 0, 'char-1', 'Fé', undefined, 45);
+    await submitTestResult('r1', 45, 0, 'char-1', 'Fé', undefined, 45);
     expect(resultWrite()).toMatchObject({ result_value: 45, roll_value: 45, is_approved: true });
     expect(faithWrite()).toBeUndefined();
   });
@@ -55,37 +55,37 @@ describe('submitTestResult: Teste de Fé', () => {
   it('com Item Profano, a Fé Efetiva menor reprova (a mesma conta da tela do jogador)', async () => {
     // Fé 50, Amuleto Proibido (-10): Fé Efetiva 40. O jogador rolou 45.
     world({ faith: 50, items: [amulet] });
-    await sessionTestService.submitTestResult('r1', 45, 0, 'char-1', 'Fé', 3, 45);
+    await submitTestResult('r1', 45, 0, 'char-1', 'Fé', 3, 45);
     expect(resultWrite()).toMatchObject({ is_approved: false });
     // A perda de Fé digitada (3) sai da Fé Atual (50), não da Efetiva.
-    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 47 } });
+    expect(faithWrite()!.payload).toStrictEqual({ stats: { current_faith: 47, pv: 10 } });
   });
 
   it('com Item Profano, um dado dentro da Fé Efetiva ainda passa', async () => {
     world({ faith: 50, items: [amulet] });
-    await sessionTestService.submitTestResult('r1', 40, 0, 'char-1', 'Fé');
+    await submitTestResult('r1', 40, 0, 'char-1', 'Fé');
     expect(resultWrite()).toMatchObject({ is_approved: true });
   });
 
   it('o Modificador de Fé do Mestre soma à Fé Efetiva (Misericórdia) ou subtrai (Punição)', async () => {
     world({ faith: 50, items: [amulet] });
-    await sessionTestService.submitTestResult('r1', 55, 15, 'char-1', 'Fé');
+    await submitTestResult('r1', 55, 15, 'char-1', 'Fé');
     expect(resultWrite()).toMatchObject({ is_approved: true }); // 40 + 15 = 55
     state.calls.length = 0;
-    await sessionTestService.submitTestResult('r1', 26, -15, 'char-1', 'Fé');
+    await submitTestResult('r1', 26, -15, 'char-1', 'Fé');
     expect(resultWrite()).toMatchObject({ is_approved: false }); // 40 - 15 = 25
   });
 
   it('só os itens do personagem do teste entram na conta', async () => {
     world({ faith: 50, items: [amulet] });
-    await sessionTestService.submitTestResult('r1', 45, 0, 'char-1', 'Fé');
+    await submitTestResult('r1', 45, 0, 'char-1', 'Fé');
     const read = callsOf(state.calls, 'character_items', 'select')[0];
     expect(filterOf(read, 'eq', 'character_id')).toBe('char-1');
   });
 
   it('a perda de Fé nunca deixa a Fé abaixo de 0', async () => {
     world({ faith: 4 });
-    await sessionTestService.submitTestResult('r1', 90, 0, 'char-1', 'Fé', 6);
+    await submitTestResult('r1', 90, 0, 'char-1', 'Fé', 6);
     expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 0 } });
   });
 });
@@ -93,26 +93,26 @@ describe('submitTestResult: Teste de Fé', () => {
 describe('submitTestResult: Teste comum', () => {
   it('passa quando o resultado alcança a CD, sem olhar Fé nem itens', async () => {
     world({ items: [amulet] });
-    await sessionTestService.submitTestResult('r1', 12, 12, 'char-1', 'Destreza');
+    await submitTestResult('r1', 12, 12, 'char-1', 'Destreza');
     expect(resultWrite()).toMatchObject({ is_approved: true, status: 'submitted' });
     expect(callsOf(state.calls, 'character_items')).toEqual([]);
     state.calls.length = 0;
-    await sessionTestService.submitTestResult('r1', 11, 12, 'char-1', 'Destreza');
+    await submitTestResult('r1', 11, 12, 'char-1', 'Destreza');
     expect(resultWrite()).toMatchObject({ is_approved: false });
   });
 
   it('o dado rolado é gravado ao lado do total; sem ele, fica nulo', async () => {
     world();
-    await sessionTestService.submitTestResult('r1', 15, 10, 'char-1', 'Destreza', undefined, 13);
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza', undefined, 13);
     expect(resultWrite()).toMatchObject({ result_value: 15, roll_value: 13 });
     state.calls.length = 0;
-    await sessionTestService.submitTestResult('r1', 15, 10, 'char-1', 'Destreza');
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza');
     expect(resultWrite()).toMatchObject({ roll_value: null });
   });
 
   it('erro ao gravar o resultado é lançado', async () => {
     state.respond = (call) =>
       call.table === 'session_test_results' ? { error: new Error('falhou') } : undefined;
-    await expect(sessionTestService.submitTestResult('r1', 15, 10)).rejects.toThrow('falhou');
+    await expect(submitTestResult('r1', 15, 10)).rejects.toThrow('falhou');
   });
 });

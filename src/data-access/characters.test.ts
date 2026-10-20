@@ -35,23 +35,30 @@ vi.mock('./realtime', () => ({
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
   createEnemyCharacter,
+  deleteCharacters,
+  filterNpcAndEnemyIds,
   findLatestCharacterOfUser,
   getActiveSessionCharacterIds,
   getCharacterById,
   getCharacterDeathState,
   getCharacterResistanceSource,
+  getCharacterStats,
+  getCharacterTestContext,
   getCharacters,
   getMyCharacters,
+  grantPendingLevelUp,
+  insertCharacter,
   listCampaignNpcs,
+  markCharactersParticipated,
   saveCharacter,
   setCharacterVisible,
   subscribeToCharacterSheet,
   subscribeToCharacterUpdates,
   updateCharacter,
   updateCharacterDeathState,
-  updateCharacterSkills,
   updateCharacterEquipment,
   updateCharacterRest,
+  updateCharacterSkills,
   updateCharacterStats,
 } from './characters';
 
@@ -495,5 +502,78 @@ describe('estado de morte', () => {
     expect(onChange).toHaveBeenCalledWith({ id: 'c1', is_dead: true });
     stop();
     expect(state.stopped).toBe(1);
+  });
+});
+
+describe('fichas de uma sessão (criar, marcar, apagar)', () => {
+  const newRow = {
+    name: 'Guarda',
+    user_id: 'gm',
+    tribe: 'Inimigo',
+    vocation: '',
+    attributes: {},
+    stats: {},
+  };
+
+  it('getCharacterStats lê só os stats da ficha', async () => {
+    state.respond = () => ({ data: { stats: { pv: 10, ca: 12, faith: 50 } } });
+    await expect(getCharacterStats('c1')).resolves.toEqual({ pv: 10, ca: 12, faith: 50 });
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+    expect(call.single).toBe(true);
+  });
+
+  it('getCharacterTestContext lê só o que o bônus do Teste usa', async () => {
+    state.respond = () => ({ data: { level: 3, vocation: 'Guerreiro' } });
+    await expect(getCharacterTestContext('c1')).resolves.toEqual({
+      level: 3,
+      vocation: 'Guerreiro',
+    });
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe('stats, equipment, level, proficiencies, attributes, vocation');
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('insertCharacter grava a linha e devolve o id', async () => {
+    state.respond = () => ({ data: { id: 'novo' } });
+    await expect(insertCharacter(newRow)).resolves.toBe('novo');
+    const [call] = callsOf(state.calls, 'characters', 'insert');
+    expect(call.payload).toEqual(newRow);
+  });
+
+  it('markCharactersParticipated marca só os ids dados', async () => {
+    await markCharactersParticipated(['a', 'b']);
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ has_participated_in_session: true });
+    expect(filterOf(call, 'in', 'id')).toEqual(['a', 'b']);
+  });
+
+  it('filterNpcAndEnemyIds devolve só os ids que são NPC ou inimigo', async () => {
+    state.respond = () => ({ data: [{ id: 'npc-1' }] });
+    await expect(filterNpcAndEnemyIds(['p1', 'npc-1'])).resolves.toEqual(['npc-1']);
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(filterOf(call, 'in', 'id')).toEqual(['p1', 'npc-1']);
+    expect(call.filters).toContainEqual(['or', 'is_npc.eq.true,is_enemy.eq.true']);
+  });
+
+  it('deleteCharacters apaga de vez e grantPendingLevelUp só marca o nível pendente', async () => {
+    await deleteCharacters(['x']);
+    await grantPendingLevelUp(['y', 'z']);
+    const [del] = callsOf(state.calls, 'characters', 'delete');
+    expect(filterOf(del, 'in', 'id')).toEqual(['x']);
+    const [grant] = callsOf(state.calls, 'characters', 'update');
+    expect(grant.payload).toEqual({ pending_level_up: true });
+    expect(filterOf(grant, 'in', 'id')).toEqual(['y', 'z']);
+  });
+
+  it('lançam o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(getCharacterStats('c1')).rejects.toBe(failure);
+    await expect(getCharacterTestContext('c1')).rejects.toBe(failure);
+    await expect(insertCharacter(newRow)).rejects.toBe(failure);
+    await expect(markCharactersParticipated(['a'])).rejects.toBe(failure);
+    await expect(filterNpcAndEnemyIds(['a'])).rejects.toBe(failure);
+    await expect(deleteCharacters(['a'])).rejects.toBe(failure);
+    await expect(grantPendingLevelUp(['a'])).rejects.toBe(failure);
   });
 });
