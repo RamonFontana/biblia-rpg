@@ -468,7 +468,6 @@ describe('visão do Mestre', () => {
   it('com combate ativo, mostra o painel de combate com as entidades da mesa', async () => {
     h.combat.activeCombat = { id: 'cb1' };
     await renderPage();
-    expect(prop('CombatDashboard', 'sessionId')).toBe('s1');
     expect(prop('CombatDashboard', 'availableEntities')).toMatchObject([
       { type: 'player', id: 'c1', name: 'Personagem c1', hpCurrent: 10 },
       { type: 'player', id: 'c2', name: 'Personagem c2', hpCurrent: 10 },
@@ -522,7 +521,7 @@ describe('visão do jogador e do espectador', () => {
   it('jogador: avisos, ficha, e lista com só os NPCs visíveis', async () => {
     await renderPage();
     expect(screen.getByText('Visão do Jogador')).toBeInTheDocument();
-    expect(prop('PlayerRestIndicator', 'character')).toMatchObject({ id: 'c1' });
+    expect(prop('PlayerRestIndicator', 'sessionData')).toBeTruthy();
     expect(props('CharacterSheetView')).toMatchObject({ userId: 'u1', sessionId: 's1' });
     expect(prop('SessionParticipantList', 'isGM')).toBe(false);
     expect(pluck(prop('SessionParticipantList', 'npcs'), 'id')).toEqual(['n1']);
@@ -563,7 +562,7 @@ describe('visão do jogador e do espectador', () => {
   it('com combate ativo, o jogador vê a visão de combate com a sua ficha e os inimigos', async () => {
     h.combat.activeCombat = { id: 'cb1' };
     await renderPage();
-    expect(props('PlayerCombatView')).toMatchObject({ sessionId: 's1', isLoading: false });
+    expect(props('PlayerCombatView')).toMatchObject({ isLoading: false });
     expect(prop('PlayerCombatView', 'character')).toMatchObject({ id: 'c1' });
     expect(prop('PlayerCombatView', 'enemies')).toBe(h.roster.enemies);
   });

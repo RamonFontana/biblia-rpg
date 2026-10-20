@@ -72,7 +72,7 @@ export function PlayerSessionView({
         </p>
       </div>
 
-      <PlayerRestIndicator sessionData={sessionData} character={myCharacter} />
+      <PlayerRestIndicator sessionData={sessionData} />
 
       {myCharacter &&
         getCurrentPv(myCharacter.stats) <= 0 &&
@@ -86,7 +86,6 @@ export function PlayerSessionView({
       {hasActiveCombat && (
         <div className="w-full max-w-6xl mt-4 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
           <PlayerCombatView
-            sessionId={sessionId}
             character={myCharacter}
             enemies={enemies}
             isLoading={isCharactersLoading}
