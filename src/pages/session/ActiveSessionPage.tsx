@@ -1,56 +1,40 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { SessionParticipantList } from '@/components/session/SessionParticipantList';
-import { CharacterSheetView } from '@/components/character/CharacterSheetView';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { useSupabasePresence } from '@/hooks/useSupabasePresence';
-import type { PresenceState } from '@/data-access/realtime';
-
-import { SessionNPCList } from '@/components/session/SessionNPCList';
-import { SessionEnemyList } from '@/components/session/SessionEnemyList';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  getGameSession,
-  subscribeToGameSession,
-  updateGameSession,
-  type GameSession,
-} from '@/data-access/sessions';
-import { Button } from '@/components/ui/button';
+import { useCombatStore } from '@/store/combatStore';
+import { updateGameSession } from '@/data-access/sessions';
+import { cancelTrade } from '@/data-access/trades';
+import { endSession as endSessionService } from '@/services/sessionService';
+import { useGameSession } from '@/hooks/useGameSession';
+import { useSessionPresence } from '@/hooks/useSessionPresence';
 import { useSessionTests } from '@/hooks/useSessionTests';
 import { useSessionCharacters } from '@/hooks/useSessionCharacters';
 import { useSessionTrades } from '@/hooks/useSessionTrades';
-import { acceptTrade, cancelTrade, createTrade } from '@/data-access/trades';
-import { endSession as endSessionService } from '@/services/sessionService';
+import { useSessionTradeActions } from '@/hooks/useSessionTradeActions';
+import { useCombatToast } from '@/hooks/useCombatToast';
+import { advanceSessionClock } from '@/domain/sessionTime';
+import { findMyActiveTrade, findTradesToCancelOnLeave } from '@/domain/trades';
+import { buildCombatEntities } from '@/lib/combatEntities';
 import { TradeDialog } from '@/components/session/TradeDialog';
 import { MasterTestDialog } from '@/components/session/MasterTestDialog';
 import { PlayerTestDialog } from '@/components/session/PlayerTestDialog';
 import { DiceRollerDialog } from '@/components/session/DiceRollerDialog';
 import { NewDayDialog } from '@/components/session/NewDayDialog';
 import { EndSessionDialog } from '@/components/session/EndSessionDialog';
-import { SessionRestControls } from '@/components/session/SessionRestControls';
-import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
-import type { CreateTradeParams, TradeWithItems } from '@/types/trade';
 import { CombatSetupModal } from '@/components/combat/CombatSetupModal';
-import { CombatDashboard } from '@/components/combat/CombatDashboard';
-import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
-import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
-import { useCombatStore } from '@/store/combatStore';
-import { getCombatStats } from '@/lib/equipmentUtils';
-import { getCurrentPv } from '@/domain/vitals';
-import { Menu } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { SessionHeader } from '@/components/session/active-session/SessionHeader';
+import { GmSessionView } from '@/components/session/active-session/GmSessionView';
+import { SpectatorView } from '@/components/session/active-session/SpectatorView';
+import { PlayerSessionView } from '@/components/session/active-session/PlayerSessionView';
+import { CombatToast } from '@/components/session/active-session/CombatToast';
 
 export function ActiveSessionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [payload, setPayload] = useState<PresenceState | undefined>();
-  const [sessionData, setSessionData] = useState<GameSession | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { sessionData, isLoading, isNewDayDialogOpen, setIsNewDayDialogOpen } = useGameSession(id);
+  const { onlineUsers } = useSessionPresence(id, user);
 
   const { activeTests, testResults } = useSessionTests(id!);
   const {
@@ -66,20 +50,9 @@ export function ActiveSessionPage() {
 
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
-  const [isNewDayDialogOpen, setIsNewDayDialogOpen] = useState(false);
   const [isEndSessionDialogOpen, setIsEndSessionDialogOpen] = useState(false);
   const [isCombatSetupOpen, setIsCombatSetupOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleToast = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      setToastMessage(customEvent.detail.message);
-      setTimeout(() => setToastMessage(null), 4000);
-    };
-    window.addEventListener('combat-toast', handleToast);
-    return () => window.removeEventListener('combat-toast', handleToast);
-  }, []);
+  const toastMessage = useCombatToast();
 
   const { activeCombat, initSubscriptions, cleanupSubscriptions } = useCombatStore();
 
@@ -90,172 +63,31 @@ export function ActiveSessionPage() {
     }
   }, [id, initSubscriptions, cleanupSubscriptions]);
 
-  useEffect(() => {
-    if (user) {
-      setPayload({
-        user_id: user.id,
-        name:
-          user.user_metadata?.name ||
-          user.user_metadata?.username ||
-          user.email?.split('@')[0] ||
-          'Jogador',
-        online_at: new Date().toISOString(),
-      });
-    }
-  }, [user]);
-
-  const { onlineUsers } = useSupabasePresence(id, payload);
-
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchSession = async () => {
-      try {
-        setSessionData(await getGameSession(id));
-      } catch (error) {
-        console.error('Erro ao buscar sessão:', error);
-      }
-      setIsLoading(false);
-    };
-
-    fetchSession();
-
-    return subscribeToGameSession(id, (newSession) => {
-      setSessionData((current) => {
-        if (
-          current &&
-          current.current_period === 'Noite' &&
-          newSession.current_period === 'Manhã'
-        ) {
-          setIsNewDayDialogOpen(true);
-        }
-        return newSession;
-      });
-    });
-  }, [id]);
-
   const isGM = user?.id === sessionData?.gm_id;
+  const myCharacter = playerCharacters.find((pc) => pc.user_id === user?.id)?.character;
 
-  const myActiveTrade = useMemo((): TradeWithItems | undefined => {
-    if (!user) return undefined;
-    return activeTrades.find((t) => {
-      if (t.status !== 'active') return false;
-      if (t.initiator_user_id === user.id) return true;
-      if (t.type === 'shop' && isGM) return true;
-      if (t.type === 'npc_trade' && isGM) return true;
-      const myChar = playerCharacters.find((pc) => pc.user_id === user.id)?.character;
-      if (myChar && t.target_character_id === myChar.id) return true;
-      return false;
+  const myActiveTrade = useMemo(
+    () =>
+      user
+        ? findMyActiveTrade(activeTrades, { userId: user.id, isGM, characterId: myCharacter?.id })
+        : undefined,
+    [activeTrades, user, isGM, myCharacter?.id],
+  );
+
+  const { handleNegotiate, handleShop, handleNPCNegotiate, handleAcceptTrade, handleRejectTrade } =
+    useSessionTradeActions({
+      sessionId: id,
+      user,
+      isGM,
+      playerCharacters,
+      isCharacterTrading,
+      refreshTrades,
     });
-  }, [activeTrades, user, isGM, playerCharacters]);
 
-  const createTradeAndRefresh = useCallback(
-    async (params: CreateTradeParams, errorMessage: string) => {
-      try {
-        await createTrade(params);
-        refreshTrades();
-      } catch (e) {
-        console.error(errorMessage, e);
-      }
-    },
-    [refreshTrades],
-  );
-
-  const handleNegotiate = useCallback(
-    async (targetUserId: string) => {
-      if (!user || !id) return;
-      const myChar = playerCharacters.find((pc) => pc.user_id === user.id)?.character;
-      const targetChar = playerCharacters.find((pc) => pc.user_id === targetUserId)?.character;
-      if (!myChar || !targetChar) return;
-      if (isCharacterTrading(myChar.id) || isCharacterTrading(targetChar.id)) return;
-
-      await createTradeAndRefresh(
-        {
-          sessionId: id,
-          type: 'player_trade',
-          initiatorUserId: user.id,
-          initiatorCharacterId: myChar.id,
-          targetCharacterId: targetChar.id,
-          status: 'pending',
-        },
-        'Erro ao criar negociação:',
-      );
-    },
-    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh],
-  );
-
-  const handleShop = useCallback(
-    async (targetUserId: string) => {
-      if (!user || !id || !isGM) return;
-      const targetChar = playerCharacters.find((pc) => pc.user_id === targetUserId)?.character;
-      if (!targetChar) return;
-      if (isCharacterTrading(targetChar.id)) return;
-
-      await createTradeAndRefresh(
-        {
-          sessionId: id,
-          type: 'shop',
-          initiatorUserId: user.id,
-          initiatorCharacterId: null,
-          targetCharacterId: targetChar.id,
-          status: 'active',
-        },
-        'Erro ao abrir lojinha:',
-      );
-    },
-    [user, id, isGM, playerCharacters, isCharacterTrading, createTradeAndRefresh],
-  );
-
-  const handleNPCNegotiate = useCallback(
-    async (npc: { id: string; name?: string; is_playable?: boolean }) => {
-      if (!user || !id) return;
-      const myChar = playerCharacters.find((pc) => pc.user_id === user.id)?.character;
-      if (!myChar) return;
-      if (isCharacterTrading(myChar.id)) return;
-
-      await createTradeAndRefresh(
-        {
-          sessionId: id,
-          type: 'npc_trade',
-          initiatorUserId: user.id,
-          initiatorCharacterId: myChar.id,
-          status: 'pending',
-          ...(npc.is_playable ? { targetCharacterId: npc.id } : { targetNpcId: npc.id }),
-        },
-        'Erro ao solicitar negociação com NPC:',
-      );
-    },
-    [user, id, playerCharacters, isCharacterTrading, createTradeAndRefresh],
-  );
-
-  const handleAcceptTrade = useCallback(
-    async (tradeId: string) => {
-      try {
-        await acceptTrade(tradeId);
-        refreshTrades();
-      } catch (e) {
-        console.error('Erro ao aceitar negociação:', e);
-      }
-    },
-    [refreshTrades],
-  );
-
-  const handleRejectTrade = useCallback(
-    async (tradeId: string) => {
-      try {
-        await cancelTrade(tradeId);
-        refreshTrades();
-      } catch (e) {
-        console.error('Erro ao recusar negociação:', e);
-      }
-    },
-    [refreshTrades],
-  );
-
-  const refreshTradeState = useCallback(() => {
+  const refreshTradeState = () => {
     refreshTrades();
     refreshPlayerCharacters();
-  }, [refreshTrades, refreshPlayerCharacters]);
+  };
 
   const endSession = async (levelUpCharacterIds: string[]) => {
     if (!id) return;
@@ -265,17 +97,15 @@ export function ActiveSessionPage() {
     }
   };
 
+  // GAP conhecido (ROADMAP, Onda 4, passo 5b): a limpeza guarda as listas do primeiro render,
+  // quase sempre ainda vazias; as trocas que chegam depois não são canceladas ao sair.
   useEffect(() => {
     return () => {
       if (!id || !user) return;
-      const myTrades = activeTrades.filter(
-        (t) =>
-          (t.status === 'active' || t.status === 'pending') &&
-          (t.initiator_user_id === user.id ||
-            playerCharacters.find((pc) => pc.user_id === user.id)?.character?.id ===
-              t.target_character_id),
-      );
-      for (const trade of myTrades) {
+      for (const trade of findTradesToCancelOnLeave(activeTrades, {
+        userId: user.id,
+        characterId: myCharacter?.id,
+      })) {
         cancelTrade(trade.id).catch(console.error);
       }
     };
@@ -284,72 +114,15 @@ export function ActiveSessionPage() {
   const advanceTime = async () => {
     if (!id || !sessionData) return;
 
-    let nextPeriod = 'Manhã';
-    let nextDay = sessionData.current_day || 1;
-
-    if (sessionData.current_period === 'Manhã') {
-      nextPeriod = 'Tarde';
-    } else if (sessionData.current_period === 'Tarde') {
-      nextPeriod = 'Noite';
-    } else if (sessionData.current_period === 'Noite') {
-      nextPeriod = 'Manhã';
-      nextDay += 1;
-    }
-
     try {
-      await updateGameSession(id, {
-        current_period: nextPeriod,
-        current_day: nextDay,
-        ...(sessionData.current_period === 'Noite' ? { short_rests_today: 0 } : {}),
-      });
+      await updateGameSession(id, advanceSessionClock(sessionData));
     } catch (error) {
       console.error('Erro ao avançar o tempo:', error);
     }
   };
 
-  const getPeriodIcon = (period: string) => {
-    switch (period) {
-      case 'Manhã':
-        return '🌅';
-      case 'Tarde':
-        return '☀️';
-      case 'Noite':
-        return '🌙';
-      default:
-        return '🌅';
-    }
-  };
-
   const availableEntities = useMemo(
-    () => [
-      ...playerCharacters
-        .filter((pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy)
-        .map((pc) => ({
-          id: pc.character.id,
-          name: pc.character.name || 'Jogador',
-          type: 'player' as const,
-          hpCurrent: getCurrentPv(pc.character.stats),
-          ...getCombatStats(pc.character),
-        })),
-      ...npcs
-        .filter((npc) => !npc.is_deleted && npc.is_playable)
-        .map((npc) => ({
-          id: npc.id,
-          name: npc.name || 'NPC',
-          type: 'npc' as const,
-          hpCurrent: getCurrentPv(npc.stats as any),
-          ...getCombatStats(npc),
-        })),
-      ...enemies
-        .filter((enemy) => !enemy.is_deleted)
-        .map((enemy) => ({
-          id: enemy.id,
-          name: enemy.name || 'Inimigo',
-          type: 'enemy' as const,
-          hpCurrent: getCurrentPv(enemy.stats),
-          ...getCombatStats(enemy),
-        })),
-    ],
+    () => buildCombatEntities({ playerCharacters, npcs, enemies }),
     [playerCharacters, npcs, enemies],
   );
 
@@ -369,270 +142,65 @@ export function ActiveSessionPage() {
     ? npcs.find((n) => n.id === myActiveTrade.target_npc_id)?.name
     : undefined;
 
-  const myCharacter = playerCharacters.find((pc) => pc.user_id === user.id)?.character;
   const isSpectator = myCharacter && myCharacter.is_deleted;
 
   return (
     <div className="container mx-auto py-2 md:py-8 px-1 sm:px-2 md:px-4 overflow-x-hidden">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 md:mb-6 border-b border-stone-800 pb-4">
-        <div className="w-full lg:w-auto">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-100">
-            {sessionData.name}{' '}
-            {isSpectator && (
-              <span className="text-sm font-normal ml-2 text-stone-400 bg-stone-800 px-2 py-1 rounded-full border border-stone-700">
-                Modo Espectador
-              </span>
-            )}
-          </h1>
-          <p className="text-stone-400 mt-1">{sessionData.description}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full lg:w-auto">
-          <div className="flex items-center bg-stone-800/50 rounded-full px-3 py-1 border border-stone-700">
-            <span className="text-stone-300 font-medium text-xs md:text-sm mr-2 border-r border-stone-600 pr-2">
-              DIA {sessionData.current_day || 1}
-            </span>
-            <span className="text-amber-400 text-xs md:text-sm font-semibold flex items-center gap-1">
-              {getPeriodIcon(sessionData.current_period || 'Manhã')}{' '}
-              {sessionData.current_period || 'Manhã'}
-            </span>
-          </div>
-
-          <div
-            className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${sessionData.status === 'active' ? 'bg-green-100/20 text-green-400' : 'bg-stone-700 text-stone-300'}`}
-          >
-            {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
-          </div>
-          {sessionData.status === 'active' && !isSpectator && (
-            <Button
-              onClick={() => setIsDiceRollerOpen(true)}
-              variant="outline"
-              className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2 h-8 md:h-10 px-2 md:px-4"
-            >
-              <span>🎲</span> <span className="hidden md:inline">Dados</span>
-            </Button>
-          )}
-          {isGM && sessionData.status === 'active' && (
-            <>
-              <div className="hidden lg:flex items-center gap-2">
-                <Button
-                  onClick={advanceTime}
-                  variant="outline"
-                  className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2"
-                  title="Avançar Tempo"
-                >
-                  <span>⏳</span> Avançar
-                </Button>
-                <Button
-                  onClick={() => setIsTestDialogOpen(true)}
-                  variant="outline"
-                  className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white"
-                >
-                  Solicitar Teste
-                </Button>
-                <Button
-                  onClick={() => setIsCombatSetupOpen(true)}
-                  variant="outline"
-                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2"
-                >
-                  <span>⚔️</span> Iniciar Combate
-                </Button>
-                <Button variant="destructive" onClick={() => setIsEndSessionDialogOpen(true)}>
-                  Finalizar Sessão
-                </Button>
-              </div>
-              <div className="lg:hidden ml-auto">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="border-stone-600 bg-stone-800 h-8 px-2 md:h-10 md:px-4"
-                    >
-                      <Menu className="h-4 w-4 md:h-5 md:w-5 text-stone-300" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56 bg-stone-900 border-stone-800 text-stone-300"
-                  >
-                    <DropdownMenuItem
-                      onClick={advanceTime}
-                      className="hover:bg-stone-800 cursor-pointer"
-                    >
-                      <span className="mr-2">⏳</span> Avançar Tempo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setIsTestDialogOpen(true)}
-                      className="hover:bg-stone-800 cursor-pointer"
-                    >
-                      <span className="mr-2">🎲</span> Solicitar Teste
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setIsCombatSetupOpen(true)}
-                      className="hover:bg-stone-800 cursor-pointer text-red-400"
-                    >
-                      <span className="mr-2">⚔️</span> Iniciar Combate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setIsEndSessionDialogOpen(true)}
-                      className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium"
-                    >
-                      Finalizar Sessão
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <SessionHeader
+        sessionData={sessionData}
+        isGM={isGM}
+        isSpectator={!!isSpectator}
+        onOpenDice={() => setIsDiceRollerOpen(true)}
+        onAdvanceTime={advanceTime}
+        onOpenTest={() => setIsTestDialogOpen(true)}
+        onOpenCombat={() => setIsCombatSetupOpen(true)}
+        onOpenEndSession={() => setIsEndSessionDialogOpen(true)}
+      />
 
       <div className="bg-stone-900 border border-stone-800 rounded-lg p-2 sm:p-3 md:p-6 min-h-[60vh]">
         {isGM ? (
-          <div className="space-y-4 md:space-y-6">
-            <div className="p-3 md:p-4 bg-amber-900/20 border border-amber-700/50 rounded-md mb-4 md:mb-6">
-              <h2 className="text-amber-500 font-bold flex items-center gap-2">
-                <span className="text-xl">👑</span> Visão do Mestre
-              </h2>
-              <p className="text-amber-200/70 text-sm mt-1">
-                Você é o mestre desta sessão. Aqui você gerencia os inimigos, NPCs e a narrativa.
-              </p>
-            </div>
-
-            <SessionRestControls
-              sessionId={id}
-              sessionData={sessionData}
-              playerCharacters={playerCharacters}
-              npcs={npcs}
-            />
-
-            {activeCombat && (
-              <div className="mb-6 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-                <CombatDashboard sessionId={id!} availableEntities={availableEntities} />
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <SessionParticipantList
-                onlineUsers={onlineUsers}
-                isGM={isGM}
-                sessionId={id}
-                gmId={sessionData.gm_id}
-                playerCharacters={playerCharacters.filter(
-                  (pc) =>
-                    !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
-                )}
-                activeTrades={activeTrades}
-                onUpdatePlayerData={(characterId, patch) =>
-                  updateLocal('player', characterId, patch)
-                }
-                onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
-                onShop={handleShop}
-                onAcceptTrade={handleAcceptTrade}
-                onRejectTrade={handleRejectTrade}
-                activeTests={activeTests}
-                testResults={testResults}
-              />
-              <SessionEnemyList
-                sessionId={id}
-                enemies={enemies}
-                isLoading={isCharactersLoading}
-                updateLocalEnemy={(enemyId, patch) => updateLocal('enemy', enemyId, patch)}
-              />
-
-              <SessionNPCList
-                npcs={npcs}
-                sessionId={id}
-                onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
-                onNPCNegotiate={handleNPCNegotiate}
-              />
-            </div>
-          </div>
+          <GmSessionView
+            sessionId={id}
+            sessionData={sessionData}
+            playerCharacters={playerCharacters}
+            npcs={npcs}
+            enemies={enemies}
+            isCharactersLoading={isCharactersLoading}
+            hasActiveCombat={!!activeCombat}
+            availableEntities={availableEntities}
+            onlineUsers={onlineUsers}
+            activeTrades={activeTrades}
+            activeTests={activeTests}
+            testResults={testResults}
+            updateLocal={updateLocal}
+            onShop={handleShop}
+            onAcceptTrade={handleAcceptTrade}
+            onRejectTrade={handleRejectTrade}
+            onNPCNegotiate={handleNPCNegotiate}
+          />
         ) : isSpectator ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="p-3 md:p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
-              <h2 className="text-stone-300 font-bold flex items-center justify-center gap-2 text-xl">
-                <span>👻</span> Modo Espectador
-              </h2>
-              <p className="text-stone-400 text-sm mt-2">
-                Seu personagem não está mais entre os vivos nesta jornada. Você ainda pode
-                acompanhar a sessão e as rolagens no chat ou na tela da sala.
-              </p>
-            </div>
-
-            <div className="w-full max-w-4xl opacity-70 pointer-events-none grayscale">
-              <CharacterSheetView userId={user.id} sessionId={id} />
-            </div>
-          </div>
+          <SpectatorView userId={user.id} sessionId={id} />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="p-3 md:p-4 bg-blue-900/20 border border-blue-700/50 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
-              <h2 className="text-blue-500 font-bold flex items-center justify-center gap-2">
-                <span className="text-xl">⚔️</span> Visão do Jogador
-              </h2>
-              <p className="text-blue-200/70 text-sm mt-1">
-                Você está conectado como jogador. Aguarde as instruções do Mestre.
-              </p>
-            </div>
-
-            <PlayerRestIndicator
-              sessionData={sessionData}
-              character={playerCharacters.find((pc) => pc.user_id === user.id)?.character}
-            />
-
-            {myCharacter &&
-              getCurrentPv(myCharacter.stats) <= 0 &&
-              !myCharacter.is_dead &&
-              !activeCombat && (
-                <div className="w-full max-w-4xl mt-4">
-                  <DeathSavesModal character={myCharacter} />
-                </div>
-              )}
-
-            {activeCombat && (
-              <div className="w-full max-w-6xl mt-4 p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-                <PlayerCombatView
-                  sessionId={id!}
-                  character={playerCharacters.find((pc) => pc.user_id === user.id)?.character}
-                  enemies={enemies}
-                  isLoading={isCharactersLoading}
-                />
-              </div>
-            )}
-
-            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 w-full max-w-6xl mt-4">
-              <div className="border border-stone-800 rounded-lg bg-stone-950 lg:col-span-2 w-full overflow-hidden">
-                <CharacterSheetView userId={user.id} sessionId={id} />
-              </div>
-
-              <div className="border border-stone-800 rounded-lg p-3 md:p-4 bg-stone-950 w-full overflow-hidden">
-                <h3 className="text-lg md:text-xl font-semibold mb-4 text-stone-200 text-center">
-                  Personagens na Sessão
-                </h3>
-                <SessionParticipantList
-                  onlineUsers={onlineUsers}
-                  isGM={false}
-                  sessionId={id}
-                  gmId={sessionData.gm_id}
-                  playerCharacters={playerCharacters.filter(
-                    (pc) =>
-                      !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
-                  )}
-                  npcs={npcs.filter((n) => (n as unknown as { is_visible?: boolean }).is_visible)}
-                  activeTrades={activeTrades}
-                  onUpdatePlayerData={(characterId, patch) =>
-                    updateLocal('player', characterId, patch)
-                  }
-                  onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
-                  onNegotiate={handleNegotiate}
-                  onNPCNegotiate={handleNPCNegotiate}
-                  onAcceptTrade={handleAcceptTrade}
-                  onRejectTrade={handleRejectTrade}
-                  activeTests={activeTests}
-                  testResults={testResults}
-                />
-              </div>
-            </div>
-          </div>
+          <PlayerSessionView
+            userId={user.id}
+            sessionId={id}
+            sessionData={sessionData}
+            myCharacter={myCharacter}
+            playerCharacters={playerCharacters}
+            npcs={npcs}
+            enemies={enemies}
+            isCharactersLoading={isCharactersLoading}
+            hasActiveCombat={!!activeCombat}
+            onlineUsers={onlineUsers}
+            activeTrades={activeTrades}
+            activeTests={activeTests}
+            testResults={testResults}
+            updateLocal={updateLocal}
+            onNegotiate={handleNegotiate}
+            onNPCNegotiate={handleNPCNegotiate}
+            onAcceptTrade={handleAcceptTrade}
+            onRejectTrade={handleRejectTrade}
+          />
         )}
       </div>
 
@@ -650,7 +218,7 @@ export function ActiveSessionPage() {
       )}
 
       <MasterTestDialog
-        sessionId={id!}
+        sessionId={id}
         isOpen={isTestDialogOpen}
         onClose={() => setIsTestDialogOpen(false)}
         activeTests={activeTests}
@@ -683,19 +251,12 @@ export function ActiveSessionPage() {
         <CombatSetupModal
           isOpen={isCombatSetupOpen}
           onClose={() => setIsCombatSetupOpen(false)}
-          sessionId={id!}
+          sessionId={id}
           availableEntities={availableEntities}
         />
       )}
 
-      {toastMessage && (
-        <div className="fixed bottom-4 left-4 z-50 bg-stone-800 border-2 border-amber-500 text-stone-100 p-4 rounded shadow-lg animate-in slide-in-from-bottom-5 max-w-[calc(100vw-2rem)] sm:max-w-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-500 text-xl">🛡️</span>
-            <span className="font-semibold text-sm">{toastMessage}</span>
-          </div>
-        </div>
-      )}
+      <CombatToast message={toastMessage} />
     </div>
   );
 }

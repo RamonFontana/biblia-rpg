@@ -424,6 +424,9 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    Um PR por tela, cada um com teste de caracterização antes de dividir e comparação do HTML antes e depois.
    - **5a, `PlayerTestDialog` (feito):** 574 → 245 linhas. `useTestCharacterContext` lê a ficha, a Desvantagem de furtividade e a penalidade de Itens Profanos; `ChallengeCard`, `RollForm`, `BonusBreakdown`, `FaithPenaltyForm` e `SubmittedResult` (em `components/session/player-test/`) só desenham. As regras do dado do Teste (d100 na Fé, d20 nos demais), do total enviado, do intervalo 0–100 e do d6 da punição foram para `domain/sessionTests.ts`; a animação do dado virtual virou `lib/rollAnimation.ts`. O dado virtual deixou de usar `Math.random` direto e passa pelo `Rng` injetado (mesma fórmula). O HTML renderizado ficou idêntico ao antigo em oito estados (inicial, digitado, avisos, tela da punição, enviado aprovado e reprovado). Saíram os props `playerCharacters` e `onClose`, que ninguém lia.
    - **Observado, não mexi:** `Math.random` direto em regra ainda existe em `DeathSavesModal` (d20), `DiceRollerDialog` (dado livre) e `SessionRestControls` (1d4 da Fé do descanso). `getTestModifiers` e `getTestBreakdown` seguem em `features/character-management/utils/characterMath` com `any`; levar para o motor pede tipar a ficha primeiro (5c). A Desvantagem de furtividade só aparece como aviso; o app não rola 2 dados (ver Onda 2).
+   - **5b, `ActiveSessionPage` (feito):** 702 → 262 linhas. Os hooks `useGameSession` (lê, acompanha em tempo real e avisa a virada para um novo dia), `useSessionPresence`, `useCombatToast` e `useSessionTradeActions` guardam dados e handlers; `SessionHeader`, `GmSessionView`, `PlayerSessionView`, `SpectatorView` e `CombatToast` (em `components/session/active-session/`) desenham. As regras foram para o motor: `domain/sessionTime.ts` (Manhã → Tarde → Noite → Manhã do dia seguinte, com os Descansos Curtos zerando na virada) e `domain/trades.ts` (qual troca é a minha, quando se pode abrir uma nova); `lib/combatEntities.ts` monta a lista de quem entra num combate. O HTML ficou idêntico ao da página antiga em dez cenários, com os filhos trocados por stubs que desenham as props, e os 65 casos do teste de caracterização passaram sem mudança (depois entraram mais 2, para mutantes que sobreviveram). O estado de presença virou `useMemo`, o que tira uma supressão de `set-state-in-effect` (128 → 126 no total).
+   - **GAP, achado na 5b (preciso da sua decisão):** o efeito de limpeza da tela deveria cancelar as trocas abertas quando o usuário sai, mas ele guarda as listas do **primeiro render** (o array de dependências é `[]`), quando as trocas ainda não chegaram. Na prática, nenhuma troca aberta é cancelada ao sair. Mantive exatamente assim (com um comentário no código e dois testes que fixam o comportamento). Para corrigir é preciso decidir: cancelar ao sair é mesmo o desejado (a troca pendente pode ser retomada ao voltar)? Corrigir vem num commit `fix:` separado.
+   - **Observado, não mexi (5b):** `useSessionCharacters`/`useSessionTrades` ainda assinam o realtime com `Math.random()` no nome do canal (não é regra de jogo).
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
 7. **Resíduo** de `any`, `set-state-in-effect` e `only-export-components`.
 
@@ -454,13 +457,13 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (128 em 2026-10-20)
+### Lint: `eslint-suppressions.json` (126 em 2026-10-20)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 111 |
+| `@typescript-eslint/no-explicit-any` | 110 |
 | `no-restricted-imports` (Supabase fora da camada de dados) | 1 |
 | `@typescript-eslint/no-unused-vars` | 4 |
-| `react-hooks/set-state-in-effect` | 8 |
+| `react-hooks/set-state-in-effect` | 7 |
 | `react-refresh/only-export-components` | 3 |
 | `react-hooks/immutability` | 1 |
 
