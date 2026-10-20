@@ -63,11 +63,11 @@ export function PlayerSessionView({
 }: PlayerSessionViewProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      <div className="p-3 md:p-4 bg-blue-900/20 border border-blue-700/50 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
-        <h2 className="text-blue-500 font-bold flex items-center justify-center gap-2">
+      <div className="p-3 md:p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
+        <h2 className="text-amber-500 font-bold flex items-center justify-center gap-2">
           <span className="text-xl">⚔️</span> Visão do Jogador
         </h2>
-        <p className="text-blue-200/70 text-sm mt-1">
+        <p className="text-stone-400 text-sm mt-1">
           Você está conectado como jogador. Aguarde as instruções do Mestre.
         </p>
       </div>

@@ -23,13 +23,13 @@ export function PlayerRestIndicator({
   return (
     <div className="flex flex-col sm:flex-row gap-2 mb-4 items-center">
       {canShortRest && (
-        <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-stone-950 focus:ring-offset-2 border bg-emerald-900/30 text-emerald-400 border-emerald-700/50 gap-2 px-3 py-1.5 shadow-sm">
+        <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-stone-950 focus:ring-offset-2 border bg-green-900/30 text-green-400 border-green-700/50 gap-2 px-3 py-1.5 shadow-sm">
           <Coffee className="w-4 h-4" />
           <span>Descanso Curto Disponível (Mestre)</span>
         </span>
       )}
       {canLongRest && (
-        <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-stone-950 focus:ring-offset-2 border bg-indigo-900/30 text-indigo-400 border-indigo-700/50 gap-2 px-3 py-1.5 shadow-sm">
+        <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-stone-950 focus:ring-offset-2 border bg-amber-900/30 text-amber-400 border-amber-700/50 gap-2 px-3 py-1.5 shadow-sm">
           <Moon className="w-4 h-4" />
           <span>Descanso Longo Disponível (Mestre)</span>
         </span>

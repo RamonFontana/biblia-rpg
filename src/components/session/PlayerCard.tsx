@@ -111,12 +111,12 @@ export function PlayerCard({
                 </span>
               )}
               {isBusy && !isSessionGM && (
-                <span className="flex animate-pulse items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+                <span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
                   🎲 Testando...
                 </span>
               )}
               {isTrading && !isSessionGM && (
-                <span className="flex animate-pulse items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400">
+                <span className="flex animate-pulse items-center gap-1 rounded-full border border-stone-600 bg-stone-700 px-2 py-0.5 text-xs text-stone-300">
                   ⚖️ Negociando...
                 </span>
               )}
@@ -214,7 +214,7 @@ export function PlayerCard({
           <div
             className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}
           >
-            <Shield className="h-3.5 w-3.5 text-blue-400" />
+            <Shield className="h-3.5 w-3.5 text-stone-400" />
             <span className="font-mono tabular-nums">CA {getCombatStats(character).totalAc}</span>
           </div>
           <div
