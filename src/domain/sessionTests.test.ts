@@ -4,7 +4,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateFaithAfterFailure,
+  calculateSubmittedTotal,
+  checkFaithPenaltyDie,
+  getTestDieSides,
   isRegularTestApproved,
+  isSubmittableResult,
+  rollTestDie,
   toStoredDifficulty,
 } from '@/domain/sessionTests';
 
@@ -65,5 +70,44 @@ describe('calculateFaithAfterFailure', () => {
   it('não valida o valor digitado: aceita acima de 6 e negativo', () => {
     expect(calculateFaithAfterFailure(50, 20, unusedRng).newFaith).toBe(30);
     expect(calculateFaithAfterFailure(50, -5, unusedRng).newFaith).toBe(55);
+  });
+});
+
+describe('dado e envio do Teste do jogador', () => {
+  it('o dado é d100 na Fé e d20 nos demais Testes', () => {
+    expect(getTestDieSides('Fé')).toBe(100);
+    expect(getTestDieSides('Destreza')).toBe(20);
+    expect(getTestDieSides('Resistência (Força)')).toBe(20);
+  });
+
+  it('a Rolagem Virtual vai de 1 ao máximo do dado do Teste', () => {
+    expect(rollTestDie('Destreza', () => 0)).toBe(1);
+    expect(rollTestDie('Destreza', () => 0.999)).toBe(20);
+    expect(rollTestDie('Fé', () => 0)).toBe(1);
+    expect(rollTestDie('Fé', () => 0.5)).toBe(51);
+    expect(rollTestDie('Fé', () => 0.999)).toBe(100);
+  });
+
+  it('o total soma modificador e proficiência, menos no Teste de Fé', () => {
+    const modifiers = { attrMod: 3, profBonus: 2 };
+    expect(calculateSubmittedTotal('Furtividade', 9, modifiers)).toBe(14);
+    expect(calculateSubmittedTotal('Fé', 9, modifiers)).toBe(9);
+    expect(calculateSubmittedTotal('Destreza', 9, { attrMod: -1, profBonus: 0 })).toBe(8);
+  });
+
+  it('o resultado enviado cabe de 0 a 100, com os limites incluídos', () => {
+    expect(isSubmittableResult(0)).toBe(true);
+    expect(isSubmittableResult(100)).toBe(true);
+    expect(isSubmittableResult(-1)).toBe(false);
+    expect(isSubmittableResult(101)).toBe(false);
+  });
+
+  it('o d6 da punição: vazio ou NaN é "empty", fora de 1 a 6 é "range"', () => {
+    expect(checkFaithPenaltyDie('')).toBe('empty');
+    expect(checkFaithPenaltyDie(NaN)).toBe('empty');
+    expect(checkFaithPenaltyDie(0)).toBe('range');
+    expect(checkFaithPenaltyDie(7)).toBe('range');
+    expect(checkFaithPenaltyDie(1)).toBeNull();
+    expect(checkFaithPenaltyDie(6)).toBeNull();
   });
 });

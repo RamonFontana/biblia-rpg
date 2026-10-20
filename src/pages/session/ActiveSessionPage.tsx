@@ -662,7 +662,6 @@ export function ActiveSessionPage() {
         isOpen={hasPendingTest && !isGM}
         activeTest={currentActiveTest || null}
         testResult={myResult || null}
-        playerCharacters={playerCharacters}
       />
 
       <DiceRollerDialog isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />

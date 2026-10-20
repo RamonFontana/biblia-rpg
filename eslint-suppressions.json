@@ -110,12 +110,6 @@
     }
   },
   "src/components/session/PlayerTestDialog.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
