@@ -26,7 +26,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # Gates bloqueantes: format, lint, typecheck, testes (inclui dados), RLS.
+      # Gates bloqueantes: format, lint, typecheck, testes (inclui dados), RLS, paleta.
       - run: npm run check
       # Só informativo: o build fica com a Vercel.
       - name: Coverage (report only)
