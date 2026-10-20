@@ -87,9 +87,9 @@ export function DeathSavesModal({ character, participantId }: DeathSavesModalPro
   }
 
   return (
-    <Card className="border-orange-500 ring-2 ring-orange-500 ring-offset-2 bg-orange-500/10">
+    <Card className="border-amber-500 ring-2 ring-amber-500 ring-offset-2 bg-amber-500/10">
       <CardHeader>
-        <CardTitle className="text-orange-500 text-center text-2xl uppercase tracking-widest">
+        <CardTitle className="text-amber-500 text-center text-2xl uppercase tracking-widest">
           Teste de Morte
         </CardTitle>
       </CardHeader>
@@ -122,7 +122,7 @@ export function DeathSavesModal({ character, participantId }: DeathSavesModalPro
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-4 pt-4 border-t border-orange-500/30">
+        <div className="flex flex-col items-center gap-4 pt-4 border-t border-amber-500/30">
           <p className="text-sm text-center text-muted-foreground">
             Role 1d20 no seu turno.
             <br />1 = 2 Falhas | 2-9 = 1 Falha | 10-19 = 1 Sucesso | 20 = 1 PV e Acorda
@@ -148,7 +148,7 @@ export function DeathSavesModal({ character, participantId }: DeathSavesModalPro
               onClick={handleAutoRoll}
               disabled={isRolling}
               variant="outline"
-              className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+              className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-stone-900"
             >
               Rolar Auto
             </Button>

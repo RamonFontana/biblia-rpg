@@ -108,7 +108,7 @@ export function PhysicalRollForm({
           Rolagem Física
           {equippedWeapon && (
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${isProficient ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${isProficient ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}
             >
               {isProficient ? 'Proficiente' : 'Não Proficiente'}
             </span>
