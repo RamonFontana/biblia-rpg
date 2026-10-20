@@ -44,8 +44,8 @@ export function RollForm({
       )}
 
       {test.test_type === 'Fé' && faithPenalty < 0 && (
-        <div className="bg-purple-900/30 border border-purple-500/50 p-2 rounded mb-4 text-center">
-          <p className="text-purple-400 text-sm font-bold">⚠️ Profanação</p>
+        <div className="bg-amber-900/30 border border-amber-500/50 p-2 rounded mb-4 text-center">
+          <p className="text-amber-400 text-sm font-bold">⚠️ Profanação</p>
           <p className="text-stone-300 text-xs">
             A presença de um item profano no seu inventário reduziu sua Fé em{' '}
             {Math.abs(faithPenalty)} para este teste.

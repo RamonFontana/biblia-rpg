@@ -47,7 +47,7 @@ export function SubmittedResult({ test, result, sheet, onDismiss }: SubmittedRes
                 {result.result_value}
               </span>
               {result.is_approved ? (
-                <span className="text-emerald-500 font-bold px-4 py-2 bg-emerald-500/10 rounded-lg text-xl border border-emerald-500/20">
+                <span className="text-green-500 font-bold px-4 py-2 bg-green-500/10 rounded-lg text-xl border border-green-500/20">
                   Aprovado!
                 </span>
               ) : (

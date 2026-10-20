@@ -176,7 +176,7 @@ export function MasterTestDialog({
                             {result.result_value}
                           </span>
                           {result.is_approved ? (
-                            <span className="text-emerald-500 font-bold px-2 py-1 bg-emerald-500/10 rounded">
+                            <span className="text-green-500 font-bold px-2 py-1 bg-green-500/10 rounded">
                               Aprovado
                             </span>
                           ) : (
