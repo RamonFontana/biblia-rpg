@@ -188,6 +188,16 @@ export async function getItemFaithPenalty(characterId: string): Promise<number> 
   return sumItemFaithPenalty((data ?? []).map((row) => row.items?.slug));
 }
 
+/** Cada linha do inventário com o `effects` do item, para quem precisa olhar as propriedades. */
+export async function listCharacterItemEffects(characterId: string) {
+  const { data, error } = await supabase
+    .from('character_items')
+    .select('id, items!inner(effects)')
+    .eq('character_id', characterId);
+  if (error) throw error;
+  return data;
+}
+
 /** Dá `quantity` do item ao personagem: soma à linha que já existe ou cria uma. */
 export async function addInventoryItem(
   characterId: string,

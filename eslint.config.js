@@ -8,7 +8,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 // O client do Supabase só pode ser importado pela camada de dados (ver AGENTS.md).
 const supabaseClientImport = {
   group: ['@/lib/supabase', '**/lib/supabase'],
-  message: 'Acesse o Supabase pela camada de dados (src/services, src/features/*/api).',
+  message: 'Acesse o Supabase pela camada de dados (src/data-access).',
 };
 
 export default defineConfig([
@@ -27,9 +27,17 @@ export default defineConfig([
   },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/services/**', 'src/features/*/api/**', 'src/lib/**', 'src/data-access/**'],
+    ignores: ['src/lib/**', 'src/data-access/**'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [supabaseClientImport] }],
+      // `no-restricted-imports` não enxerga `await import('@/lib/supabase')`.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression[source.value=/lib\\/supabase$/]',
+          message: supabaseClientImport.message,
+        },
+      ],
     },
   },
   {

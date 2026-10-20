@@ -78,6 +78,16 @@ describe('endSession', () => {
     expect(filterOf(del, 'in', 'id')).toEqual(['npc-1']);
   });
 
+  it('se nenhum participante é NPC ou inimigo, não apaga nada', async () => {
+    state.respond = (call) => {
+      if (call.table === 'session_participants') return { data: [{ character_id: 'player-1' }] };
+      if (call.table === 'characters' && call.op === 'select') return { data: [] };
+      return undefined;
+    };
+    await endSession('s1', []);
+    expect(callsOf(state.calls, 'characters', 'delete')).toEqual([]);
+  });
+
   it('sem participantes, não apaga nada', async () => {
     state.respond = (call) => (call.table === 'session_participants' ? { data: [] } : undefined);
     await endSession('s1', []);
@@ -226,6 +236,12 @@ describe('createGameSession', () => {
     const mark = callsOf(state.calls, 'characters', 'update')[0];
     expect(mark.payload).toEqual({ has_participated_in_session: true });
     expect(filterOf(mark, 'in', 'id')).toEqual(['player-1', 'Filisteu-id']);
+  });
+
+  it('sem participantes, não marca ficha nenhuma', async () => {
+    state.respond = respond;
+    await createGameSession(payload({ participant_character_ids: [] }));
+    expect(callsOf(state.calls, 'characters', 'update')).toEqual([]);
   });
 
   it('erro ao marcar participação é só registrado; a sessão é devolvida', async () => {

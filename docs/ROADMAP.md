@@ -396,7 +396,7 @@ Achados do passo 4(a) (leitura do banco em 2026-10-17):
 - **Recomendações:**
   - *Refatorar* a criação de personagem, **preservando o markup e o visual** (é a referência): tirar os `@ts-nocheck`, extrair as regras para o motor e trocar as classes fixas pelos tokens equivalentes sem mudar a aparência.
   - *Refatorar* sessão e combate (grandes, com realtime, alto risco de regressão).
-- **Avaliar:** 1–2 smoke tests E2E contra o preview da Vercel (login → abrir ficha), só se as regressões de UI incomodarem.
+- **Testes E2E (decisão do autor, 2026-10-18):** nenhum fluxo atrás de login foi testado no navegador durante a Onda 4. No fim, cada feature ganha um teste E2E e a suíte roda por inteiro. Precisa de um Supabase de teste (projeto separado ou Postgres local com as migrations) com usuários semeados; decidir a ferramenta e o ambiente quando a Onda 4 fechar.
 - **Pronto quando:** `eslint-suppressions.json` está vazio ou próximo disso.
 
 #### Passos da Onda 4 (planejados em 2026-10-18)
@@ -412,7 +412,10 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    - **Mudanças de comportamento da 3b (caminhos de erro):** a busca da ficha do jogador na sessão (`findParticipantCharacterId`) agora lança o erro do Supabase em vez de ignorar e cair na ficha mais recente; `TokenContextMenu` registra a falha do uso do item em vez de descartá-la.
    - **3c, combate (feito):** `data-access/combat.ts` (novo) tem as leituras e gravações de `combats` e `combat_participants`; `data-access/conditions.ts` grava as Condições; `characters.ts` ganhou habilidades, estado de morte e a fonte da Resistência a Condição. As funções puras de Condição (`mergeCondition`, `removeCondition`, `tickConditions`, `cleanTemporaryConditions`) foram para `src/domain/conditions.ts`, o que fecha parte do "duração e tique das Condições ainda estão fora do motor". `combatStore`, `combatEngine`, `useDeathSaves` e `MasterDeathControls` não importam mais o cliente; o teste de caracterização do `combatStore` passou sem mudança. `conditionsService` deixou de existir.
    - **Mudanças de comportamento da 3c (caminhos de erro):** as leituras que eram ignoradas no início e no fim do combate (Condições, habilidades, fichas) continuam tolerantes, mas agora registram o erro; a rodada ainda avança se o tique de uma Condição falhar. O reset das habilidades de combate agora também registra falhas de gravação, que antes passavam sem aviso.
-   - **Falta migrar (3d):** `sessionService`, `sessionTestService`, `tradeService` e o `PlayerTestDialog` (que usa `await import('@/lib/supabase')`, invisível para a regra `no-restricted-imports`; a 3d fecha essa lacuna com uma regra que cubra o import dinâmico). `PhysicalRollForm` fica, parado, com a única supressão de import que sobra fora de `src/services`. A regra de lint segue desligada para `src/services/` até a 3d acabar.
+   - **3d, testes, trocas e criação de sessão (feito):** `data-access/trades.ts` (antigo `tradeService`, agora sem `any`), `data-access/sessionTests.ts` (leituras e gravações dos Testes de sessão) e, em `sessions.ts`/`characters.ts`/`inventory.ts`, as peças de `createGameSession` e `endSession`. `sessionService` e `sessionTestService` ficam em `src/services` só com a orquestração (ordem dos passos, tolerância a falha, aprovação e perda de Fé); `tradeService` deixou de existir. O `PlayerTestDialog` lê a ficha por `getCharacterTestContext`, `listCharacterItemEffects` e `getCharacterStats`. Os testes de caracterização dos três serviços passaram sem mudança de expectativa.
+   - **Lint fechado:** `src/services/**` e `src/features/*/api/**` saíram da lista de exceções, e um seletor `no-restricted-syntax` pega `await import('@/lib/supabase')`, que `no-restricted-imports` não via. Só `src/data-access/**` e `src/lib/**` importam o cliente; a única supressão que sobra é a do `PhysicalRollForm` (parado, Onda 5).
+   - **Mudanças de comportamento da 3d (caminhos de erro):** no `endSession`, as gravações que ignoravam o erro (apagar NPCs e inimigos, conceder level-up) agora caem no `catch` que já existia e registram a falha; o fluxo segue igual. O Teste que não é de Fé não lê mais os `stats` da ficha (a leitura nunca era usada). As leituras do `PlayerTestDialog` e do Teste de Fé registram a falha.
+   - **Observado, não mexi (GAP):** se a leitura dos `stats` falha num Teste de Fé, o serviço cai na regra do teste comum (`resultado >= CD`) em vez de falhar, e a perda de Fé não é aplicada. Antes o erro passava em silêncio; agora é registrado. Decidir se a falha deve interromper o envio do resultado.
 4. **Criação de personagem.** Tira os 5 `@ts-nocheck`, leva as regras para o motor e preserva o visual, que é a referência.
 5. **Quebrar** `CharacterSheetView`, `ActiveSessionPage` e `PlayerTestDialog`.
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta.
@@ -445,10 +448,10 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (188 em 2026-10-18)
+### Lint: `eslint-suppressions.json` (150 em 2026-10-20)
 | Regra | Qtde |
 |---|---|
-| `@typescript-eslint/no-explicit-any` | 153 |
+| `@typescript-eslint/no-explicit-any` | 115 |
 | `no-restricted-imports` (Supabase fora da camada de dados) | 1 |
 | `@typescript-eslint/no-unused-vars` | 17 |
 | `react-hooks/set-state-in-effect` | 8 |

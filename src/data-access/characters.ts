@@ -36,6 +36,70 @@ export async function listCampaignNpcs(): Promise<Character[]> {
   return (data ?? []).map(toCharacter);
 }
 
+/** Grava uma ficha nova (NPC jogável ou inimigo de uma sessão) e devolve o `id`. */
+export async function insertCharacter(row: TablesInsert<'characters'>): Promise<string> {
+  const { data, error } = await supabase.from('characters').insert(row).select('id').single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function markCharactersParticipated(ids: string[]): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ has_participated_in_session: true })
+    .in('id', ids);
+  if (error) throw error;
+}
+
+/** Dos `ids`, os que são NPC ou inimigo (nunca um jogador). */
+export async function filterNpcAndEnemyIds(ids: string[]): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('id')
+    .in('id', ids)
+    .or('is_npc.eq.true,is_enemy.eq.true');
+  if (error) throw error;
+  return data.map((c) => c.id);
+}
+
+/** Apaga as fichas de vez (não é a exclusão lógica de `softDeleteCharacters`). */
+export async function deleteCharacters(ids: string[]): Promise<void> {
+  const { error } = await supabase.from('characters').delete().in('id', ids);
+  if (error) throw error;
+}
+
+export async function grantPendingLevelUp(ids: string[]): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ pending_level_up: true })
+    .in('id', ids);
+  if (error) throw error;
+}
+
+/** O que um Teste de sessão precisa da ficha para calcular o bônus de quem rola. */
+export type CharacterTestContext = Pick<
+  CharacterRow,
+  'stats' | 'equipment' | 'level' | 'proficiencies' | 'attributes' | 'vocation'
+>;
+
+export async function getCharacterTestContext(id: string): Promise<CharacterTestContext> {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('stats, equipment, level, proficiencies, attributes, vocation')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Os `stats` gravados de uma ficha, ou `null` se a ficha não tem. */
+export async function getCharacterStats(id: string): Promise<CharacterStats | null> {
+  const { data, error } = await supabase.from('characters').select('stats').eq('id', id).single();
+  if (error) throw error;
+  // `stats` é `jsonb`; quem grava é o app, com a forma de `CharacterStats`.
+  return data.stats as CharacterStats | null;
+}
+
 export async function updateCharacterStats(id: string, stats: CharacterStats): Promise<void> {
   const { error } = await supabase
     .from('characters')

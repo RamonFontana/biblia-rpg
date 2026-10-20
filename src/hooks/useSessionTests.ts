@@ -3,8 +3,9 @@ import { subscribeToTables } from '@/data-access/realtime';
 import {
   type SessionTest,
   type SessionTestResult,
-  sessionTestService,
-} from '@/services/sessionTestService';
+  getActiveTestsForSession,
+  getTestResults,
+} from '@/data-access/sessionTests';
 
 export function useSessionTests(sessionId: string) {
   const [activeTests, setActiveTests] = useState<SessionTest[]>([]);
@@ -17,13 +18,13 @@ export function useSessionTests(sessionId: string) {
 
     try {
       setLoading(true);
-      const tests = await sessionTestService.getActiveTestsForSession(sessionId);
+      const tests = await getActiveTestsForSession(sessionId);
       setActiveTests(tests);
 
       // Fetch results for all active tests
       const resultsMap: Record<string, SessionTestResult[]> = {};
       for (const test of tests) {
-        const results = await sessionTestService.getTestResults(test.id);
+        const results = await getTestResults(test.id);
         resultsMap[test.id] = results;
       }
       setTestResults(resultsMap);

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import {
   type SessionTest,
   type SessionTestResult,
-  sessionTestService,
-} from '@/services/sessionTestService';
+  cancelSessionTest,
+  completeSessionTest,
+  createSessionTest,
+} from '@/data-access/sessionTests';
 import type { Character } from '@/features/character-management/types';
 
 interface MasterTestDialogProps {
@@ -80,7 +82,7 @@ export function MasterTestDialog({
         })
         .filter((t) => t.playerId !== '');
 
-      await sessionTestService.createTest(sessionId, testType, finalDifficulty, targets);
+      await createSessionTest(sessionId, testType, finalDifficulty, targets);
       // The state will be updated via the realtime hook in the parent
     } catch (err: any) {
       setError(err.message || 'Erro ao criar o teste.');
@@ -93,7 +95,7 @@ export function MasterTestDialog({
     if (!currentActiveTest) return;
     setIsSubmitting(true);
     try {
-      await sessionTestService.cancelTest(currentActiveTest.id);
+      await cancelSessionTest(currentActiveTest.id);
     } catch (err: any) {
       setError(err.message || 'Erro ao cancelar o teste.');
     } finally {
@@ -105,7 +107,7 @@ export function MasterTestDialog({
     if (!currentActiveTest) return;
     setIsSubmitting(true);
     try {
-      await sessionTestService.completeTest(currentActiveTest.id);
+      await completeSessionTest(currentActiveTest.id);
       onClose(); // Close the dialog completely when finished
     } catch (err: any) {
       setError(err.message || 'Erro ao concluir o teste.');

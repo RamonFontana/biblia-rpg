@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useSessionTests } from '@/hooks/useSessionTests';
 import { useSessionCharacters } from '@/hooks/useSessionCharacters';
 import { useSessionTrades } from '@/hooks/useSessionTrades';
-import { tradeService } from '@/services/tradeService';
+import { acceptTrade, cancelTrade, createTrade } from '@/data-access/trades';
 import { endSession as endSessionService } from '@/services/sessionService';
 import { TradeDialog } from '@/components/session/TradeDialog';
 import { MasterTestDialog } from '@/components/session/MasterTestDialog';
@@ -152,7 +152,7 @@ export function ActiveSessionPage() {
   const createTradeAndRefresh = useCallback(
     async (params: CreateTradeParams, errorMessage: string) => {
       try {
-        await tradeService.createTrade(params);
+        await createTrade(params);
         refreshTrades();
       } catch (e) {
         console.error(errorMessage, e);
@@ -231,7 +231,7 @@ export function ActiveSessionPage() {
   const handleAcceptTrade = useCallback(
     async (tradeId: string) => {
       try {
-        await tradeService.acceptTrade(tradeId);
+        await acceptTrade(tradeId);
         refreshTrades();
       } catch (e) {
         console.error('Erro ao aceitar negociação:', e);
@@ -243,7 +243,7 @@ export function ActiveSessionPage() {
   const handleRejectTrade = useCallback(
     async (tradeId: string) => {
       try {
-        await tradeService.cancelTrade(tradeId);
+        await cancelTrade(tradeId);
         refreshTrades();
       } catch (e) {
         console.error('Erro ao recusar negociação:', e);
@@ -276,7 +276,7 @@ export function ActiveSessionPage() {
               t.target_character_id),
       );
       for (const trade of myTrades) {
-        tradeService.cancelTrade(trade.id).catch(console.error);
+        cancelTrade(trade.id).catch(console.error);
       }
     };
   }, []);

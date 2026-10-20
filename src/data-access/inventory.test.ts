@@ -28,6 +28,7 @@ import {
   getCharacterInventory,
   getInventoryForMenu,
   getItemFaithPenalty,
+  listCharacterItemEffects,
   listCatalogItems,
   recoverAmmo,
   removeInventoryItem,
@@ -272,6 +273,22 @@ describe('getItemFaithPenalty', () => {
     state.respond = () => ({ error: failure });
     await expect(getItemFaithPenalty('c1')).rejects.toBe(failure);
     expect(console.error).toHaveBeenCalled();
+  });
+});
+
+describe('listCharacterItemEffects', () => {
+  it('lê cada linha do inventário do personagem com os efeitos do item', async () => {
+    const rows = [{ id: 'ci1', items: { effects: { properties: ['stealth_disadvantage'] } } }];
+    state.respond = () => ({ data: rows });
+    await expect(listCharacterItemEffects('c1')).resolves.toEqual(rows);
+    const [call] = itemWrites('select');
+    expect(call.columns).toBe('id, items!inner(effects)');
+    expect(filterOf(call, 'eq', 'character_id')).toBe('c1');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(listCharacterItemEffects('c1')).rejects.toBe(failure);
   });
 });
 
