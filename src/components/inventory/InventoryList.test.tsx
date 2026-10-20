@@ -105,3 +105,29 @@ describe('InventoryList: avisos ao equipar armadura e escudo', () => {
     expect(screen.queryByText(/Sem proficiência/)).toBeNull();
   });
 });
+
+describe('InventoryList: Resistência a Condição do item × personalizada', () => {
+  // As duas aparecem como "Resiste: …"; a personalizada é a que o Mestre acrescentou ao item.
+  const elmoComExtra = () => ({
+    ...row('elmo_bronze', 'Elmo de Bronze Fechado', 'Armadura'),
+    custom_condition_resistances: ['Pestilência'],
+  });
+
+  it('a resistência que o item já dá não leva a nota de personalizada', () => {
+    const item = elmoComExtra();
+    renderList(item);
+    const proprias = screen
+      .getAllByText(/^Resiste: /)
+      .filter((el) => el.textContent !== 'Resiste: Pestilência');
+    expect(proprias.length).toBeGreaterThan(0);
+    for (const el of proprias) expect(el.getAttribute('title')).toBeNull();
+  });
+
+  it('a resistência personalizada diz, em texto, que é personalizada', () => {
+    const item = elmoComExtra();
+    renderList(item);
+    expect(screen.getByText('Resiste: Pestilência').getAttribute('title')).toBe(
+      'Resistência personalizada',
+    );
+  });
+});

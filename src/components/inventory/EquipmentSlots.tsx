@@ -73,7 +73,7 @@ export function EquipmentSlots({
             <span className="text-red-400 flex items-center gap-1">⚔️ {damageDie}</span>
           )}
           {armorClass && (
-            <span className="text-blue-400 flex items-center gap-1">🛡️ {armorClass}</span>
+            <span className="text-stone-300 flex items-center gap-1">🛡️ {armorClass}</span>
           )}
         </div>
         <ItemResistances slug={slug} />

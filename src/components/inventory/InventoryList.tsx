@@ -439,7 +439,7 @@ export function InventoryList({
                           level: item.level,
                         });
                         return armorClass ? (
-                          <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-blue-900/30 text-blue-400 rounded border border-blue-900/50 font-bold">
+                          <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-stone-700 text-stone-200 rounded border border-stone-600 font-bold">
                             {armorClass}
                           </span>
                         ) : null;
@@ -456,7 +456,8 @@ export function InventoryList({
                             {item.custom_condition_resistances.map((res: string) => (
                               <span
                                 key={res}
-                                className="text-[10px] px-1.5 py-0.5 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50"
+                                title="Resistência personalizada"
+                                className="text-[10px] px-1.5 py-0.5 bg-stone-700 text-stone-300 rounded border border-stone-600"
                               >
                                 Resiste: {res}
                               </span>

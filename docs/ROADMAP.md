@@ -436,6 +436,7 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    - **Observado, não mexi (6b):** `text-white` (37 usos) e `bg-black/NN` (fundos de diálogo) ficam fora do gate; o `DESIGN.md` pede `text-stone-100` para o texto principal, mas a decisão do autor sobre cores só tratou das cores de estado. Se quiser, o `white` entra no gate numa próxima rodada (trocar por `stone-100` muda um pouco o tom). Sombras com `rgba(...)` de âmbar e vermelho (brilhos) também não são contadas.
    - **6c em diante, migração por módulo:** um PR por módulo, na ordem ficha e gestão de personagens, inventário, sessão (em dois: mesa e Testes), combate. Auth já estava dentro da paleta. A cada módulo, baixar a baseline com `--update`; só as classes de cor mudam, e o corpo do PR lista o que a cor distinguia e onde a diferença foi parar.
    - **6c-1, ficha e gestão de personagens (feito):** `App.tsx` (Home), `SheetHeader`, `VitalsGrid` e `CharacterList`, 14 usos (baseline 92 → 78). Mapa aplicado: o bônus de CA e o ícone de Proficiência (azul) viram âmbar, que é o acento dos números que somam; a etiqueta "Resistência" (índigo) vira pedra, por ser apoio; o cartão de moedas (amarelo) vira âmbar; o botão "Entrar" da Home (azul) usa a receita do botão secundário do `DESIGN.md` (pedra, texto âmbar); o spinner (índigo) vira âmbar. **Diferença que a cor carregava:** o cartão de moedas "SP" e o de "Fé" ficam da mesma cor; o ícone (`Coins` × `Sparkles`) e o rótulo (SP × Fé) já os distinguiam, então nada foi acrescentado.
+   - **6c-2, inventário (feito):** `InventoryList` e `EquipmentSlots`, 7 usos (baseline 78 → 71). Mapa: o selo "CA x" da armadura (azul) vira um selo de pedra (`bg-stone-700 text-stone-200`, apoio); o "🛡️ CA" do espaço equipado (azul) vira `text-stone-300`; o selo "Resiste: …" que o Mestre acrescenta ao item (índigo) vira pedra. **Diferença que a cor carregava:** a Resistência a Condição que o item já dá (âmbar) e a personalizada (índigo) tinham o mesmo texto "Resiste: X" e só a cor as separava. Agora a personalizada é de pedra e leva `title="Resistência personalizada"`, com dois testes novos (um prova que a nota aparece só nela). Se quiser a diferença visível sem passar o mouse, dá para escrever "Personalizada" no selo. **Observado, não mexi:** o verde de `InventoryList`/`EquipmentSlots` (botão Equipar, selos "CA" e "Equipado", marcador "Equipado") passa no gate, porque verde é da paleta, mas é verde para "equipado/positivo" e não para "sucesso" no sentido estrito do `DESIGN.md`; decidir se fica.
    - **Decisão do autor (cores semânticas, 2026-10-20):** a paleta ganha só o **verde** para sucesso; o resto sai. Mapa para a migração: verde e esmeralda → verde de sucesso; cinza e ardósia → `stone`; laranja e amarelo → `amber` (aviso); azul, índigo e roxo → `stone` ou `amber`, conforme o papel (destaque vira `amber`, apoio vira `stone`). Vermelho continua só para erro e perigo. Onde a cor era o único jeito de distinguir dois estados lado a lado (Descanso Curto × Longo, jogador × NPC), a distinção passa para o texto ou o ícone, e o PR da migração lista cada caso. As cores de condição de `src/content/conditions.ts` seguem como exceção. Com o verde dentro da paleta, a dívida medida pelo gate é de 92 usos em 24 arquivos.
 7. **Resíduo** de `any`, `set-state-in-effect` e `only-export-components`.
 
@@ -478,18 +479,18 @@ Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode
 
 Ao corrigir uma violação, rode `npm run lint:prune`; o lint falha enquanto houver supressão órfã.
 
-### Paleta: `palette-baseline.json` (78 usos em 20 arquivos, em 2026-10-20)
+### Paleta: `palette-baseline.json` (71 usos em 18 arquivos, em 2026-10-20)
 | Cor | Qtde |
 |---|---|
-| `blue` | 19 |
 | `emerald` | 16 |
-| `indigo` | 14 |
+| `blue` | 15 |
 | `orange` | 13 |
+| `indigo` | 11 |
 | `purple` | 8 |
 | `gray` | 7 |
 | hexadecimal arbitrário (`bg-[#1C1C24]`) | 1 |
 
-Os maiores: `AbilityCard` (14), `SessionRestControls` (10), `DeathSavesModal` (8), `PlayerCard` (7), `InventoryList` (6), `PlayerRestIndicator` (6). Ao migrar um arquivo, rode `npm run check:palette -- --update`; o gate falha enquanto a baseline estiver acima da conta.
+Os maiores: `AbilityCard` (14), `SessionRestControls` (10), `DeathSavesModal` (8), `PlayerCard` (7), `PlayerRestIndicator` (6). Ao migrar um arquivo, rode `npm run check:palette -- --update`; o gate falha enquanto a baseline estiver acima da conta.
 
 ### Typecheck
 Nenhum arquivo com `@ts-nocheck` (os 5 da criação de personagem saíram no passo 4 da Onda 4).
