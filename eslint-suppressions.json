@@ -220,14 +220,6 @@
       "count": 5
     }
   },
-  "src/pages/session/ActiveSessionPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "src/services/combatEngine.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1

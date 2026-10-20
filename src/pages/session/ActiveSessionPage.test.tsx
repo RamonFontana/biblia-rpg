@@ -258,6 +258,10 @@ describe('estados antes da sessão', () => {
     expect(last()[1]).toMatchObject({ user_id: 'u1', name: 'Ana' });
     expect(typeof (last()[1] as Obj).online_at).toBe('string');
     cleanup();
+    h.user = { id: 'u1', email: 'bia@exemplo.com', user_metadata: { username: 'biab' } };
+    await renderPage();
+    expect(last()[1]).toMatchObject({ name: 'biab' });
+    cleanup();
     h.user = { id: 'u1', email: 'bia@exemplo.com', user_metadata: {} };
     await renderPage();
     expect(last()[1]).toMatchObject({ name: 'bia' });
@@ -412,6 +416,14 @@ describe('avançar o tempo', () => {
     expect(prop('NewDayDialog', 'day')).toBe(3);
     act(() => call('NewDayDialog', 'onClose'));
     expect(prop('NewDayDialog', 'isOpen')).toBe(false);
+  });
+
+  it('compara sempre com a última versão recebida da sessão', async () => {
+    await renderPage();
+    act(() => h.sessionListener!({ ...baseSession, current_period: 'Noite' }));
+    expect(prop('NewDayDialog', 'isOpen')).toBe(false);
+    act(() => h.sessionListener!({ ...baseSession, current_period: 'Manhã', current_day: 3 }));
+    expect(prop('NewDayDialog', 'isOpen')).toBe(true);
   });
 
   it('outras mudanças de período não abrem o aviso, mas atualizam a tela', async () => {
@@ -808,6 +820,18 @@ describe('trocas', () => {
       });
     });
 
+    it('erro é registrado com a mensagem da negociação com NPC', async () => {
+      h.createTrade.mockRejectedValue(new Error('falhou'));
+      await renderPage();
+      await act(async () => {
+        await call('SessionParticipantList', 'onNPCNegotiate', { id: 'n1' });
+      });
+      expect(console.error).toHaveBeenCalledWith(
+        'Erro ao solicitar negociação com NPC:',
+        expect.any(Error),
+      );
+    });
+
     it('não cria se o jogador já está em troca ou não tem ficha', async () => {
       h.trades.trading = new Set(['c1']);
       await renderPage();
@@ -898,11 +922,10 @@ describe('aviso de combate', () => {
   });
 
   it('para de ouvir o evento quando a tela sai', async () => {
+    const remove = vi.spyOn(window, 'removeEventListener');
     const { unmount } = render(<ActiveSessionPage />);
     await act(async () => {});
     unmount();
-    const spy = vi.spyOn(console, 'error');
-    window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message: 'x' } }));
-    expect(spy).not.toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledWith('combat-toast', expect.any(Function));
   });
 });
