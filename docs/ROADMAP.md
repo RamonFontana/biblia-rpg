@@ -432,9 +432,10 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
    - **Observado, não mexi (5c):** a ficha do inimigo (skills em lista) nunca mostra a seção de Habilidades, só a de jogadores e NPCs com `skills` em objeto. O botão de usar Habilidade grava a Fé gasta em `stats.current_faith` mas não respeita o teto nem o piso do Sistema de Fé (a Fé só desce, então não estoura).
 6. **Componentes compartilhados** (`PageShell`, `Panel`, `PageHeader`, `ProgressBar`, `ChipToggle`), migração por módulo e o gate ratchet de classes fora da paleta. Dividido em subpassos, um PR cada:
    - **6a, componentes (feito):** os cinco ficam em `src/components/ui/` (`page-shell`, `panel`, `page-header`, `progress-bar`, `chip-toggle`), extraídos do `WizardLayout`, que agora os usa. O teste de caracterização do `WizardLayout` (21 casos, escrito antes) passou sem mudança. O HTML renderizado ficou igual ao antigo em sete estados, a menos de: ordem das classes, os atributos acrescentados (`role="progressbar"` e `aria-value*` na barra, `aria-pressed` e `type="button"` nos chips) e o passo 10, que não existe (`nextStep`/`prevStep` seguram em 1–9): a barra deixou de passar de 100%. `docs/DESIGN.md` aponta para os componentes.
-   - **6b, gate ratchet da paleta (a fazer):** script que conta, por arquivo, as classes de cor fora da paleta e falha se a conta subir; entra no `npm run check`. A definição de "fora da paleta" depende da decisão abaixo.
-   - **6c em diante, migração por módulo (a fazer):** auth, ficha e gestão de personagens, inventário, sessão, combate.
-   - **Decisão do autor (cores semânticas, 2026-10-20):** a paleta ganha só o **verde** para sucesso; o resto sai. Mapa para a migração: verde e esmeralda → verde de sucesso; cinza e ardósia → `stone`; laranja e amarelo → `amber` (aviso); azul, índigo e roxo → `stone` ou `amber`, conforme o papel (destaque vira `amber`, apoio vira `stone`). Vermelho continua só para erro e perigo. Onde a cor era o único jeito de distinguir dois estados lado a lado (Descanso Curto × Longo, jogador × NPC), a distinção passa para o texto ou o ícone, e o PR da migração lista cada caso. As cores de condição de `src/content/conditions.ts` seguem como exceção. Antes dessa decisão havia cerca de 145 usos fora de `stone`/`amber`/`red`, em 33 arquivos.
+   - **6b, gate ratchet da paleta (feito):** `scripts/check-palette.mjs` (`npm run check:palette`, dentro do `npm run check` e do CI) conta, por arquivo de `src/`, as classes de cor fora da paleta (`bg`/`text`/`border`/`ring`/`from`/`via`/`to`/`divide`/`outline`/`fill`/`stroke`/`placeholder`/`accent`/`caret`/`decoration`/`shadow` com `slate`, `gray`, `zinc`, `neutral`, `orange`, `yellow`, `lime`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, ou hexadecimal arbitrário). A dívida atual fica em `palette-baseline.json` (92 usos em 24 arquivos) e só diminui: arquivo com mais usos que a baseline falha, arquivo com menos também, até `npm run check:palette -- --update`, que se recusa a subir um número. Ficam de fora: testes, `src/test/`, `src/content/conditions.ts` (cores de Condição), `rgba(...)` dentro de sombras arbitrárias, e `white`/`black`. 58 testes cobrem o que conta, o que não conta, a comparação e o comando (código de saída, `--update`).
+   - **Observado, não mexi (6b):** `text-white` (37 usos) e `bg-black/NN` (fundos de diálogo) ficam fora do gate; o `DESIGN.md` pede `text-stone-100` para o texto principal, mas a decisão do autor sobre cores só tratou das cores de estado. Se quiser, o `white` entra no gate numa próxima rodada (trocar por `stone-100` muda um pouco o tom). Sombras com `rgba(...)` de âmbar e vermelho (brilhos) também não são contadas.
+   - **6c em diante, migração por módulo (a fazer):** auth, ficha e gestão de personagens, inventário, sessão, combate. A cada módulo, baixar a baseline com `--update`.
+   - **Decisão do autor (cores semânticas, 2026-10-20):** a paleta ganha só o **verde** para sucesso; o resto sai. Mapa para a migração: verde e esmeralda → verde de sucesso; cinza e ardósia → `stone`; laranja e amarelo → `amber` (aviso); azul, índigo e roxo → `stone` ou `amber`, conforme o papel (destaque vira `amber`, apoio vira `stone`). Vermelho continua só para erro e perigo. Onde a cor era o único jeito de distinguir dois estados lado a lado (Descanso Curto × Longo, jogador × NPC), a distinção passa para o texto ou o ícone, e o PR da migração lista cada caso. As cores de condição de `src/content/conditions.ts` seguem como exceção. Com o verde dentro da paleta, a dívida medida pelo gate é de 92 usos em 24 arquivos.
 7. **Resíduo** de `any`, `set-state-in-effect` e `only-export-components`.
 
 ### Onda 5 em diante: features novas
@@ -475,6 +476,20 @@ Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode
 | `react-hooks/immutability` | 1 |
 
 Ao corrigir uma violação, rode `npm run lint:prune`; o lint falha enquanto houver supressão órfã.
+
+### Paleta: `palette-baseline.json` (92 usos em 24 arquivos, em 2026-10-20)
+| Cor | Qtde |
+|---|---|
+| `blue` | 24 |
+| `indigo` | 17 |
+| `emerald` | 16 |
+| `orange` | 13 |
+| `purple` | 8 |
+| `gray` | 7 |
+| `yellow` | 6 |
+| hexadecimal arbitrário (`bg-[#1C1C24]`) | 1 |
+
+Os maiores: `AbilityCard` (14), `SessionRestControls` (10), `VitalsGrid` (9), `DeathSavesModal` (8), `PlayerCard` (7), `InventoryList` (6), `PlayerRestIndicator` (6). Ao migrar um arquivo, rode `npm run check:palette -- --update`; o gate falha enquanto a baseline estiver acima da conta.
 
 ### Typecheck
 Nenhum arquivo com `@ts-nocheck` (os 5 da criação de personagem saíram no passo 4 da Onda 4).
