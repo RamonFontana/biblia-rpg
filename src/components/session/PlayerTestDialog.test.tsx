@@ -171,6 +171,28 @@ describe('avisos', () => {
   });
 });
 
+describe('leituras que falham', () => {
+  it('sem a penalidade de Fé, a ficha e os avisos ainda carregam', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.getItemFaithPenalty.mockRejectedValue(new Error('falhou'));
+    mocks.listCharacterItemEffects.mockResolvedValue([
+      { id: 'ci-armor', items: { effects: { properties: ['stealth_disadvantage'] } } },
+    ]);
+    await show(test({ test_type: 'Destreza' }));
+    expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    roll('10');
+    expect(screen.getByText('Total').nextSibling).toHaveTextContent('13');
+  });
+
+  it('sem Teste ativo ou sem resultado do jogador, não lê a ficha', async () => {
+    const { rerender } = render(<PlayerTestDialog isOpen activeTest={test()} testResult={null} />);
+    await act(async () => {});
+    rerender(<PlayerTestDialog isOpen activeTest={null} testResult={result()} />);
+    await act(async () => {});
+    expect(mocks.getCharacterTestContext).not.toHaveBeenCalled();
+  });
+});
+
 describe('enviar um Teste comum', () => {
   it('soma o modificador do atributo e a proficiência e manda o dado à parte', async () => {
     await show(test({ test_type: 'Furtividade', difficulty: 14 }));
@@ -365,8 +387,13 @@ describe('dado virtual', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5); // 1 + floor(0.5 × 6) = 4
     vi.useFakeTimers({ toFake: ['setTimeout'] });
     fireEvent.click(screen.getByRole('button', { name: /Rolar 1d6/ }));
+    // A rolagem leva ao menos 1s e o envio espera mais 400ms depois do último número.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(3000);
+      await vi.advanceTimersByTimeAsync(1300);
+    });
+    expect(mocks.submitTestResult).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
     });
     expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 90, 0, 'c1', 'Fé', 4, 90);
   });
