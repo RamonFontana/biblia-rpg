@@ -25,7 +25,7 @@ Tema escuro e único: pedra e bronze. Fundo de pedra quente (`stone`), acento de
 | Erro | `text-red-400`; botão destrutivo `bg-red-900/30 border-red-700/50 text-red-400` | `--destructive` (red-500, serve ao texto e ao botão cheio com texto `stone-900`) |
 | Sucesso | `text-green-400`; faixa `bg-green-900/30 border-green-700/50 text-green-400` | — |
 
-Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`, `orange`, `yellow`, `emerald`…) não fazem parte do padrão. Para diferenciar dois estados, use o texto ou um ícone, não uma cor a mais. As exceções são as cores semânticas de condição em `src/content/conditions.ts`.
+Cores fora desta tabela (`slate`, `gray`, `zinc`, `blue`, `indigo`, `purple`, `orange`, `yellow`, `emerald`…) não fazem parte do padrão. Para diferenciar dois estados, use o texto ou um ícone, não uma cor a mais. O `npm run check:palette` barra cor nova fora da paleta. As exceções são as cores semânticas de condição em `src/content/conditions.ts`.
 
 ## Tipografia
 - **Títulos:** `font-serif` (pilha serifada padrão do Tailwind; não há fonte customizada).

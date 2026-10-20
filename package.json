@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "prepare": "simple-git-hooks",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run check:rls",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run check:rls && npm run check:palette",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -20,6 +20,7 @@
     "test:data": "vitest run src/content",
     "coverage": "vitest run --coverage",
     "check:rls": "node scripts/check-rls.mjs",
+    "check:palette": "node scripts/check-palette.mjs",
     "test:rls-db": "bash scripts/test-rls-db.sh",
     "gen:items-seed": "node scripts/gen-items-seed.ts",
     "gen:types": "supabase gen types typescript --linked --schema public > src/types/database.types.ts"

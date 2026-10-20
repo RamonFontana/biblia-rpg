@@ -46,6 +46,7 @@ Ao refatorar uma regra, escreva antes um teste de caracterização do comportame
 | Testes | `npm test` | — |
 | Dados do jogo | `npm run test:data` (`src/content/gameData.test.ts`) | `src/content/known-violations.json`. Violação nova falha; ao corrigir, apague a entrada |
 | RLS | `npm run check:rls` | — (toda tabela com RLS e toda função `SECURITY DEFINER` com `revoke execute ... from public, anon`) |
+| Paleta | `npm run check:palette` (baixar a baseline: `npm run check:palette -- --update`) | Congelada em `palette-baseline.json`, por arquivo. Cor fora de pedra, âmbar, vermelho e verde de sucesso falha; ao corrigir, baixe a baseline (o `--update` recusa subir um número) |
 
 Cobertura (`npm run coverage`) e Dependabot são só informativos.
 
