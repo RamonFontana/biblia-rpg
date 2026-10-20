@@ -23,7 +23,7 @@ export function BonusBreakdown({ roll, modifiers }: BonusBreakdownProps) {
           <span className="text-stone-600 mx-1">+</span>
           <div className="flex flex-col items-center">
             <span className="text-stone-500 text-[10px] uppercase">Prof</span>
-            <span className="text-emerald-500">+{profBonus}</span>
+            <span className="text-green-500">+{profBonus}</span>
           </div>
         </>
       )}
