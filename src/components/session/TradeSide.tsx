@@ -378,7 +378,8 @@ export function TradeSide({
                     {ti.custom_condition_resistances.map((res: string) => (
                       <span
                         key={res}
-                        className="text-[9px] px-1 bg-indigo-900/40 text-indigo-300 rounded border border-indigo-900/50"
+                        title="Resistência personalizada"
+                        className="text-[9px] px-1 bg-stone-700 text-stone-300 rounded border border-stone-600"
                       >
                         {res}
                       </span>

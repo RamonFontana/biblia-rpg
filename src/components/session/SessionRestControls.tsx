@@ -165,7 +165,7 @@ export function SessionRestControls({
           onClick={handleShortRest}
           disabled={!canShortRest || isResting}
           variant="outline"
-          className="bg-emerald-900/20 text-emerald-500 border-emerald-800 hover:bg-emerald-900/40 hover:text-emerald-400"
+          className="bg-green-900/20 text-green-500 border-green-800 hover:bg-green-900/40 hover:text-green-400"
         >
           {isResting ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -179,7 +179,7 @@ export function SessionRestControls({
           onClick={handleLongRest}
           disabled={!canLongRest || isResting}
           variant="outline"
-          className="bg-indigo-900/20 text-indigo-400 border-indigo-800 hover:bg-indigo-900/40 hover:text-indigo-300"
+          className="bg-amber-900/20 text-amber-400 border-amber-800 hover:bg-amber-900/40 hover:text-amber-300"
           title={!canLongRest ? 'Só um Descanso Longo por dia de jogo.' : ''}
         >
           {isResting ? (

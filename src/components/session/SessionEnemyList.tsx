@@ -139,7 +139,7 @@ export function SessionEnemyList({
                       </div>
 
                       <div className="flex items-center gap-1 bg-stone-950 px-2 py-1 rounded">
-                        <span className="text-blue-400">⛨</span>
+                        <span className="text-stone-400">⛨</span>
                         <span className="font-mono">CA {getCombatStats(enemy).totalAc}</span>
                       </div>
                     </div>

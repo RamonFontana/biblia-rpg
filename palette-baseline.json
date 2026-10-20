@@ -7,13 +7,6 @@
   "src/components/combat/MasterDeathControls.tsx": 3,
   "src/components/combat/PhysicalRollForm.tsx": 2,
   "src/components/session/MasterTestDialog.tsx": 2,
-  "src/components/session/PlayerCard.tsx": 7,
-  "src/components/session/PlayerRestIndicator.tsx": 6,
-  "src/components/session/SessionEnemyList.tsx": 1,
-  "src/components/session/SessionNPCList.tsx": 1,
-  "src/components/session/SessionRestControls.tsx": 10,
-  "src/components/session/TradeSide.tsx": 3,
-  "src/components/session/active-session/PlayerSessionView.tsx": 4,
   "src/components/session/player-test/BonusBreakdown.tsx": 1,
   "src/components/session/player-test/RollForm.tsx": 3,
   "src/components/session/player-test/SubmittedResult.tsx": 3
