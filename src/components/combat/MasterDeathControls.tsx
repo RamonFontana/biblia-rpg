@@ -28,8 +28,8 @@ export function MasterDeathControls({ characterId, participantId }: MasterDeathC
   if (!characterState) return null;
 
   return (
-    <div className="mt-4 p-4 border border-orange-500/30 rounded-md bg-orange-500/5">
-      <h4 className="font-semibold text-orange-500 mb-2">Controles de Morte (Mestre)</h4>
+    <div className="mt-4 p-4 border border-amber-500/30 rounded-md bg-amber-500/5">
+      <h4 className="font-semibold text-amber-500 mb-2">Controles de Morte (Mestre)</h4>
 
       <div className="flex gap-4 mb-4">
         <div className="flex flex-col text-sm">

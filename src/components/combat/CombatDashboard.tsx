@@ -108,7 +108,7 @@ export function CombatDashboard({
                   {entityDetails?.totalAc !== undefined && (
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-sm text-muted-foreground">CA Total:</span>
-                      <span className="font-bold text-blue-400">{entityDetails.totalAc}</span>
+                      <span className="font-bold">{entityDetails.totalAc}</span>
                     </div>
                   )}
 

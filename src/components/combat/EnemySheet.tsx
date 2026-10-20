@@ -57,7 +57,7 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
               </div>
             </div>
             <div className="bg-stone-800 p-3 rounded-lg flex items-center gap-3 border border-stone-700">
-              <Shield className="text-blue-400" size={24} />
+              <Shield className="text-stone-400" size={24} />
               <div>
                 <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">
                   C. Armadura

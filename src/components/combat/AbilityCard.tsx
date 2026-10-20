@@ -21,18 +21,16 @@ export function AbilityCard({
   disabledReason,
   isGM,
 }: AbilityCardProps) {
+  // O texto do chip diz o tipo; a cor só separa o que se faz (âmbar) do que é passivo (pedra).
   const getActionTypeColor = (type: string) => {
     switch (type) {
       case 'action':
-        return 'bg-blue-500/10 text-blue-500';
       case 'bonus_action':
-        return 'bg-purple-500/10 text-purple-500';
       case 'reaction':
-        return 'bg-orange-500/10 text-orange-500';
       case 'free_action':
-        return 'bg-green-500/10 text-green-500';
+        return 'bg-amber-500/10 text-amber-500';
       default:
-        return 'bg-gray-500/10 text-gray-500'; // passive
+        return 'bg-stone-700 text-stone-400'; // passive
     }
   };
 
@@ -84,10 +82,10 @@ export function AbilityCard({
   };
 
   return (
-    <Card className="bg-[#1C1C24] border-gray-800">
+    <Card className="bg-stone-900 border-stone-800">
       <CardHeader className="p-3 pb-2 flex flex-row items-start justify-between space-y-0">
         <div>
-          <CardTitle className="text-sm font-semibold text-gray-100 flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold text-stone-100 flex items-center gap-2">
             {ability.name}
             {ability.path && (
               <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-[10px] border-amber-500/30 text-amber-500">
@@ -110,7 +108,7 @@ export function AbilityCard({
                       : 'Passiva'}
             </span>
             {ability.usageType !== 'unlimited' && (
-              <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-[10px] border-gray-700 text-gray-400">
+              <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-[10px] border-stone-700 text-stone-400">
                 {getUsageLabel()}
               </span>
             )}
@@ -152,7 +150,7 @@ export function AbilityCard({
         </div>
       </CardHeader>
       <CardContent className="p-3 pt-0">
-        <p className="text-xs text-gray-400 leading-relaxed">{ability.effect}</p>
+        <p className="text-xs text-stone-400 leading-relaxed">{ability.effect}</p>
       </CardContent>
     </Card>
   );

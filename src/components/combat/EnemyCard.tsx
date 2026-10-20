@@ -40,7 +40,7 @@ export function EnemyCard({ enemy, participant, onClick }: EnemyCardProps) {
             <span className="text-[10px] text-stone-500">/{hpMax}</span>
           </div>
           <div className="flex flex-col items-center">
-            <div className="flex items-center gap-1 text-blue-400">
+            <div className="flex items-center gap-1 text-stone-300">
               <Shield size={14} />
               <span>{ca}</span>
             </div>
