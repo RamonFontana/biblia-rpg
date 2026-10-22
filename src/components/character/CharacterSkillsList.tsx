@@ -1,9 +1,10 @@
 import { BookOpen } from 'lucide-react';
 import { SKILLS_LIST, formatModifier } from '@/features/character-management/utils/characterMath';
 import { calculateModifier, calculateProficiency } from '@/domain/attributes';
+import type { CharacterAttributes } from '@/features/character-creation/types';
 
 interface CharacterSkillsListProps {
-  attributes: any;
+  attributes: Partial<CharacterAttributes> | null | undefined;
   level: number;
   proficiencies: string[];
 }
