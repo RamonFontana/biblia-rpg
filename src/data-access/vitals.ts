@@ -1,6 +1,7 @@
 // Vida e Fé das fichas: cada operação calcula o novo valor com `domain/vitals` e grava.
 import { supabase } from '@/lib/supabase';
 import type { Database, TablesUpdate } from '@/types/database.types';
+import type { CharacterSkills, EnemySkill } from '@/features/character-creation/types';
 import type { ConditionEntry } from '@/types/combat';
 import {
   type VitalsLike,
@@ -46,13 +47,18 @@ async function resolveMaxPvForEntity(entityId: string, entityType: string): Prom
   return getMaxPv(npcData?.stats as VitalsLike | null | undefined);
 }
 
+/** O que a cura grava junto dos stats numa ficha (as Habilidades recarregadas no Descanso Curto). */
+interface HealExtra {
+  skills?: CharacterSkills | EnemySkill[];
+}
+
 // Sobrecargas: `session_npcs` não tem os campos extras de `characters`.
 async function healCurrentPv(
   table: 'characters',
   characterId: string,
   currentStats: VitalsLike,
   amount: number,
-  extra?: TablesUpdate<'characters'>,
+  extra?: HealExtra,
 ): Promise<Record<string, unknown>>;
 async function healCurrentPv(
   table: 'session_npcs',
@@ -65,7 +71,7 @@ async function healCurrentPv(
   characterId: string,
   currentStats: VitalsLike,
   amount: number,
-  extra?: TablesUpdate<'characters'>,
+  extra?: HealExtra,
 ): Promise<Record<string, unknown>> {
   const max = getMaxPv(currentStats);
   const current = getCurrentPv(currentStats, max);
@@ -77,7 +83,7 @@ async function healCurrentPv(
     table === 'characters'
       ? await supabase
           .from('characters')
-          .update({ stats, ...extra })
+          .update({ stats, ...(extra?.skills !== undefined && { skills: toJson(extra.skills) }) })
           .eq('id', characterId)
       : await supabase.from('session_npcs').update({ stats }).eq('id', characterId);
 
@@ -144,11 +150,11 @@ export const characterVitalsService = {
 
   // Session +/- PV button for players. Only touches current_pv — does not set
   // is_dead/status, preserving this call site's exact prior behavior.
-  async adjustCurrentPv(
+  async adjustCurrentPv<T extends VitalsLike>(
     characterId: string,
-    currentStats: VitalsLike,
+    currentStats: T,
     delta: number,
-  ): Promise<Record<string, unknown>> {
+  ): Promise<T & { current_pv: number }> {
     const max = getMaxPv(currentStats);
     const current = getCurrentPv(currentStats, max);
     const newPv = applyHpDelta(current, max, delta);
@@ -168,11 +174,11 @@ export const characterVitalsService = {
   // Session +/- PV button for enemies/NPCs. Also updates the free-text stats.status
   // label, matching what these two call sites already did — still does not touch
   // is_dead (they didn't before either).
-  async adjustCurrentPvWithStatus(
+  async adjustCurrentPvWithStatus<T extends VitalsLike>(
     characterId: string,
-    currentStats: VitalsLike,
+    currentStats: T,
     delta: number,
-  ): Promise<Record<string, unknown>> {
+  ): Promise<T & { current_pv: number; status: 'Vivo' | 'Morto' }> {
     const max = getMaxPv(currentStats);
     const current = getCurrentPv(currentStats, max);
     const newPv = applyHpDelta(current, max, delta);
