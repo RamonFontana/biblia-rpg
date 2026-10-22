@@ -2,6 +2,7 @@
 // As funções lançam o erro do Supabase; quem chama decide o que fazer com ele.
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesUpdate } from '@/types/database.types';
+import type { CombatInventoryItem } from '@/types/inventory';
 import type { Character } from '@/features/character-management/types';
 import { subscribeToTables } from './realtime';
 import { toCharacter } from './characters';
@@ -183,7 +184,7 @@ export type SessionRoster = Awaited<ReturnType<typeof fetchSessionRoster>>;
 type RosterParticipant = SessionRoster['participants'][number];
 
 /** Ficha do elenco da sessão, com os itens aninhados como o app os carrega. */
-export type SessionCharacter = Character & { character_items?: unknown[] };
+export type SessionCharacter = Character & { character_items?: CombatInventoryItem[] };
 
 export interface SessionPlayer {
   user_id: string;

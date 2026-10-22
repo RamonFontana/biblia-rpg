@@ -4,6 +4,7 @@
 // Decisões: ROADMAP.md, Onda 3 (passo 5). Termos: CONTEXT.md (CA).
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { InventoryItem } from '@/types/inventory';
 import { InventoryList } from './InventoryList';
 
 afterEach(cleanup);
@@ -16,10 +17,7 @@ const row = (slug: string, name: string, category: string) => ({
   items: { slug, name, category, effects: {}, description: '' },
 });
 
-function renderList(
-  item: ReturnType<typeof row>,
-  character: { vocation?: string; strength?: number } = {},
-) {
+function renderList(item: InventoryItem, character: { vocation?: string; strength?: number } = {}) {
   const onEquip = vi.fn();
   render(
     <InventoryList
@@ -129,5 +127,59 @@ describe('InventoryList: Resistência a Condição do item × personalizada', ()
     expect(screen.getByText('Resiste: Pestilência').getAttribute('title')).toBe(
       'Resistência personalizada',
     );
+  });
+});
+
+describe('InventoryList: peso e consumível', () => {
+  const withItems = (
+    items: Partial<InventoryItem['items']>,
+    over: Partial<InventoryItem> = {},
+  ): InventoryItem => {
+    const base = row('corda', 'Corda', 'Utilidade');
+    return { ...base, ...over, items: { ...base.items, ...items } };
+  };
+
+  it('mostra o peso do item quando ele é maior que zero', () => {
+    renderList(withItems({ weight: 2 }));
+    expect(screen.getByText('2 kg')).toBeInTheDocument();
+  });
+
+  it.each([[0], [null], [undefined]])('sem peso (%s) não mostra a linha de peso', (weight) => {
+    renderList(withItems({ weight }));
+    expect(screen.queryByText(/kg/)).toBeNull();
+  });
+
+  it('o consumível entrega a linha com os efeitos já normalizados', () => {
+    const onUseConsumable = vi.fn();
+    const item = withItems({
+      is_consumable: true,
+      effects: { heal: 4 },
+      description: 'Cura 4 PV',
+    });
+    render(
+      <InventoryList
+        inventoryItems={[item]}
+        equipment={null}
+        onEquip={vi.fn()}
+        onUseConsumable={onUseConsumable}
+        isUpdating={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Usar' }));
+    expect(onUseConsumable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'ci-corda',
+        quantity: 1,
+        items: expect.objectContaining({
+          name: 'Corda',
+          effects: expect.objectContaining({ heal: 4 }),
+        }),
+      }),
+    );
+  });
+
+  it('o consumível sem unidades não pode ser usado', () => {
+    renderList(withItems({ is_consumable: true }, { quantity: 0 }));
+    expect(screen.getByRole('button', { name: 'Usar' })).toBeDisabled();
   });
 });

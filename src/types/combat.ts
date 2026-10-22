@@ -56,6 +56,11 @@ export type ItemEffects = {
   damageType?: string; // e.g. "cortante", "perfurante"
   properties?: string[]; // e.g. ["Versátil", "Acuidade"]
   stealthDisadvantage?: boolean;
+  versatileDamageDie?: string; // e.g. "1d10", ao empunhar com as duas mãos
+  weaponCategory?: string; // e.g. "Marcial"
+  heal?: number; // cura fixa
+  heal_dice?: string; // cura variável, e.g. "1d4"
+  restore_faith?: number;
 };
 
 export interface ConditionEntry {

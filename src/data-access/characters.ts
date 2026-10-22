@@ -229,13 +229,6 @@ export const updateCharacter = async (
     throw error;
   }
 
-  // Sync inventory if equipment was updated
-  if (data && updates.equipment) {
-    // If vocation isn't in updates, we fallback to the character's current vocation
-    const vocation = updates.vocation || data.vocation || 'Guerreiro';
-    await syncInventoryItems(data.id, updates.equipment, vocation);
-  }
-
   return toCharacter(data);
 };
 

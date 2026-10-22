@@ -2,7 +2,14 @@
 // está equipado. Inimigos e NPCs simples seguem com a CA que o Mestre digitou (stats.ca).
 // Decisões: ROADMAP.md, Onda 3 (passo 5). Termos: CONTEXT.md (CA, Elmo, Qualidade).
 import { describe, expect, it } from 'vitest';
-import { getCombatStats } from './equipmentUtils';
+import type { CharacterEquipment } from '@/types/combat';
+import {
+  checkWeaponProficiency,
+  equipItem,
+  getCombatStats,
+  getEquippedSlots,
+  unequipSlot,
+} from './equipmentUtils';
 
 // Monta um personagem com ficha: DES nos atributos, itens no inventário e nos slots indicados.
 type Slots = { head?: string; body?: string; mainHand?: string; offHand?: string };
@@ -18,7 +25,7 @@ function character(des: number, slots: Slots, items: Record<string, ItemSpec>, s
       custom_condition_resistances: [],
       items: {
         slug: it.slug,
-        name: it.name,
+        name: it.name ?? '',
         effects: it.effects,
         condition_resistances: it.res ?? [],
       },
@@ -209,5 +216,140 @@ describe('getCombatStats: arma', () => {
       { w: { slug: 'espada_curta', name: 'Espada Curta (Ferro)', effects: { damageDie: '1d6' } } },
     );
     expect(getCombatStats(c).weapon).toEqual({ name: 'Espada Curta (Ferro)', damageDie: '1d6' });
+  });
+});
+
+describe('getCombatStats: entradas incompletas', () => {
+  it('sem ficha, a CA é a de quem está sem armadura', () => {
+    expect(getCombatStats(null)).toMatchObject({ totalAc: 10, baseAc: 10, bonusAc: 0 });
+    expect(getCombatStats(undefined)).toMatchObject({ totalAc: 10, baseAc: 10, bonusAc: 0 });
+  });
+
+  it('equipment em texto que não é JSON vale equipamento vazio', () => {
+    const c = { ...character(14, {}, {}), equipment: 'isto não é json' };
+    expect(getCombatStats(c)).toMatchObject({ totalAc: 12, resistances: [], weapon: undefined });
+  });
+
+  it('equipment em texto "null" também vale equipamento vazio', () => {
+    expect(getCombatStats({ ...character(14, {}, {}), equipment: 'null' }).totalAc).toBe(12);
+  });
+
+  it('o item do catálogo aninhado como lista usa o primeiro', () => {
+    const c = character(10, { mainHand: 'w' }, {});
+    c.character_items = [
+      {
+        id: 'w',
+        level: 1,
+        custom_condition_resistances: [],
+        items: [{ name: 'Maça', effects: { damageDie: '1d6' } }],
+      } as never,
+    ];
+    expect(getCombatStats(c).weapon).toEqual({ name: 'Maça', damageDie: '1d6' });
+  });
+
+  it('o item é achado pelo id da linha ou pelo id do item', () => {
+    const c = character(10, { body: 'item-couro' }, {});
+    const withItems = {
+      ...c,
+      character_items: [
+        {
+          id: 'ci-1',
+          item_id: 'item-couro',
+          level: 1,
+          custom_condition_resistances: [],
+          items: { name: 'Couro Cru', slug: 'couro_cru' },
+        },
+      ],
+    };
+    expect(getCombatStats(withItems).bonusAc).toBeGreaterThan(0);
+  });
+
+  it('a CA digitada que não é número vira 10', () => {
+    const enemy = { is_enemy: true, stats: { ca: 'alta' }, character_items: [] };
+    expect(getCombatStats(enemy).totalAc).toBe(10);
+  });
+});
+
+describe('checkWeaponProficiency', () => {
+  const martial = { effects: { weaponCategory: 'Marcial' } };
+
+  it('sem arma não há proficiência', () => {
+    expect(checkWeaponProficiency(null, 'Guerreiro')).toBe(false);
+    expect(checkWeaponProficiency(undefined, 'Guerreiro')).toBe(false);
+  });
+
+  it('arma que não é marcial vale para qualquer Vocação', () => {
+    expect(checkWeaponProficiency({ effects: { weaponCategory: 'Simples' } }, 'Sacerdote')).toBe(
+      true,
+    );
+    expect(checkWeaponProficiency({}, 'Sacerdote')).toBe(true);
+  });
+
+  it('arma marcial vale para Guerreiro, Batedor e Caçador', () => {
+    for (const vocation of ['Guerreiro', 'Batedor', 'Caçador']) {
+      expect(checkWeaponProficiency(martial, vocation)).toBe(true);
+    }
+  });
+
+  it.each(['Sacerdote', 'SACERDOTE', 'Sábio', 'sabio', 'Levita'])(
+    'arma marcial não vale para %s',
+    (vocation) => {
+      expect(checkWeaponProficiency(martial, vocation)).toBe(false);
+    },
+  );
+
+  it('a categoria marcial também vem do tipo da arma', () => {
+    expect(checkWeaponProficiency({ type: 'Arma Marcial' }, 'Sacerdote')).toBe(false);
+    expect(checkWeaponProficiency({ type: 'Arma Marcial' }, 'Guerreiro')).toBe(true);
+  });
+
+  it('sem Vocação, a arma marcial vale', () => {
+    expect(checkWeaponProficiency(martial, '')).toBe(true);
+  });
+});
+
+describe('getEquippedSlots', () => {
+  it('sem equipamento gravado, todas as posições vazias', () => {
+    const empty = { head: null, body: null, mainHand: null, offHand: null };
+    expect(getEquippedSlots(undefined)).toEqual(empty);
+    expect(getEquippedSlots(null)).toEqual(empty);
+  });
+
+  it('com as posições gravadas, devolve as próprias', () => {
+    const slots = { head: 'a', body: null, mainHand: 'b', offHand: 'b' };
+    expect(getEquippedSlots(slots)).toBe(slots);
+  });
+
+  it('GAP: a ficha recém-criada guarda a lista de compras, e é ela que sai', () => {
+    const cart = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
+    expect(getEquippedSlots(cart)).toBe(cart);
+  });
+});
+
+describe('equipItem e unequipSlot sobre a lista de compras', () => {
+  const cart = [{ id: 'adaga', name: 'Adaga', type: 'arma' }] as unknown as CharacterEquipment;
+
+  it('GAP: o primeiro item equipado carrega a lista de compras junto para as posições', () => {
+    // A lista é espalhada no objeto novo, que vai inteiro para o banco.
+    expect(equipItem('ci-1', { slot: 'head' }, cart)).toEqual({
+      0: { id: 'adaga', name: 'Adaga', type: 'arma' },
+      head: 'ci-1',
+    });
+  });
+
+  it('GAP: sem as outras posições, as duas mãos "iguais" (indefinidas) contam como arma de duas mãos', () => {
+    const result = equipItem('ci-2', { slot: 'shield' }, cart);
+    expect(result.offHand).toBe('ci-2');
+    expect(result.mainHand).toBeNull();
+  });
+
+  it('desequipar uma posição de equipamento completo a esvazia', () => {
+    const slots = { head: 'a', body: 'b', mainHand: 'c', offHand: null };
+    expect(unequipSlot('head', slots)).toEqual({
+      head: null,
+      body: 'b',
+      mainHand: 'c',
+      offHand: null,
+    });
   });
 });

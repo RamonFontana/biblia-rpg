@@ -7,6 +7,7 @@ import { applyConsumableEffects, type ConsumableEffects } from '@/domain/consuma
 import { sumItemFaithPenalty } from '@/domain/faith';
 import type { Rng } from '@/domain/rng';
 import type { WeaponEffect } from '@/types/combat';
+import type { InventoryItem } from '@/types/inventory';
 import { toJson } from './json';
 import type { EquipmentItem } from '@/features/character-creation/types';
 
@@ -104,16 +105,16 @@ const SHEET_INVENTORY = `
   )
 `;
 
-export async function getCharacterInventory(characterId: string) {
+export async function getCharacterInventory(characterId: string): Promise<InventoryItem[]> {
   const { data, error } = await supabase
     .from('character_items')
     .select(SHEET_INVENTORY)
     .eq('character_id', characterId);
   if (error) throw error;
-  return data;
+  // `effects` e `weapon_effects` são `jsonb` e `items` vem aninhado; o app grava as formas de
+  // `InventoryItem`. Mesma asserção de `toCharacter`.
+  return data as unknown as InventoryItem[];
 }
-
-export type CharacterInventoryRow = Awaited<ReturnType<typeof getCharacterInventory>>[number];
 
 // O que o menu de ações do token mostra: só o que decide se o item pode ser usado.
 export async function getInventoryForMenu(characterId: string) {

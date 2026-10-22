@@ -5,7 +5,8 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { CharacterEquipment, WeaponEffect } from '@/types/combat';
+import type { CharacterEquipment, ItemEffects, WeaponEffect } from '@/types/combat';
+import type { ConsumableInventoryItem, InventoryItem } from '@/types/inventory';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
 import { CONDITIONS } from '@/content/conditions';
@@ -17,10 +18,14 @@ import { ItemResistances } from './ItemResistances';
 import { EquipWarnings } from './EquipWarnings';
 
 interface InventoryListProps {
-  inventoryItems: any[];
+  inventoryItems: InventoryItem[];
   equipment: CharacterEquipment | null;
-  onEquip: (characterItemId: string, itemEffects: any, targetHand?: 'mainHand' | 'offHand') => void;
-  onUseConsumable: (item: any) => void;
+  onEquip: (
+    characterItemId: string,
+    itemEffects: ItemEffects,
+    targetHand?: 'mainHand' | 'offHand',
+  ) => void;
+  onUseConsumable: (item: ConsumableInventoryItem) => void;
   isUpdating: boolean;
   isGM?: boolean;
   onChangeLevel?: (characterItemId: string, newLevel: number) => void;
@@ -94,7 +99,7 @@ export function InventoryList({
       acc[category].push(curr);
       return acc;
     },
-    {} as Record<string, any[]>,
+    {} as Record<string, InventoryItem[]>,
   );
 
   return (
@@ -110,7 +115,7 @@ export function InventoryList({
               {category}
             </h4>
             <div className="space-y-2">
-              {(items as any[]).map((item: any) => {
+              {items.map((item) => {
                 const itemEffects = item.items?.effects || {};
                 const dbItem = ITEMS_DB.find((i) => i.name === item.items?.name);
                 const itemType = dbItem?.type || item.items?.category;
@@ -589,7 +594,7 @@ export function InventoryList({
                         </div>
                       )}
 
-                      {item.items?.weight > 0 && (
+                      {(item.items?.weight ?? 0) > 0 && (
                         <span className="text-xs text-stone-500">{item.items.weight} kg</span>
                       )}
                     </div>

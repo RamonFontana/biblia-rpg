@@ -1,5 +1,6 @@
 import { Shield, Sword, User } from 'lucide-react';
 import type { CharacterEquipment } from '@/types/combat';
+import type { InventoryItem } from '@/types/inventory';
 import { checkWeaponProficiency } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
 import { formatItemArmorClass } from '@/domain/armorClass';
@@ -8,7 +9,7 @@ import { EquipWarnings } from './EquipWarnings';
 
 interface EquipmentSlotsProps {
   equipment: CharacterEquipment | null;
-  inventoryItems: any[];
+  inventoryItems: InventoryItem[];
   characterVocation?: string;
   characterStrength?: number | null;
   onUnequip?: (slot: keyof CharacterEquipment) => void;
@@ -30,21 +31,17 @@ export function EquipmentSlots({
   // Check if main and off hand are the same item (2H weapon)
   const isTwoHanded = equipment?.mainHand === equipment?.offHand && equipment?.mainHand !== null;
 
-  const isMainHandWeapon =
-    mainHandItem?.items?.effects?.weaponCategory !== undefined ||
-    mainHandItem?.items?.type?.toLowerCase() === 'arma';
+  const isMainHandWeapon = mainHandItem?.items?.effects?.weaponCategory !== undefined;
   const isMainProficient = isMainHandWeapon
     ? checkWeaponProficiency(mainHandItem?.items, characterVocation)
     : true;
 
-  const isOffHandWeapon =
-    offHandItem?.items?.effects?.weaponCategory !== undefined ||
-    offHandItem?.items?.type?.toLowerCase() === 'arma';
+  const isOffHandWeapon = offHandItem?.items?.effects?.weaponCategory !== undefined;
   const isOffProficient = isOffHandWeapon
     ? checkWeaponProficiency(offHandItem?.items, characterVocation)
     : true;
 
-  const renderItemStats = (item: any) => {
+  const renderItemStats = (item: InventoryItem) => {
     const slug = item?.items?.slug;
     let damageDie = item?.items?.effects?.damageDie;
 
@@ -82,7 +79,7 @@ export function EquipmentSlots({
     );
   };
 
-  const renderItemName = (item: any) => {
+  const renderItemName = (item: InventoryItem) => {
     const level = item.level || 1;
     return (
       <div className="flex items-center gap-1 justify-center flex-wrap">

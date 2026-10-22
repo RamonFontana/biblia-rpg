@@ -1,6 +1,12 @@
-import type { DraftCharacter } from '../../character-creation/types';
+import type { CharacterEquipment } from '@/types/combat';
+import type { DraftCharacter, EquipmentItem } from '../../character-creation/types';
 
-export interface Character extends DraftCharacter {
+export interface Character extends Omit<DraftCharacter, 'equipment'> {
+  /**
+   * As posições vestidas (ids de `character_items`). A ficha recém-criada ainda guarda aí a lista
+   * de compras da criação (um array) até o primeiro item ser equipado; ver ROADMAP, passo 7d.
+   */
+  equipment?: CharacterEquipment | EquipmentItem[] | null;
   id: string;
   user_id: string;
   has_participated_in_session: boolean;
