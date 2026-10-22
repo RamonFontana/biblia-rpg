@@ -362,7 +362,9 @@ describe('saveCharacter', () => {
 
   it('lança o erro do Supabase sem mexer no inventário', async () => {
     state.respond = () => ({ error: failure });
-    await expect(saveCharacter({ ...draft, equipment: [{ id: 'x' }] })).rejects.toBe(failure);
+    await expect(
+      saveCharacter({ ...draft, equipment: [{ id: 'x', name: 'Adaga', type: 'arma' }] }),
+    ).rejects.toBe(failure);
     expect(state.syncInventoryItems).not.toHaveBeenCalled();
   });
 });
