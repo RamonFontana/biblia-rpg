@@ -2,7 +2,7 @@
 // A personalizada diz em texto que é personalizada (a cor é só reforço). Decisões: ROADMAP.md,
 // Onda 4, passo 6c-3. Termos: CONTEXT.md (Resistência a Condição).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('@/data-access/trades', () => ({
   addTradeItem: vi.fn(),
@@ -33,22 +33,22 @@ const tradeItem = (over: Partial<TradeItemWithDetails> = {}): TradeItemWithDetai
   ...over,
 });
 
-const show = (tradeItems: TradeItemWithDetails[]) =>
-  render(
-    <TradeSide
-      label="Você"
-      side="initiator"
-      tradeId="t-1"
-      coins={0}
-      tradeItems={tradeItems}
-      isReady={false}
-      otherSideReady={false}
-      canEdit={false}
-      onCoinsChange={vi.fn()}
-      onReady={vi.fn()}
-      onItemsChanged={vi.fn()}
-    />,
-  );
+const sideWith = (tradeItems: TradeItemWithDetails[], coins = 0) => (
+  <TradeSide
+    label="Você"
+    side="initiator"
+    tradeId="t-1"
+    coins={coins}
+    tradeItems={tradeItems}
+    isReady={false}
+    otherSideReady={false}
+    canEdit={false}
+    onCoinsChange={vi.fn()}
+    onReady={vi.fn()}
+    onItemsChanged={vi.fn()}
+  />
+);
+const show = (tradeItems: TradeItemWithDetails[], coins = 0) => render(sideWith(tradeItems, coins));
 
 describe('TradeSide: resistências e efeitos no item', () => {
   it('a resistência personalizada leva a nota "Resistência personalizada"', () => {
@@ -71,5 +71,37 @@ describe('TradeSide: resistências e efeitos no item', () => {
     ]);
     expect(screen.getByText('Sangrando')).toBeTruthy();
     expect(screen.queryByTitle('Resistência personalizada')).toBeNull();
+  });
+});
+
+describe('TradeSide: campo de SP', () => {
+  // O rótulo não está ligado ao campo; sem itens, é o único campo numérico.
+  const coinsField = () => screen.getByRole('spinbutton') as HTMLInputElement;
+
+  it('mostra as moedas da troca', () => {
+    show([], 12);
+    expect(coinsField().value).toBe('12');
+  });
+
+  it('o que o jogador digita fica no campo enquanto as moedas da troca não mudam', () => {
+    const { rerender } = show([], 12);
+    fireEvent.change(coinsField(), { target: { value: '30' } });
+    rerender(sideWith([], 12));
+    expect(coinsField().value).toBe('30');
+  });
+
+  it('quando as moedas da troca mudam, o campo passa a mostrar o novo valor', () => {
+    const { rerender } = show([], 12);
+    fireEvent.change(coinsField(), { target: { value: '30' } });
+    rerender(sideWith([], 45));
+    expect(coinsField().value).toBe('45');
+  });
+
+  it('as moedas da troca voltarem ao mesmo valor não apagam o que foi digitado', () => {
+    const { rerender } = show([], 12);
+    rerender(sideWith([], 12));
+    fireEvent.change(coinsField(), { target: { value: '8' } });
+    rerender(sideWith([], 12));
+    expect(coinsField().value).toBe('8');
   });
 });

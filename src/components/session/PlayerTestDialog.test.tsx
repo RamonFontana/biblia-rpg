@@ -446,4 +446,26 @@ describe('depois de enviado', () => {
     );
     expect(await screen.findByText('O Mestre Exige um Teste!')).toBeInTheDocument();
   });
+
+  // GAP conhecido (ROADMAP, Onda 4, passo 7b): o formulário zera sempre que `activeTest` ou
+  // `testResult` chegam como objetos novos, mesmo sendo o mesmo Teste (o realtime recarrega a
+  // lista inteira a cada mudança). O valor digitado se perde.
+  it('GAP: o mesmo Teste chegando como objeto novo apaga o valor digitado', async () => {
+    const { rerender } = await show(test());
+    roll('14');
+    expect(input().value).toBe('14');
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    await act(async () => {});
+    expect(input().value).toBe('');
+  });
+
+  it('as mesmas props (mesmos objetos) não apagam o valor digitado', async () => {
+    const t = test();
+    const r = result();
+    const { rerender } = await show(t, r);
+    roll('14');
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={r} />);
+    await act(async () => {});
+    expect(input().value).toBe('14');
+  });
 });
