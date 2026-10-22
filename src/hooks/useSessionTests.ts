@@ -7,17 +7,26 @@ import {
   getTestResults,
 } from '@/data-access/sessionTests';
 
+const logFetchError = (error: unknown) => console.error('Error fetching session tests:', error);
+
 export function useSessionTests(sessionId: string) {
   const [activeTests, setActiveTests] = useState<SessionTest[]>([]);
   const [testResults, setTestResults] = useState<Record<string, SessionTestResult[]>>({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch initial active tests
-  const fetchActiveTests = useCallback(async () => {
+  // Outra sessão recomeça o carregamento. Ajustar durante a renderização (e não num efeito) evita
+  // um quadro com a sessão nova e `loading` desligado.
+  const [loadedSessionId, setLoadedSessionId] = useState(sessionId);
+  if (loadedSessionId !== sessionId) {
+    setLoadedSessionId(sessionId);
+    setLoading(true);
+  }
+
+  // Quem chama trata a falha (`logFetchError`); aqui só se garante que o carregamento termina.
+  const loadActiveTests = useCallback(async () => {
     if (!sessionId) return;
 
     try {
-      setLoading(true);
       const tests = await getActiveTestsForSession(sessionId);
       setActiveTests(tests);
 
@@ -28,16 +37,21 @@ export function useSessionTests(sessionId: string) {
         resultsMap[test.id] = results;
       }
       setTestResults(resultsMap);
-    } catch (error) {
-      console.error('Error fetching session tests:', error);
     } finally {
       setLoading(false);
     }
   }, [sessionId]);
 
+  // Consulta nova (realtime ou chamada de fora): liga `loading` e carrega.
+  const fetchActiveTests = useCallback(async () => {
+    if (!sessionId) return;
+    setLoading(true);
+    await loadActiveTests().catch(logFetchError);
+  }, [sessionId, loadActiveTests]);
+
   useEffect(() => {
-    fetchActiveTests();
-  }, [fetchActiveTests]);
+    loadActiveTests().catch(logFetchError);
+  }, [loadActiveTests]);
 
   useEffect(() => {
     if (!sessionId) return;

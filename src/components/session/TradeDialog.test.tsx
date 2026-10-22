@@ -4,6 +4,8 @@
 // passo 7a. Termos: CONTEXT.md (Troca).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 
 const h = vi.hoisted(() => ({
   cancelTrade: vi.fn(),
@@ -28,7 +30,14 @@ import { TradeDialog } from './TradeDialog';
 const onClose = vi.fn();
 const onTradeUpdated = vi.fn();
 
+// A janela executa a troca por uma mutation do react-query, que pede o provider.
+let queryClient = new QueryClient();
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
+
 beforeEach(() => {
+  queryClient = new QueryClient();
   clearStubs();
   Object.values(h).forEach((fn) => fn.mockReset());
   h.cancelTrade.mockResolvedValue(undefined);
@@ -77,6 +86,7 @@ const show = (
       onClose={onClose}
       onTradeUpdated={onTradeUpdated}
     />,
+    { wrapper },
   );
 const side = (name: 'initiator' | 'target') =>
   stubProps('TradeSide', name) as Record<string, unknown>;
@@ -253,7 +263,7 @@ describe('TradeDialog: execução automática', () => {
 
   it('o aviso some quando a execução termina', async () => {
     await executeThenRefresh((call) => call.resolve({ success: true }));
-    expect(screen.queryByText('Executando transação...')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Executando transação...')).toBeNull());
   });
 
   it.each([
@@ -305,9 +315,16 @@ describe('TradeDialog: execução automática', () => {
 
   // GAP conhecido (ROADMAP, Onda 4, passo 7a): o efeito depende de `executing`. Ao fim da primeira
   // execução ele roda de novo e, se a troca ainda chega como "os dois prontos", executa outra vez
-  // (o servidor responde "Trade não está ativa"). Aqui as props ficam velhas de propósito.
+  // (o servidor responde "Trade não está ativa"). Aqui as props ficam velhas de propósito, e a
+  // chamada demora um instante, como a rede (a mutation só mostra "executando" se ela durar mais
+  // que um ciclo do navegador).
+  const afterAWhile = <T,>(value: T) =>
+    new Promise<T>((resolve) => setTimeout(() => resolve(value), 20));
+
   it('GAP: com as props ainda mostrando os dois prontos, executa uma segunda vez', async () => {
-    h.executeTrade.mockResolvedValueOnce({ success: true }).mockReturnValue(new Promise(() => {}));
+    h.executeTrade
+      .mockReturnValueOnce(afterAWhile({ success: true }))
+      .mockReturnValue(new Promise(() => {}));
     show(ready());
     await waitFor(() => expect(h.executeTrade).toHaveBeenCalledTimes(2));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -315,7 +332,7 @@ describe('TradeDialog: execução automática', () => {
 
   it('GAP: o erro de uma recusa some quando a segunda execução recomeça', async () => {
     h.executeTrade
-      .mockResolvedValueOnce({ success: false, error: 'Saldo insuficiente.' })
+      .mockReturnValueOnce(afterAWhile({ success: false, error: 'Saldo insuficiente.' }))
       .mockReturnValue(new Promise(() => {}));
     show(ready());
     await waitFor(() => expect(h.executeTrade).toHaveBeenCalledTimes(2));

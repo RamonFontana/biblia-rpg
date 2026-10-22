@@ -69,9 +69,13 @@ export function TradeSide({
   const [isSavingCoins, setIsSavingCoins] = useState(false);
   const coinsSaveRef = useRef<Promise<number | null> | null>(null);
 
-  useEffect(() => {
+  // O campo é um rascunho: volta a mostrar as moedas da troca quando elas mudam. Ajustar durante a
+  // renderização (e não num efeito) evita um quadro com o valor antigo.
+  const [shownCoins, setShownCoins] = useState(coins);
+  if (shownCoins !== coins) {
+    setShownCoins(coins);
     setCoinsInput(String(coins));
-  }, [coins]);
+  }
 
   useEffect(() => {
     if (useCatalog) {

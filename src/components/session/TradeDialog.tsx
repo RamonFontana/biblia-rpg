@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { TradeSide } from './TradeSide';
@@ -40,7 +41,6 @@ export function TradeDialog({
   onTradeUpdated,
 }: TradeDialogProps) {
   const [error, setError] = useState<string | null>(null);
-  const [executing, setExecuting] = useState(false);
 
   const initiatorChar = playerCharacters.find(
     (pc) => pc.character.id === trade.initiator_character_id,
@@ -71,17 +71,10 @@ export function TradeDialog({
         ? isGM
         : targetUserId === currentUserId;
 
-  useEffect(() => {
-    if (trade.initiator_ready && trade.target_ready && trade.status === 'active' && !executing) {
-      handleExecute();
-    }
-  }, [trade.initiator_ready, trade.target_ready, trade.status, executing]);
-
-  const handleExecute = async () => {
-    if (executing) return;
-    setExecuting(true);
-    setError(null);
-    try {
+  // Executa a troca e, se o servidor recusa, desmarca os dois lados. É uma mutation (e não estado
+  // próprio) para o efeito abaixo disparar a execução sem gravar estado de forma síncrona.
+  const { mutate: runExecute, isPending: executing } = useMutation({
+    mutationFn: async () => {
       const result = await executeTrade(trade.id);
       if (!result.success) {
         setError(result.error ?? 'Erro ao executar a transação.');
@@ -92,12 +85,18 @@ export function TradeDialog({
         onTradeUpdated();
         onClose();
       }
-    } catch (e) {
-      setError(getErrorMessage(e, 'Erro ao executar a transação.'));
-    } finally {
-      setExecuting(false);
+    },
+    onMutate: () => setError(null),
+    onError: (e) => setError(getErrorMessage(e, 'Erro ao executar a transação.')),
+  });
+
+  // GAP conhecido (ROADMAP, Onda 4, passo 7a): ao fim da execução `executing` volta a `false` e,
+  // se a troca ainda chega como "os dois prontos e ativa", executa uma segunda vez.
+  useEffect(() => {
+    if (trade.initiator_ready && trade.target_ready && trade.status === 'active' && !executing) {
+      runExecute();
     }
-  };
+  }, [trade.initiator_ready, trade.target_ready, trade.status, executing, runExecute]);
 
   const handleCancel = async () => {
     try {

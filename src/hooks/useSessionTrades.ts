@@ -3,27 +3,41 @@ import { subscribeToTables } from '@/data-access/realtime';
 import { getActiveTradesForSession } from '@/data-access/trades';
 import type { TradeWithItems } from '@/types/trade';
 
+const logFetchError = (error: unknown) => console.error('Error fetching session trades:', error);
+
 export function useSessionTrades(sessionId: string | undefined) {
   const [activeTrades, setActiveTrades] = useState<TradeWithItems[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTrades = useCallback(async () => {
+  // Outra sessão recomeça o carregamento. Ajustar durante a renderização (e não num efeito) evita
+  // um quadro com a sessão nova e `loading` desligado.
+  const [loadedSessionId, setLoadedSessionId] = useState(sessionId);
+  if (loadedSessionId !== sessionId) {
+    setLoadedSessionId(sessionId);
+    setLoading(true);
+  }
+
+  // Quem chama trata a falha (`logFetchError`); aqui só se garante que o carregamento termina.
+  const loadTrades = useCallback(async () => {
     if (!sessionId) return;
 
     try {
-      setLoading(true);
-      const trades = await getActiveTradesForSession(sessionId);
-      setActiveTrades(trades);
-    } catch (error) {
-      console.error('Error fetching session trades:', error);
+      setActiveTrades(await getActiveTradesForSession(sessionId));
     } finally {
       setLoading(false);
     }
   }, [sessionId]);
 
+  // Consulta nova (realtime ou chamada de fora): liga `loading` e carrega.
+  const fetchTrades = useCallback(async () => {
+    if (!sessionId) return;
+    setLoading(true);
+    await loadTrades().catch(logFetchError);
+  }, [sessionId, loadTrades]);
+
   useEffect(() => {
-    fetchTrades();
-  }, [fetchTrades]);
+    loadTrades().catch(logFetchError);
+  }, [loadTrades]);
 
   useEffect(() => {
     if (!sessionId) return;

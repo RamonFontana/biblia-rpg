@@ -446,4 +446,71 @@ describe('depois de enviado', () => {
     );
     expect(await screen.findByText('O Mestre Exige um Teste!')).toBeInTheDocument();
   });
+
+  // GAP conhecido (ROADMAP, Onda 4, passo 7b): o formulário zera sempre que `activeTest` ou
+  // `testResult` chegam como objetos novos, mesmo sendo o mesmo Teste (o realtime recarrega a
+  // lista inteira a cada mudança). O valor digitado se perde.
+  it('GAP: o mesmo Teste chegando como objeto novo apaga o valor digitado', async () => {
+    const { rerender } = await show(test());
+    roll('14');
+    expect(input().value).toBe('14');
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    await act(async () => {});
+    expect(input().value).toBe('');
+  });
+
+  it('basta o objeto do Teste ser novo (o do resultado é o mesmo) para zerar o formulário', async () => {
+    const r = result();
+    const { rerender } = await show(test(), r);
+    roll('14');
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={r} />);
+    await act(async () => {});
+    expect(input().value).toBe('');
+  });
+
+  it('basta o objeto do resultado ser novo (o do Teste é o mesmo) para zerar o formulário', async () => {
+    const t = test();
+    const { rerender } = await show(t, result());
+    roll('14');
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result()} />);
+    await act(async () => {});
+    expect(input().value).toBe('');
+  });
+
+  it('um Teste novo volta da tela da punição para o formulário do dado', async () => {
+    const { rerender } = await show(test({ test_type: 'Fé', difficulty: 0 }));
+    roll('51');
+    send();
+    await screen.findByText('Teste de Fé Reprovado!');
+    rerender(
+      <PlayerTestDialog
+        isOpen
+        activeTest={test({ test_type: 'Fé', difficulty: 0 })}
+        testResult={result()}
+      />,
+    );
+    await act(async () => {});
+    expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Enviar Valor' })).toBeInTheDocument();
+  });
+
+  it('um Teste novo apaga o erro mostrado', async () => {
+    const { rerender } = await show(test({ test_type: 'Destreza' }));
+    roll('99');
+    send();
+    await screen.findByText('Valor fora do intervalo aceitável (0-100).');
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    await act(async () => {});
+    expect(screen.queryByText('Valor fora do intervalo aceitável (0-100).')).toBeNull();
+  });
+
+  it('as mesmas props (mesmos objetos) não apagam o valor digitado', async () => {
+    const t = test();
+    const r = result();
+    const { rerender } = await show(t, r);
+    roll('14');
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={r} />);
+    await act(async () => {});
+    expect(input().value).toBe('14');
+  });
 });
