@@ -20,13 +20,16 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
     };
   }, []);
 
-  // Reset when opened
-  useEffect(() => {
+  // Reset when opened. Ajustar durante a renderização (e não num efeito) evita um quadro com o
+  // resultado da abertura anterior.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
     if (isOpen) {
       setResult(null);
       setIsRolling(false);
     }
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
 

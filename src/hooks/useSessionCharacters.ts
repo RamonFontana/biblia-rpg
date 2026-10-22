@@ -8,31 +8,47 @@ import {
   type SessionPlayer,
 } from '@/data-access/sessions';
 
+const logFetchError = (error: unknown) =>
+  console.error('Error fetching session characters:', error);
+
 export function useSessionCharacters(sessionId: string | undefined) {
   const [playerCharacters, setPlayerCharacters] = useState<SessionPlayer[]>([]);
   const [npcs, setNpcs] = useState<SessionNpc[]>([]);
   const [enemies, setEnemies] = useState<SessionCharacter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCharacters = useCallback(async () => {
-    if (!sessionId) return;
+  // Outra sessão recomeça o carregamento. Ajustar durante a renderização (e não num efeito) evita
+  // um quadro com a sessão nova e `isLoading` desligado.
+  const [loadedSessionId, setLoadedSessionId] = useState(sessionId);
+  if (loadedSessionId !== sessionId) {
+    setLoadedSessionId(sessionId);
     setIsLoading(true);
+  }
+
+  // Quem chama trata a falha (`logFetchError`); aqui só se garante que o carregamento termina.
+  const loadCharacters = useCallback(async () => {
+    if (!sessionId) return;
 
     try {
       const roster = groupSessionRoster(await fetchSessionRoster(sessionId));
       setPlayerCharacters(roster.players);
       setNpcs(roster.npcs);
       setEnemies(roster.enemies);
-    } catch (error) {
-      console.error('Error fetching session characters:', error);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }, [sessionId]);
 
+  // Consulta nova (realtime ou chamada de fora): liga `isLoading` e carrega.
+  const fetchCharacters = useCallback(async () => {
+    if (!sessionId) return;
+    setIsLoading(true);
+    await loadCharacters().catch(logFetchError);
+  }, [sessionId, loadCharacters]);
+
   useEffect(() => {
-    fetchCharacters();
-  }, [fetchCharacters]);
+    loadCharacters().catch(logFetchError);
+  }, [loadCharacters]);
 
   useEffect(() => {
     if (!sessionId) return;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
 import { submitTestResult } from '@/services/sessionTestService';
 import { getTestModifiers } from '@/features/character-management/utils/characterMath';
@@ -46,8 +46,14 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
     testResult,
   );
 
-  // Reset state when a new test arrives
-  useEffect(() => {
+  // Reset state when a new test arrives (qualquer objeto novo de `activeTest` ou `testResult`, ver o
+  // GAP no ROADMAP, passo 7b). Ajustar durante a renderização (e não num efeito) evita um quadro
+  // com o formulário do Teste anterior.
+  const [seenTest, setSeenTest] = useState(activeTest);
+  const [seenResult, setSeenResult] = useState(testResult);
+  if (seenTest !== activeTest || seenResult !== testResult) {
+    setSeenTest(activeTest);
+    setSeenResult(testResult);
     if (activeTest) {
       setResultValue('');
       setError(null);
@@ -59,7 +65,7 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
       setFaithPenaltyResult('');
       setIsRollingPenalty(false);
     }
-  }, [activeTest, testResult]);
+  }
 
   if (!isOpen || !activeTest || !testResult || dismissed) return null;
 
