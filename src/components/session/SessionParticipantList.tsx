@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { PresenceState } from '@/data-access/realtime';
+import type { SessionNpc } from '@/data-access/sessions';
+import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
 import { PlayerCard } from './PlayerCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
@@ -17,6 +19,7 @@ import { getCombatStats } from '@/lib/equipmentUtils';
 import { applyConditionToCharacter, removeConditionFromCharacter } from '@/data-access/conditions';
 import { characterVitalsService } from '@/data-access/vitals';
 import { getCurrentPv } from '@/domain/vitals';
+import { getCharacterLevel } from '@/domain/levelUp';
 import type { ConditionEntry } from '@/types/combat';
 import { addFaith } from '@/domain/faith';
 
@@ -26,17 +29,17 @@ interface SessionParticipantListProps {
   sessionId?: string;
   gmId?: string;
   playerCharacters?: { user_id: string; character: Character }[];
-  npcs?: Character[];
+  npcs?: SessionNpc[];
   activeTrades?: TradeWithItems[];
-  onUpdatePlayerData?: (characterId: string, data: any) => void;
-  onUpdateNPCData?: (npcId: string, data: any) => void;
+  onUpdatePlayerData?: (characterId: string, data: Partial<Character>) => void;
+  onUpdateNPCData?: (npcId: string, data: Partial<Character>) => void;
   onNegotiate?: (targetUserId: string) => void;
   onShop?: (targetUserId: string) => void;
-  onNPCNegotiate?: (npc: Character & { is_playable?: boolean }) => void;
+  onNPCNegotiate?: (npc: SessionNpc) => void;
   onAcceptTrade?: (tradeId: string) => void;
   onRejectTrade?: (tradeId: string) => void;
-  activeTests: any[];
-  testResults: Record<string, any[]>;
+  activeTests: SessionTest[];
+  testResults: Record<string, SessionTestResult[]>;
 }
 
 export function SessionParticipantList({
@@ -58,7 +61,7 @@ export function SessionParticipantList({
   testResults,
 }: SessionParticipantListProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedNPC, setSelectedNPC] = useState<Character | null>(null);
+  const [selectedNPC, setSelectedNPC] = useState<SessionNpc | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { user } = useAuthStore();
 
@@ -139,7 +142,7 @@ export function SessionParticipantList({
   const handleAddNPCCondition = async (npcId: string, conditionId: string, duration: number) => {
     const npc = npcs.find((n) => n.id === npcId);
     if (!npc) return;
-    const current = ((npc as any).conditions as unknown as ConditionEntry[]) || [];
+    const current = npc.conditions || [];
     const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
 
     const updated = [...current.filter((c) => c.conditionId !== conditionId), newCond];
@@ -151,7 +154,7 @@ export function SessionParticipantList({
   const handleRemoveNPCCondition = async (npcId: string, conditionId: string) => {
     const npc = npcs.find((n) => n.id === npcId);
     if (!npc) return;
-    const current = ((npc as any).conditions as unknown as ConditionEntry[]) || [];
+    const current = npc.conditions || [];
 
     const updated = current.filter((c) => c.conditionId !== conditionId);
     if (onUpdateNPCData) onUpdateNPCData(npcId, { conditions: updated });
@@ -248,9 +251,9 @@ export function SessionParticipantList({
               {npcs.map((npc) => (
                 <li key={npc.id}>
                   <div
-                    className={`relative p-3 bg-stone-700 border border-stone-600 rounded-md transition-colors ${(npc as any).is_playable ? 'cursor-pointer hover:bg-stone-600' : ''}`}
+                    className={`relative p-3 bg-stone-700 border border-stone-600 rounded-md transition-colors ${npc.is_playable ? 'cursor-pointer hover:bg-stone-600' : ''}`}
                     onClick={() => {
-                      if ((npc as any).is_playable) setSelectedNPC(npc);
+                      if (npc.is_playable) setSelectedNPC(npc);
                     }}
                   >
                     <div className="flex items-start gap-3">
@@ -267,13 +270,13 @@ export function SessionParticipantList({
                           >
                             {npc.name}
                           </p>
-                          {!isGM && onNPCNegotiate && (npc as any).is_visible !== false && (
+                          {!isGM && onNPCNegotiate && npc.is_visible !== false && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onNPCNegotiate(npc as Character & { is_playable?: boolean });
+                                onNPCNegotiate(npc);
                               }}
                               className="h-7 text-xs border-stone-500 text-stone-300 hover:bg-stone-600 shrink-0"
                             >
@@ -282,10 +285,10 @@ export function SessionParticipantList({
                           )}
                         </div>
                         <p
-                          className={`text-sm ${(npc as any).is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}
+                          className={`text-sm ${npc.is_playable ? 'text-stone-400' : 'text-stone-500 line-clamp-2'}`}
                         >
-                          {(npc as any).is_playable
-                            ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'} (Nível ${npc.level || (npc.stats as any)?.level || 1})`
+                          {npc.is_playable
+                            ? `${npc.tribe || 'Tribo Desconhecida'} • ${npc.vocation || 'Sem Vocação'} (Nível ${getCharacterLevel(npc)})`
                             : npc.vocation}
                         </p>
                       </div>
@@ -301,27 +304,24 @@ export function SessionParticipantList({
                       </div>
                     )}
                     {/* Condições do NPC */}
-                    {(((npc as any).conditions as unknown as ConditionEntry[])?.length > 0 ||
-                      isGM) && (
+                    {((npc.conditions?.length ?? 0) > 0 || isGM) && (
                       <div
                         className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-600/50 pt-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {(((npc as any).conditions as unknown as ConditionEntry[]) || []).map(
-                          (cond) => (
-                            <ConditionBadge
-                              key={cond.conditionId}
-                              conditionId={cond.conditionId}
-                              duration={cond.duration || undefined}
-                              onRemove={
-                                isGM
-                                  ? () => handleRemoveNPCCondition(npc.id, cond.conditionId)
-                                  : undefined
-                              }
-                              readonly={!isGM}
-                            />
-                          ),
-                        )}
+                        {(npc.conditions || []).map((cond) => (
+                          <ConditionBadge
+                            key={cond.conditionId}
+                            conditionId={cond.conditionId}
+                            duration={cond.duration || undefined}
+                            onRemove={
+                              isGM
+                                ? () => handleRemoveNPCCondition(npc.id, cond.conditionId)
+                                : undefined
+                            }
+                            readonly={!isGM}
+                          />
+                        ))}
                         {isGM && (
                           <ConditionSelector
                             resistanceLevels={getCombatStats(npc).conditionResistanceLevels}

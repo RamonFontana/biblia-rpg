@@ -3,8 +3,10 @@
 // Termos: CONTEXT.md (Marco, Morrendo, Estável).
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { Character } from '@/features/character-management/types';
 import { EndSessionDialog } from './EndSessionDialog';
 
+// A ficha parcial do teste: só os campos que a janela lê.
 const pc = (id: string, over: Record<string, unknown> = {}) => ({
   character: {
     id,
@@ -17,7 +19,7 @@ const pc = (id: string, over: Record<string, unknown> = {}) => ({
     is_enemy: false,
     is_deleted: false,
     ...over,
-  },
+  } as unknown as Character,
 });
 
 const renderDialog = (playerCharacters: ReturnType<typeof pc>[], onConfirm = vi.fn()) => {

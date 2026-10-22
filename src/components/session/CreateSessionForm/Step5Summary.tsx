@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSessionDraftStore } from '@/store/createSessionStore';
 import { createGameSession } from '@/services/sessionService';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 export function Step5Summary() {
   const store = useSessionDraftStore();
@@ -23,8 +24,8 @@ export function Step5Summary() {
       });
       store.resetStore();
       navigate(`/session/${sessionId}`);
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao criar a sessão.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ocorreu um erro ao criar a sessão.'));
       setIsSubmitting(false);
     }
   };

@@ -55,7 +55,7 @@ export function SessionNPCList({
           npc.stats,
           delta,
         );
-        if (onUpdateNPCData) onUpdateNPCData(npc.id, { stats: newStats as any });
+        if (onUpdateNPCData) onUpdateNPCData(npc.id, { stats: newStats });
       } catch (e) {
         console.error('Erro ao atualizar status do NPC:', e);
       }

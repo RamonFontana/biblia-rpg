@@ -7,6 +7,7 @@ import {
   createSessionTest,
 } from '@/data-access/sessionTests';
 import type { Character } from '@/features/character-management/types';
+import { getErrorMessage } from '@/lib/errorMessage';
 
 interface MasterTestDialogProps {
   sessionId: string;
@@ -14,7 +15,7 @@ interface MasterTestDialogProps {
   onClose: () => void;
   activeTests: SessionTest[];
   testResults: Record<string, SessionTestResult[]>;
-  playerCharacters: { character: Character; profile: any | null }[];
+  playerCharacters: { character: Character; profile: { name?: string } | null }[];
 }
 
 import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
@@ -84,8 +85,8 @@ export function MasterTestDialog({
 
       await createSessionTest(sessionId, testType, finalDifficulty, targets);
       // The state will be updated via the realtime hook in the parent
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar o teste.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao criar o teste.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -96,8 +97,8 @@ export function MasterTestDialog({
     setIsSubmitting(true);
     try {
       await cancelSessionTest(currentActiveTest.id);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao cancelar o teste.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao cancelar o teste.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -109,8 +110,8 @@ export function MasterTestDialog({
     try {
       await completeSessionTest(currentActiveTest.id);
       onClose(); // Close the dialog completely when finished
-    } catch (err: any) {
-      setError(err.message || 'Erro ao concluir o teste.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao concluir o teste.'));
     } finally {
       setIsSubmitting(false);
     }

@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { canGrantLevelUp } from '@/domain/levelUp';
 import { isDying } from '@/domain/deathSaves';
+import type { Character } from '@/features/character-management/types';
 
 interface EndSessionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (levelUpCharacterIds: string[]) => void;
-  playerCharacters: any[];
+  playerCharacters: { character: Character }[];
 }
 
 export function EndSessionDialog({

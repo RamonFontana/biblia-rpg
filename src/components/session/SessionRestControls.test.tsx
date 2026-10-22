@@ -24,6 +24,8 @@ vi.mock('../../lib/supabase', async () => {
 
 import { callsOf, filterOf } from '../../test/fakeSupabase';
 import { ABILITIES } from '@/content/abilities';
+import type { SessionNpc } from '@/data-access/sessions';
+import type { Character } from '@/features/character-management/types';
 import { SessionRestControls } from './SessionRestControls';
 
 const shortRestAbility = ABILITIES.find((a) => a.usageType === 'short_rest')!.id;
@@ -43,7 +45,7 @@ const hero = {
     is_enemy: false,
     stats: { pv: 10, current_pv: 4, current_faith: 40 },
     skills: { ability_uses: { [shortRestAbility]: 1, [longRestAbility]: 1 } },
-  },
+  } as unknown as Character, // ficha parcial: só os campos que os botões leem
 };
 
 const renderControls = (sessionData = session()) =>
@@ -146,6 +148,46 @@ describe('Descanso Curto', () => {
     expect(screen.getByRole('button', { name: /Descanso Curto/ })).toBeDisabled();
   });
 
+  it('um jogador sem personagem é ignorado e os outros descansam', async () => {
+    vi.stubGlobal(
+      'prompt',
+      vi.fn(() => '3'),
+    );
+    render(
+      <SessionRestControls
+        sessionId="s1"
+        sessionData={session()}
+        playerCharacters={[{ character: null }, hero]}
+      />,
+    );
+    clickShortRest();
+    await waitFor(() => expect(heroWrites()).toHaveLength(1));
+    expect(callsOf(state.calls, 'characters', 'update')).toHaveLength(1);
+  });
+
+  it('os NPCs com ficha descansam, mas um inimigo na lista de NPCs não', async () => {
+    vi.stubGlobal(
+      'prompt',
+      vi.fn(() => '3'),
+    );
+    const npc = { ...hero.character, id: 'npc-1' } as SessionNpc;
+    const foe = { ...hero.character, id: 'foe-1', is_enemy: true } as SessionNpc;
+    render(
+      <SessionRestControls
+        sessionId="s1"
+        sessionData={session()}
+        playerCharacters={[]}
+        npcs={[npc, foe]}
+      />,
+    );
+    clickShortRest();
+    await waitFor(() =>
+      expect(
+        callsOf(state.calls, 'characters', 'update').map((c) => filterOf(c, 'eq', 'id')),
+      ).toEqual(['npc-1']),
+    );
+  });
+
   it('inimigos não descansam', async () => {
     vi.stubGlobal(
       'prompt',
@@ -155,7 +197,10 @@ describe('Descanso Curto', () => {
       <SessionRestControls
         sessionId="s1"
         sessionData={session()}
-        playerCharacters={[hero, { character: { ...hero.character, id: 'orc', is_enemy: true } }]}
+        playerCharacters={[
+          hero,
+          { character: { ...hero.character, id: 'orc', is_enemy: true } as Character },
+        ]}
       />,
     );
     clickShortRest();

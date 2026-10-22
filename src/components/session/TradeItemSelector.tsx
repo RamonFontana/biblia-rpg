@@ -7,7 +7,7 @@ export interface SelectableItem {
   description?: string | null;
   category: string;
   price?: number | null;
-  availableQuantity?: number;
+  availableQuantity?: number | null;
 }
 
 interface TradeItemSelectorProps {

@@ -111,7 +111,7 @@ export async function updateCharacterStats(id: string, stats: CharacterStats): P
 /** Grava `stats` e `skills` juntos (descanso longo). */
 export async function updateCharacterRest(
   id: string,
-  patch: { stats: CharacterStats; skills: CharacterSkills | EnemySkill[] },
+  patch: { stats: Partial<CharacterStats>; skills: CharacterSkills | EnemySkill[] },
 ): Promise<void> {
   const { error } = await supabase
     .from('characters')

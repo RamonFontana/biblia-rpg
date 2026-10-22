@@ -3,6 +3,8 @@ import { findLatestCharacterOfUser } from '@/data-access/characters';
 import { consumeItemViaRpc, getInventoryForMenu } from '@/data-access/inventory';
 import { findParticipantCharacterId } from '@/data-access/sessions';
 
+type InventoryMenuItem = Awaited<ReturnType<typeof getInventoryForMenu>>[number];
+
 interface TokenContextMenuProps {
   userId: string;
   sessionId: string;
@@ -13,7 +15,7 @@ interface TokenContextMenuProps {
 
 export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryMenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [position, setPosition] = useState({ top: y, left: x });
 
@@ -77,7 +79,10 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
     fetchInventory();
   }, [userId]);
 
-  const handleUseItem = async (characterItemId: string, isConsumable: boolean) => {
+  const handleUseItem = async (
+    characterItemId: string,
+    isConsumable: boolean | null | undefined,
+  ) => {
     if (!isConsumable) return;
 
     // Call RPC to use item
@@ -122,7 +127,7 @@ export function TokenContextMenu({ userId, sessionId, x, y, onClose }: TokenCont
             >
               <div className="flex items-center gap-2">
                 <span>{item.items?.name}</span>
-                {item.quantity > 1 && (
+                {(item.quantity ?? 0) > 1 && (
                   <span className="text-[10px] bg-stone-800 px-1 rounded">x{item.quantity}</span>
                 )}
               </div>

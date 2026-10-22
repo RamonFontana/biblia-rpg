@@ -1,7 +1,8 @@
 import { Coffee, Moon } from 'lucide-react';
+import type { GameSession } from '@/data-access/sessions';
 
 interface PlayerRestIndicatorProps {
-  sessionData: any;
+  sessionData: Pick<GameSession, 'short_rests_today' | 'current_day' | 'last_long_rest_day'> | null;
 }
 
 export function PlayerRestIndicator({ sessionData }: PlayerRestIndicatorProps) {

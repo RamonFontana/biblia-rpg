@@ -1,4 +1,4 @@
-import type { CharacterEquipment } from '@/types/combat';
+import type { CharacterEquipment, ConditionEntry } from '@/types/combat';
 import type { DraftCharacter, EquipmentItem } from '../../character-creation/types';
 
 export interface Character extends Omit<DraftCharacter, 'equipment'> {
@@ -7,6 +7,8 @@ export interface Character extends Omit<DraftCharacter, 'equipment'> {
    * de compras da criação (um array) até o primeiro item ser equipado; ver ROADMAP, passo 7d.
    */
   equipment?: CharacterEquipment | EquipmentItem[] | null;
+  /** As Condições ativas (`characters.conditions`, `jsonb`). */
+  conditions?: ConditionEntry[] | null;
   id: string;
   user_id: string;
   has_participated_in_session: boolean;

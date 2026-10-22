@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { updateCharacterRest } from '@/data-access/characters';
-import { updateGameSession } from '@/data-access/sessions';
+import { updateGameSession, type GameSession, type SessionNpc } from '@/data-access/sessions';
+import type { Character } from '@/features/character-management/types';
+import type { CharacterSkills } from '@/features/character-creation/types';
 import { Button } from '@/components/ui/button';
 import { Coffee, Moon, Loader2 } from 'lucide-react';
 import { calculateRechargedAbilities } from '@/utils/abilityUtils';
@@ -15,10 +17,23 @@ import { characterVitalsService } from '@/data-access/vitals';
 
 interface SessionRestControlsProps {
   sessionId: string;
-  sessionData: any;
-  playerCharacters: any[];
-  npcs?: any[];
+  sessionData: Pick<GameSession, 'short_rests_today' | 'current_day' | 'last_long_rest_day'> | null;
+  playerCharacters: { character?: Character | null }[];
+  npcs?: SessionNpc[];
   onRestCompleted?: () => void;
+}
+
+/** Quem descansa: os personagens dos jogadores e os NPCs com ficha, nunca os inimigos. */
+function restTargets(
+  playerCharacters: { character?: Character | null }[],
+  npcs: SessionNpc[],
+): Character[] {
+  return [
+    ...playerCharacters.flatMap((pc) =>
+      pc.character && !pc.character.is_enemy ? [pc.character] : [],
+    ),
+    ...npcs.filter((npc) => !npc.is_enemy),
+  ];
 }
 
 export function SessionRestControls({
@@ -60,18 +75,13 @@ export function SessionRestControls({
       await updateGameSession(sessionId, { short_rests_today: shortRestsTaken + 1 });
 
       // 2. Heal (possibly 0 PV) and recharge short-rest abilities for everyone
-      const allCharacters = [
-        ...playerCharacters
-          .filter((pc) => pc.character && !pc.character.is_enemy)
-          .map((pc) => pc.character),
-        ...npcs.filter((npc) => !npc.is_enemy),
-      ];
+      const allCharacters = restTargets(playerCharacters, npcs);
 
       const updates = allCharacters.map((char) => {
         const currentStats = char.stats || {};
 
         // Calculate recharged abilities
-        const currentSkills = char.skills || {};
+        const currentSkills = (char.skills || {}) as CharacterSkills;
         const abilityUses = currentSkills.ability_uses || {};
         const newAbilityUses = calculateRechargedAbilities(abilityUses, 'short_rest');
 
@@ -115,18 +125,13 @@ export function SessionRestControls({
       const faithRecovered = calculateFaithRecovery(baseFaithRoll, hasPriest);
 
       // 3. Update all characters (players and npcs)
-      const allCharacters = [
-        ...playerCharacters
-          .filter((pc) => pc.character && !pc.character.is_enemy)
-          .map((pc) => pc.character),
-        ...npcs.filter((npc) => !npc.is_enemy),
-      ];
+      const allCharacters = restTargets(playerCharacters, npcs);
 
       const updates = allCharacters.map((char) => {
         const currentStats = char.stats || {};
 
         // Calculate recharged abilities
-        const currentSkills = char.skills || {};
+        const currentSkills = (char.skills || {}) as CharacterSkills;
         const abilityUses = currentSkills.ability_uses || {};
         const newAbilityUses = calculateRechargedAbilities(abilityUses, 'long_rest');
 
