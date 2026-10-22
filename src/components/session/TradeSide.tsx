@@ -90,7 +90,7 @@ export function TradeSide({
     } else if (characterId) {
       getTradeInventory(characterId).then((data) => {
         setInventoryItems(
-          data.map((row: any) => ({
+          data.map((row) => ({
             id: row.items.id,
             name: row.items.name,
             description: row.items.description,

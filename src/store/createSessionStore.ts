@@ -19,13 +19,27 @@ export type SessionEnemyDraft = {
   imageBase64?: string;
 };
 
+/** A ficha de um NPC jogável da preparação: as chaves do formulário, lidas com valor padrão. */
+export type SessionNPCCharacterData = {
+  tribo?: string;
+  classe?: string;
+  level?: number;
+  ca?: number;
+  for?: number;
+  des?: number;
+  con?: number;
+  int?: number;
+  sab?: number;
+  car?: number;
+};
+
 export type SessionNPCDraft = {
   id: string; // temp id
   name: string;
   description: string;
-  stats?: Record<string, any>;
+  stats?: Record<string, unknown>;
   isPlayable: boolean;
-  characterData?: Record<string, any>;
+  characterData?: SessionNPCCharacterData;
 };
 
 interface SessionDraftState {

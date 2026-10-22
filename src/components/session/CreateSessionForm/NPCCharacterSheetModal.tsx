@@ -60,8 +60,8 @@ export function NPCCharacterSheetModal({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CharacterFormValues>({
-    resolver: zodResolver(characterSchema) as any,
+  } = useForm<z.input<typeof characterSchema>, unknown, CharacterFormValues>({
+    resolver: zodResolver(characterSchema),
     defaultValues: {
       name: initialName,
       description: initialDescription,

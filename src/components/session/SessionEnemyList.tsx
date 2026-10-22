@@ -45,7 +45,7 @@ export function SessionEnemyList({
           enemy.stats,
           delta,
         );
-        updateLocalEnemy(enemy.id, { stats: newStats as any });
+        updateLocalEnemy(enemy.id, { stats: newStats });
       } catch (e) {
         console.error('Erro ao atualizar status do inimigo:', e);
       }

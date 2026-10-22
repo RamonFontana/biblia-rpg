@@ -6,6 +6,7 @@ import { Heart, LogIn, Minus, Plus, Scale, Shield, Sparkles, Store } from 'lucid
 import { MasterDeathControls } from '../combat/MasterDeathControls';
 import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv } from '@/domain/vitals';
+import { getCharacterLevel } from '@/domain/levelUp';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
@@ -49,7 +50,7 @@ export function PlayerCard({
 
   const handleAddCondition = async (conditionId: string, duration: number) => {
     if (!character?.id) return;
-    const current = ((character as any).conditions as unknown as ConditionEntry[]) || [];
+    const current = character.conditions || [];
     const newCond: ConditionEntry = { conditionId, duration: duration > 0 ? duration : null };
 
     // Optimistic Update
@@ -63,7 +64,7 @@ export function PlayerCard({
 
   const handleRemoveCondition = async (conditionId: string) => {
     if (!character?.id) return;
-    const current = ((character as any).conditions as unknown as ConditionEntry[]) || [];
+    const current = character.conditions || [];
 
     // Optimistic Update
     const updated = current.filter((c) => c.conditionId !== conditionId);
@@ -74,7 +75,7 @@ export function PlayerCard({
     await removeConditionFromCharacter(character.id, current, conditionId);
   };
 
-  const currentConditions = ((character as any)?.conditions as unknown as ConditionEntry[]) || [];
+  const currentConditions = character?.conditions || [];
 
   return (
     <div
@@ -102,7 +103,7 @@ export function PlayerCard({
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="min-w-0 truncate block max-w-[200px] sm:max-w-full text-lg font-medium text-stone-200">
                 {character
-                  ? `${character.name} (Nível ${character.level || (character.stats as any)?.level || 1})`
+                  ? `${character.name} (Nível ${getCharacterLevel(character)})`
                   : user.name || 'Jogador'}
               </span>
               {isSessionGM && (
