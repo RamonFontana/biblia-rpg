@@ -53,9 +53,30 @@ export function formatModifier(modifier: number): string {
 import { calculateModifier, calculateProficiency } from '@/domain/attributes';
 import { getVocationRules } from './rules/vocations';
 
+/**
+ * O que o cálculo de um Teste lê da ficha. Os campos `jsonb` chegam como `Json` (lidos do banco) ou
+ * já tipados (a ficha carregada), então ficam `unknown` e são lidos pelas funções abaixo.
+ */
+export interface TestSheet {
+  attributes?: unknown;
+  vocation?: string | null;
+  level?: number | null;
+  proficiencies?: unknown;
+}
+
+function readAttribute(sheet: TestSheet, key: string): number | undefined {
+  return (sheet.attributes as Record<string, number | undefined> | null | undefined)?.[key];
+}
+
+type SkillProficiencies = { skill_proficiencies?: string[] } | null | undefined;
+
+function readSkillProficiencies(sheet: TestSheet): string[] {
+  return (sheet.proficiencies as SkillProficiencies)?.skill_proficiencies || [];
+}
+
 export function getTestModifiers(
   testType: string,
-  charData: any,
+  charData: TestSheet | null | undefined,
 ): { attrMod: number; profBonus: number } {
   let attrMod = 0;
   let profBonus = 0;
@@ -75,8 +96,7 @@ export function getTestModifiers(
     };
     const mappedKey = attrNameMap[attrName];
     if (mappedKey) {
-      const attrValue = (charData.attributes as any)?.[mappedKey];
-      attrMod = calculateModifier(attrValue);
+      attrMod = calculateModifier(readAttribute(charData, mappedKey));
 
       const rules = getVocationRules(charData.vocation);
       const savingThrows = rules?.savingThrows || [];
@@ -89,11 +109,9 @@ export function getTestModifiers(
 
   const skillInfo = SKILLS_LIST.find((s) => s.name === testType);
   if (skillInfo) {
-    const attrValue = (charData.attributes as any)?.[skillInfo.attribute];
-    attrMod = calculateModifier(attrValue);
+    attrMod = calculateModifier(readAttribute(charData, skillInfo.attribute));
 
-    const proficiencies = (charData.proficiencies as any)?.skill_proficiencies || [];
-    if (proficiencies.includes(skillInfo.id)) {
+    if (readSkillProficiencies(charData).includes(skillInfo.id)) {
       profBonus = calculateProficiency(charData.level || 1);
     }
   } else {
@@ -109,8 +127,7 @@ export function getTestModifiers(
     };
     const mappedKey = attrNameMap[testType];
     if (mappedKey) {
-      const attrValue = (charData.attributes as any)?.[mappedKey];
-      attrMod = calculateModifier(attrValue);
+      attrMod = calculateModifier(readAttribute(charData, mappedKey));
     }
   }
 
@@ -125,7 +142,7 @@ export function getTestModifiers(
 export function getTestBreakdown(
   testType: string,
   resultValue: number | null,
-  charData: any,
+  charData: TestSheet | null | undefined,
   rollValue?: number | null,
 ): string {
   if (resultValue === null) return '';

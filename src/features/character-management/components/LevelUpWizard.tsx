@@ -3,6 +3,13 @@ import type { Character } from '../types';
 import { updateCharacter } from '@/data-access/characters';
 import { applyMaxPvIncrease } from '@/domain/vitals';
 import { ABILITIES } from '@/content/abilities';
+import type { AbilityDefinition } from '@/content/schemas';
+import { getErrorMessage } from '@/lib/errorMessage';
+import type {
+  CharacterAttributes,
+  CharacterSkills,
+  CharacterStats,
+} from '@/features/character-creation/types';
 import {
   ASI_LEVELS,
   calculateLevelUpHp,
@@ -14,6 +21,24 @@ interface LevelUpWizardProps {
   character: Character;
   onComplete: () => void;
   onCancel: () => void;
+}
+
+type PathChoice = 'A' | 'B';
+type PathChoices = Record<number, PathChoice>;
+
+/** Habilidade que oferece um Caminho: só essas entram na escolha do level-up. */
+type PathAbility = AbilityDefinition & { path: PathChoice };
+
+const ATTRIBUTE_KEYS = ['for', 'des', 'con', 'int', 'sab', 'car'] as const;
+
+function asAttributeKey(value: string): keyof CharacterAttributes | undefined {
+  return ATTRIBUTE_KEYS.find((key) => key === value);
+}
+
+/** Fichas antigas guardam o Caminho do nível 1 como texto; hoje é um mapa nível → Caminho. */
+function toPathChoices(choice: PathChoices | PathChoice | undefined): PathChoices {
+  if (typeof choice === 'string') return { 1: choice };
+  return choice || {};
 }
 
 function normalizeString(str: string) {
@@ -29,12 +54,15 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   const [error, setError] = useState<string | null>(null);
 
   const newLevel = getCharacterLevel(character) + 1;
-  const currentCon = (character.attributes as any)?.con || 10;
+  const currentCon = character.attributes?.con || 10;
 
   // State for choices
-  const [selectedTribePath, setSelectedTribePath] = useState<'A' | 'B' | null>(null);
-  const [selectedVocationPath, setSelectedVocationPath] = useState<'A' | 'B' | null>(null);
-  const [asiChoices, setAsiChoices] = useState<{ attr1?: string; attr2?: string }>({});
+  const [selectedTribePath, setSelectedTribePath] = useState<PathChoice | null>(null);
+  const [selectedVocationPath, setSelectedVocationPath] = useState<PathChoice | null>(null);
+  const [asiChoices, setAsiChoices] = useState<{
+    attr1?: keyof CharacterAttributes;
+    attr2?: keyof CharacterAttributes;
+  }>({});
 
   const normalizedVocation = normalizeString(character.vocation || '');
   const { hpAverage, newConMod, retroactiveHpGained, totalHpGained } = calculateLevelUpHp({
@@ -47,21 +75,21 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   // Steps calculation
   const tribeOptions = useMemo(() => {
     return ABILITIES.filter(
-      (a) =>
+      (a): a is PathAbility =>
         a.sourceType === 'tribe' &&
         normalizeString(a.sourceId) === normalizeString(character.tribe || '') &&
         a.minLevel === newLevel &&
-        a.path,
+        a.path !== undefined,
     );
   }, [character.tribe, newLevel]);
 
   const vocationOptions = useMemo(() => {
     return ABILITIES.filter(
-      (a) =>
+      (a): a is PathAbility =>
         a.sourceType === 'vocation' &&
         normalizeString(a.sourceId) === normalizedVocation &&
         a.minLevel === newLevel &&
-        a.path,
+        a.path !== undefined,
     );
   }, [normalizedVocation, newLevel]);
 
@@ -107,9 +135,11 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
       setError(null);
 
       // Build updates
-      const currentStats: any = character.stats || {};
-      const currentAttributes: any = character.attributes || {};
-      const currentSkills: any = character.skills || {};
+      const currentStats: Partial<CharacterStats> = character.stats || {};
+      const currentAttributes: Partial<CharacterAttributes> = character.attributes || {};
+      // O level-up é de ficha de jogador, cujas `skills` são `CharacterSkills` (a lista de
+      // Habilidades de inimigo é a outra forma do tipo).
+      const currentSkills = (character.skills || {}) as CharacterSkills;
 
       const { pv, current_pv } = applyMaxPvIncrease(currentStats, totalHpGained);
       const newStats = {
@@ -130,39 +160,33 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
       const newSkills = { ...currentSkills };
       newSkills.path_choices = newSkills.path_choices || {};
 
-      // Upgrade path_choices to object if it's string
-      if (typeof newSkills.path_choices.tribe === 'string') {
-        newSkills.path_choices.tribe = { 1: newSkills.path_choices.tribe };
-      } else {
-        newSkills.path_choices.tribe = newSkills.path_choices.tribe || {};
-      }
-
-      if (typeof newSkills.path_choices.vocation === 'string') {
-        newSkills.path_choices.vocation = { 1: newSkills.path_choices.vocation };
-      } else {
-        newSkills.path_choices.vocation = newSkills.path_choices.vocation || {};
-      }
+      const tribeChoices = toPathChoices(newSkills.path_choices.tribe);
+      const vocationChoices = toPathChoices(newSkills.path_choices.vocation);
+      newSkills.path_choices.tribe = tribeChoices;
+      newSkills.path_choices.vocation = vocationChoices;
 
       if (hasTribeChoice && selectedTribePath) {
-        newSkills.path_choices.tribe[newLevel] = selectedTribePath;
+        tribeChoices[newLevel] = selectedTribePath;
       }
 
       if (hasVocationChoice && selectedVocationPath) {
-        newSkills.path_choices.vocation[newLevel] = selectedVocationPath;
+        vocationChoices[newLevel] = selectedVocationPath;
       }
 
+      // `stats` e `attributes` são lidos de forma defensiva (`Partial`, `|| 10`): fichas antigas
+      // podem não ter todas as chaves, e gravamos o que a ficha tinha mais a mudança.
       await updateCharacter(character.id, {
         level: newLevel,
         pending_level_up: false,
-        stats: newStats,
-        attributes: newAttributes,
+        stats: newStats as CharacterStats,
+        attributes: newAttributes as CharacterAttributes,
         skills: newSkills,
       });
 
       onComplete();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || 'Erro ao salvar progressão');
+      setError(getErrorMessage(err, 'Erro ao salvar progressão'));
       setIsSubmitting(false);
     }
   };
@@ -214,9 +238,9 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
 
   const renderPathChoice = (
     type: 'tribe' | 'vocation',
-    options: any[],
-    selected: string | null,
-    onSelect: (val: any) => void,
+    options: PathAbility[],
+    selected: PathChoice | null,
+    onSelect: (path: PathChoice) => void,
   ) => {
     return (
       <div className="space-y-4">
@@ -250,7 +274,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   };
 
   const renderAsiStep = () => {
-    const attrs = ['for', 'des', 'con', 'int', 'sab', 'car'] as const;
+    const attrs = ATTRIBUTE_KEYS;
     const attrNames = {
       for: 'Força',
       des: 'Destreza',
@@ -259,10 +283,10 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
       sab: 'Sabedoria',
       car: 'Carisma',
     };
-    const currentAttributes: any = character.attributes || {};
+    const currentAttributes: Partial<CharacterAttributes> = character.attributes || {};
 
     const handleSelect = (slot: 'attr1' | 'attr2', val: string) => {
-      setAsiChoices((prev) => ({ ...prev, [slot]: val }));
+      setAsiChoices((prev) => ({ ...prev, [slot]: asAttributeKey(val) }));
     };
 
     return (

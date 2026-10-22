@@ -1,14 +1,4 @@
 {
-  "src/components/character/CharacterSavingThrows.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/character/CharacterSkillsList.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/character/NPCInventoryManager.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
@@ -125,11 +115,6 @@
       "count": 1
     }
   },
-  "src/features/character-management/components/LevelUpWizard.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    }
-  },
   "src/features/character-management/pages/CharacterEdit.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
@@ -138,11 +123,6 @@
   "src/features/character-management/pages/CharacterList.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/character-management/utils/characterMath.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
     }
   },
   "src/lib/equipmentUtils.ts": {

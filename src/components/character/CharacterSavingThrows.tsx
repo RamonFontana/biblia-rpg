@@ -2,14 +2,15 @@ import { ShieldAlert } from 'lucide-react';
 import { formatModifier } from '@/features/character-management/utils/characterMath';
 import { calculateModifier, calculateProficiency } from '@/domain/attributes';
 import { getVocationRules } from '@/features/character-management/utils/rules/vocations';
+import type { CharacterAttributes } from '@/features/character-creation/types';
 
 interface CharacterSavingThrowsProps {
-  attributes: any;
+  attributes: Partial<CharacterAttributes> | null | undefined;
   level: number;
   vocation: string;
 }
 
-const ATTRIBUTES = [
+const ATTRIBUTES: { id: keyof CharacterAttributes; name: string }[] = [
   { id: 'for', name: 'Força' },
   { id: 'des', name: 'Destreza' },
   { id: 'con', name: 'Constituição' },
