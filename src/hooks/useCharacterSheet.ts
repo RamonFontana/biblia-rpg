@@ -6,10 +6,11 @@ import {
   subscribeToCharacterSheet,
 } from '@/data-access/characters';
 import { getCharacterInventory } from '@/data-access/inventory';
+import type { InventoryItem } from '@/types/inventory';
 import { findParticipantCharacterId } from '@/data-access/sessions';
 import { getErrorMessage } from '@/lib/errorMessage';
 
-export type SheetInventoryItems = Awaited<ReturnType<typeof getCharacterInventory>>;
+export type SheetInventoryItems = InventoryItem[];
 
 interface SheetSource {
   userId?: string;

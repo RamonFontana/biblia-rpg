@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCharacterById } from '@/data-access/characters';
+import { getErrorMessage } from '@/lib/errorMessage';
 import { WizardLayout } from '../../character-creation/components/WizardLayout';
 import { useCharacterCreationStore } from '../../character-creation/store/useCharacterCreationStore';
 import type { DraftCharacter } from '../../character-creation/types';
@@ -28,17 +29,19 @@ export function CharacterEdit() {
           tribe: data.tribe,
           vocation: data.vocation,
           coins: data.coins || 0,
-          equipment: (data.equipment as any) || [],
-          attributes: data.attributes as any,
-          stats: data.stats as any,
+          // A lista de compras só existe na ficha recém-criada; depois o campo guarda as posições
+          // vestidas, e o Mercador recomeça de uma lista vazia.
+          equipment: Array.isArray(data.equipment) ? data.equipment : [],
+          attributes: data.attributes,
+          stats: data.stats,
           fortress: data.fortress || '',
           temptation: data.temptation || '',
-          narrative: data.narrative as any,
+          narrative: data.narrative,
         };
 
         loadDraft(draft, id, data.has_participated_in_session || false);
-      } catch (err: any) {
-        setError(err.message || 'Erro ao carregar personagem');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Erro ao carregar personagem'));
       } finally {
         setLoading(false);
       }

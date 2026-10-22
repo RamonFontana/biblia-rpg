@@ -3,7 +3,13 @@
 // Decisões: ROADMAP.md, Onda 3 (passo 5). Termos: CONTEXT.md (CA, Elmo, Qualidade).
 import { describe, expect, it } from 'vitest';
 import type { CharacterEquipment } from '@/types/combat';
-import { checkWeaponProficiency, equipItem, getCombatStats, unequipSlot } from './equipmentUtils';
+import {
+  checkWeaponProficiency,
+  equipItem,
+  getCombatStats,
+  getEquippedSlots,
+  unequipSlot,
+} from './equipmentUtils';
 
 // Monta um personagem com ficha: DES nos atributos, itens no inventário e nos slots indicados.
 type Slots = { head?: string; body?: string; mainHand?: string; offHand?: string };
@@ -299,6 +305,24 @@ describe('checkWeaponProficiency', () => {
 
   it('sem Vocação, a arma marcial vale', () => {
     expect(checkWeaponProficiency(martial, '')).toBe(true);
+  });
+});
+
+describe('getEquippedSlots', () => {
+  it('sem equipamento gravado, todas as posições vazias', () => {
+    const empty = { head: null, body: null, mainHand: null, offHand: null };
+    expect(getEquippedSlots(undefined)).toEqual(empty);
+    expect(getEquippedSlots(null)).toEqual(empty);
+  });
+
+  it('com as posições gravadas, devolve as próprias', () => {
+    const slots = { head: 'a', body: null, mainHand: 'b', offHand: 'b' };
+    expect(getEquippedSlots(slots)).toBe(slots);
+  });
+
+  it('GAP: a ficha recém-criada guarda a lista de compras, e é ela que sai', () => {
+    const cart = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
+    expect(getEquippedSlots(cart)).toBe(cart);
   });
 });
 

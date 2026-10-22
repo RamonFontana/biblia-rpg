@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { listCatalogItems } from '@/data-access/inventory';
 import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
 import { Plus, Minus, Trash2 } from 'lucide-react';
+import type { InventoryItem } from '@/types/inventory';
+
+type CatalogOption = Awaited<ReturnType<typeof listCatalogItems>>[number];
 
 interface NPCInventoryManagerProps {
   characterId: string;
-  items: any[];
+  items: InventoryItem[];
 }
 
 export function NPCInventoryManager({ characterId, items }: NPCInventoryManagerProps) {
   const { addItem, updateQuantity, removeItem, isUpdating } = useUpdateNPCInventory();
-  const [availableItems, setAvailableItems] = useState<any[]>([]);
+  const [availableItems, setAvailableItems] = useState<CatalogOption[]>([]);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantityToAdd, setQuantityToAdd] = useState(1);
 
@@ -69,7 +72,7 @@ export function NPCInventoryManager({ characterId, items }: NPCInventoryManagerP
         <h4 className="text-sm font-bold text-amber-500/80 uppercase tracking-wider mb-2">
           Gerenciar Itens
         </h4>
-        {items.map((item: any) => (
+        {items.map((item) => (
           <div
             key={item.id}
             className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-900 border border-stone-800 rounded-lg"

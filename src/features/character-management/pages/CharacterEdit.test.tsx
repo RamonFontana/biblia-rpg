@@ -101,6 +101,13 @@ describe('CharacterEdit: carregar a ficha no rascunho', () => {
     expect((await loaded()).draft.equipment).toEqual(cart);
   });
 
+  it('com as posições vestidas gravadas, o Mercador recomeça de uma lista vazia', async () => {
+    h.getCharacterById.mockResolvedValue(
+      sheet({ equipment: { head: 'a', body: null, mainHand: 'b', offHand: 'b' } }),
+    );
+    expect((await loaded()).draft.equipment).toEqual([]);
+  });
+
   it('sem equipamento gravado, a lista é vazia', async () => {
     h.getCharacterById.mockResolvedValue(sheet({ equipment: null }));
     expect((await loaded()).draft.equipment).toEqual([]);

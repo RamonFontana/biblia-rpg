@@ -1,4 +1,6 @@
 import type { CharacterEquipment, ItemEffects } from '../types/combat';
+import type { CombatInventoryItem } from '../types/inventory';
+import type { Character } from '@/features/character-management/types';
 import { calculateArmorClass, UNARMORED_AC, type EquippedItemRef } from '@/domain/armorClass';
 import { calculateModifier } from '@/domain/attributes';
 import {
@@ -6,6 +8,22 @@ import {
   getItemConditionResistances,
   resolveEquippedItems,
 } from '@/domain/armorResistance';
+
+export const EMPTY_EQUIPMENT: CharacterEquipment = {
+  head: null,
+  body: null,
+  mainHand: null,
+  offHand: null,
+};
+
+/**
+ * As posições vestidas da ficha, ou todas vazias. Uma ficha recém-criada guarda aí a lista de
+ * compras (um array) até o primeiro item ser equipado, e é esse array que sai daqui; ver ROADMAP,
+ * passo 7d.
+ */
+export function getEquippedSlots(equipment: Character['equipment']): CharacterEquipment {
+  return (equipment || EMPTY_EQUIPMENT) as CharacterEquipment;
+}
 
 export function canEquipItem(itemEffects: ItemEffects): boolean {
   if (!itemEffects.slot) return false;
@@ -100,7 +118,16 @@ export function unequipSlot(
   return newEquipment;
 }
 
-export function checkWeaponProficiency(weapon: any, vocation: string): boolean {
+/** O que a proficiência lê de uma arma: o catálogo (`effects.weaponCategory`) ou o `type` dela. */
+interface WeaponLike {
+  type?: string | null;
+  effects?: ItemEffects | null;
+}
+
+export function checkWeaponProficiency(
+  weapon: WeaponLike | null | undefined,
+  vocation: string,
+): boolean {
   if (!weapon) return false;
 
   const weaponCategory = weapon.effects?.weaponCategory?.toLowerCase() || '';
@@ -128,35 +155,46 @@ function dexModifierOf(attributes: { des?: unknown } | null | undefined): number
  * Inimigos e NPCs simples não têm ficha: a CA é a que o Mestre digitou (`stats.ca`). Quem tem
  * ficha (jogador e NPC jogável) tem a CA calculada.
  */
-function hasSheet(character: { attributes?: unknown; is_enemy?: boolean | null } | null) {
+function hasSheet(
+  character: CombatSource | null | undefined,
+): character is CombatSource & { attributes: { des?: unknown } } {
   return (
     !character?.is_enemy && !!character?.attributes && typeof character.attributes === 'object'
   );
 }
 
-export function getCombatStats(character: any) {
+/** O que o cálculo de combate lê de uma ficha, de um NPC ou de um inimigo. */
+interface CombatSource {
+  stats?: unknown;
+  equipment?: unknown;
+  attributes?: { des?: unknown } | null;
+  is_enemy?: boolean | null;
+  character_items?: CombatInventoryItem[];
+}
+
+/** O `jsonb` do equipamento às vezes chega como texto. */
+function parseEquipment(equipment: unknown): Partial<CharacterEquipment> | null | undefined {
+  if (typeof equipment !== 'string') return equipment as Partial<CharacterEquipment> | null;
+  try {
+    return JSON.parse(equipment);
+  } catch {
+    return {};
+  }
+}
+
+export function getCombatStats(character: CombatSource | null | undefined) {
   const { stats, equipment, character_items: inventoryItems = [] } = character || {};
   let resistances: string[] = [];
   let conditionResistanceLevels: Record<string, number> = {};
   let weapon: { name: string; damageDie: string } | undefined = undefined;
   let armor: { body?: EquippedItemRef; shield?: EquippedItemRef } = {};
 
-  // Ensure equipment is an object (sometimes JSONB can be stringified)
-  let parsedEquipment = equipment;
-  if (typeof equipment === 'string') {
-    try {
-      parsedEquipment = JSON.parse(equipment);
-    } catch {
-      parsedEquipment = {};
-    }
-  }
+  const parsedEquipment = parseEquipment(equipment);
 
   if (parsedEquipment) {
     const findItem = (slotId: string | null | undefined) => {
       if (!slotId) return undefined;
-      return inventoryItems.find(
-        (i: any) => i.id === slotId || (i.item_id && i.item_id === slotId),
-      );
+      return inventoryItems.find((i) => i.id === slotId || (i.item_id && i.item_id === slotId));
     };
 
     const headItem = findItem(parsedEquipment.head);
@@ -165,7 +203,7 @@ export function getCombatStats(character: any) {
     const offHandItem = findItem(parsedEquipment.offHand);
 
     // O motor decide o que é armadura e escudo pelo catálogo; o elmo só entra nas resistências.
-    const itemRef = (invItem: any): EquippedItemRef | undefined => {
+    const itemRef = (invItem: CombatInventoryItem | undefined): EquippedItemRef | undefined => {
       if (!invItem) return undefined;
       const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
       return { slug: itemData?.slug, level: invItem.level };
@@ -174,7 +212,7 @@ export function getCombatStats(character: any) {
 
     // As Condições a que o item resiste vêm do catálogo pelo slug; as personalizadas do inventário
     // (tipos de dano, outro vocabulário) só se juntam para exibição.
-    const getResistances = (invItem: any) => {
+    const getResistances = (invItem: CombatInventoryItem | undefined) => {
       if (!invItem) return [];
       const itemData = Array.isArray(invItem.items) ? invItem.items[0] : invItem.items;
 
@@ -227,6 +265,6 @@ export function getCombatStats(character: any) {
     };
   }
 
-  const baseAc = Number(stats?.ca) || UNARMORED_AC;
+  const baseAc = Number((stats as { ca?: unknown } | null | undefined)?.ca) || UNARMORED_AC;
   return { totalAc: baseAc, baseAc, bonusAc: 0, weapon, resistances, conditionResistanceLevels };
 }

@@ -7,16 +7,9 @@ import {
   updateWeaponEffects,
 } from '@/data-access/inventory';
 import { applyAbilityUse, restoreAbilityUses, type UsableAbility } from '@/domain/abilityUse';
-import { equipItem, unequipSlot } from '@/lib/equipmentUtils';
+import { equipItem, getEquippedSlots, unequipSlot } from '@/lib/equipmentUtils';
 import { useAmmunition } from '@/hooks/useAmmunition';
 import type { CharacterEquipment, ItemEffects, WeaponEffect } from '@/types/combat';
-
-const EMPTY_EQUIPMENT: CharacterEquipment = {
-  head: null,
-  body: null,
-  mainHand: null,
-  offHand: null,
-};
 
 interface Options {
   character: Character | null;
@@ -67,7 +60,7 @@ export function useSheetActions({ character, setCharacter, isGM, isInventoryBusy
   ) => {
     if (!character) return;
     await busy('Error equipping item:', async () => {
-      const currentEquipment: CharacterEquipment = character.equipment || EMPTY_EQUIPMENT;
+      const currentEquipment: CharacterEquipment = getEquippedSlots(character.equipment);
       const newEquipment = equipItem(characterItemId, itemEffects, currentEquipment, targetHand);
       await updateCharacterEquipment(character.id, newEquipment);
       setCharacter({ ...character, equipment: newEquipment });
@@ -77,7 +70,7 @@ export function useSheetActions({ character, setCharacter, isGM, isInventoryBusy
   const handleUnequip = async (slot: 'head' | 'body' | 'mainHand' | 'offHand') => {
     if (!character) return;
     await busy('Error unequipping item:', async () => {
-      const currentEquipment: CharacterEquipment = character.equipment || EMPTY_EQUIPMENT;
+      const currentEquipment: CharacterEquipment = getEquippedSlots(character.equipment);
       const newEquipment = unequipSlot(slot, currentEquipment);
       await updateCharacterEquipment(character.id, newEquipment);
       setCharacter({ ...character, equipment: newEquipment });

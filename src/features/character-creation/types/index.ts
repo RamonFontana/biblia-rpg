@@ -62,7 +62,8 @@ export interface DraftCharacter {
   fortress?: string;
   temptation?: string;
   stats?: CharacterStats;
-  equipment?: any; // Replace with CharacterEquipment from combat types later or just any for now to avoid circular deps. Actually let's import it.
+  /** A lista de compras da criação (o Mercador); a ficha gravada usa `Character.equipment`. */
+  equipment?: EquipmentItem[];
   coins?: number;
   narrative?: CharacterNarrative;
   skills?: CharacterSkills | EnemySkill[];

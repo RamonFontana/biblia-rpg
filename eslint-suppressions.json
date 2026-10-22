@@ -1,9 +1,4 @@
 {
-  "src/components/character/NPCInventoryManager.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
   "src/components/combat/CombatDashboard.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
@@ -38,16 +33,6 @@
   "src/components/combat/PlayerCombatView.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/components/inventory/EquipmentSlots.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
-  "src/components/inventory/InventoryList.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
     }
   },
   "src/components/session/CreateSessionForm/NPCCharacterSheetModal.tsx": {
@@ -108,26 +93,6 @@
   "src/components/session/TradeSide.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/character-creation/types/index.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/character-management/pages/CharacterEdit.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    }
-  },
-  "src/features/character-management/pages/CharacterList.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/lib/equipmentUtils.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
     }
   },
   "src/services/combatEngine.ts": {

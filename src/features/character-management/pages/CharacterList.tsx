@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyCharacters, getActiveSessionCharacterIds } from '@/data-access/characters';
+import { getErrorMessage } from '@/lib/errorMessage';
 import type { Character } from '../types';
 import { CharacterCard } from '../components/CharacterCard';
 import { LevelUpWizard } from '../components/LevelUpWizard';
@@ -22,8 +23,8 @@ export function CharacterList() {
         ]);
         setCharacters(charData);
         setActiveSessionIds(activeIds);
-      } catch (err: any) {
-        setError(err.message || 'Erro ao carregar dados');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Erro ao carregar dados'));
       } finally {
         setLoading(false);
       }

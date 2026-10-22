@@ -1,16 +1,10 @@
 import type { ConsumableEffects } from '@/domain/consumables';
 import type { Character } from '@/features/character-management/types';
 import type { CharacterEquipment, ItemEffects, WeaponEffect } from '@/types/combat';
+import { getEquippedSlots } from '@/lib/equipmentUtils';
 import { EquipmentSlots } from '../../inventory/EquipmentSlots';
 import { InventoryList } from '../../inventory/InventoryList';
 import type { SheetInventoryItems } from '@/hooks/useCharacterSheet';
-
-const EMPTY_EQUIPMENT: CharacterEquipment = {
-  head: null,
-  body: null,
-  mainHand: null,
-  offHand: null,
-};
 
 /** A linha do inventário que a lista entrega ao usar um consumível. */
 export interface ConsumableItem {
@@ -59,7 +53,7 @@ export function EquipmentSection({
   onRemoveItem,
 }: EquipmentSectionProps) {
   const { attributes, vocation } = character;
-  const equipment: CharacterEquipment = character.equipment || EMPTY_EQUIPMENT;
+  const equipment: CharacterEquipment = getEquippedSlots(character.equipment);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
