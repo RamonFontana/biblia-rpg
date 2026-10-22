@@ -4,9 +4,16 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useDeathSaves } from '../../hooks/useDeathSaves';
 import { getDeathSaveOutcome } from '@/domain/deathSaves';
+import type { Character } from '@/features/character-management/types';
 
 interface DeathSavesModalProps {
-  character: any;
+  character:
+    | Pick<
+        Character,
+        'id' | 'death_saves_successes' | 'death_saves_failures' | 'is_stable' | 'is_dead'
+      >
+    | null
+    | undefined;
   participantId?: string;
 }
 

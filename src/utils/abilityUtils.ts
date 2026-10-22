@@ -1,6 +1,7 @@
 import { ABILITIES } from '@/content/abilities';
 import type { AbilityDefinition } from '@/content/schemas';
 import { canonicalVocation } from '@/domain/vocation';
+import type { Character } from '@/features/character-management/types';
 
 export function getAbilitiesForCharacter(
   tribe: string,
@@ -105,4 +106,9 @@ export function resetCombatAbilities(
   }
 
   return newAbilityUses;
+}
+
+/** As skills de uma ficha comum; a lista de Habilidades de um inimigo não tem registro de usos. */
+export function abilitySkills(character: Pick<Character, 'skills'> | null | undefined) {
+  return Array.isArray(character?.skills) ? undefined : character?.skills;
 }

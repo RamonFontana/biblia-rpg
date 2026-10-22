@@ -25,7 +25,7 @@ export const combatEngine = {
       duration: 3, // Efeitos de arma padrão duram 3 rodadas se não curados
     }));
 
-    await this.executeAbilityOnTarget({ applyConditions } as any, targetParticipantId);
+    await this.executeAbilityOnTarget({ applyConditions }, targetParticipantId);
 
     // Notifica via toast
     if (typeof window !== 'undefined') {
@@ -41,7 +41,10 @@ export const combatEngine = {
    * Executa uma habilidade em um alvo, aplicando os efeitos mecânicos automatizados
    * (como applyConditions) se existirem.
    */
-  async executeAbilityOnTarget(ability: AbilityDefinition, targetParticipantId: string) {
+  async executeAbilityOnTarget(
+    ability: Pick<AbilityDefinition, 'applyConditions'>,
+    targetParticipantId: string,
+  ) {
     if (!ability.applyConditions || ability.applyConditions.length === 0) {
       return;
     }

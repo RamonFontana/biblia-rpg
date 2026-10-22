@@ -125,14 +125,14 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
 
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     {Array.isArray(participant.conditions) &&
-                      participant.conditions.map((condObj: any, i) => (
+                      (participant.conditions as unknown as ConditionEntry[]).map((condObj, i) => (
                         <ConditionBadge
                           key={i}
                           conditionId={condObj.conditionId}
                           duration={condObj.duration || undefined}
                           onRemove={async (conditionId) => {
                             const newConditions = removeCondition(
-                              (participant as any).conditions as unknown as ConditionEntry[],
+                              participant.conditions as unknown as ConditionEntry[],
                               conditionId,
                             );
                             await useCombatStore
@@ -149,7 +149,7 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
                           duration: duration > 0 ? duration : null,
                         };
                         const current =
-                          ((participant as any).conditions as unknown as ConditionEntry[]) || [];
+                          (participant.conditions as unknown as ConditionEntry[] | null) || [];
                         const newConditions = mergeCondition(current, newCond);
                         await useCombatStore
                           .getState()

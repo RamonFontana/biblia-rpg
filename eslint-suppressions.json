@@ -1,24 +1,4 @@
 {
-  "src/components/combat/CombatDashboard.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
-  "src/components/combat/DeathSavesModal.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/combat/EnemyCard.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/combat/EnemySheet.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
   "src/components/combat/PhysicalRollForm.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -27,16 +7,6 @@
       "count": 1
     },
     "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/components/combat/PlayerCombatView.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/services/combatEngine.ts": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   }

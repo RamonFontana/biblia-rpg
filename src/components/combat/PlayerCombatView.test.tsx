@@ -19,7 +19,8 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 vi.mock('@/data-access/characters', () => ({ updateCharacter: h.updateCharacter }));
-vi.mock('../../utils/abilityUtils', () => ({
+vi.mock('../../utils/abilityUtils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/abilityUtils')>()),
   getAbilitiesForCharacter: h.getAbilitiesForCharacter,
 }));
 vi.mock('./EnemyCombatList', async () => ({
@@ -240,6 +241,7 @@ describe('PlayerCombatView: usar uma Habilidade', () => {
     view();
     await useAbility('a1');
     expect(h.updateCharacter).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it('a falha ao gravar é registrada e o botão volta a liberar', async () => {

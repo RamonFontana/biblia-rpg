@@ -2,11 +2,12 @@ import { Card, CardContent } from '../ui/card';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { Shield, Heart } from 'lucide-react';
 import type { Character } from '@/features/character-management/types';
+import type { CombatParticipant } from '@/data-access/combat';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 
 interface EnemyCardProps {
   enemy: Character;
-  participant?: any;
+  participant?: Pick<CombatParticipant, 'hp_current'>;
   onClick?: () => void;
 }
 
