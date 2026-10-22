@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { ABILITIES } from '@/content/abilities';
 import type { AbilityDefinition } from '@/content/schemas';
 import {
+  abilitySkills,
   calculateRechargedAbilities,
   getAbilitiesForCharacter,
   resetCombatAbilities,
@@ -150,5 +151,22 @@ describe('resetCombatAbilities', () => {
     const combat = idOfUsage('combat');
     const shortRest = idOfUsage('short_rest');
     expect(resetCombatAbilities({ [combat]: 1, [shortRest]: 1 })).toEqual({ [shortRest]: 1 });
+  });
+});
+
+describe('abilitySkills', () => {
+  it('devolve as skills de uma ficha comum', () => {
+    const skills = { ability_uses: { a: 1 } };
+    expect(abilitySkills({ skills })).toBe(skills);
+  });
+
+  it('a lista de Habilidades de um inimigo não tem registro de usos', () => {
+    expect(abilitySkills({ skills: [{ name: 'Golpe', description: 'Dano' }] })).toBeUndefined();
+  });
+
+  it('sem ficha ou sem skills, devolve indefinido', () => {
+    expect(abilitySkills(null)).toBeUndefined();
+    expect(abilitySkills(undefined)).toBeUndefined();
+    expect(abilitySkills({})).toBeUndefined();
   });
 });

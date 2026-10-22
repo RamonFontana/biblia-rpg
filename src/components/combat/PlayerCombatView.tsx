@@ -8,14 +8,14 @@ import { useMemo, useState } from 'react';
 import { updateCharacter } from '@/data-access/characters';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
-import { getAbilitiesForCharacter } from '../../utils/abilityUtils';
+import { abilitySkills, getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
-import { spendFaith } from '@/domain/faith';
+import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 
 interface PlayerCombatViewProps {
-  character: any; // The current player character data
+  character: Character | null | undefined; // The current player character data
   enemies: Character[];
   isLoading: boolean;
 }
@@ -45,37 +45,18 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
     setIsUpdating(true);
 
     try {
-      const skills = character.skills || {};
-      const abilityUses = skills.ability_uses || {};
-      const currentUsed = abilityUses[ability.id] || 0;
+      const used = applyAbilityUse(ability, abilitySkills(character), character.stats);
 
-      const newSkills = {
-        ...skills,
-        ability_uses: {
-          ...abilityUses,
-          [ability.id]: currentUsed + 1,
-        },
-      };
-
-      const updates: any = { skills: newSkills };
-
-      if (ability.faithCost) {
-        const stats = character.stats || {};
-        const faithLeft = spendFaith(stats, ability.faithCost);
-
-        if (faithLeft !== null) {
-          updates.stats = {
-            ...stats,
-            current_faith: faithLeft,
-          };
-        } else {
-          // Not enough faith
-          setIsUpdating(false);
-          return;
-        }
+      if (!used) {
+        // Not enough faith
+        setIsUpdating(false);
+        return;
       }
 
-      await updateCharacter(character.id, updates);
+      await updateCharacter(character.id, {
+        skills: used.skills,
+        ...(used.stats ? { stats: used.stats } : {}),
+      });
     } catch (error) {
       console.error('Failed to use ability:', error);
     } finally {
@@ -88,7 +69,7 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
 
     // Convert level (could be string if from older DB but should be number)
     const level = Number(character.level) || 1;
-    const pathChoices = character.skills?.path_choices;
+    const pathChoices = abilitySkills(character)?.path_choices;
 
     return getAbilitiesForCharacter(character.tribe, character.vocation, level, pathChoices);
   }, [character]);
@@ -195,31 +176,24 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {characterAbilities.map((ability) => {
-              const abilityUses = character?.skills?.ability_uses || {};
-              const used = abilityUses[ability.id] || 0;
-              const currentUses = ability.maxUses ? Math.max(0, ability.maxUses - used) : undefined;
-              let disabled = false;
-              let disabledReason = '';
+              const availability = getAbilityAvailability(
+                ability,
+                abilitySkills(character),
+                character?.stats,
+              );
+              const currentUses = availability.remainingUses;
+              let disabled: boolean;
+              let disabledReason: string;
 
               if (!activeCombat && ability.usageType === 'combat') {
                 disabled = true;
                 disabledReason = 'Apenas em combate';
               } else if (isUpdating) {
                 disabled = true;
+                disabledReason = '';
               } else {
-                if (ability.faithCost) {
-                  if (spendFaith(character?.stats, ability.faithCost) === null) {
-                    disabled = true;
-                    disabledReason = 'Fé Insuficiente';
-                  }
-                }
-
-                if (!disabled && ability.maxUses) {
-                  if (used >= ability.maxUses) {
-                    disabled = true;
-                    disabledReason = 'Sem Usos';
-                  }
-                }
+                disabled = availability.disabled;
+                disabledReason = availability.reason;
               }
 
               return (

@@ -9,6 +9,7 @@ import {
 import { applyAbilityUse, restoreAbilityUses, type UsableAbility } from '@/domain/abilityUse';
 import { equipItem, getEquippedSlots, unequipSlot } from '@/lib/equipmentUtils';
 import { useAmmunition } from '@/hooks/useAmmunition';
+import { abilitySkills } from '@/utils/abilityUtils';
 import type { CharacterEquipment, ItemEffects, WeaponEffect } from '@/types/combat';
 
 interface Options {
@@ -130,9 +131,4 @@ export function useSheetActions({ character, setCharacter, isGM, isInventoryBusy
     handleUseAbility,
     handleRestoreAbility,
   };
-}
-
-/** As skills de uma ficha comum; a lista de Habilidades de um inimigo não tem registro de usos. */
-function abilitySkills(character: Character) {
-  return Array.isArray(character.skills) ? undefined : character.skills;
 }

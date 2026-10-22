@@ -1,12 +1,13 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet';
 import type { Character } from '@/features/character-management/types';
+import type { CombatParticipant } from '@/data-access/combat';
 import { Shield, Heart } from 'lucide-react';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 
 interface EnemySheetProps {
   enemy: Character | null;
-  participant?: any;
+  participant?: Pick<CombatParticipant, 'hp_current'>;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -81,7 +82,10 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
                   'sabedoria',
                   'carisma',
                 ];
-                const val = (enemy.attributes as any)?.[keys[idx]] ?? 10;
+                // GAP (ROADMAP, passo 7f): a ficha do inimigo guarda for/des/…, não estas chaves,
+                // então o valor sai sempre 10.
+                const val =
+                  (enemy.attributes as Record<string, number> | undefined)?.[keys[idx]] ?? 10;
                 const mod = Math.floor((val - 10) / 2);
                 return (
                   <div
@@ -103,7 +107,7 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
                 Habilidades
               </h3>
               <ul className="space-y-3">
-                {(enemy.skills as any[]).map((skill: any, idx: number) => {
+                {enemy.skills.map((skill, idx) => {
                   const title = skill.name || skill.description;
                   const hasDesc = skill.name && skill.description;
                   return (
