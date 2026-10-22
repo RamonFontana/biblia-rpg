@@ -44,12 +44,15 @@ describe('useActiveSession', () => {
     expect(h.listPlayerActiveSessions).toHaveBeenCalledTimes(1);
   });
 
-  it('sem usuário não consulta e termina o carregamento', async () => {
+  it('sem usuário não consulta, não registra erro e termina o carregamento', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     h.user = null;
     const { result } = renderHook(() => useActiveSession());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.activeSessions).toEqual([]);
     expect(h.listPlayerActiveSessions).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
   });
 
   it('se a consulta falha, registra o erro e termina o carregamento', async () => {

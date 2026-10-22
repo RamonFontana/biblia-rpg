@@ -107,6 +107,20 @@ describe('useSessionTrades: realtime e atualização', () => {
     expect(result.current.activeTrades.map((t) => t.id)).toEqual(['t2']);
   });
 
+  it('se a consulta disparada pelo realtime falha, registra o erro e termina o carregamento', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderHook(() => useSessionTrades('s1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    h.getActiveTradesForSession.mockRejectedValue(new Error('x'));
+    await act(async () => {
+      subscription('trades')?.onChange({} as never);
+    });
+    await waitFor(() => expect(log).toHaveBeenCalled());
+    expect(result.current.loading).toBe(false);
+    expect(result.current.activeTrades).toEqual([trade()]);
+    log.mockRestore();
+  });
+
   it('refresh consulta de novo, com `loading` ligado enquanto espera', async () => {
     const { result } = renderHook(() => useSessionTrades('s1'));
     await waitFor(() => expect(result.current.loading).toBe(false));

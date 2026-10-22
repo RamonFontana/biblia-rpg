@@ -129,6 +129,20 @@ describe('useSessionTests: realtime e atualização', () => {
     expect(Object.keys(result.current.testResults)).toEqual(['t3']);
   });
 
+  it('se a consulta disparada pelo realtime falha, registra o erro e termina o carregamento', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderHook(() => useSessionTests('s1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    h.getActiveTestsForSession.mockRejectedValue(new Error('x'));
+    await act(async () => {
+      subscription('session_tests')?.onChange({} as never);
+    });
+    await waitFor(() => expect(log).toHaveBeenCalled());
+    expect(result.current.loading).toBe(false);
+    expect(result.current.activeTests.map((t) => t.id)).toEqual(['t1', 't2']);
+    log.mockRestore();
+  });
+
   it('refresh consulta de novo, com `loading` ligado enquanto espera', async () => {
     const { result } = renderHook(() => useSessionTests('s1'));
     await waitFor(() => expect(result.current.loading).toBe(false));

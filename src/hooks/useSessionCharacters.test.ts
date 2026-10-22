@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
   roster: undefined as unknown,
   fetchError: undefined as unknown,
   fetchCount: 0,
+  hold: undefined as Promise<void> | undefined,
   subscriptions: [] as unknown[],
   stopped: 0,
 }));
@@ -15,6 +16,7 @@ const state = vi.hoisted(() => ({
 vi.mock('@/data-access/sessions', () => ({
   fetchSessionRoster: vi.fn(async () => {
     state.fetchCount += 1;
+    await state.hold;
     if (state.fetchError) throw state.fetchError;
     return state.roster;
   }),
@@ -47,9 +49,11 @@ beforeEach(() => {
   state.roster = grouped();
   state.fetchError = undefined;
   state.fetchCount = 0;
+  state.hold = undefined;
   state.subscriptions = [];
   state.stopped = 0;
   vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.mocked(console.error).mockClear();
 });
 
 describe('useSessionCharacters', () => {
@@ -80,6 +84,17 @@ describe('useSessionCharacters', () => {
 
     expect(result.current.isLoading).toBe(false);
     expect(result.current.enemies).toEqual(grouped().enemies);
+    expect(console.error).toHaveBeenCalledWith(
+      'Error fetching session characters:',
+      state.fetchError,
+    );
+  });
+
+  it('se a primeira consulta falha, registra o erro, termina o carregamento e deixa o elenco vazio', async () => {
+    state.fetchError = { message: 'sem rede' };
+    const { result } = renderHook(() => useSessionCharacters('s1'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.playerCharacters).toEqual([]);
     expect(console.error).toHaveBeenCalledWith(
       'Error fetching session characters:',
       state.fetchError,
@@ -124,6 +139,71 @@ describe('useSessionCharacters', () => {
       subscription('combats')?.onChange({ new: { status: 'finished' } } as never);
     });
     await waitFor(() => expect(state.fetchCount).toBe(before + 1));
+  });
+
+  it('uma mudança do realtime liga isLoading enquanto consulta de novo', async () => {
+    const { result } = renderHook(() => useSessionCharacters('s1'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    let finish: () => void = () => {};
+    state.hold = new Promise<void>((resolve) => (finish = resolve));
+    act(() => {
+      subscription('character_items')?.onChange({} as never);
+    });
+    expect(result.current.isLoading).toBe(true);
+    await act(async () => {
+      finish();
+      state.hold = undefined;
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+  });
+
+  it('refresh liga isLoading enquanto consulta de novo', async () => {
+    const { result } = renderHook(() => useSessionCharacters('s1'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    let finish: () => void = () => {};
+    state.hold = new Promise<void>((resolve) => (finish = resolve));
+    let done: Promise<void> = Promise.resolve();
+    act(() => {
+      done = result.current.refresh();
+    });
+    expect(result.current.isLoading).toBe(true);
+    await act(async () => {
+      finish();
+      state.hold = undefined;
+      await done;
+    });
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('ao trocar de sessão, liga isLoading, consulta a nova e refaz as assinaturas', async () => {
+    const { result, rerender } = renderHook(({ id }) => useSessionCharacters(id), {
+      initialProps: { id: 's1' },
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    let finish: () => void = () => {};
+    state.hold = new Promise<void>((resolve) => (finish = resolve));
+    const before = state.fetchCount;
+    rerender({ id: 's2' });
+    expect(result.current.isLoading).toBe(true);
+    expect(state.fetchCount).toBe(before + 1);
+    expect(state.stopped).toBeGreaterThan(0);
+    expect(subscription('session_participants')?.filter).toBe('session_id=eq.s2');
+    await act(async () => {
+      finish();
+      state.hold = undefined;
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+  });
+
+  it('se a consulta do realtime falha, registra o erro e termina o carregamento', async () => {
+    const { result } = renderHook(() => useSessionCharacters('s1'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    state.fetchError = { message: 'sem rede' };
+    await act(async () => {
+      subscription('character_items')?.onChange({} as never);
+    });
+    await waitFor(() => expect(console.error).toHaveBeenCalled());
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('cancela as assinaturas ao desmontar', async () => {
