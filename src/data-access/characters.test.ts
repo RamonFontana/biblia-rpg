@@ -241,27 +241,19 @@ describe('updateCharacter', () => {
     expect(state.syncInventoryItems).not.toHaveBeenCalled();
   });
 
-  it('refaz o inventário quando o equipamento muda, com a vocação enviada', async () => {
+  it('grava o equipamento recebido na ficha, mas não refaz o inventário', async () => {
     state.respond = () => ({ data: { id: 'c1', vocation: 'Batedor' } });
     const equipment = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
     await updateCharacter('c1', { equipment, vocation: 'Guerreiro' });
-    expect(state.syncInventoryItems).toHaveBeenCalledWith('c1', equipment, 'Guerreiro');
-  });
 
-  it('sem vocação enviada usa a da ficha, e sem ela usa Guerreiro', async () => {
-    const equipment = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
-    state.respond = () => ({ data: { id: 'c1', vocation: 'Batedor' } });
-    await updateCharacter('c1', { equipment });
-    expect(state.syncInventoryItems).toHaveBeenLastCalledWith('c1', equipment, 'Batedor');
-
-    state.respond = () => ({ data: { id: 'c1', vocation: '' } });
-    await updateCharacter('c1', { equipment });
-    expect(state.syncInventoryItems).toHaveBeenLastCalledWith('c1', equipment, 'Guerreiro');
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ equipment, vocation: 'Guerreiro' });
+    expect(state.syncInventoryItems).not.toHaveBeenCalled();
   });
 
   it('registra e lança o erro do Supabase sem mexer no inventário', async () => {
     state.respond = () => ({ error: failure });
-    await expect(updateCharacter('c1', { equipment: [{}] })).rejects.toBe(failure);
+    await expect(updateCharacter('c1', { level: 2 })).rejects.toBe(failure);
     expect(console.error).toHaveBeenCalled();
     expect(state.syncInventoryItems).not.toHaveBeenCalled();
   });
