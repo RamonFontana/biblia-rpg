@@ -31,3 +31,7 @@ supabase/.temp/
 
 # Test coverage reports
 coverage
+
+# Playwright
+playwright-report
+test-results

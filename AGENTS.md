@@ -52,6 +52,8 @@ Cobertura (`npm run coverage`) e Dependabot são só informativos.
 
 O comportamento do RLS e das funções por papel (anon, jogador, outro jogador, Mestre) tem teste em `supabase/tests/rls.sql`: `npm run test:rls-db` sobe um Postgres descartável (Podman ou Docker), aplica as migrations e roda o teste. Não roda no CI; rode ao mexer em política, função ou grant.
 
+Os fluxos atrás de login têm teste E2E em `e2e/` (Playwright, Chromium). `npm run e2e:up` sobe o Supabase local (Podman ou Docker), `npm run test:e2e` roda a suíte e `npm run e2e:down` para a pilha. O teste só aceita o Supabase local e cria e apaga os próprios dados; cada tela nova com fluxo de login ganha um teste lá. Não roda no `check` nem no CI; rode ao mexer em tela, rota ou fluxo.
+
 Dívida existente só diminui: para um gate passar, corrija a causa. Supressão nova, `any`, `@ts-ignore`/`@ts-nocheck`, regra desligada ou teste pulado não entram.
 
 **Testes de um módulo** (o loop do tdd): `npx vitest run <caminho>`, por exemplo `npx vitest run src/domain/combat`. Modo watch: `npx vitest <caminho>`.
