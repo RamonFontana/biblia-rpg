@@ -61,6 +61,19 @@ test.describe('negociação entre jogadores', () => {
     expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
   });
 
+  test('sair da mesa cancela o pedido de troca aberto', async ({ seed, signIn }) => {
+    const { eliabePage, rutePage } = await openTable(seed, signIn);
+
+    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await expect(rutePage.getByText('Solicitação de Troca')).toBeVisible();
+
+    await eliabePage.getByRole('link', { name: 'Home' }).click();
+
+    await expect(rutePage.getByText('Solicitação de Troca')).toHaveCount(0);
+    await expect(rutePage.getByText('⚖️ Negociando...')).toHaveCount(0);
+    expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
+  });
+
   test('ao aceitar, os dois veem a mesma negociação e cada um edita só o próprio lado', async ({
     seed,
     signIn,

@@ -878,16 +878,26 @@ describe('trocas', () => {
   });
 
   describe('limpeza ao sair da tela', () => {
-    it('GAP conhecido: as trocas que chegam depois do primeiro render NÃO são canceladas ao sair (o efeito de limpeza guarda as listas do primeiro render, ainda vazias)', async () => {
+    it('cancela as trocas abertas que chegaram depois do primeiro render', async () => {
       const { unmount, rerender } = render(<ActiveSessionPage />);
       await act(async () => {});
-      h.trades.activeTrades = [trade({ initiator_user_id: 'u1', status: 'pending' })];
+      h.trades.activeTrades = [trade({ id: 'tardia', initiator_user_id: 'u1', status: 'pending' })];
+      rerender(<ActiveSessionPage />);
+      unmount();
+      expect(h.cancelTrade.mock.calls.map((c) => c[0])).toEqual(['tardia']);
+    });
+
+    it('não cancela a troca que já saiu da lista antes de a pessoa sair', async () => {
+      h.trades.activeTrades = [trade({ id: 'concluida', initiator_user_id: 'u1' })];
+      const { unmount, rerender } = render(<ActiveSessionPage />);
+      await act(async () => {});
+      h.trades.activeTrades = [];
       rerender(<ActiveSessionPage />);
       unmount();
       expect(h.cancelTrade).not.toHaveBeenCalled();
     });
 
-    it('só enxerga as trocas que já existiam no primeiro render: cancela as do usuário', async () => {
+    it('cancela as do usuário: as que ele iniciou e as pedidas à sua ficha', async () => {
       h.trades.activeTrades = [
         trade({ id: 'minha', initiator_user_id: 'u1', status: 'pending' }),
         trade({ id: 'para-mim', initiator_user_id: 'u2', target_character_id: 'c1' }),

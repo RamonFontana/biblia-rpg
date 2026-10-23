@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCombatStore } from '@/store/combatStore';
 import { updateGameSession } from '@/data-access/sessions';
@@ -97,15 +97,17 @@ export function ActiveSessionPage() {
     }
   };
 
-  // GAP conhecido (ROADMAP, Onda 4, passo 5b): a limpeza guarda as listas do primeiro render,
-  // quase sempre ainda vazias; as trocas que chegam depois não são canceladas ao sair.
+  // Sair da mesa cancela as trocas abertas da pessoa (a outra ponta fica sem a janela). A limpeza
+  // roda ao desmontar, então lê as trocas por um ref que acompanha o estado mais novo.
+  const leaving = useRef({ activeTrades, userId: user?.id, characterId: myCharacter?.id });
+  useEffect(() => {
+    leaving.current = { activeTrades, userId: user?.id, characterId: myCharacter?.id };
+  });
   useEffect(() => {
     return () => {
-      if (!id || !user) return;
-      for (const trade of findTradesToCancelOnLeave(activeTrades, {
-        userId: user.id,
-        characterId: myCharacter?.id,
-      })) {
+      const { activeTrades: trades, userId, characterId } = leaving.current;
+      if (!userId) return;
+      for (const trade of findTradesToCancelOnLeave(trades, { userId, characterId })) {
         cancelTrade(trade.id).catch(console.error);
       }
     };
