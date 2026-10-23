@@ -50,14 +50,31 @@ test.describe('negociação entre jogadores', () => {
     await eliabePage.getByRole('button', { name: 'Negociar' }).click();
 
     await expect(rutePage.getByText('Solicitação de Troca')).toBeVisible();
-    await expect(rutePage.getByText('quer negociar com você')).toBeVisible();
+    await expect(rutePage.getByText('Eliabe quer negociar com você')).toBeVisible();
     await expect(eliabePage.getByText('⚖️ Negociando...')).toHaveCount(2);
+    await expect(eliabePage.getByText('Pedido de Troca enviado')).toBeVisible();
+    await expect(eliabePage.getByText(/Você quer negociar com\s*Rute/)).toBeVisible();
 
     await rutePage.getByRole('button', { name: 'Recusar' }).click();
 
     await expect(rutePage.getByText('Solicitação de Troca')).toHaveCount(0);
+    await expect(eliabePage.getByText('Pedido de Troca enviado')).toHaveCount(0);
     await expect(eliabePage.getByText('⚖️ Negociando...')).toHaveCount(0);
     await expect(eliabePage.getByRole('dialog')).toHaveCount(0);
+    expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
+  });
+
+  test('quem pediu a troca pode cancelar o pedido antes da resposta', async ({ seed, signIn }) => {
+    const { eliabePage, rutePage } = await openTable(seed, signIn);
+
+    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await expect(rutePage.getByText('Eliabe quer negociar com você')).toBeVisible();
+
+    await eliabePage.getByRole('button', { name: 'Cancelar pedido' }).click();
+
+    await expect(eliabePage.getByText('Pedido de Troca enviado')).toHaveCount(0);
+    await expect(rutePage.getByText('Solicitação de Troca')).toHaveCount(0);
+    await expect(rutePage.getByText('⚖️ Negociando...')).toHaveCount(0);
     expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
   });
 
@@ -259,7 +276,8 @@ test.describe('negociação com NPC', () => {
     await expect(player.getByText('Raabe')).toBeVisible();
 
     await player.getByRole('button', { name: '⚖️ Negociar' }).click();
-    await expect(master.getByText('Eliabe quer negociar com NPC')).toBeVisible();
+    await expect(master.getByText('Eliabe quer negociar com Raabe')).toBeVisible();
+    await expect(player.getByText(/Aguardando o Mestre aceitar a troca com\s*Raabe/)).toBeVisible();
     await master.getByRole('button', { name: 'Aceitar' }).click();
 
     const masterDialog = master.getByRole('dialog');
