@@ -22,6 +22,10 @@
     "check:rls": "node scripts/check-rls.mjs",
     "check:palette": "node scripts/check-palette.mjs",
     "test:rls-db": "bash scripts/test-rls-db.sh",
+    "e2e:up": "bash scripts/e2e-stack.sh up",
+    "e2e:down": "bash scripts/e2e-stack.sh down",
+    "e2e:reset": "bash scripts/e2e-stack.sh reset",
+    "test:e2e": "playwright test",
     "gen:items-seed": "node scripts/gen-items-seed.ts",
     "gen:types": "supabase gen types typescript --linked --schema public > src/types/database.types.ts"
   },
@@ -53,6 +57,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
