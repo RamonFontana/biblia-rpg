@@ -9,3 +9,10 @@ export async function loginAs(page: Page, user: UserKey) {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page).toHaveURL('/');
 }
+
+/** Espera a página pintar o que o React renderizou depois da última resposta de rede. */
+export async function nextPaint(page: Page) {
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+}
