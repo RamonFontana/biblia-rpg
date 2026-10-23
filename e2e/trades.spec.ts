@@ -37,6 +37,12 @@ async function tradeStatuses() {
   return data;
 }
 
+/** A prontidão que a troca concluída guarda: executar não pode desmarcá-la. */
+async function readyFlags() {
+  const { data } = await adminClient().from('trades').select('initiator_ready, target_ready');
+  return data;
+}
+
 test.describe('negociação entre jogadores', () => {
   test('o pedido chega ao outro jogador, que pode recusar', async ({ seed, signIn }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
@@ -110,6 +116,7 @@ test.describe('negociação entre jogadores', () => {
     expect(await coinsOf(eliabe)).toBe(48);
     expect(await coinsOf(rute)).toBe(22);
     expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'completed' }]);
+    expect(await readyFlags()).toEqual([{ initiator_ready: true, target_ready: true }]);
   });
 
   test('mudar a oferta depois do Pronto desmarca os dois lados', async ({ seed, signIn }) => {

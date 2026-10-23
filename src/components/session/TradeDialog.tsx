@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -90,13 +90,21 @@ export function TradeDialog({
     onError: (e) => setError(getErrorMessage(e, 'Erro ao executar a transação.')),
   });
 
-  // GAP conhecido (ROADMAP, Onda 4, passo 7a): ao fim da execução `executing` volta a `false` e,
-  // se a troca ainda chega como "os dois prontos e ativa", executa uma segunda vez.
+  // Executa uma vez por rodada de "os dois prontos". A rodada termina quando a prontidão muda (a
+  // recusa do servidor desmarca os dois lados), e só então a próxima pode executar. Depender de
+  // `executing` refazia o efeito ao fim da execução, com as props ainda velhas, e a troca rodava de
+  // novo (o servidor respondia "Trade não está ativa" e a recusa desmarcava uma troca concluída).
+  const bothReady = trade.initiator_ready && trade.target_ready && trade.status === 'active';
+  const executedThisRound = useRef(false);
   useEffect(() => {
-    if (trade.initiator_ready && trade.target_ready && trade.status === 'active' && !executing) {
-      runExecute();
+    if (!bothReady) {
+      executedThisRound.current = false;
+      return;
     }
-  }, [trade.initiator_ready, trade.target_ready, trade.status, executing, runExecute]);
+    if (executedThisRound.current) return;
+    executedThisRound.current = true;
+    runExecute();
+  }, [bothReady, runExecute]);
 
   const handleCancel = async () => {
     try {
