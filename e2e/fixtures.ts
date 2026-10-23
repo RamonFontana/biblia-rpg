@@ -15,6 +15,8 @@ interface SessionOptions {
 export interface Seed {
   /** Cria uma ficha do usuário. */
   createCharacter(owner: UserKey, overrides?: Partial<TablesInsert<'characters'>>): Promise<string>;
+  /** Põe um item do catálogo (pelo `slug`) no inventário da ficha. */
+  giveItem(characterId: string, slug: string, quantity?: number): Promise<void>;
   /** Cria um inimigo do Mestre de teste, pronto para entrar numa sessão. */
   createEnemy(name: string, stats?: { pv: number; ca: number }): Promise<string>;
   /** Cria uma sessão ativa do Mestre de teste, com os participantes e NPCs pedidos. */
@@ -65,6 +67,15 @@ export const test = base.extend<{ seed: Seed; signIn: SignIn }>({
         if (error) throw error;
         ownerOf.set(data.id, users[owner]);
         return data.id;
+      },
+
+      async giveItem(characterId, slug, quantity = 1) {
+        const item = await admin.from('items').select('id').eq('slug', slug).single();
+        if (item.error) throw item.error;
+        const { error } = await admin
+          .from('character_items')
+          .insert({ character_id: characterId, item_id: item.data.id, quantity });
+        if (error) throw error;
       },
 
       async createEnemy(name, { pv, ca } = { pv: 12, ca: 12 }) {
