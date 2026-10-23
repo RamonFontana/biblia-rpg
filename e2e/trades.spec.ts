@@ -236,8 +236,6 @@ test.describe('negociação com NPC', () => {
 
     await master.getByRole('button', { name: 'Alternar visibilidade' }).click();
     await expect(master.getByText('VISÍVEL')).toBeVisible();
-    // O jogador só recebe o NPC visível ao recarregar a mesa (ver o GAP do passo 8d).
-    await player.reload();
     await expect(player.getByText('Raabe')).toBeVisible();
 
     await player.getByRole('button', { name: '⚖️ Negociar' }).click();
