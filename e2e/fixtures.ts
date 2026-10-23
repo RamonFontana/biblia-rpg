@@ -12,14 +12,18 @@ interface SessionOptions {
   npcs?: string[];
 }
 
-interface Seed {
+export interface Seed {
   /** Cria uma ficha do usuário. */
   createCharacter(owner: UserKey, overrides?: Partial<TablesInsert<'characters'>>): Promise<string>;
+  /** Cria um inimigo do Mestre de teste, pronto para entrar numa sessão. */
+  createEnemy(name: string, stats?: { pv: number; ca: number }): Promise<string>;
   /** Cria uma sessão ativa do Mestre de teste, com os participantes e NPCs pedidos. */
   createSession(options?: SessionOptions): Promise<string>;
 }
 
-export const test = base.extend<{ seed: Seed; signIn: (user: UserKey) => Promise<Page> }>({
+export type SignIn = (user: UserKey) => Promise<Page>;
+
+export const test = base.extend<{ seed: Seed; signIn: SignIn }>({
   // Abre outro navegador isolado já logado como o usuário, para testes com mais de uma pessoa.
   signIn: async ({ browser, baseURL, locale }, provide) => {
     const contexts: { close(): Promise<void> }[] = [];
@@ -61,6 +65,17 @@ export const test = base.extend<{ seed: Seed; signIn: (user: UserKey) => Promise
         if (error) throw error;
         ownerOf.set(data.id, users[owner]);
         return data.id;
+      },
+
+      async createEnemy(name, { pv, ca } = { pv: 12, ca: 12 }) {
+        return this.createCharacter('master', {
+          name,
+          is_enemy: true,
+          tribe: 'Inimigo',
+          has_participated_in_session: true,
+          stats: { pv, current_pv: pv, ca, faith: 0, current_faith: 0 },
+          skills: [],
+        });
       },
 
       async createSession({ name = 'Invasão a Jericó', characters = [], npcs = [] } = {}) {
