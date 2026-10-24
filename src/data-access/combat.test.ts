@@ -25,6 +25,7 @@ import {
   getCharacterConditions,
   getCharacterSkills,
   getCharactersForCombatEnd,
+  getCombat,
   insertCombatParticipants,
   listCombatParticipants,
   setParticipantConditions,
@@ -145,6 +146,16 @@ describe('findSessionCombat e listCombatParticipants', () => {
     await expect(findSessionCombat('s1', 'active')).resolves.toBeNull();
     state.respond = () => ({ error: failure });
     await expect(findSessionCombat('s1', 'active')).rejects.toBe(failure);
+  });
+
+  it('getCombat lê o combate pelo id e lança o erro do Supabase', async () => {
+    state.respond = () => ({ data: { id: 'combat-1', current_turn_index: 2 } });
+    await expect(getCombat('combat-1')).resolves.toEqual({ id: 'combat-1', current_turn_index: 2 });
+    const [call] = callsOf(state.calls, 'combats', 'select');
+    expect(filterOf(call, 'eq', 'id')).toBe('combat-1');
+    expect(call.single).toBe(true);
+    state.respond = () => ({ error: failure });
+    await expect(getCombat('combat-1')).rejects.toBe(failure);
   });
 
   it('listCombatParticipants lista os participantes do combate', async () => {

@@ -109,11 +109,25 @@ describe('setCombatState: ordem e vez de quem joga', () => {
 });
 
 describe('nextTurn', () => {
-  const setup = (index: number, round: number, participants: CombatParticipant[]) =>
-    store().setCombatState(
-      combat({ current_turn_index: index, round_number: round }),
-      participants,
-    );
+  // O avanço parte do que o banco guarda, não do estado local (que vem do tempo real e pode estar
+  // atrasado). `db` é esse banco: um avanço gravado muda o combate que a leitura seguinte devolve.
+  let db: { combat: Combat; participants: CombatParticipant[] };
+  const setup = (index: number, round: number, participants: CombatParticipant[]) => {
+    const current = combat({ current_turn_index: index, round_number: round });
+    db = { combat: current, participants };
+    store().setCombatState(current, participants);
+    state.respond = (call) => {
+      if (call.table === 'combats' && call.op === 'select') return { data: db.combat };
+      if (call.table === 'combat_participants' && call.op === 'select') {
+        return { data: db.participants };
+      }
+      if (call.table === 'combats' && call.op === 'update') {
+        db.combat = { ...db.combat, ...(call.payload as Partial<Combat>) };
+      }
+      return undefined;
+    };
+  };
+  const writes = () => state.calls.filter((call) => call.op === 'update');
 
   it('sem combate ativo não faz nada', async () => {
     await store().nextTurn();
@@ -126,7 +140,7 @@ describe('nextTurn', () => {
       part({ id: 'b', initiative: 10 }),
     ]);
     await store().nextTurn();
-    expect(callsOf(state.calls, 'combat_participants')).toEqual([]);
+    expect(callsOf(state.calls, 'combat_participants', 'update')).toEqual([]);
     const update = callsOf(state.calls, 'combats', 'update')[0];
     expect(update.payload).toEqual({ current_turn_index: 1, round_number: 3 });
     expect(filterOf(update, 'eq', 'id')).toBe('combat-1');
@@ -179,7 +193,7 @@ describe('nextTurn', () => {
       part({ id: 'b', initiative: 10 }),
     ]);
     await store().nextTurn();
-    const order = state.calls.map((c) => `${c.table}:${c.op}`);
+    const order = writes().map((c) => `${c.table}:${c.op}`);
     expect(order).toEqual(['combat_participants:update', 'combats:update']);
   });
 
@@ -192,10 +206,14 @@ describe('nextTurn', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    state.respond = (call) => (call.table === 'combat_participants' ? { wait: gate } : undefined);
+    const reads = state.respond;
+    state.respond = (call) =>
+      call.table === 'combat_participants' && call.op === 'update' ? { wait: gate } : reads?.(call);
     const pending = store().nextTurn();
-    await Promise.resolve();
-    expect(callsOf(state.calls, 'combats')).toEqual([]);
+    await vi.waitFor(() =>
+      expect(callsOf(state.calls, 'combat_participants', 'update')).toHaveLength(1),
+    );
+    expect(callsOf(state.calls, 'combats', 'update')).toEqual([]);
     release();
     await pending;
     expect(callsOf(state.calls, 'combats', 'update')).toHaveLength(1);
@@ -206,10 +224,63 @@ describe('nextTurn', () => {
       part({ id: 'a', initiative: 20, conditions: conds(['sangrando', 3]) }),
       part({ id: 'b', initiative: 10 }),
     ]);
+    const reads = state.respond;
     state.respond = (call) =>
-      call.table === 'combats' ? { error: new Error('falhou') } : undefined;
+      call.table === 'combats' && call.op === 'update'
+        ? { error: new Error('falhou') }
+        : reads?.(call);
     await expect(store().nextTurn()).rejects.toThrow('falhou');
     expect(callsOf(state.calls, 'combat_participants', 'update')).toHaveLength(1);
+  });
+
+  it('parte do turno que o banco guarda, não do estado local atrasado', async () => {
+    setup(0, 1, [
+      part({ id: 'a', initiative: 20 }),
+      part({ id: 'b', initiative: 15 }),
+      part({ id: 'c', initiative: 10 }),
+      part({ id: 'd', initiative: 5 }),
+    ]);
+    db.combat = { ...db.combat, current_turn_index: 2 };
+    await store().nextTurn();
+    expect(callsOf(state.calls, 'combats', 'update')[0].payload).toEqual({
+      current_turn_index: 3,
+      round_number: 1,
+    });
+  });
+
+  it('conta os participantes que o banco guarda para saber se a rodada acabou', async () => {
+    setup(1, 1, [part({ id: 'a', initiative: 20 }), part({ id: 'b', initiative: 10 })]);
+    db.participants = [...db.participants, part({ id: 'c', initiative: 5 })];
+    await store().nextTurn();
+    expect(callsOf(state.calls, 'combats', 'update')[0].payload).toEqual({
+      current_turn_index: 2,
+      round_number: 1,
+    });
+  });
+
+  it('dois avanços seguidos, com o estado local ainda velho, andam dois turnos', async () => {
+    setup(0, 1, [
+      part({ id: 'a', initiative: 20 }),
+      part({ id: 'b', initiative: 15 }),
+      part({ id: 'c', initiative: 10 }),
+    ]);
+    await store().nextTurn();
+    await store().nextTurn();
+    expect(callsOf(state.calls, 'combats', 'update').map((call) => call.payload)).toEqual([
+      { current_turn_index: 1, round_number: 1 },
+      { current_turn_index: 2, round_number: 1 },
+    ]);
+  });
+
+  it('se ler o combate falhar, lança e não grava nada', async () => {
+    setup(0, 1, [part({ id: 'a', initiative: 20 }), part({ id: 'b', initiative: 10 })]);
+    const reads = state.respond;
+    state.respond = (call) =>
+      call.table === 'combats' && call.op === 'select'
+        ? { error: new Error('sem rede') }
+        : reads?.(call);
+    await expect(store().nextTurn()).rejects.toThrow('sem rede');
+    expect(writes()).toEqual([]);
   });
 
   it('quem está com 0 PV continua tendo turno (ninguém é pulado)', async () => {

@@ -30,6 +30,21 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
     name: string;
   } | null>(null);
 
+  // O avanço e o fim leem o banco e gravam: enquanto um não termina, os dois botões esperam. Um
+  // segundo clique partiria do mesmo turno (ou finalizaria o combate duas vezes).
+  const [saving, setSaving] = useState(false);
+  const runOnce = async (action: () => Promise<void>, failure: string) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await action();
+    } catch (error) {
+      console.error(failure, error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!activeCombat) {
     return (
       <div className="p-4 border rounded-md text-center bg-muted/50">
@@ -49,10 +64,19 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
           Painel de Combate (Rodada {activeCombat.round_number})
         </h2>
         <div className="flex flex-wrap sm:flex-nowrap gap-2">
-          <Button variant="destructive" onClick={endCombat} className="flex-1 sm:flex-none">
+          <Button
+            variant="destructive"
+            disabled={saving}
+            onClick={() => runOnce(endCombat, 'Erro ao finalizar o combate:')}
+            className="flex-1 sm:flex-none"
+          >
             Finalizar Combate
           </Button>
-          <Button onClick={nextTurn} className="flex-1 sm:flex-none">
+          <Button
+            disabled={saving}
+            onClick={() => runOnce(nextTurn, 'Erro ao avançar o turno:')}
+            className="flex-1 sm:flex-none"
+          >
             Próximo Turno
           </Button>
         </div>

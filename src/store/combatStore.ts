@@ -10,6 +10,7 @@ import {
   getCharacterConditions,
   getCharacterSkills,
   getCharactersForCombatEnd,
+  getCombat,
   insertCombatParticipants,
   listCombatParticipants,
   setParticipantConditions,
@@ -238,11 +239,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   nextTurn: async () => {
-    const { activeCombat, participants } = get();
+    const { activeCombat } = get();
     if (!activeCombat) return;
 
-    let newIndex = activeCombat.current_turn_index + 1;
-    let newRound = activeCombat.round_number;
+    // O avanço parte do que o banco guarda. O estado local vem do tempo real e pode estar um
+    // passo atrás: dois avanços seguidos partiam do mesmo turno e andavam um só.
+    const [current, participants] = await Promise.all([
+      getCombat(activeCombat.id),
+      listCombatParticipants(activeCombat.id),
+    ]);
+
+    let newIndex = current.current_turn_index + 1;
+    let newRound = current.round_number;
 
     if (newIndex >= participants.length) {
       newIndex = 0;
@@ -262,7 +270,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       await Promise.all(conditionUpdates);
     }
 
-    await updateCombatTurn(activeCombat.id, newIndex, newRound);
+    await updateCombatTurn(current.id, newIndex, newRound);
   },
 
   endCombat: async () => {

@@ -91,14 +91,89 @@ describe('CombatDashboard: o combate', () => {
     expect(screen.getByText('Nenhum combate ativo nesta sessão.')).toBeInTheDocument();
   });
 
-  it('mostra a rodada e os botões de turno e de fim', () => {
+  it('mostra a rodada e os botões de turno e de fim', async () => {
     startCombat([participant('p1')]);
     render(<CombatDashboard />);
     expect(screen.getByText('Painel de Combate (Rodada 3)')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Próximo Turno' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Finalizar Combate' }));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Próximo Turno' })));
+    await act(async () =>
+      fireEvent.click(screen.getByRole('button', { name: 'Finalizar Combate' })),
+    );
     expect(nextTurn).toHaveBeenCalledTimes(1);
     expect(endCombat).toHaveBeenCalledTimes(1);
+  });
+
+  // O avanço e o fim leem o banco e gravam: um segundo clique antes de terminar partiria do mesmo
+  // turno (ou finalizaria duas vezes).
+  describe('enquanto grava', () => {
+    const pendingCall = () => {
+      let finish: () => void = () => {};
+      let fail: (reason: unknown) => void = () => {};
+      const promise = new Promise<void>((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      });
+      return { promise, finish, fail };
+    };
+    const button = (name: string) => screen.getByRole('button', { name }) as HTMLButtonElement;
+
+    it('Próximo Turno e Finalizar Combate ficam desabilitados até o avanço terminar', async () => {
+      const turn = pendingCall();
+      nextTurn.mockReturnValue(turn.promise);
+      startCombat([participant('p1')]);
+      render(<CombatDashboard />);
+
+      await act(async () => fireEvent.click(button('Próximo Turno')));
+      expect(button('Próximo Turno').disabled).toBe(true);
+      expect(button('Finalizar Combate').disabled).toBe(true);
+      await act(async () => fireEvent.click(button('Próximo Turno')));
+      expect(nextTurn).toHaveBeenCalledTimes(1);
+
+      await act(async () => turn.finish());
+      expect(button('Próximo Turno').disabled).toBe(false);
+      expect(button('Finalizar Combate').disabled).toBe(false);
+    });
+
+    it('Finalizar Combate trava os dois botões enquanto grava', async () => {
+      const ending = pendingCall();
+      endCombat.mockReturnValue(ending.promise);
+      startCombat([participant('p1')]);
+      render(<CombatDashboard />);
+
+      await act(async () => fireEvent.click(button('Finalizar Combate')));
+      expect(button('Próximo Turno').disabled).toBe(true);
+      await act(async () => fireEvent.click(button('Finalizar Combate')));
+      expect(endCombat).toHaveBeenCalledTimes(1);
+      await act(async () => ending.finish());
+    });
+
+    it('se o avanço falhar, registra o erro e libera os botões', async () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const turn = pendingCall();
+      nextTurn.mockReturnValue(turn.promise);
+      startCombat([participant('p1')]);
+      render(<CombatDashboard />);
+
+      await act(async () => fireEvent.click(button('Próximo Turno')));
+      await act(async () => turn.fail(new Error('sem rede')));
+
+      expect(error).toHaveBeenCalledWith('Erro ao avançar o turno:', expect.any(Error));
+      expect(button('Próximo Turno').disabled).toBe(false);
+    });
+
+    it('se finalizar falhar, registra o erro e libera os botões', async () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const ending = pendingCall();
+      endCombat.mockReturnValue(ending.promise);
+      startCombat([participant('p1')]);
+      render(<CombatDashboard />);
+
+      await act(async () => fireEvent.click(button('Finalizar Combate')));
+      await act(async () => ending.fail(new Error('sem rede')));
+
+      expect(error).toHaveBeenCalledWith('Erro ao finalizar o combate:', expect.any(Error));
+      expect(button('Finalizar Combate').disabled).toBe(false);
+    });
   });
 
   it('marca o participante do turno atual', () => {

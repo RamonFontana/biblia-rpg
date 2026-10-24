@@ -81,6 +81,21 @@ test.describe('turnos e rodadas', () => {
     await expect(participantCard(master, GUARD)).toContainText('Turno Atual');
     await expect(player.getByText('É O SEU TURNO!')).toHaveCount(0);
   });
+
+  test('dois cliques seguidos em Próximo Turno avançam dois turnos', async ({ seed, signIn }) => {
+    const { master } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    // O segundo clique espera o botão voltar (ele fica desabilitado enquanto grava) e parte do
+    // turno já gravado, sem esperar o eco do tempo real.
+    const next = master.getByRole('button', { name: 'Próximo Turno' });
+    await next.click();
+    await next.click();
+
+    await expect(master.getByText('Painel de Combate (Rodada 2)')).toBeVisible();
+    const { data } = await adminClient().from('combats').select('current_turn_index, round_number');
+    expect(data).toEqual([{ current_turn_index: 0, round_number: 2 }]);
+  });
 });
 
 test.describe('vida', () => {
@@ -259,6 +274,25 @@ test.describe('finalizar o combate', () => {
     expect(enemy?.stats).toMatchObject({ current_pv: 0, status: 'Morto' });
     const { data: combats } = await admin.from('combats').select('status');
     expect(combats).toEqual([{ status: 'finished' }]);
+  });
+
+  test('finalizar logo depois do dano grava o PV novo, sem esperar o painel', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, eliabe: eliabeId } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    await master.getByRole('button', { name: 'Finalizar Combate' }).click();
+    await expect(master.getByText(/Painel de Combate/)).toHaveCount(0);
+
+    const { data } = await adminClient()
+      .from('characters')
+      .select('stats')
+      .eq('id', eliabeId)
+      .single();
+    expect(data?.stats).toMatchObject({ current_pv: 0, status: 'Morrendo' });
   });
 
   test('quem termina o combate a 0 PV continua Morrendo', async ({ seed, signIn }) => {

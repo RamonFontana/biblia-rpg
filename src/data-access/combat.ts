@@ -66,6 +66,13 @@ export async function getCharacterSkills(
   return data.map((row) => ({ id: row.id, skills: (row.skills as CharacterSkills | null) || {} }));
 }
 
+/** O combate pelo id, como o banco o guarda agora. */
+export async function getCombat(combatId: string): Promise<Combat> {
+  const { data, error } = await supabase.from('combats').select('*').eq('id', combatId).single();
+  if (error) throw error;
+  return data;
+}
+
 /** O combate da sessão no estado pedido, ou nulo. */
 export async function findSessionCombat(
   sessionId: string,
