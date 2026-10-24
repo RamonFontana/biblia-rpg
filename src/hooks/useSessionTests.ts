@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { subscribeToTables } from '@/data-access/realtime';
+import { uniqueChannelName } from '@/lib/channelName';
 import {
   type SessionTest,
   type SessionTestResult,
@@ -57,7 +58,7 @@ export function useSessionTests(sessionId: string) {
     if (!sessionId) return;
 
     return subscribeToTables(
-      `session_tests_realtime_${sessionId}_${Math.random()}`,
+      uniqueChannelName(`session_tests_realtime_${sessionId}`),
       [
         {
           table: 'session_tests',

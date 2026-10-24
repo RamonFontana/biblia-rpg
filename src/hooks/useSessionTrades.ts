@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { subscribeToTables } from '@/data-access/realtime';
+import { uniqueChannelName } from '@/lib/channelName';
 import { getActiveTradesForSession } from '@/data-access/trades';
 import type { TradeWithItems } from '@/types/trade';
 
@@ -43,7 +44,7 @@ export function useSessionTrades(sessionId: string | undefined) {
     if (!sessionId) return;
 
     return subscribeToTables(
-      `session_trades_realtime_${sessionId}_${Math.random()}`,
+      uniqueChannelName(`session_trades_realtime_${sessionId}`),
       [
         { table: 'trades', filter: `session_id=eq.${sessionId}`, onChange: fetchTrades },
         { table: 'trade_items', onChange: fetchTrades },

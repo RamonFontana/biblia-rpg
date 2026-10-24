@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { subscribeToTables } from '@/data-access/realtime';
+import { uniqueChannelName } from '@/lib/channelName';
 import {
   fetchSessionRoster,
   groupSessionRoster,
@@ -54,7 +55,7 @@ export function useSessionCharacters(sessionId: string | undefined) {
     if (!sessionId) return;
 
     return subscribeToTables(
-      `session_characters_${sessionId}_${Math.random()}`,
+      uniqueChannelName(`session_characters_${sessionId}`),
       [
         {
           table: 'session_participants',

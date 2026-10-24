@@ -21,6 +21,7 @@ import {
 } from '@/data-access/combat';
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
+import { uniqueChannelName } from '@/lib/channelName';
 import type { ConditionEntry } from '../types/combat';
 
 export type { Combat, CombatParticipant };
@@ -180,9 +181,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       })().catch((error) => console.error('Failed to load the combat', error));
     loadCombat();
 
-    const channelId = Math.random().toString(36).substring(7);
     const unsubscribe = subscribeToTables(
-      `combat:session-${sessionId}-${channelId}`,
+      uniqueChannelName(`combat:session-${sessionId}`),
       [
         {
           table: 'combats',
