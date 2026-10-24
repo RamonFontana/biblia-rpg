@@ -10,6 +10,7 @@ import {
   getCharacterConditions,
   getCharacterSkills,
   getCharactersForCombatEnd,
+  getCombat,
   insertCombatParticipants,
   listCombatParticipants,
   setParticipantConditions,
@@ -165,64 +166,74 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Clean up existing subscription if any
     get().combatUnsubscribe?.();
 
-    // Initial fetch
-    (async () => {
-      // Maybe there's a setup combat
-      const combat =
-        (await findSessionCombat(sessionId, 'active')) ??
-        (await findSessionCombat(sessionId, 'setup'));
-      if (combat) {
-        get().setCombatState(combat, await listCombatParticipants(combat.id));
-      }
-    })().catch((error) => console.error('Failed to load the combat', error));
+    // Lê o combate da sessão. Roda ao abrir a mesa e de novo quando o servidor confirma o canal
+    // (e a cada reconexão): o que acontece entre uma coisa e outra não chega por evento nenhum.
+    const loadCombat = () =>
+      (async () => {
+        // Maybe there's a setup combat
+        const combat =
+          (await findSessionCombat(sessionId, 'active')) ??
+          (await findSessionCombat(sessionId, 'setup'));
+        if (combat) {
+          get().setCombatState(combat, await listCombatParticipants(combat.id));
+        }
+      })().catch((error) => console.error('Failed to load the combat', error));
+    loadCombat();
 
     const channelId = Math.random().toString(36).substring(7);
-    const unsubscribe = subscribeToTables(`combat:session-${sessionId}-${channelId}`, [
-      {
-        table: 'combats',
-        filter: `session_id=eq.${sessionId}`,
-        onChange: (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newCombat = payload.new as Combat;
-            const { activeCombat, participants } = get();
+    const unsubscribe = subscribeToTables(
+      `combat:session-${sessionId}-${channelId}`,
+      [
+        {
+          table: 'combats',
+          filter: `session_id=eq.${sessionId}`,
+          onChange: (payload) => {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const newCombat = payload.new as Combat;
+              const { activeCombat, participants } = get();
 
-            if (activeCombat && activeCombat.current_turn_index !== newCombat.current_turn_index) {
-              get().resetTurnChecklist();
-            }
+              if (
+                activeCombat &&
+                activeCombat.current_turn_index !== newCombat.current_turn_index
+              ) {
+                get().resetTurnChecklist();
+              }
 
-            if (newCombat.status === 'finished') {
+              if (newCombat.status === 'finished') {
+                get().setCombatState(null, []);
+              } else {
+                get().setCombatState(newCombat, participants);
+              }
+            } else if (payload.eventType === 'DELETE') {
               get().setCombatState(null, []);
-            } else {
-              get().setCombatState(newCombat, participants);
             }
-          } else if (payload.eventType === 'DELETE') {
-            get().setCombatState(null, []);
-          }
+          },
         },
-      },
-      {
-        table: 'combat_participants',
-        onChange: (payload) => {
-          const { activeCombat, participants } = get();
-          if (!activeCombat) return;
+        {
+          table: 'combat_participants',
+          onChange: (payload) => {
+            const { activeCombat, participants } = get();
+            if (!activeCombat) return;
 
-          let newParticipants = [...participants];
-          if (payload.eventType === 'INSERT') {
-            if (payload.new.combat_id === activeCombat.id) {
-              newParticipants.push(payload.new as CombatParticipant);
+            let newParticipants = [...participants];
+            if (payload.eventType === 'INSERT') {
+              if (payload.new.combat_id === activeCombat.id) {
+                newParticipants.push(payload.new as CombatParticipant);
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              newParticipants = newParticipants.map((p) =>
+                p.id === payload.new.id ? (payload.new as CombatParticipant) : p,
+              );
+            } else if (payload.eventType === 'DELETE') {
+              newParticipants = newParticipants.filter((p) => p.id !== payload.old.id);
             }
-          } else if (payload.eventType === 'UPDATE') {
-            newParticipants = newParticipants.map((p) =>
-              p.id === payload.new.id ? (payload.new as CombatParticipant) : p,
-            );
-          } else if (payload.eventType === 'DELETE') {
-            newParticipants = newParticipants.filter((p) => p.id !== payload.old.id);
-          }
 
-          get().setCombatState(activeCombat, newParticipants);
+            get().setCombatState(activeCombat, newParticipants);
+          },
         },
-      },
-    ]);
+      ],
+      { onSubscribed: loadCombat },
+    );
 
     set({ combatUnsubscribe: unsubscribe });
   },
@@ -238,11 +249,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   nextTurn: async () => {
-    const { activeCombat, participants } = get();
+    const { activeCombat } = get();
     if (!activeCombat) return;
 
-    let newIndex = activeCombat.current_turn_index + 1;
-    let newRound = activeCombat.round_number;
+    // O avanço parte do que o banco guarda. O estado local vem do tempo real e pode estar um
+    // passo atrás: dois avanços seguidos partiam do mesmo turno e andavam um só.
+    const [current, participants] = await Promise.all([
+      getCombat(activeCombat.id),
+      listCombatParticipants(activeCombat.id),
+    ]);
+
+    let newIndex = current.current_turn_index + 1;
+    let newRound = current.round_number;
 
     if (newIndex >= participants.length) {
       newIndex = 0;
@@ -262,12 +280,17 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       await Promise.all(conditionUpdates);
     }
 
-    await updateCombatTurn(activeCombat.id, newIndex, newRound);
+    await updateCombatTurn(current.id, newIndex, newRound);
   },
 
   endCombat: async () => {
-    const { activeCombat, participants } = get();
+    const { activeCombat } = get();
     if (!activeCombat) return;
+
+    // O estado local vem do tempo real e pode estar atrasado (um dano de um instante atrás ainda
+    // não chegou): o PV que vai para a ficha é o que o banco guarda agora. Se a leitura falhar, o
+    // combate não encerra, para não gravar um PV velho.
+    const participants = await listCombatParticipants(activeCombat.id);
 
     // 1. Sync final HP to characters and perform soft delete for dead characters BEFORE ending combat
     // This ensures that realtime listeners for 'combats' UPDATE will fetch the correctly updated characters.
@@ -282,7 +305,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
 
       if (chars) {
-        const deadEnemyIds: string[] = [];
+        const deadIds: string[] = [];
 
         for (const char of chars) {
           const participant = participants.find((p) => p.entity_id === char.id);
@@ -294,7 +317,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               (participant.conditions as unknown as ConditionEntry[] | null) || [];
             const permanentConditions = cleanTemporaryConditions(currentConditions);
 
-            await characterVitalsService.syncFromCombatEnd(
+            const { isDead } = await characterVitalsService.syncFromCombatEnd(
               char.id,
               currentStats,
               participant.hp_current,
@@ -303,21 +326,21 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               permanentConditions,
             );
 
-            // Soft-delete list is driven by "died in this combat" (hp <= 0 now),
-            // not by the sticky is_dead result — a character already dead before
-            // this combat but currently above 0 HP should not be swept up here.
-            if (participant.hp_current <= 0 && char.is_enemy) {
-              deadEnemyIds.push(char.id);
+            // Morte Permanente: o inimigo sai da lista se morreu NESTE combate (hp <= 0 agora); um
+            // já morto antes, acima de 0 PV, não entra na varredura. O personagem (jogador ou NPC)
+            // sai do jogo se morreu nos Testes de Morte (`is_dead`, que é definitivo).
+            if (char.is_enemy ? participant.hp_current <= 0 : isDead) {
+              deadIds.push(char.id);
             }
           }
         }
 
-        // Soft delete dead enemies
-        if (deadEnemyIds.length > 0) {
+        // Soft delete: o inimigo morto continua na lista do Mestre como "Morto"; o personagem morto vira memorial.
+        if (deadIds.length > 0) {
           try {
-            await softDeleteCharacters(deadEnemyIds);
+            await softDeleteCharacters(deadIds);
           } catch (deleteError) {
-            console.error('Failed to soft delete dead enemies', deleteError);
+            console.error('Failed to soft delete the dead', deleteError);
           }
         }
       }

@@ -227,11 +227,44 @@ export const characterVitalsService = {
     return newStats;
   },
 
+  // Morte do personagem (3 Testes de Morte falhos ou a Morte Instantânea do Mestre): `is_dead` e o
+  // rótulo "Morto" são gravados juntos, com as estatísticas lidas na hora (a ficha da tela pode
+  // estar atrasada). Não mexe no PV nem no participante do combate. `extra` leva os contadores.
+  async markDead(
+    characterId: string,
+    extra?: TablesUpdate<'characters'>,
+  ): Promise<Record<string, unknown>> {
+    const { data: char, error: fetchError } = await supabase
+      .from('characters')
+      .select('stats')
+      .eq('id', characterId)
+      .single();
+
+    if (fetchError) {
+      console.error('Failed to fetch character to mark dead', fetchError);
+      throw fetchError;
+    }
+
+    const newStats = { ...(char?.stats as VitalsLike | null), status: 'Morto' as const };
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ stats: toJson(newStats), is_dead: true, ...extra })
+      .eq('id', characterId);
+
+    if (error) {
+      console.error('Failed to mark character dead', error);
+      throw error;
+    }
+    return newStats;
+  },
+
   // Death-save nat-20 revival: sets an absolute HP (clamped to max) and unconditionally
   // forces alive/Vivo — an explicit revival bypasses the sticky hp-based derivation on
   // purpose. Self-fetches stats fresh since the caller's character prop can be stale by
   // the time a nat-20 is rolled. `extra` carries the death-save counter reset fields
-  // (owned by useDeathSaves, out of scope here). Optionally syncs combat HP too.
+  // (owned by useDeathSaves, out of scope here). With a combat participant the HP goes to the
+  // participant only (the sheet gets it when the combat ends); without one, to the sheet.
   async reviveWithHp(
     characterId: string,
     newHp: number,
@@ -251,7 +284,13 @@ export const characterVitalsService = {
 
     const currentStats = (char?.stats as VitalsLike) || {};
     const clampedHp = clampHp(newHp, getMaxPv(currentStats));
-    const newStats = { ...currentStats, current_pv: clampedHp, status: 'Vivo' as const };
+    // Em combate o PV vive no participante (o dano do Mestre só o altera) e a ficha o recebe no
+    // fim do combate; aqui ela ganha só o estado de vida. Fora do combate o PV vai para a ficha.
+    const newStats = {
+      ...currentStats,
+      ...(participantId ? {} : { current_pv: clampedHp }),
+      status: 'Vivo' as const,
+    };
 
     const { error } = await supabase
       .from('characters')

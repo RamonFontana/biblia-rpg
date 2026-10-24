@@ -101,6 +101,36 @@ describe('subscribeToTables', () => {
     stop();
     expect(state.removed).toEqual([channels()[0]]);
   });
+  // Os eventos que acontecem entre abrir a página e o servidor confirmar o canal se perdem. Quem
+  // depende do estado relê o que perdeu quando a confirmação chega (e a cada reconexão).
+  it('chama onSubscribed quando o servidor confirma a assinatura, a cada vez que confirma', async () => {
+    const onSubscribed = vi.fn();
+    subscribeToTables('canal', [{ table: 'trades', onChange: () => {} }], { onSubscribed });
+    const [channel] = channels();
+
+    expect(onSubscribed).not.toHaveBeenCalled();
+    await channel.subscribeCallback?.('SUBSCRIBED');
+    expect(onSubscribed).toHaveBeenCalledTimes(1);
+    await channel.subscribeCallback?.('SUBSCRIBED');
+    expect(onSubscribed).toHaveBeenCalledTimes(2);
+  });
+
+  it('não chama onSubscribed quando a assinatura falha ou fecha', async () => {
+    const onSubscribed = vi.fn();
+    subscribeToTables('canal', [{ table: 'trades', onChange: () => {} }], { onSubscribed });
+    const [channel] = channels();
+
+    for (const status of ['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED']) {
+      await channel.subscribeCallback?.(status);
+    }
+    expect(onSubscribed).not.toHaveBeenCalled();
+  });
+
+  it('sem onSubscribed, a confirmação não faz nada', async () => {
+    subscribeToTables('canal', [{ table: 'trades', onChange: () => {} }]);
+    const [channel] = channels();
+    expect(() => channel.subscribeCallback?.('SUBSCRIBED')).not.toThrow();
+  });
 });
 
 describe('uniquePresenceUsers', () => {

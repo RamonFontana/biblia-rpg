@@ -14,6 +14,15 @@ export interface TableSubscription {
   onChange: (payload: ChangePayload) => void;
 }
 
+export interface SubscribeOptions {
+  /**
+   * Chamado quando o servidor confirma a assinatura (e de novo a cada reconexão). Os eventos que
+   * acontecem entre abrir a página e essa confirmação se perdem: quem depende do estado relê aqui
+   * o que perdeu.
+   */
+  onSubscribed?: () => void;
+}
+
 // Wires one realtime channel to N postgres_changes listeners and returns its teardown.
 // Centralizes the channel-naming/listener/cleanup boilerplate that every session-scoped
 // hook (and combatStore) was hand-rolling separately — the refetch-vs-patch decision
@@ -21,6 +30,7 @@ export interface TableSubscription {
 export function subscribeToTables(
   channelName: string,
   subscriptions: TableSubscription[],
+  options: SubscribeOptions = {},
 ): () => void {
   const channel = supabase.channel(channelName);
 
@@ -35,7 +45,9 @@ export function subscribeToTables(
     channel.on('postgres_changes', filter, sub.onChange);
   }
 
-  channel.subscribe();
+  channel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') options.onSubscribed?.();
+  });
 
   return () => {
     supabase.removeChannel(channel);

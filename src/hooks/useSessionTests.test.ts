@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   getActiveTestsForSession: vi.fn(),
   getTestResults: vi.fn(),
   subscriptions: [] as unknown[],
+  options: undefined as { onSubscribed?: () => void } | undefined,
   stopped: 0,
   subscribed: 0,
 }));
@@ -19,9 +20,14 @@ vi.mock('@/data-access/sessionTests', () => ({
   getTestResults: h.getTestResults,
 }));
 vi.mock('@/data-access/realtime', () => ({
-  subscribeToTables: (_name: string, subscriptions: unknown[]) => {
+  subscribeToTables: (
+    _name: string,
+    subscriptions: unknown[],
+    options?: { onSubscribed?: () => void },
+  ) => {
     h.subscribed += 1;
     h.subscriptions = subscriptions;
+    h.options = options;
     return () => {
       h.stopped += 1;
     };
@@ -48,6 +54,7 @@ beforeEach(() => {
     .mockReset()
     .mockImplementation(async (testId: string) => [resultOf(`r-${testId}`, testId)]);
   h.subscriptions = [];
+  h.options = undefined;
   h.stopped = 0;
   h.subscribed = 0;
 });
@@ -175,6 +182,39 @@ describe('useSessionTests: realtime e atualização', () => {
     expect(subscription('session_tests')?.filter).toBe('session_id=eq.s2');
     await act(async () => next.resolve([]));
     await waitFor(() => expect(result.current.loading).toBe(false));
+  });
+
+  // Os eventos entre a primeira consulta e a confirmação do canal se perdem (e uma reconexão
+  // também perde os seus): quando o servidor confirma, o hook consulta de novo, sem ligar `loading`.
+  it('consulta de novo quando o servidor confirma a assinatura, sem ligar `loading`', async () => {
+    h.getActiveTestsForSession.mockResolvedValue([]);
+    const { result } = renderHook(() => useSessionTests('s1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.activeTests).toEqual([]);
+
+    // O Mestre pediu um Teste antes de o canal estar no ar.
+    h.getActiveTestsForSession.mockResolvedValue([test('t1')]);
+    act(() => {
+      h.options?.onSubscribed?.();
+    });
+
+    await waitFor(() => expect(result.current.activeTests).toEqual([test('t1')]));
+    expect(result.current.testResults).toEqual({ t1: [resultOf('r-t1', 't1')] });
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('se a consulta da confirmação falha, registra o erro e mantém os Testes', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderHook(() => useSessionTests('s1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    h.getActiveTestsForSession.mockRejectedValue(new Error('x'));
+    act(() => {
+      h.options?.onSubscribed?.();
+    });
+
+    await waitFor(() => expect(log).toHaveBeenCalled());
+    expect(result.current.activeTests).toEqual([test('t1'), test('t2')]);
   });
 
   it('ao sair, cancela a assinatura', async () => {

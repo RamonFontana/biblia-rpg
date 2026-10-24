@@ -53,26 +53,31 @@ export function useSessionCharacters(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) return;
 
-    return subscribeToTables(`session_characters_${sessionId}_${Math.random()}`, [
-      {
-        table: 'session_participants',
-        filter: `session_id=eq.${sessionId}`,
-        onChange: fetchCharacters,
-      },
-      { table: 'character_items', onChange: fetchCharacters },
-      { table: 'characters', event: 'UPDATE', onChange: fetchCharacters },
-      { table: 'session_npcs', filter: `session_id=eq.${sessionId}`, onChange: fetchCharacters },
-      {
-        table: 'combats',
-        event: 'UPDATE',
-        filter: `session_id=eq.${sessionId}`,
-        onChange: (payload) => {
-          if ('status' in payload.new && payload.new.status === 'finished') {
-            fetchCharacters();
-          }
+    return subscribeToTables(
+      `session_characters_${sessionId}_${Math.random()}`,
+      [
+        {
+          table: 'session_participants',
+          filter: `session_id=eq.${sessionId}`,
+          onChange: fetchCharacters,
         },
-      },
-    ]);
+        { table: 'character_items', onChange: fetchCharacters },
+        { table: 'characters', event: 'UPDATE', onChange: fetchCharacters },
+        { table: 'session_npcs', filter: `session_id=eq.${sessionId}`, onChange: fetchCharacters },
+        {
+          table: 'combats',
+          event: 'UPDATE',
+          filter: `session_id=eq.${sessionId}`,
+          onChange: (payload) => {
+            if ('status' in payload.new && payload.new.status === 'finished') {
+              fetchCharacters();
+            }
+          },
+        },
+      ],
+      // Eventos antes da confirmação do canal (ou durante uma reconexão) se perdem: relê aqui.
+      { onSubscribed: () => loadCharacters().catch(logFetchError) },
+    );
   }, [sessionId, fetchCharacters]);
 
   // Single local-state patcher for all three entity kinds. Players are stored as

@@ -56,11 +56,20 @@ export function useSessionTests(sessionId: string) {
   useEffect(() => {
     if (!sessionId) return;
 
-    return subscribeToTables(`session_tests_realtime_${sessionId}_${Math.random()}`, [
-      { table: 'session_tests', filter: `session_id=eq.${sessionId}`, onChange: fetchActiveTests },
-      { table: 'session_test_results', onChange: fetchActiveTests },
-    ]);
-  }, [sessionId, fetchActiveTests]);
+    return subscribeToTables(
+      `session_tests_realtime_${sessionId}_${Math.random()}`,
+      [
+        {
+          table: 'session_tests',
+          filter: `session_id=eq.${sessionId}`,
+          onChange: fetchActiveTests,
+        },
+        { table: 'session_test_results', onChange: fetchActiveTests },
+      ],
+      // Eventos antes da confirmação do canal (ou durante uma reconexão) se perdem: relê aqui.
+      { onSubscribed: () => loadActiveTests().catch(logFetchError) },
+    );
+  }, [sessionId, fetchActiveTests, loadActiveTests]);
 
   return {
     activeTests,

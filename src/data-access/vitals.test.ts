@@ -269,6 +269,20 @@ describe('reviveWithHp', () => {
     expect(filterOf(write!, 'eq', 'id')).toBe('p1');
   });
 
+  // Em combate o PV vive no participante (o dano do Mestre também só o altera) e a ficha o recebe
+  // no fim do combate. Levantar grava na ficha na hora o estado de vida, mas não o PV.
+  it('em combate, a ficha recebe o estado de vida mas não o PV: ele chega no fim do combate', async () => {
+    world({ stats: { pv: 20, current_pv: 12, status: 'Morrendo' } });
+    const result = await vitals.reviveWithHp('c1', 1, { death_saves_failures: 0 }, 'p1');
+    expect(result).toEqual({ pv: 20, current_pv: 12, status: 'Vivo' });
+    expect(lastWrite('characters')?.payload).toEqual({
+      stats: { pv: 20, current_pv: 12, status: 'Vivo' },
+      is_dead: false,
+      death_saves_failures: 0,
+    });
+    expect(lastWrite('combat_participants')?.payload).toEqual({ hp_current: 1 });
+  });
+
   it('sem participante, não mexe no combate', async () => {
     world();
     await vitals.reviveWithHp('c1', 1);
@@ -303,5 +317,53 @@ describe('reviveWithHp', () => {
           : undefined;
     await expect(vitals.reviveWithHp('c1', 5, undefined, 'p1')).rejects.toBe(failure);
     expect(console.error).toHaveBeenCalledTimes(3);
+  });
+});
+
+// A morte (3 Testes de Morte falhos ou a Morte Instantânea do Mestre) grava `is_dead` e o rótulo
+// "Morto" juntos. Antes só `is_dead` mudava e o rótulo ficava "Vivo" até o fim do combate.
+describe('markDead', () => {
+  const world = (
+    data: unknown = { stats: { pv: 20, current_pv: 0, faith: 50, status: 'Morrendo' } },
+  ) => {
+    state.respond = (call) =>
+      call.table === 'characters' && call.op === 'select' ? { data } : undefined;
+  };
+
+  it('lê as estatísticas na hora e grava is_dead com o rótulo Morto, sem perder o resto', async () => {
+    world();
+    const result = await vitals.markDead('c1', { death_saves_failures: 3 });
+    expect(result).toEqual({ pv: 20, current_pv: 0, faith: 50, status: 'Morto' });
+    const write = lastWrite('characters');
+    expect(write?.payload).toEqual({
+      stats: result,
+      is_dead: true,
+      death_saves_failures: 3,
+    });
+    expect(filterOf(write!, 'eq', 'id')).toBe('c1');
+  });
+
+  it('não mexe no PV nem no combate', async () => {
+    world();
+    await vitals.markDead('c1');
+    expect(callsOf(state.calls, 'combat_participants')).toHaveLength(0);
+    expect(lastWrite('characters')?.payload).toMatchObject({ stats: { current_pv: 0 } });
+  });
+
+  it('sem estatísticas legíveis, grava só o rótulo', async () => {
+    world({ stats: null });
+    await expect(vitals.markDead('c1')).resolves.toEqual({ status: 'Morto' });
+  });
+
+  it('registra e lança o erro de ler e o de gravar', async () => {
+    vi.mocked(console.error).mockClear();
+    state.respond = (call) => (call.op === 'select' ? { error: failure } : undefined);
+    await expect(vitals.markDead('c1')).rejects.toBe(failure);
+    expect(callsOf(state.calls, 'characters', 'update')).toHaveLength(0);
+
+    state.respond = (call) =>
+      call.op === 'select' ? { data: { stats: { pv: 20 } } } : { error: failure };
+    await expect(vitals.markDead('c1')).rejects.toBe(failure);
+    expect(console.error).toHaveBeenCalledTimes(2);
   });
 });

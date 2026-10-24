@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 interface HealthModificationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Chamado quando o valor foi gravado, antes de fechar (fechar sem aplicar não chama). */
+  onApplied?: () => void;
   participantId: string;
   participantName: string;
 }
@@ -19,6 +21,7 @@ interface HealthModificationModalProps {
 export function HealthModificationModal({
   isOpen,
   onClose,
+  onApplied,
   participantId,
   participantName,
 }: HealthModificationModalProps) {
@@ -38,6 +41,7 @@ export function HealthModificationModal({
     try {
       setIsSubmitting(true);
       await applyDamageOrHealing(values.participantId, values.amount, values.type);
+      onApplied?.();
       onClose();
     } catch (error) {
       console.error('Failed to modify health', error);

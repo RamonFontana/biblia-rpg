@@ -47,6 +47,34 @@ test.describe('iniciar o combate', () => {
     expect(combats).toEqual([{ status: 'active', round_number: 1, current_turn_index: 0 }]);
   });
 
+  test('o painel aparece mesmo quando o combate começa antes de o canal do tempo real estar no ar', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const guard = await seed.createEnemy(GUARD);
+    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const master = await signIn('master');
+    // O servidor só recebe os pedidos de entrada nos canais depois de 3 s: o combate começa antes
+    // de qualquer canal estar no ar, então o evento do combate novo nunca chega por assinatura.
+    await master.routeWebSocket(/realtime\/v1\/websocket/, (socket) => {
+      const server = socket.connectToServer();
+      socket.onMessage((message) => {
+        if (typeof message === 'string' && message.includes('"phx_join"')) {
+          setTimeout(() => server.send(message), 3000);
+        } else {
+          server.send(message);
+        }
+      });
+      server.onMessage((message) => socket.send(message));
+    });
+    await master.goto(`/session/${sessionId}`);
+
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 }, { timeout: 15_000 });
+
+    await expect(participantCard(master, GUARD)).toBeVisible();
+  });
+
   test('o combate exige pelo menos dois participantes', async ({ seed, signIn }) => {
     const { master } = await openTable(seed, signIn);
 
@@ -81,6 +109,21 @@ test.describe('turnos e rodadas', () => {
     await expect(participantCard(master, GUARD)).toContainText('Turno Atual');
     await expect(player.getByText('É O SEU TURNO!')).toHaveCount(0);
   });
+
+  test('dois cliques seguidos em Próximo Turno avançam dois turnos', async ({ seed, signIn }) => {
+    const { master } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    // O segundo clique espera o botão voltar (ele fica desabilitado enquanto grava) e parte do
+    // turno já gravado, sem esperar o eco do tempo real.
+    const next = master.getByRole('button', { name: 'Próximo Turno' });
+    await next.click();
+    await next.click();
+
+    await expect(master.getByText('Painel de Combate (Rodada 2)')).toBeVisible();
+    const { data } = await adminClient().from('combats').select('current_turn_index, round_number');
+    expect(data).toEqual([{ current_turn_index: 0, round_number: 2 }]);
+  });
 });
 
 test.describe('vida', () => {
@@ -106,6 +149,45 @@ test.describe('vida', () => {
     await expect(player.getByText('Inimigos na Cena')).toBeVisible();
     await expect(player.getByText('/12')).toBeVisible();
     await expect(player.getByText('7', { exact: true }).first()).toBeVisible();
+  });
+
+  test('o jogador acompanha o próprio PV durante o combate, sem esperar o fim', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    const pv = player.getByText('PV em combate').locator('xpath=following-sibling::div[1]');
+    await expect(pv).toHaveText('11/11');
+
+    await modifyHealth(master, 'Eliabe', 'Dano', 4);
+    await expect(pv).toHaveText('7/11');
+
+    await modifyHealth(master, 'Eliabe', 'Cura', 2);
+    await expect(pv).toHaveText('9/11');
+
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    await expect(pv).toHaveText('0/11');
+  });
+
+  test('depois de aplicar, o botão do participante espera um instante antes de aceitar outro valor', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    await modifyHealth(master, GUARD, 'Dano', 3);
+
+    const guardButton = participantCard(master, GUARD).getByRole('button', {
+      name: 'Modificar Vida',
+    });
+    await expect(guardButton).toBeDisabled();
+    await expect(
+      participantCard(master, 'Eliabe').getByRole('button', { name: 'Modificar Vida' }),
+    ).toBeEnabled();
+    await expect(guardButton).toBeEnabled();
+    await expect(participantCard(master, GUARD)).toContainText('HP Atual:9');
   });
 
   test('o dano não leva o PV abaixo de zero', async ({ seed, signIn }) => {
@@ -190,12 +272,16 @@ test.describe('queda e morte', () => {
     await expect(eliabe).toContainText('HP Atual:1');
     await expect(master.getByText('Controles de Morte (Mestre)')).toHaveCount(0);
     await expect(player.getByText('TESTE DE MORTE')).toHaveCount(0);
+    await expect(
+      player.getByText('PV em combate').locator('xpath=following-sibling::div[1]'),
+    ).toHaveText('1/11');
   });
 
-  test('três falhas nos testes de morte matam o personagem', async ({ seed, signIn }) => {
-    const { master, eliabe: eliabeId } = await openTable(seed, signIn);
+  test('três falhas nos testes de morte matam o personagem na hora', async ({ seed, signIn }) => {
+    const { master, player, eliabe: eliabeId } = await openTable(seed, signIn);
     await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
     await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    await expect(player.getByText('TESTE DE MORTE')).toBeVisible();
 
     const eliabe = participantCard(master, 'Eliabe');
     await expect(eliabe).toContainText('Morto: Não');
@@ -205,12 +291,38 @@ test.describe('queda e morte', () => {
     }
 
     await expect(eliabe).toContainText('Morto: Sim');
+    // Na hora, ainda dentro do combate: o painel de teste de morte dá lugar ao aviso de morte e a
+    // ficha já guarda o rótulo Morto.
+    await expect(player.getByText('Você Morreu')).toBeVisible();
+    await expect(player.getByText('TESTE DE MORTE')).toHaveCount(0);
     const { data } = await adminClient()
       .from('characters')
-      .select('is_dead, death_saves_failures')
+      .select('is_dead, death_saves_failures, is_deleted, stats')
       .eq('id', eliabeId)
       .single();
-    expect(data).toEqual({ is_dead: true, death_saves_failures: 3 });
+    expect(data).toMatchObject({
+      is_dead: true,
+      death_saves_failures: 3,
+      is_deleted: false,
+      stats: { status: 'Morto' },
+    });
+  });
+
+  test('Morte Instantânea marca o personagem como Morto na hora', async ({ seed, signIn }) => {
+    const { master, eliabe: eliabeId } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+
+    const eliabe = participantCard(master, 'Eliabe');
+    await eliabe.getByRole('button', { name: 'Morte Instantânea' }).click();
+
+    await expect(eliabe).toContainText('Morto: Sim');
+    const { data } = await adminClient()
+      .from('characters')
+      .select('is_dead, stats')
+      .eq('id', eliabeId)
+      .single();
+    expect(data).toMatchObject({ is_dead: true, stats: { status: 'Morto' } });
   });
 });
 
@@ -238,7 +350,9 @@ test.describe('finalizar o combate', () => {
     await expect(player.getByText('Inimigos na Cena')).toHaveCount(0);
     await expect(sheetPv(player)).toHaveText(/7\s*\/11\s*PV/);
 
-    // A lista de inimigos do Mestre só reflete a morte depois de recarregar.
+    // A lista de inimigos do Mestre mostra o inimigo morto na hora, sem recarregar, e ele
+    // continua listado como Morto.
+    await expect(master.getByText('Morto', { exact: true })).toBeVisible();
     await master.reload();
     await expect(master.getByText('Morto', { exact: true })).toBeVisible();
 
@@ -259,6 +373,51 @@ test.describe('finalizar o combate', () => {
     expect(enemy?.stats).toMatchObject({ current_pv: 0, status: 'Morto' });
     const { data: combats } = await admin.from('combats').select('status');
     expect(combats).toEqual([{ status: 'finished' }]);
+  });
+
+  test('finalizar logo depois do dano grava o PV novo, sem esperar o painel', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, eliabe: eliabeId } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    await master.getByRole('button', { name: 'Finalizar Combate' }).click();
+    await expect(master.getByText(/Painel de Combate/)).toHaveCount(0);
+
+    const { data } = await adminClient()
+      .from('characters')
+      .select('stats')
+      .eq('id', eliabeId)
+      .single();
+    expect(data?.stats).toMatchObject({ current_pv: 0, status: 'Morrendo' });
+  });
+
+  test('quem morreu nos testes de morte sai do jogo ao fim do combate e vira espectador', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player, eliabe: eliabeId } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    const eliabe = participantCard(master, 'Eliabe');
+    for (const falhas of [1, 2, 3]) {
+      await eliabe.getByRole('button', { name: '+1 Falha' }).click();
+      await expect(eliabe).toContainText(`Falhas: ${falhas}`);
+    }
+    await expect(player.getByText('Você Morreu')).toBeVisible();
+
+    await master.getByRole('button', { name: 'Finalizar Combate' }).click();
+    await expect(master.getByText(/Painel de Combate/)).toHaveCount(0);
+
+    await expect(player.getByText(/não está mais entre os vivos/)).toBeVisible();
+    const { data } = await adminClient()
+      .from('characters')
+      .select('is_deleted, is_dead, stats')
+      .eq('id', eliabeId)
+      .single();
+    expect(data).toMatchObject({ is_deleted: true, is_dead: true, stats: { status: 'Morto' } });
   });
 
   test('quem termina o combate a 0 PV continua Morrendo', async ({ seed, signIn }) => {

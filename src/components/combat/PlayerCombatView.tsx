@@ -13,6 +13,7 @@ import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
+import { getMaxPv } from '@/domain/vitals';
 
 interface PlayerCombatViewProps {
   character: Character | null | undefined; // The current player character data
@@ -95,6 +96,16 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
               {character.vocation && <span className="ml-2">• {character.vocation}</span>}
             </div>
           </div>
+          {/* O dano e a cura do Mestre vão para o participante; a ficha só recebe o PV no fim do
+              combate. Por isso o PV daqui sai do participante, e não da ficha. */}
+          {activeCombat && participant && (
+            <div className="ml-auto text-right">
+              <div className="text-xs uppercase tracking-wider text-stone-400">PV em combate</div>
+              <div className={`text-2xl font-bold ${isDying ? 'text-red-400' : 'text-amber-400'}`}>
+                {participant.hp_current}/{getMaxPv(character.stats)}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
