@@ -73,20 +73,28 @@ export function buyStarterKit(kit: { name: string; leftover: number }): Purse<Pu
   };
 }
 
-/** Quanto a venda devolve: o preço do item, ou os 50 inteiros no caso do Pacote Inicial. */
+/**
+ * Quanto a venda devolve: o `cost` gravado na linha. O Pacote Inicial sem custo gravado (rascunho
+ * antigo) devolve os 50 Siclos iniciais.
+ */
 export function sellValue(item: PurchasedItem): number | undefined {
-  return isStarterKit(item) ? STARTING_COINS : item.cost;
+  return isStarterKit(item) ? kitValue(item) : item.cost;
+}
+
+function kitValue(kit: PurchasedItem): number {
+  return kit.cost ?? STARTING_COINS;
 }
 
 /**
- * Vende o item da posição `index`. Vender o kit zera a carteira para 50; qualquer outro item
- * soma o preço ao que há na carteira.
+ * Vende o item da posição `index`. Vender o kit põe na carteira o custo gravado nele (a sobra do
+ * kit se perde, porque ele veio no lugar da bolsa inteira); qualquer outro item soma o preço ao que
+ * há na carteira.
  */
 export function sellItem<T extends PurchasedItem>(purse: Purse<T>, index: number): Purse<T> {
   const item = purse.items[index];
   const items = purse.items.filter((_, i) => i !== index);
   if (!item) return { coins: purse.coins, items };
-  return { coins: isStarterKit(item) ? STARTING_COINS : purse.coins + (item.cost || 0), items };
+  return { coins: isStarterKit(item) ? kitValue(item) : purse.coins + (item.cost || 0), items };
 }
 
 /** Itens do catálogo que a Vocação sabe usar; Vocação desconhecida vê só a categoria "Todas". */
