@@ -1,0 +1,43 @@
+name: E2E
+
+# A suíte E2E (Playwright + Supabase local) não roda em todo PR: o runner baixa as imagens do
+# Supabase a cada execução (uns 2 GB). Roda uma vez por semana e sob demanda (aba Actions).
+# Decisão do autor, 2026-10-24 (docs/ROADMAP.md, Onda 4, passo 8).
+on:
+  schedule:
+    - cron: '0 6 * * 1' # segunda-feira, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SKIP_INSTALL_SIMPLE_GIT_HOOKS: '1'
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Supabase local
+        run: npm run e2e:up
+      - name: Testes E2E
+        run: npm run test:e2e
+      - name: Relatório e rastros de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 14
+      - name: Parar o Supabase
+        if: always()
+        run: npm run e2e:down

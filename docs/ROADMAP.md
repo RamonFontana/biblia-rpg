@@ -10,7 +10,7 @@
 | 2 — Rede de segurança | concluída: grill, glossário, ADRs 0001–0002, correções de doc (PR #9), caracterização das regras (PRs #10, #11 e #13) e correções do bloco B (PR #14). O que sobrou do bloco B (Teste de Fé unificado, CA, Resistência a Condição) entrou nos passos da Onda 3 |
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
-| Rodada 2 — Regras do jogo | **próxima**: perguntas de regra, balanceamento e conteúdo que precisam do autor (ver o fechamento da Onda 4) |
+| Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
 
 
@@ -521,6 +521,16 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
      - Habilidades de inimigo e o efeito de Habilidade (a Fé gasta por inimigo, `applyConditions`).
      - O E2E no CI e o E2E instável sem causa conhecida (1 falha em 5 execuções, passo 9b).
    - **Rodada 2, a pergunta ao autor (regras, números e conteúdo):** Vantagem e Desvantagem no Teste de Fé; os números do Modificador de Fé para Tentação e Testemunho; "TR de Fé"; o efeito de Vulnerável e a definição de Ruptura; Dados de Vida nos descansos; o 1 e o 20 naturais nos Testes de Morte; elmos +1/+2 de CA e proficiências de armadura que divergem do doc; a Vocação Nobre (e a loja sem kit); a Desvantagem de furtividade; a direção "dados de jogo no banco"; e a decisão de rodar o E2E no CI.
+   - **Rodada 2, decisões do autor (2026-10-24).** Já resolvidos antes e fora da pergunta: elmos e proficiências de armadura (Onda 3, passo 3), Nobre (removido), dados de jogo no banco (ADR 0003) e "TR de Fé" (não aparece mais nos docs). As linhas "Pendências" do bloco de decisões da Onda 2 e a divergência de elmos/proficiências acima ficaram defasadas por isso.
+     - **Q1, Vantagem e Desvantagem no Teste de Fé:** Vantagem usa o **menor** de dois d100 e Desvantagem o **maior** (o teste passa com resultado baixo).
+     - **Q2, dado virtual:** com Vantagem ou Desvantagem o dado virtual rola dois dados e fica com o maior ou o menor (inverso no Teste de Fé, Q1). O dado físico continua como o jogador digita. Vale para a Desvantagem de furtividade.
+     - **Q3, Tentação e Testemunho:** atalhos 0 / −20 / −50 para o Modificador de Fé, como no Clamor, mais valor livre do Mestre. São só botões; nenhuma regra muda.
+     - **Q4, Vulnerável:** sem efeito automático; o estado aparece na ficha e no cartão do jogador para o Mestre lembrar o Testemunho.
+     - **Q5, Ruptura:** o app mostra o estado e um alerta ao Mestre; as Habilidades com custo de Fé já falham por Fé insuficiente; a tragédia e o ato de consagração são narrativos.
+     - **Q6, Dados de Vida:** implementar como feature da Onda 5 (Dados de Vida iguais ao nível, dado da Vocação, o jogador rola e o app soma CON; o Longo devolve metade dos gastos). Até lá o doc fica como está.
+     - **Q7, Testes de Morte:** o 1 natural (duas falhas) e o 20 natural (volta com 1 PV) valem.
+     - **Q8, E2E no CI:** workflow `.github/workflows/e2e.yml`, **uma vez por semana** (segunda, 06:00 UTC) e sob demanda, não em todo PR. **Não foi executado no GitHub ainda**: a primeira execução (aba Actions, "Run workflow") confirma o Supabase local no runner; se falhar, o rastro vai como artefato.
+     - **Próximo:** Q1 a Q5 viram uma feature da Onda 5 (`/to-spec` → `/to-tickets` → `/tdd`), junto com os Dados de Vida (Q6).
 
 ### Onda 5 em diante: features novas
 Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, e só começa depois que a área que ela toca foi refatorada. A lista de features do prompt estava vazia; preencher no ROADMAP.
