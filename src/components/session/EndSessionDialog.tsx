@@ -121,7 +121,7 @@ export function EndSessionDialog({
             variant="outline"
             onClick={onClose}
             disabled={isSubmitting}
-            className="border-stone-700 text-stone-300 hover:bg-stone-800 hover:text-white"
+            className="border-stone-700 text-stone-300 hover:bg-stone-800 hover:text-stone-100"
           >
             Cancelar
           </Button>

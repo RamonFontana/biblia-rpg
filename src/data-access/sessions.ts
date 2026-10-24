@@ -5,6 +5,7 @@ import type { Tables, TablesUpdate } from '@/types/database.types';
 import type { CombatInventoryItem } from '@/types/inventory';
 import type { Character } from '@/features/character-management/types';
 import { subscribeToTables } from './realtime';
+import { uniqueChannelName } from '@/lib/channelName';
 import { toCharacter } from './characters';
 import { toJson } from './json';
 
@@ -58,7 +59,7 @@ export function subscribeToGameSession(
   id: string,
   onChange: (session: GameSession) => void,
 ): () => void {
-  return subscribeToTables(`session-${id}-${Math.random()}`, [
+  return subscribeToTables(uniqueChannelName(`session-${id}`), [
     {
       table: 'game_sessions',
       filter: `id=eq.${id}`,

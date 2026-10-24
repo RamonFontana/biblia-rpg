@@ -212,7 +212,7 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl relative overflow-hidden">
         {/* Decorative corner */}
         <div className="absolute top-0 right-0 w-16 h-16 bg-amber-600/20 rotate-45 transform translate-x-8 -translate-y-8" />

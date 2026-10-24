@@ -30,7 +30,7 @@ export function BonusBreakdown({ roll, modifiers }: BonusBreakdownProps) {
       <span className="text-stone-600 mx-1">=</span>
       <div className="flex flex-col items-center">
         <span className="text-stone-500 text-[10px] uppercase">Total</span>
-        <span className="text-white font-bold text-lg">{roll + totalBonus}</span>
+        <span className="text-stone-100 font-bold text-lg">{roll + totalBonus}</span>
       </div>
     </div>
   );

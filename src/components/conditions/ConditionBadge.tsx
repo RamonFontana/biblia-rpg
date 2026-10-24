@@ -36,20 +36,20 @@ export const ConditionBadge: React.FC<ConditionBadgeProps> = ({
         <TooltipTrigger asChild>
           <Badge
             variant="outline"
-            className={`flex items-center gap-1 ${definition.color} text-white hover:${definition.color} border-none max-w-[140px] sm:max-w-[180px] ${className}`}
+            className={`flex items-center gap-1 ${definition.color} text-stone-100 hover:${definition.color} border-none max-w-[140px] sm:max-w-[180px] ${className}`}
           >
             <span className="truncate" title={definition.name}>
               {definition.name}
             </span>
             {duration !== undefined && duration > 0 && (
-              <span className="bg-black/20 rounded-full px-1.5 py-0.5 text-xs shrink-0">
+              <span className="bg-stone-950/20 rounded-full px-1.5 py-0.5 text-xs shrink-0">
                 {duration}
               </span>
             )}
             {!readonly && onRemove && (
               <button
                 onClick={handleRemove}
-                className="ml-1 rounded-full p-0.5 hover:bg-black/20 transition-colors shrink-0"
+                className="ml-1 rounded-full p-0.5 hover:bg-stone-950/20 transition-colors shrink-0"
                 title="Remover efeito"
               >
                 <X size={12} />

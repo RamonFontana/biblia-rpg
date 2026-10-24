@@ -7,8 +7,8 @@
 //
 // Conta: bg/text/border/ring/from/via/to/divide/outline/fill/stroke/placeholder/accent/caret/
 // decoration/shadow com uma cor fora da paleta (`bg-blue-500`, `md:hover:text-indigo-300/70`) e
-// cor hexadecimal arbitrária (`bg-[#1C1C24]`). Não conta: `white`/`black` (fundos de diálogo e
-// texto sobre botão), `rgba(...)` dentro de sombras arbitrárias e as exceções abaixo.
+// cor hexadecimal arbitrária (`bg-[#1C1C24]`). Conta também `white`/`black` (a paleta usa `stone-100` e
+// `stone-950`). Não conta: `rgba(...)` dentro de sombras arbitrárias e as exceções abaixo.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -54,7 +54,7 @@ const UTILITIES = [
   'shadow',
 ].join('|');
 const OFF_PALETTE_RE = new RegExp(
-  String.raw`(?<![\w-])(?:[\w-]+:)*(?:${UTILITIES})-(?:(?:${OFF_PALETTE.join('|')})-\d{2,3}(?:/\d+)?|\[#[0-9a-fA-F]{3,8}\])(?![\w-])`,
+  String.raw`(?<![\w-])(?:[\w-]+:)*(?:${UTILITIES})-(?:(?:${OFF_PALETTE.join('|')})-\d{2,3}(?:/\d+)?|(?:white|black)(?:/\d+)?|\[#[0-9a-fA-F]{3,8}\])(?![\w-])`,
   'g',
 );
 

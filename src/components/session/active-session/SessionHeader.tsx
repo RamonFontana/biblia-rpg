@@ -64,7 +64,7 @@ export function SessionHeader({
           <Button
             onClick={onOpenDice}
             variant="outline"
-            className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-white flex items-center gap-2 h-8 md:h-10 px-2 md:px-4"
+            className="border-stone-500 text-stone-300 hover:bg-stone-800 hover:text-stone-100 flex items-center gap-2 h-8 md:h-10 px-2 md:px-4"
           >
             <span>🎲</span> <span className="hidden md:inline">Dados</span>
           </Button>
@@ -75,7 +75,7 @@ export function SessionHeader({
               <Button
                 onClick={onAdvanceTime}
                 variant="outline"
-                className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white flex items-center gap-2"
+                className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-stone-100 flex items-center gap-2"
                 title="Avançar Tempo"
               >
                 <span>⏳</span> Avançar
@@ -83,14 +83,14 @@ export function SessionHeader({
               <Button
                 onClick={onOpenTest}
                 variant="outline"
-                className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white"
+                className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-stone-100"
               >
                 Solicitar Teste
               </Button>
               <Button
                 onClick={onOpenCombat}
                 variant="outline"
-                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2"
+                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-stone-100 flex items-center gap-2"
               >
                 <span>⚔️</span> Iniciar Combate
               </Button>

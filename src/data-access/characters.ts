@@ -13,6 +13,7 @@ import type {
 import { getCurrentUser, getSession } from './auth';
 import { toJson } from './json';
 import { subscribeToTables } from './realtime';
+import { uniqueChannelName } from '@/lib/channelName';
 import { syncInventoryItems } from './inventory';
 
 export type CharacterRow = Tables<'characters'>;
@@ -323,22 +324,19 @@ export function subscribeToCharacterSheet(
     onCharacterUpdate: (row: Partial<Character>) => void;
   },
 ): () => void {
-  return subscribeToTables(
-    `character_sheet_updates_${characterId}_${Math.random().toString(36).substring(7)}`,
-    [
-      {
-        table: 'character_items',
-        filter: `character_id=eq.${characterId}`,
-        onChange: () => handlers.onInventoryChange(),
-      },
-      {
-        table: 'characters',
-        event: 'UPDATE',
-        filter: `id=eq.${characterId}`,
-        onChange: (payload) => handlers.onCharacterUpdate(payload.new as Partial<Character>),
-      },
-    ],
-  );
+  return subscribeToTables(uniqueChannelName(`character_sheet_updates_${characterId}`), [
+    {
+      table: 'character_items',
+      filter: `character_id=eq.${characterId}`,
+      onChange: () => handlers.onInventoryChange(),
+    },
+    {
+      table: 'characters',
+      event: 'UPDATE',
+      filter: `id=eq.${characterId}`,
+      onChange: (payload) => handlers.onCharacterUpdate(payload.new as Partial<Character>),
+    },
+  ]);
 }
 
 export async function updateCharacterSkills(
@@ -395,7 +393,7 @@ export function subscribeToCharacterUpdates(
   id: string,
   onChange: (row: CharacterRow) => void,
 ): () => void {
-  return subscribeToTables(`char_death_${id}_${Math.random().toString(36).substring(7)}`, [
+  return subscribeToTables(uniqueChannelName(`char_death_${id}`), [
     {
       table: 'characters',
       event: 'UPDATE',

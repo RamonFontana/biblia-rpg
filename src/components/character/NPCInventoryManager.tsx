@@ -60,7 +60,7 @@ export function NPCInventoryManager({ characterId, items }: NPCInventoryManagerP
           />
           <button
             disabled={!selectedItemId || isUpdating}
-            className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-2 px-4 rounded transition-colors"
+            className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-stone-100 font-bold py-2 px-4 rounded transition-colors"
             onClick={handleAddItem}
           >
             Adicionar

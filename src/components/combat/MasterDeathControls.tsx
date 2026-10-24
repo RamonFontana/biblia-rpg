@@ -50,7 +50,7 @@ export function MasterDeathControls({ characterId, participantId }: MasterDeathC
         <Button
           size="sm"
           variant="outline"
-          className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+          className="border-green-500 text-green-500 hover:bg-green-500 hover:text-stone-100"
           onClick={() => addSuccess(characterId, characterState.death_saves_successes || 0)}
           disabled={characterState.is_stable || characterState.is_dead}
         >
@@ -59,7 +59,7 @@ export function MasterDeathControls({ characterId, participantId }: MasterDeathC
         <Button
           size="sm"
           variant="outline"
-          className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+          className="border-destructive text-destructive hover:bg-destructive hover:text-stone-100"
           onClick={() => addFailure(characterId, characterState.death_saves_failures || 0)}
           disabled={characterState.is_dead}
         >

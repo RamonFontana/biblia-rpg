@@ -411,7 +411,7 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-stone-900 border border-stone-700 rounded-xl flex flex-col max-h-[90vh] shadow-2xl">
         {/* Header */}
         <div className="p-5 border-b border-stone-800 flex justify-between items-center">

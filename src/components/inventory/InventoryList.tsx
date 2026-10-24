@@ -220,7 +220,7 @@ export function InventoryList({
                                 onClick={() =>
                                   onChangeLevel?.(item.id, Math.max(1, (item.level || 1) - 1))
                                 }
-                                className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
+                                className="text-stone-400 hover:text-stone-100 px-1.5 flex items-center justify-center disabled:opacity-30"
                                 disabled={isUpdating || (item.level || 1) <= 1}
                               >
                                 -
@@ -235,7 +235,7 @@ export function InventoryList({
                                 onClick={() =>
                                   onChangeLevel?.(item.id, Math.min(5, (item.level || 1) + 1))
                                 }
-                                className="text-stone-400 hover:text-white px-1.5 flex items-center justify-center disabled:opacity-30"
+                                className="text-stone-400 hover:text-stone-100 px-1.5 flex items-center justify-center disabled:opacity-30"
                                 disabled={isUpdating || (item.level || 1) >= 5}
                               >
                                 +
@@ -248,7 +248,7 @@ export function InventoryList({
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <button
-                                      className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                                      className="h-5 px-1.5 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-stone-100 transition-colors flex items-center justify-center"
                                       title="Adicionar Resistências"
                                     >
                                       <ShieldPlus className="w-3 h-3" />

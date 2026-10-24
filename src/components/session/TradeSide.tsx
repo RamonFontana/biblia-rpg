@@ -267,7 +267,7 @@ export function TradeSide({
                           await updateTradeItemLevel(ti.id, Math.max(1, (ti.level || 1) - 1));
                           onItemsChanged();
                         }}
-                        className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
+                        className="text-stone-400 hover:text-stone-100 px-1 flex items-center justify-center disabled:opacity-30 text-xs"
                         disabled={(ti.level || 1) <= 1}
                       >
                         -
@@ -284,7 +284,7 @@ export function TradeSide({
                           await updateTradeItemLevel(ti.id, Math.min(5, (ti.level || 1) + 1));
                           onItemsChanged();
                         }}
-                        className="text-stone-400 hover:text-white px-1 flex items-center justify-center disabled:opacity-30 text-xs"
+                        className="text-stone-400 hover:text-stone-100 px-1 flex items-center justify-center disabled:opacity-30 text-xs"
                         disabled={(ti.level || 1) >= 5}
                       >
                         +
@@ -294,7 +294,7 @@ export function TradeSide({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-white transition-colors flex items-center justify-center"
+                            className="h-5 px-1 bg-stone-800 rounded border border-stone-700 text-stone-400 hover:text-stone-100 transition-colors flex items-center justify-center"
                             title="Adicionar Resistências"
                           >
                             <ShieldPlus className="w-3 h-3" />
@@ -437,7 +437,7 @@ export function TradeSide({
         <Button
           onClick={handleReadyToggle}
           disabled={isSavingCoins}
-          className={`w-full ${isReady ? 'bg-stone-600 hover:bg-stone-500' : 'bg-amber-600 hover:bg-amber-500'} text-white`}
+          className={`w-full ${isReady ? 'bg-stone-600 hover:bg-stone-500' : 'bg-amber-600 hover:bg-amber-500'} text-stone-100`}
         >
           {isSavingCoins ? 'Salvando SP...' : isReady ? 'Cancelar Pronto' : 'Pronto'}
         </Button>

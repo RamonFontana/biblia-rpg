@@ -2,4 +2,4 @@
 // este, e os testes injetam um com seed (createSeededRng).
 import type { Rng } from '@/domain/rng';
 
-export const systemRng: Rng = Math.random;
+export const systemRng: Rng = () => Math.random();

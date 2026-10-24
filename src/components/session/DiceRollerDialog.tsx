@@ -1,3 +1,5 @@
+import { rollDie } from '@/domain/dice';
+import { systemRng } from '@/lib/systemRng';
 import { useState, useRef, useEffect } from 'react';
 
 interface DiceRollerDialogProps {
@@ -52,10 +54,10 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
       const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2);
 
       if (elapsed >= duration) {
-        setResult(Math.floor(Math.random() * selectedDice) + 1);
+        setResult(rollDie(selectedDice, systemRng));
         setIsRolling(false);
       } else {
-        setResult(Math.floor(Math.random() * selectedDice) + 1);
+        setResult(rollDie(selectedDice, systemRng));
         elapsed += currentInterval;
         setTimeout(rollStep, currentInterval);
       }
@@ -65,11 +67,11 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-stone-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-stone-400 hover:text-stone-100 transition-colors"
           title="Fechar"
         >
           ✕
@@ -88,7 +90,7 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
               disabled={isRolling}
               className={`py-2 rounded border font-mono transition-colors ${
                 selectedDice === d
-                  ? 'bg-amber-600 border-amber-500 text-white shadow-[0_0_10px_rgba(217,119,6,0.3)]'
+                  ? 'bg-amber-600 border-amber-500 text-stone-100 shadow-[0_0_10px_rgba(217,119,6,0.3)]'
                   : 'bg-stone-800 border-stone-700 text-stone-400 hover:bg-stone-700'
               }`}
             >
@@ -103,7 +105,7 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
             className={`absolute inset-0 opacity-20 transition-colors duration-300 ${result !== null && !isRolling ? 'bg-amber-500' : 'bg-transparent'}`}
           />
 
-          <div className="text-6xl font-mono relative z-10 text-white">
+          <div className="text-6xl font-mono relative z-10 text-stone-100">
             {result !== null ? result : '-'}
           </div>
         </div>
@@ -111,7 +113,7 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
         <button
           onClick={rollDice}
           disabled={isRolling}
-          className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-stone-600 text-white rounded-lg font-bold tracking-wide disabled:opacity-50 transition-colors"
+          className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-stone-600 text-stone-100 rounded-lg font-bold tracking-wide disabled:opacity-50 transition-colors"
         >
           {isRolling ? 'Rolando...' : `Rolar d${selectedDice}`}
         </button>

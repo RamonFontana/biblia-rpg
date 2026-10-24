@@ -85,7 +85,7 @@ describe('subscribeToGameSession', () => {
     subscribeToGameSession('s1', onChange);
 
     const [{ name, subscriptions }] = state.tables;
-    expect(name).toMatch(/^session-s1-/);
+    expect(name).toMatch(/^session-s1_/);
     const [subscription] = subscriptions as {
       table: string;
       filter: string;
