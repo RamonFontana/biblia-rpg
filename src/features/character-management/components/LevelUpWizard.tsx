@@ -157,13 +157,10 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
           newAttributes[asiChoices.attr2] = (newAttributes[asiChoices.attr2] || 10) + 1;
       }
 
-      const newSkills = { ...currentSkills };
-      newSkills.path_choices = newSkills.path_choices || {};
-
-      const tribeChoices = toPathChoices(newSkills.path_choices.tribe);
-      const vocationChoices = toPathChoices(newSkills.path_choices.vocation);
-      newSkills.path_choices.tribe = tribeChoices;
-      newSkills.path_choices.vocation = vocationChoices;
+      // Os mapas de Caminho são copiados: a ficha carregada não muda se a gravação falhar.
+      const currentChoices = currentSkills.path_choices;
+      const tribeChoices = { ...toPathChoices(currentChoices?.tribe) };
+      const vocationChoices = { ...toPathChoices(currentChoices?.vocation) };
 
       if (hasTribeChoice && selectedTribePath) {
         tribeChoices[newLevel] = selectedTribePath;
@@ -172,6 +169,11 @@ export function LevelUpWizard({ character, onComplete, onCancel }: LevelUpWizard
       if (hasVocationChoice && selectedVocationPath) {
         vocationChoices[newLevel] = selectedVocationPath;
       }
+
+      const newSkills = {
+        ...currentSkills,
+        path_choices: { ...currentChoices, tribe: tribeChoices, vocation: vocationChoices },
+      };
 
       // `stats` e `attributes` são lidos de forma defensiva (`Partial`, `|| 10`): fichas antigas
       // podem não ter todas as chaves, e gravamos o que a ficha tinha mais a mudança.

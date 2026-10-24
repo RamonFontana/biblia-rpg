@@ -449,6 +449,84 @@ describe('LevelUpWizard: nível com caminhos e aumento de atributo', () => {
   });
 });
 
+// Decisão do autor (ROADMAP, passo 9c, Q14): o assistente grava cópias dos mapas de Caminho. Antes
+// alterava no lugar os objetos da ficha carregada, então uma gravação que falhava deixava a tela
+// com o Caminho novo já escolhido.
+describe('LevelUpWizard: não altera a ficha carregada', () => {
+  const pickCard = (name: string) => fireEvent.click(screen.getByText(name));
+
+  const finishLevel4 = () => {
+    pickCard('Delícias Reais');
+    next();
+    pickCard('Golpe Firme');
+    next();
+    pick('for', 'des');
+    next();
+    next();
+    finish();
+  };
+
+  const loaded = (path_choices: unknown) =>
+    character({
+      level: 3,
+      skills: { ability_uses: { 'tribe-aser-a': 1 }, path_choices },
+    } as Partial<Character>);
+
+  const open = (sheet: Character) =>
+    render(<LevelUpWizard character={sheet} onComplete={onComplete} onCancel={onCancel} />);
+
+  it('uma gravação que falha deixa os Caminhos da ficha como estavam', async () => {
+    const sheet = loaded({ tribe: { 1: 'A' }, vocation: { 1: 'B' } });
+    const before = structuredClone(sheet);
+    h.updateCharacter.mockRejectedValueOnce(new Error('sem rede'));
+    open(sheet);
+    finishLevel4();
+
+    expect(await screen.findByText('sem rede')).toBeInTheDocument();
+    expect(sheet).toEqual(before);
+  });
+
+  it('uma gravação que dá certo também não altera a ficha carregada', async () => {
+    const sheet = loaded({ tribe: { 1: 'A' }, vocation: { 1: 'B' } });
+    const before = structuredClone(sheet);
+    open(sheet);
+    finishLevel4();
+
+    await waitFor(() => expect(onComplete).toHaveBeenCalled());
+    expect(sheet).toEqual(before);
+  });
+
+  it('o Caminho gravado como texto (formato antigo) continua texto na ficha carregada', async () => {
+    const sheet = loaded({ tribe: 'A', vocation: 'B' });
+    h.updateCharacter.mockRejectedValueOnce(new Error('sem rede'));
+    open(sheet);
+    finishLevel4();
+
+    expect(await screen.findByText('sem rede')).toBeInTheDocument();
+    expect(sheet.skills).toEqual({
+      ability_uses: { 'tribe-aser-a': 1 },
+      path_choices: { tribe: 'A', vocation: 'B' },
+    });
+  });
+
+  it('tentar de novo depois da falha grava os mesmos Caminhos, sem acumular', async () => {
+    const sheet = loaded({ tribe: { 1: 'A' }, vocation: { 1: 'B' } });
+    h.updateCharacter.mockRejectedValueOnce(new Error('sem rede'));
+    open(sheet);
+    finishLevel4();
+    await screen.findByText('sem rede');
+
+    finish();
+    await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
+    const [first, second] = h.updateCharacter.mock.calls;
+    expect(second[1].skills).toEqual(first[1].skills);
+    expect(second[1].skills.path_choices).toEqual({
+      tribe: { 1: 'A', 4: 'B' },
+      vocation: { 1: 'B', 4: 'A' },
+    });
+  });
+});
+
 describe('LevelUpWizard: falha ao gravar', () => {
   const toSummary = () => {
     renderWizard();
