@@ -5,6 +5,8 @@ import { Shield, Heart } from 'lucide-react';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 
+const ATTRIBUTE_KEYS = ['for', 'des', 'con', 'int', 'sab', 'car'] as const;
+
 interface EnemySheetProps {
   enemy: Character | null;
   participant?: Pick<CombatParticipant, 'hp_current'>;
@@ -73,19 +75,9 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
               Atributos
             </h3>
             <div className="grid grid-cols-3 gap-2 text-center">
-              {['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'].map((attr, idx) => {
-                const keys = [
-                  'forca',
-                  'destreza',
-                  'constituicao',
-                  'inteligencia',
-                  'sabedoria',
-                  'carisma',
-                ];
-                // GAP (ROADMAP, passo 7f): a ficha do inimigo guarda for/des/…, não estas chaves,
-                // então o valor sai sempre 10.
-                const val =
-                  (enemy.attributes as Record<string, number> | undefined)?.[keys[idx]] ?? 10;
+              {ATTRIBUTE_KEYS.map((key) => {
+                const attr = key.toUpperCase();
+                const val = enemy.attributes?.[key] ?? 10;
                 const mod = Math.floor((val - 10) / 2);
                 return (
                   <div

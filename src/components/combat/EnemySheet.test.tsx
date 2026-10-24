@@ -50,10 +50,18 @@ describe('EnemySheet', () => {
     expect(screen.queryByText('(Derrotado)')).toBeNull();
   });
 
-  it('GAP: os atributos saem sempre como 10, porque a ficha do inimigo guarda for/des/… e a tela lê forca/destreza/…', () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q13): a tela lê as chaves que o inimigo guarda
+  // (for/des/con/int/sab/car); antes lia forca/destreza/… e mostrava tudo como 10 (+0).
+  it('mostra os atributos do inimigo com o modificador de cada um', () => {
     open(enemy());
     const group = screen.getByText('Atributos').nextElementSibling as HTMLElement;
-    expect(group.textContent).toBe('FOR10+0DES10+0CON10+0INT10+0SAB10+0CAR10+0');
+    expect(group.textContent).toBe('FOR16+3DES12+1CON14+2INT8-1SAB10+0CAR6-2');
+  });
+
+  it('um atributo que falta na ficha sai como 10 (+0), e os outros seguem', () => {
+    open(enemy({ attributes: { for: 18 } as Character['attributes'] }));
+    const group = screen.getByText('Atributos').nextElementSibling as HTMLElement;
+    expect(group.textContent).toBe('FOR18+4DES10+0CON10+0INT10+0SAB10+0CAR10+0');
   });
 
   it('lista as Habilidades com a descrição quando há nome e descrição', () => {
