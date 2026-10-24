@@ -2,6 +2,15 @@
 // head, body, shield, 1h e 2h. Arma de duas mãos é a que tem a propriedade two-handed ou "Duas
 // mãos" na descrição.
 import { ITEMS_DB } from '@/content/items';
+import type { CharacterEquipment } from '@/types/combat';
+
+/** As quatro posições vestidas, todas vazias: o que uma ficha nova grava em `equipment`. */
+export const EMPTY_EQUIPMENT: CharacterEquipment = {
+  head: null,
+  body: null,
+  mainHand: null,
+  offHand: null,
+};
 
 export type EquipSlot = 'head' | 'body' | 'shield' | '1h' | '2h';
 

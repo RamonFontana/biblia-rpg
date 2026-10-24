@@ -88,6 +88,29 @@ describe('submitTestResult: Teste de Fé', () => {
     await submitTestResult('r1', 90, 0, 'char-1', 'Fé', 6);
     expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 0 } });
   });
+
+  // Decisão do autor (ROADMAP, passo 9c, Q11): sem ler a ficha não há como julgar o Teste de Fé.
+  // Antes o serviço caía na regra do Teste comum (resultado >= CD) e não aplicava a perda de Fé.
+  it('se a leitura da ficha falha, lança e não grava o resultado nem a perda de Fé', async () => {
+    state.respond = (call) =>
+      call.table === 'characters' && call.op === 'select'
+        ? { error: new Error('leitura falhou') }
+        : undefined;
+    await expect(submitTestResult('r1', 90, 0, 'char-1', 'Fé', 6)).rejects.toThrow(
+      'leitura falhou',
+    );
+    expect(callsOf(state.calls, 'session_test_results', 'update')).toEqual([]);
+    expect(faithWrite()).toBeUndefined();
+  });
+
+  it('o Teste comum não lê a ficha, então uma leitura que falha não o atrapalha', async () => {
+    state.respond = (call) =>
+      call.table === 'characters' && call.op === 'select'
+        ? { error: new Error('leitura falhou') }
+        : undefined;
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza');
+    expect(resultWrite()).toMatchObject({ is_approved: true });
+  });
 });
 
 describe('submitTestResult: Teste comum', () => {

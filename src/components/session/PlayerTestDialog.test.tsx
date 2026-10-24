@@ -333,13 +333,36 @@ describe('Teste de Fé', () => {
     expect(mocks.submitTestResult).not.toHaveBeenCalled();
   });
 
-  it('se a leitura da Fé falha, o dado é avaliado só com o Item Profano (Fé 0)', async () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q11): sem a Fé do personagem não há como julgar o dado,
+  // então o envio para e o jogador vê o erro (antes avaliava com Fé 0 e abria a tela da punição).
+  it('se a leitura da Fé falha, o envio para com um erro e nada é enviado', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mocks.getCharacterStats.mockRejectedValue(new Error('falhou'));
     await show(test({ test_type: 'Fé', difficulty: 0 }));
     roll('1');
     send();
-    expect(await screen.findByText('Teste de Fé Reprovado!')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Não foi possível ler a Fé do personagem. Tente enviar de novo.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
+    expect(mocks.submitTestResult).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(
+      'Error reading the character Faith for the test:',
+      expect.any(Error),
+    );
+  });
+
+  it('depois da leitura que falhou, o jogador mantém o dado e envia de novo', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.getCharacterStats.mockRejectedValueOnce(new Error('falhou'));
+    await show(test({ test_type: 'Fé', difficulty: 0 }));
+    roll('30');
+    send();
+    await screen.findByText('Não foi possível ler a Fé do personagem. Tente enviar de novo.');
+    expect(input().value).toBe('30');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText(/Não foi possível ler a Fé/)).toBeNull();
   });
 });
 
@@ -447,37 +470,50 @@ describe('depois de enviado', () => {
     expect(await screen.findByText('O Mestre Exige um Teste!')).toBeInTheDocument();
   });
 
-  // GAP conhecido (ROADMAP, Onda 4, passo 7b): o formulário zera sempre que `activeTest` ou
-  // `testResult` chegam como objetos novos, mesmo sendo o mesmo Teste (o realtime recarrega a
-  // lista inteira a cada mudança). O valor digitado se perde.
-  it('GAP: o mesmo Teste chegando como objeto novo apaga o valor digitado', async () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q9): o formulário só zera quando muda o Teste ou o
+  // resultado (o id), não quando o realtime entrega os mesmos como objetos novos.
+  it('o mesmo Teste chegando como objeto novo mantém o valor digitado', async () => {
     const { rerender } = await show(test());
     roll('14');
     expect(input().value).toBe('14');
     rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
     await act(async () => {});
-    expect(input().value).toBe('');
+    expect(input().value).toBe('14');
   });
 
-  it('basta o objeto do Teste ser novo (o do resultado é o mesmo) para zerar o formulário', async () => {
+  it('o resultado de outro jogador chegando (lista recarregada) mantém o valor digitado', async () => {
+    const { rerender } = await show(test());
+    roll('14');
+    rerender(
+      <PlayerTestDialog
+        isOpen
+        activeTest={test()}
+        testResult={result({ updated_at: '2026-10-24T10:00:00Z' })}
+      />,
+    );
+    await act(async () => {});
+    expect(input().value).toBe('14');
+  });
+
+  it('um Teste novo (outro id) zera o valor digitado', async () => {
     const r = result();
     const { rerender } = await show(test(), r);
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={r} />);
+    rerender(<PlayerTestDialog isOpen activeTest={test({ id: 't2' })} testResult={r} />);
     await act(async () => {});
     expect(input().value).toBe('');
   });
 
-  it('basta o objeto do resultado ser novo (o do Teste é o mesmo) para zerar o formulário', async () => {
+  it('um resultado novo (outro id) zera o valor digitado', async () => {
     const t = test();
     const { rerender } = await show(t, result());
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result({ id: 'r2' })} />);
     await act(async () => {});
     expect(input().value).toBe('');
   });
 
-  it('um Teste novo volta da tela da punição para o formulário do dado', async () => {
+  it('o mesmo Teste como objeto novo mantém a tela da punição', async () => {
     const { rerender } = await show(test({ test_type: 'Fé', difficulty: 0 }));
     roll('51');
     send();
@@ -490,6 +526,41 @@ describe('depois de enviado', () => {
       />,
     );
     await act(async () => {});
+    expect(screen.getByText('Teste de Fé Reprovado!')).toBeInTheDocument();
+  });
+
+  it('o mesmo Teste como objeto novo mantém o aviso de erro', async () => {
+    const { rerender } = await show(test({ test_type: 'Destreza' }));
+    roll('99');
+    send();
+    await screen.findByText('Valor fora do intervalo aceitável (0-100).');
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    await act(async () => {});
+    expect(screen.getByText('Valor fora do intervalo aceitável (0-100).')).toBeInTheDocument();
+  });
+
+  it('o mesmo Teste como objeto novo não reabre o aviso que o jogador fechou', async () => {
+    const { container, rerender } = await show(test(), submitted());
+    fireEvent.click(screen.getByTitle('Fechar aviso'));
+    expect(container).toBeEmptyDOMElement();
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={submitted()} />);
+    await act(async () => {});
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('um Teste novo volta da tela da punição para o formulário do dado', async () => {
+    const { rerender } = await show(test({ test_type: 'Fé', difficulty: 0 }));
+    roll('51');
+    send();
+    await screen.findByText('Teste de Fé Reprovado!');
+    rerender(
+      <PlayerTestDialog
+        isOpen
+        activeTest={test({ id: 't2', test_type: 'Fé', difficulty: 0 })}
+        testResult={result({ id: 'r2', test_id: 't2' })}
+      />,
+    );
+    await act(async () => {});
     expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
     expect(screen.getByRole('button', { name: 'Enviar Valor' })).toBeInTheDocument();
   });
@@ -499,7 +570,13 @@ describe('depois de enviado', () => {
     roll('99');
     send();
     await screen.findByText('Valor fora do intervalo aceitável (0-100).');
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    rerender(
+      <PlayerTestDialog
+        isOpen
+        activeTest={test({ id: 't2' })}
+        testResult={result({ id: 'r2', test_id: 't2' })}
+      />,
+    );
     await act(async () => {});
     expect(screen.queryByText('Valor fora do intervalo aceitável (0-100).')).toBeNull();
   });

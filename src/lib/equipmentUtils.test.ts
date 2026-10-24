@@ -2,7 +2,7 @@
 // está equipado. Inimigos e NPCs simples seguem com a CA que o Mestre digitou (stats.ca).
 // Decisões: ROADMAP.md, Onda 3 (passo 5). Termos: CONTEXT.md (CA, Elmo, Qualidade).
 import { describe, expect, it } from 'vitest';
-import type { CharacterEquipment } from '@/types/combat';
+import type { Character } from '@/features/character-management/types';
 import {
   checkWeaponProficiency,
   equipItem,
@@ -320,27 +320,38 @@ describe('getEquippedSlots', () => {
     expect(getEquippedSlots(slots)).toBe(slots);
   });
 
-  it('GAP: a ficha recém-criada guarda a lista de compras, e é ela que sai', () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q12): uma lista é a lista de compras de uma ficha antiga e
+  // não é equipamento vestido. Sem migração de dados, o leitor trata a lista como nada vestido.
+  it('uma lista de compras (ficha antiga) vale como nada vestido', () => {
     const cart = [{ id: 'adaga', name: 'Adaga', type: 'arma' }];
-    expect(getEquippedSlots(cart)).toBe(cart);
-  });
-});
-
-describe('equipItem e unequipSlot sobre a lista de compras', () => {
-  const cart = [{ id: 'adaga', name: 'Adaga', type: 'arma' }] as unknown as CharacterEquipment;
-
-  it('GAP: o primeiro item equipado carrega a lista de compras junto para as posições', () => {
-    // A lista é espalhada no objeto novo, que vai inteiro para o banco.
-    expect(equipItem('ci-1', { slot: 'head' }, cart)).toEqual({
-      0: { id: 'adaga', name: 'Adaga', type: 'arma' },
-      head: 'ci-1',
+    expect(getEquippedSlots(cart)).toEqual({
+      head: null,
+      body: null,
+      mainHand: null,
+      offHand: null,
     });
   });
 
-  it('GAP: sem as outras posições, as duas mãos "iguais" (indefinidas) contam como arma de duas mãos', () => {
-    const result = equipItem('ci-2', { slot: 'shield' }, cart);
-    expect(result.offHand).toBe('ci-2');
-    expect(result.mainHand).toBeNull();
+  it('uma lista vazia também vale como nada vestido', () => {
+    expect(getEquippedSlots([])).toEqual({ head: null, body: null, mainHand: null, offHand: null });
+  });
+});
+
+describe('equipItem e unequipSlot sobre a ficha antiga (lista de compras)', () => {
+  const cart = [{ id: 'adaga', name: 'Adaga', type: 'arma' }] as unknown as Character['equipment'];
+
+  it('o primeiro item equipado grava só as quatro posições, sem as chaves da lista', () => {
+    expect(equipItem('ci-1', { slot: 'head' }, getEquippedSlots(cart))).toEqual({
+      head: 'ci-1',
+      body: null,
+      mainHand: null,
+      offHand: null,
+    });
+  });
+
+  it('equipar um escudo não tira a mão principal nem conta como arma de duas mãos', () => {
+    const result = equipItem('ci-2', { slot: 'shield' }, getEquippedSlots(cart));
+    expect(result).toEqual({ head: null, body: null, mainHand: null, offHand: 'ci-2' });
   });
 
   it('desequipar uma posição de equipamento completo a esvazia', () => {

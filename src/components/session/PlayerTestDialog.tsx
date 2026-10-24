@@ -46,14 +46,17 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
     testResult,
   );
 
-  // Reset state when a new test arrives (qualquer objeto novo de `activeTest` ou `testResult`, ver o
-  // GAP no ROADMAP, passo 7b). Ajustar durante a renderização (e não num efeito) evita um quadro
-  // com o formulário do Teste anterior.
-  const [seenTest, setSeenTest] = useState(activeTest);
-  const [seenResult, setSeenResult] = useState(testResult);
-  if (seenTest !== activeTest || seenResult !== testResult) {
-    setSeenTest(activeTest);
-    setSeenResult(testResult);
+  // Zera o formulário quando chega outro Teste ou outro resultado (o id muda). O realtime recarrega
+  // a lista inteira a cada mudança e entrega os mesmos como objetos novos: isso não zera o que o
+  // jogador digitou. Ajustar durante a renderização (e não num efeito) evita um quadro com o
+  // formulário do Teste anterior.
+  const testId = activeTest?.id;
+  const resultId = testResult?.id;
+  const [seenTestId, setSeenTestId] = useState(testId);
+  const [seenResultId, setSeenResultId] = useState(resultId);
+  if (seenTestId !== testId || seenResultId !== resultId) {
+    setSeenTestId(testId);
+    setSeenResultId(resultId);
     if (activeTest) {
       setResultValue('');
       setError(null);
@@ -89,11 +92,16 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
 
     let isFailedFaithTest = false;
     if (activeTest.test_type === 'Fé') {
-      // Busca a fé atual do personagem direto do banco para garantir o valor correto
-      const stats = await getCharacterStats(testResult.character_id).catch((error) => {
+      // Busca a fé atual do personagem direto do banco para garantir o valor correto. Sem ela o
+      // dado não pode ser julgado: o envio para.
+      let stats;
+      try {
+        stats = await getCharacterStats(testResult.character_id);
+      } catch (error) {
         console.error('Error reading the character Faith for the test:', error);
-        return null;
-      });
+        setError('Não foi possível ler a Fé do personagem. Tente enviar de novo.');
+        return;
+      }
       // faithPenalty é a soma (negativa) dos Itens Profanos; a mesma regra grava is_approved.
       isFailedFaithTest = !isFaithTestPassed(
         val,

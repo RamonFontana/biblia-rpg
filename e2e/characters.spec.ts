@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { PASSWORD, USERS } from './support/admin';
+import { adminClient, PASSWORD, USERS } from './support/admin';
 import { loginAs } from './support/ui';
 
 test.describe('login e lista de personagens', () => {
@@ -57,5 +57,71 @@ test.describe('login e lista de personagens', () => {
     await page.getByRole('heading', { name: 'Rute' }).click();
     await expect(page).toHaveURL(`/characters/${newcomerId}/edit`);
     await expect(page.getByText('Edição de Personagem')).toBeVisible();
+  });
+});
+
+test.describe('equipamento da ficha', () => {
+  const POSITIONS = ['body', 'head', 'mainHand', 'offHand'];
+
+  /** Espera a gravação do equipar chegar ao banco (a tela muda antes) e devolve o campo. */
+  async function savedEquipment(characterId: string) {
+    let saved: Record<string, unknown> = {};
+    await expect
+      .poll(async () => {
+        const { data, error } = await adminClient()
+          .from('characters')
+          .select('equipment')
+          .eq('id', characterId)
+          .single();
+        if (error) throw error;
+        saved = data.equipment as Record<string, unknown>;
+        return typeof saved.head;
+      })
+      .toBe('string');
+    return saved;
+  }
+
+  test('uma ficha antiga, com a lista de compras no equipamento, grava só as quatro posições ao equipar', async ({
+    page,
+    seed,
+  }) => {
+    const characterId = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      has_participated_in_session: true,
+      equipment: [{ id: 'elmo_bronze', name: 'Elmo de Bronze', type: 'armadura' }],
+    });
+    await seed.giveItem(characterId, 'elmo_bronze');
+
+    await loginAs(page, 'player1');
+    await page.goto(`/characters/${characterId}`);
+    await page.getByRole('button', { name: 'Equipar' }).click();
+    await expect(page.getByRole('button', { name: 'Equipar' })).toHaveCount(0);
+
+    const saved = await savedEquipment(characterId);
+    expect(Object.keys(saved).sort()).toEqual(POSITIONS);
+    expect(saved).toMatchObject({ body: null, mainHand: null, offHand: null });
+    expect(saved.head).toEqual(expect.any(String));
+  });
+
+  test('a ficha nova, com as quatro posições vazias, equipa como sempre', async ({
+    page,
+    seed,
+  }) => {
+    const empty = { head: null, body: null, mainHand: null, offHand: null };
+    const characterId = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      has_participated_in_session: true,
+      equipment: empty,
+    });
+    await seed.giveItem(characterId, 'elmo_bronze');
+
+    await loginAs(page, 'player1');
+    await page.goto(`/characters/${characterId}`);
+    await page.getByRole('button', { name: 'Equipar' }).click();
+    await expect(page.getByRole('button', { name: 'Equipar' })).toHaveCount(0);
+
+    const saved = await savedEquipment(characterId);
+    expect(Object.keys(saved).sort()).toEqual(POSITIONS);
+    expect(saved.head).toEqual(expect.any(String));
   });
 });

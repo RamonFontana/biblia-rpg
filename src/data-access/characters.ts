@@ -1,6 +1,7 @@
 // Fichas (`characters`) usadas pelas telas de sessão. As funções lançam o erro do Supabase.
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
+import { EMPTY_EQUIPMENT } from '@/domain/equipment';
 import type { CharacterEquipment } from '@/types/combat';
 import type { Character } from '@/features/character-management/types';
 import type {
@@ -292,7 +293,7 @@ export async function saveCharacter(draft: DraftCharacter) {
       temptation: draft.temptation || null,
       stats: toJson(draft.stats),
       proficiencies: toJson(draft.proficiencies ?? null),
-      equipment: toJson(draft.equipment || []),
+      equipment: toJson(EMPTY_EQUIPMENT),
       coins: draft.coins || 0,
       narrative: toJson(draft.narrative ?? null),
     })

@@ -27,7 +27,8 @@ export async function submitTestResult(
   let isApproved = isRegularTestApproved(resultValue, difficulty);
 
   if (testType === 'Fé' && characterId) {
-    const stats = await readStatsOrNull(characterId);
+    // Sem a Fé do personagem não há como julgar o Teste: a falha na leitura interrompe o envio.
+    const stats = await getCharacterStats(characterId);
     if (stats) {
       // Mesma regra da tela do jogador: passa se o dado <= Fé Efetiva (Fé Atual mais a penalidade
       // dos Itens Profanos) + Modificador de Fé do Mestre.

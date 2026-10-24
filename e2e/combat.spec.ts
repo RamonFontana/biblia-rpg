@@ -151,6 +151,34 @@ test.describe('vida', () => {
     await expect(player.getByText('7', { exact: true }).first()).toBeVisible();
   });
 
+  test('o jogador abre a ficha do inimigo e vê os atributos que ele tem', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const guard = await seed.createEnemy(
+      GUARD,
+      { pv: 12, ca: 12 },
+      { for: 16, des: 12, con: 14, int: 8, sab: 10, car: 6 },
+    );
+    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await startCombat(master, { Eliabe: 10, [GUARD]: 5 });
+
+    await player.getByRole('heading', { name: GUARD }).click();
+    const sheet = player.getByRole('dialog');
+    const attribute = (label: string) => sheet.getByText(label, { exact: true }).locator('..');
+    await expect(attribute('FOR')).toContainText('16');
+    await expect(attribute('FOR')).toContainText('+3');
+    await expect(attribute('INT')).toContainText('8');
+    await expect(attribute('INT')).toContainText('-1');
+    await expect(attribute('CAR')).toContainText('-2');
+  });
+
   test('o jogador acompanha o próprio PV durante o combate, sem esperar o fim', async ({
     seed,
     signIn,
