@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { formatSiclos } from '@/domain/coins';
 import { TradeItemSelector, type SelectableItem } from './TradeItemSelector';
 import type { TradeItemWithDetails, TradeSide as TradeSideType } from '@/types/trade';
 import {
@@ -178,7 +179,7 @@ export function TradeSide({
 
   const validateReady = (coinsToOffer = coins): boolean => {
     if (!skipBalanceCheck && coinsToOffer > characterCoins) {
-      setError(`Saldo insuficiente de SP. Você tem ${characterCoins} SP.`);
+      setError(`Saldo insuficiente de SP. Você tem ${formatSiclos(characterCoins)} SP.`);
       return false;
     }
 
@@ -239,7 +240,9 @@ export function TradeSide({
           className="w-full px-3 py-2 bg-stone-900 border border-stone-600 rounded-md text-stone-200 text-sm font-mono disabled:opacity-50"
         />
         {!skipBalanceCheck && (
-          <span className="text-xs text-stone-500 mt-1 block">Saldo: {characterCoins} SP</span>
+          <span className="text-xs text-stone-500 mt-1 block">
+            Saldo: {formatSiclos(characterCoins)} SP
+          </span>
         )}
       </div>
 

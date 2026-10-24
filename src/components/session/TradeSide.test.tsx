@@ -105,3 +105,42 @@ describe('TradeSide: campo de SP', () => {
     expect(coinsField().value).toBe('8');
   });
 });
+
+describe('TradeSide: saldo', () => {
+  // Decisão do autor (ROADMAP, passo 9d, Q15c): o saldo fracionado aparece arredondado.
+  const withBalance = (characterCoins: number, coins = 0, canEdit = true) =>
+    render(
+      <TradeSide
+        label="Você"
+        side="initiator"
+        tradeId="t-1"
+        coins={coins}
+        tradeItems={[]}
+        isReady={false}
+        otherSideReady={false}
+        canEdit={canEdit}
+        characterCoins={characterCoins}
+        onCoinsChange={vi.fn()}
+        onReady={vi.fn()}
+        onItemsChanged={vi.fn()}
+      />,
+    );
+
+  it('mostra o saldo inteiro como está', () => {
+    withBalance(50);
+    expect(screen.getByText('Saldo: 50 SP')).toBeInTheDocument();
+  });
+
+  it('arredonda o saldo fracionado na exibição', () => {
+    withBalance(49.975);
+    expect(screen.getByText('Saldo: 49.98 SP')).toBeInTheDocument();
+  });
+
+  it('o aviso de saldo insuficiente também mostra o saldo arredondado', async () => {
+    withBalance(49.975, 60);
+    fireEvent.click(screen.getByRole('button', { name: /Pronto/ }));
+    expect(
+      await screen.findByText('Saldo insuficiente de SP. Você tem 49.98 SP.'),
+    ).toBeInTheDocument();
+  });
+});

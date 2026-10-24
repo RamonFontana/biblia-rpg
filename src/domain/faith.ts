@@ -28,10 +28,12 @@ export function addFaith(stats: FaithStats | null | undefined, delta: number): n
   return Math.min(FAITH_MAX, Math.max(0, getCurrentFaith(stats) + delta));
 }
 
-/** Fé que sobra depois de pagar o custo de uma habilidade; `null` se não há Fé suficiente. */
+/**
+ * Fé que sobra depois de pagar o custo de uma habilidade, entre 0 e o teto; `null` se não há Fé
+ * suficiente.
+ */
 export function spendFaith(stats: FaithStats | null | undefined, cost: number): number | null {
-  const current = getCurrentFaith(stats);
-  return current >= cost ? current - cost : null;
+  return getCurrentFaith(stats) >= cost ? addFaith(stats, -cost) : null;
 }
 
 /**

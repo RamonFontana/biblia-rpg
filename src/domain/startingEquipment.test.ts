@@ -97,8 +97,23 @@ describe('sellItem e sellValue', () => {
     expect(purse).toEqual({ coins: 30, items: [sword, bread] });
   });
 
-  it('vender o kit devolve os 50 inteiros, não soma à carteira', () => {
+  it('vender o kit devolve o custo gravado nele, não soma à carteira', () => {
     expect(sellItem({ coins: 5, items: [kitRow] }, 0)).toEqual({ coins: 50, items: [] });
+  });
+
+  // Decisão do autor (ROADMAP, passo 9d, Q15b): a venda do kit devolve o `cost` da linha. Antes
+  // devolvia 50 fixos; hoje os dois valem 50, então só um kit com outro custo mostra a diferença.
+  it('o kit com outro custo gravado devolve esse custo', () => {
+    expect(sellItem({ coins: 5, items: [{ ...kitRow, cost: 40 }] }, 0)).toEqual({
+      coins: 40,
+      items: [],
+    });
+  });
+
+  it('o kit sem custo gravado (rascunho antigo) devolve os 50 Siclos iniciais', () => {
+    const { cost, ...withoutCost } = kitRow;
+    void cost;
+    expect(sellItem({ coins: 5, items: [withoutCost] }, 0)).toEqual({ coins: 50, items: [] });
   });
 
   it('item sem preço devolve 0', () => {
@@ -113,8 +128,8 @@ describe('sellItem e sellValue', () => {
   it('sellValue mostra o que a venda devolve', () => {
     expect(sellValue(sword)).toBe(10);
     expect(sellValue(kitRow)).toBe(50);
-    // O valor do kit é fixo, não o `cost` gravado na linha.
-    expect(sellValue({ ...kitRow, cost: 12 })).toBe(50);
+    // O kit devolve o `cost` gravado na linha, como qualquer item.
+    expect(sellValue({ ...kitRow, cost: 12 })).toBe(12);
   });
 });
 

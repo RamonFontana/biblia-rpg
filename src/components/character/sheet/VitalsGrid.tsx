@@ -1,5 +1,6 @@
 import { Shield, Coins, Heart, Sparkles } from 'lucide-react';
 import { describeConditionResistances } from '@/domain/armorResistance';
+import { formatSiclos } from '@/domain/coins';
 import { getCurrentFaith } from '@/domain/faith';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import type { Character } from '@/features/character-management/types';
@@ -82,7 +83,7 @@ export function VitalsGrid({
       <div className="flex flex-col items-center justify-center p-4 bg-stone-900 border border-amber-900/50 rounded-xl shadow-inner relative overflow-hidden group">
         <div className="absolute inset-0 bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"></div>
         <Coins className="w-8 h-8 text-amber-500 mb-2" />
-        <span className="text-3xl font-bold text-amber-100">{coins ?? 0}</span>
+        <span className="text-3xl font-bold text-amber-100">{formatSiclos(coins)}</span>
         <span className="text-xs text-amber-500/70 uppercase tracking-wider font-semibold mt-1">
           SP
         </span>

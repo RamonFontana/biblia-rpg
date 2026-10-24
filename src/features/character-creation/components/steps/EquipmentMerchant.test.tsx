@@ -192,6 +192,36 @@ describe('catálogo por Vocação', () => {
   });
 });
 
+describe('moedas fracionadas', () => {
+  // Decisão do autor (ROADMAP, passo 9d, Q15c): a carteira guarda o valor exato (a Pedra para Funda
+  // custa 0,025 SP) e só a exibição é arredondada.
+  it('a carteira mostra o valor arredondado', () => {
+    start(withDraft({ coins: 49.975 }));
+    expect(wallet()).toBe('49.98 Siclos');
+  });
+
+  it('o rascunho guarda o valor exato, sem arredondar', async () => {
+    start({ ...withDraft({ coins: 49.975 }), currentStep: 6 });
+    fireEvent.click(screen.getByRole('button', { name: 'Avançar' }));
+    await vi.waitFor(() => expect(useCharacterCreationStore.getState().currentStep).toBe(7));
+    expect(useCharacterCreationStore.getState().draft.coins).toBe(49.975);
+  });
+
+  it('comprar um item fracionado mostra a carteira sem ruído de ponto flutuante', () => {
+    const torch = ITEMS_DB.find((i) => i.id === 'tocha')!;
+    start(withDraft({ coins: 50, vocation: 'Guerreiro' }));
+    openTab('Geral');
+    fireEvent.click(screen.getAllByRole('button', { name: `${torch.cost} SP` })[0]);
+    expect(wallet()).toBe('49.5 Siclos');
+  });
+
+  it('o preço do item continua exato no botão de compra', () => {
+    start(withDraft({ coins: 50, vocation: 'Guerreiro' }));
+    openTab('Geral');
+    expect(screen.getAllByRole('button', { name: '0.025 SP' }).length).toBeGreaterThan(0);
+  });
+});
+
 describe('avançar', () => {
   it('grava a bolsa e a carteira no rascunho e vai para o próximo passo', async () => {
     const item = weaponFor('Guerreiro')[0];

@@ -125,3 +125,31 @@ test.describe('equipamento da ficha', () => {
     expect(saved.head).toEqual(expect.any(String));
   });
 });
+
+test.describe('moedas da ficha', () => {
+  test('uma ficha com Siclos fracionados abre com o valor arredondado, e o banco guarda o exato', async ({
+    page,
+    seed,
+  }) => {
+    // A Pedra para Funda custa 0,025 SP: comprar uma deixa a carteira em 49,975.
+    const characterId = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      has_participated_in_session: true,
+      coins: 49.975,
+    });
+
+    await loginAs(page, 'player1');
+    await page.goto(`/characters/${characterId}`);
+    await expect(
+      page.getByText('SP', { exact: true }).locator('xpath=preceding-sibling::span[1]'),
+    ).toHaveText('49.98');
+
+    const { data, error } = await adminClient()
+      .from('characters')
+      .select('coins')
+      .eq('id', characterId)
+      .single();
+    if (error) throw error;
+    expect(Number(data.coins)).toBe(49.975);
+  });
+});

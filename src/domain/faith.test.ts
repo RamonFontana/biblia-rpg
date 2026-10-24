@@ -61,6 +61,16 @@ describe('spendFaith: custo de uma habilidade', () => {
   it('sem Fé suficiente, devolve null e nada é gasto', () => {
     expect(spendFaith({ current_faith: 9 }, 10)).toBeNull();
   });
+
+  // Decisão do autor (ROADMAP, passo 9d, Q16): o gasto passa pelo teto e pelo piso da Fé (0 a 100).
+  it('uma Fé gravada acima do teto volta ao teto depois do gasto', () => {
+    expect(spendFaith({ current_faith: 120 }, 10)).toBe(100);
+  });
+
+  it('o gasto nunca deixa a Fé abaixo de 0', () => {
+    expect(spendFaith({ current_faith: 0 }, 0)).toBe(0);
+    expect(spendFaith({ current_faith: 10 }, 10)).toBe(0);
+  });
 });
 
 describe('sumItemFaithPenalty: Itens Profanos', () => {
