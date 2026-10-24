@@ -103,6 +103,13 @@ describe('applyAbilityUse', () => {
     });
   });
 
+  // Decisão do autor (ROADMAP, passo 9d, Q16): o gasto respeita o teto da Fé (0 a 100).
+  it('uma Fé gravada acima do teto volta ao teto ao gastar o custo', () => {
+    expect(applyAbilityUse(costly, {}, { current_faith: 120 })).toMatchObject({
+      stats: { current_faith: 100 },
+    });
+  });
+
   it('sem Fé para o custo, devolve null (nada é gasto)', () => {
     expect(applyAbilityUse(costly, {}, { current_faith: 4 })).toBeNull();
     expect(applyAbilityUse(costly, {}, undefined)).toBeNull();
