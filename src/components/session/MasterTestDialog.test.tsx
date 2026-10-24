@@ -34,10 +34,7 @@ const sheet = (id: string, name: string, over: Partial<Character> = {}): Charact
   ...over,
 });
 
-const players = [
-  { character: sheet('c1', 'Eliab'), profile: null },
-  { character: sheet('c2', 'Raquel'), profile: null },
-];
+const players = [{ character: sheet('c1', 'Eliab') }, { character: sheet('c2', 'Raquel') }];
 
 const active = (over: Partial<SessionTest> = {}): SessionTest =>
   ({ id: 't1', status: 'active', test_type: 'Destreza', difficulty: 12, ...over }) as SessionTest;
@@ -99,10 +96,13 @@ describe('MasterTestDialog: formulário', () => {
     expect(screen.getByRole('spinbutton')).toHaveValue(10);
   });
 
-  it('lista os jogadores com personagem, "Sem jogador" quando não há perfil', () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q10): o elenco da sessão nunca traz o perfil do jogador,
+  // então o texto "(Sem jogador)" ao lado do nome estava sempre errado e saiu.
+  it('lista os personagens dos jogadores só pelo nome', () => {
     renderDialog();
     expect(screen.getByText('Eliab')).toBeInTheDocument();
-    expect(screen.getAllByText('(Sem jogador)')).toHaveLength(2);
+    expect(screen.getByText('Raquel')).toBeInTheDocument();
+    expect(screen.queryByText(/Sem jogador/)).toBeNull();
   });
 
   it('sem jogadores, avisa e não deixa pedir', () => {
@@ -200,8 +200,8 @@ describe('MasterTestDialog: enviar o Teste', () => {
   it('deixa de fora o personagem sem dono', async () => {
     renderDialog({
       playerCharacters: [
-        { character: sheet('c1', 'Eliab'), profile: null },
-        { character: sheet('c3', 'Sem Dono', { user_id: '' }), profile: null },
+        { character: sheet('c1', 'Eliab') },
+        { character: sheet('c3', 'Sem Dono', { user_id: '' }) },
       ],
     });
     pickPlayer('Eliab');

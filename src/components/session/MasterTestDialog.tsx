@@ -15,7 +15,7 @@ interface MasterTestDialogProps {
   onClose: () => void;
   activeTests: SessionTest[];
   testResults: Record<string, SessionTestResult[]>;
-  playerCharacters: { character: Character; profile: { name?: string } | null }[];
+  playerCharacters: { character: Character }[];
 }
 
 import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
@@ -349,10 +349,7 @@ export function MasterTestDialog({
                       <span
                         className={isSelected ? 'text-stone-200 font-medium' : 'text-stone-400'}
                       >
-                        {pc.character.name}{' '}
-                        <span className="text-xs opacity-50">
-                          ({pc.profile?.name || 'Sem jogador'})
-                        </span>
+                        {pc.character.name}
                       </span>
                     </div>
                   );
