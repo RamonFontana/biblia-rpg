@@ -92,11 +92,16 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
 
     let isFailedFaithTest = false;
     if (activeTest.test_type === 'Fé') {
-      // Busca a fé atual do personagem direto do banco para garantir o valor correto
-      const stats = await getCharacterStats(testResult.character_id).catch((error) => {
+      // Busca a fé atual do personagem direto do banco para garantir o valor correto. Sem ela o
+      // dado não pode ser julgado: o envio para.
+      let stats;
+      try {
+        stats = await getCharacterStats(testResult.character_id);
+      } catch (error) {
         console.error('Error reading the character Faith for the test:', error);
-        return null;
-      });
+        setError('Não foi possível ler a Fé do personagem. Tente enviar de novo.');
+        return;
+      }
       // faithPenalty é a soma (negativa) dos Itens Profanos; a mesma regra grava is_approved.
       isFailedFaithTest = !isFaithTestPassed(
         val,

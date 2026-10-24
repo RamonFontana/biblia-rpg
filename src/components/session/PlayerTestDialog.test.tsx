@@ -333,13 +333,36 @@ describe('Teste de Fé', () => {
     expect(mocks.submitTestResult).not.toHaveBeenCalled();
   });
 
-  it('se a leitura da Fé falha, o dado é avaliado só com o Item Profano (Fé 0)', async () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q11): sem a Fé do personagem não há como julgar o dado,
+  // então o envio para e o jogador vê o erro (antes avaliava com Fé 0 e abria a tela da punição).
+  it('se a leitura da Fé falha, o envio para com um erro e nada é enviado', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mocks.getCharacterStats.mockRejectedValue(new Error('falhou'));
     await show(test({ test_type: 'Fé', difficulty: 0 }));
     roll('1');
     send();
-    expect(await screen.findByText('Teste de Fé Reprovado!')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Não foi possível ler a Fé do personagem. Tente enviar de novo.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
+    expect(mocks.submitTestResult).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(
+      'Error reading the character Faith for the test:',
+      expect.any(Error),
+    );
+  });
+
+  it('depois da leitura que falhou, o jogador mantém o dado e envia de novo', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.getCharacterStats.mockRejectedValueOnce(new Error('falhou'));
+    await show(test({ test_type: 'Fé', difficulty: 0 }));
+    roll('30');
+    send();
+    await screen.findByText('Não foi possível ler a Fé do personagem. Tente enviar de novo.');
+    expect(input().value).toBe('30');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText(/Não foi possível ler a Fé/)).toBeNull();
   });
 });
 
