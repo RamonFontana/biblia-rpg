@@ -47,6 +47,34 @@ test.describe('iniciar o combate', () => {
     expect(combats).toEqual([{ status: 'active', round_number: 1, current_turn_index: 0 }]);
   });
 
+  test('o painel aparece mesmo quando o combate começa antes de o canal do tempo real estar no ar', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const guard = await seed.createEnemy(GUARD);
+    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const master = await signIn('master');
+    // O servidor só recebe os pedidos de entrada nos canais depois de 3 s: o combate começa antes
+    // de qualquer canal estar no ar, então o evento do combate novo nunca chega por assinatura.
+    await master.routeWebSocket(/realtime\/v1\/websocket/, (socket) => {
+      const server = socket.connectToServer();
+      socket.onMessage((message) => {
+        if (typeof message === 'string' && message.includes('"phx_join"')) {
+          setTimeout(() => server.send(message), 3000);
+        } else {
+          server.send(message);
+        }
+      });
+      server.onMessage((message) => socket.send(message));
+    });
+    await master.goto(`/session/${sessionId}`);
+
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 }, { timeout: 15_000 });
+
+    await expect(participantCard(master, GUARD)).toBeVisible();
+  });
+
   test('o combate exige pelo menos dois participantes', async ({ seed, signIn }) => {
     const { master } = await openTable(seed, signIn);
 
@@ -140,6 +168,26 @@ test.describe('vida', () => {
 
     await modifyHealth(master, 'Eliabe', 'Dano', 20);
     await expect(pv).toHaveText('0/11');
+  });
+
+  test('depois de aplicar, o botão do participante espera um instante antes de aceitar outro valor', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    await modifyHealth(master, GUARD, 'Dano', 3);
+
+    const guardButton = participantCard(master, GUARD).getByRole('button', {
+      name: 'Modificar Vida',
+    });
+    await expect(guardButton).toBeDisabled();
+    await expect(
+      participantCard(master, 'Eliabe').getByRole('button', { name: 'Modificar Vida' }),
+    ).toBeEnabled();
+    await expect(guardButton).toBeEnabled();
+    await expect(participantCard(master, GUARD)).toContainText('HP Atual:9');
   });
 
   test('o dano não leva o PV abaixo de zero', async ({ seed, signIn }) => {

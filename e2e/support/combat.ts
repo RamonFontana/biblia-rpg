@@ -6,7 +6,11 @@ export function participantCard(master: Page, name: string): Locator {
 }
 
 /** Abre o setup, dá a iniciativa de cada participante e inicia o combate. */
-export async function startCombat(master: Page, initiative: Record<string, number>) {
+export async function startCombat(
+  master: Page,
+  initiative: Record<string, number>,
+  { timeout }: { timeout?: number } = {},
+) {
   await master.getByRole('button', { name: 'Iniciar Combate' }).click();
   const setup = master.getByRole('dialog');
   for (const [name, value] of Object.entries(initiative)) {
@@ -14,7 +18,7 @@ export async function startCombat(master: Page, initiative: Record<string, numbe
     await row.getByLabel('Iniciativa').fill(String(value));
   }
   await setup.getByRole('button', { name: 'Iniciar Combate' }).click();
-  await expect(master.getByText('Painel de Combate (Rodada 1)')).toBeVisible();
+  await expect(master.getByText('Painel de Combate (Rodada 1)')).toBeVisible({ timeout });
 }
 
 /** Aplica dano ou cura pelo botão "Modificar Vida" do cartão. */
