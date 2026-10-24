@@ -123,6 +123,25 @@ test.describe('vida', () => {
     await expect(player.getByText('7', { exact: true }).first()).toBeVisible();
   });
 
+  test('o jogador acompanha o próprio PV durante o combate, sem esperar o fim', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    const pv = player.getByText('PV em combate').locator('xpath=following-sibling::div[1]');
+    await expect(pv).toHaveText('11/11');
+
+    await modifyHealth(master, 'Eliabe', 'Dano', 4);
+    await expect(pv).toHaveText('7/11');
+
+    await modifyHealth(master, 'Eliabe', 'Cura', 2);
+    await expect(pv).toHaveText('9/11');
+
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    await expect(pv).toHaveText('0/11');
+  });
+
   test('o dano não leva o PV abaixo de zero', async ({ seed, signIn }) => {
     const { master } = await openTable(seed, signIn);
     await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
@@ -205,6 +224,9 @@ test.describe('queda e morte', () => {
     await expect(eliabe).toContainText('HP Atual:1');
     await expect(master.getByText('Controles de Morte (Mestre)')).toHaveCount(0);
     await expect(player.getByText('TESTE DE MORTE')).toHaveCount(0);
+    await expect(
+      player.getByText('PV em combate').locator('xpath=following-sibling::div[1]'),
+    ).toHaveText('1/11');
   });
 
   test('três falhas nos testes de morte matam o personagem na hora', async ({ seed, signIn }) => {

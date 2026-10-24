@@ -264,6 +264,48 @@ describe('PlayerCombatView: usar uma Habilidade', () => {
   });
 });
 
+// O dano e a cura do Mestre vão para o participante; a ficha só recebe o PV no fim do combate.
+// Durante o combate o jogador vê o PV do participante, e não o da ficha (o de antes do combate).
+describe('PlayerCombatView: o PV em combate', () => {
+  it('mostra o PV do participante sobre o PV máximo da ficha', () => {
+    startCombat([participant({ hp_current: 4 })]);
+    view();
+    expect(screen.getByText('PV em combate')).toBeInTheDocument();
+    expect(screen.getByText('4/12')).toBeInTheDocument();
+  });
+
+  it('não usa o PV que a ficha ainda guarda de antes do combate', () => {
+    startCombat([participant({ hp_current: 4 })]);
+    view(sheet({ stats: { pv: 12, current_pv: 12, ca: 11, faith: 50 } }));
+    expect(screen.getByText('4/12')).toBeInTheDocument();
+    expect(screen.queryByText('12/12')).toBeNull();
+  });
+
+  it('acompanha a cura e o dano que chegam pelo tempo real', () => {
+    startCombat([participant({ hp_current: 4 })]);
+    view();
+    act(() => startCombat([participant({ hp_current: 9 })]));
+    expect(screen.getByText('9/12')).toBeInTheDocument();
+  });
+
+  it('a 0 PV mostra 0/12 junto do Teste de Morte', () => {
+    startCombat([participant({ hp_current: 0 })]);
+    view();
+    expect(screen.getByText('0/12')).toBeInTheDocument();
+  });
+
+  it('sem combate, não mostra o PV em combate', () => {
+    view();
+    expect(screen.queryByText('PV em combate')).toBeNull();
+  });
+
+  it('em combate mas fora da lista de participantes, não mostra o PV em combate', () => {
+    startCombat([participant({ entity_id: 'outro' })]);
+    view();
+    expect(screen.queryByText('PV em combate')).toBeNull();
+  });
+});
+
 describe('PlayerCombatView: o combate', () => {
   it('sem combate, não há lista de inimigos, turno nem checklist', () => {
     view();
