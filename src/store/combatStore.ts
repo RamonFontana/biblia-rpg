@@ -266,8 +266,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   endCombat: async () => {
-    const { activeCombat, participants } = get();
+    const { activeCombat } = get();
     if (!activeCombat) return;
+
+    // O estado local vem do tempo real e pode estar atrasado (um dano de um instante atrás ainda
+    // não chegou): o PV que vai para a ficha é o que o banco guarda agora. Se a leitura falhar, o
+    // combate não encerra, para não gravar um PV velho.
+    const participants = await listCombatParticipants(activeCombat.id);
 
     // 1. Sync final HP to characters and perform soft delete for dead characters BEFORE ending combat
     // This ensures that realtime listeners for 'combats' UPDATE will fetch the correctly updated characters.

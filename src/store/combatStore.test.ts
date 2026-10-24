@@ -269,13 +269,22 @@ describe('endCombat', () => {
     { id: 'char-enemy-2', stats: { pv: 8, current_pv: 8 }, is_dead: false, is_enemy: true },
   ];
 
+  /**
+   * `participants` é o estado local; `fresh` é o que o banco guarda naquele instante (o tempo real
+   * pode estar atrasado). Sem `fresh`, os dois são iguais.
+   */
   const run = async (
     participants: CombatParticipant[],
     rows: Array<Record<string, unknown>> = characters,
+    fresh: CombatParticipant[] = participants,
   ) => {
     store().setCombatState(combat(), participants);
-    state.respond = (call) =>
-      call.table === 'characters' && call.op === 'select' ? { data: rows } : undefined;
+    state.respond = (call) => {
+      if (call.op !== 'select') return undefined;
+      if (call.table === 'characters') return { data: rows };
+      if (call.table === 'combat_participants') return { data: fresh };
+      return undefined;
+    };
     await store().endCombat();
   };
   const writeOf = (id: string) =>
@@ -350,10 +359,36 @@ describe('endCombat', () => {
     expect(store().participants).toEqual([]);
   });
 
+  // O estado local vem do tempo real e pode estar atrasado: o dano de um instante atrás ainda não
+  // chegou. Finalizar com ele gravava na ficha o PV de antes do dano.
+  it('grava o PV que o banco guarda, não o do estado local atrasado', async () => {
+    await run([player], characters, [{ ...player, hp_current: 0 }]);
+    expect(writeOf('char-player')!.payload).toMatchObject({
+      stats: { current_pv: 0, status: 'Morrendo' },
+    });
+  });
+
+  it('lê os participantes do combate que está terminando', async () => {
+    await run([player]);
+    const read = callsOf(state.calls, 'combat_participants', 'select')[0];
+    expect(filterOf(read, 'eq', 'combat_id')).toBe('combat-1');
+  });
+
+  it('se ler os participantes falhar, lança e não grava as fichas nem encerra o combate', async () => {
+    store().setCombatState(combat(), [player]);
+    state.respond = (call) =>
+      call.table === 'combat_participants' ? { error: new Error('sem rede') } : undefined;
+    await expect(store().endCombat()).rejects.toThrow('sem rede');
+    expect(callsOf(state.calls, 'characters', 'update')).toEqual([]);
+    expect(callsOf(state.calls, 'combats', 'update')).toEqual([]);
+    expect(store().activeCombat).not.toBeNull();
+  });
+
   it('se encerrar o combate falhar, lança e o estado local fica como estava', async () => {
     store().setCombatState(combat(), [player]);
     state.respond = (call) => {
       if (call.table === 'characters' && call.op === 'select') return { data: characters };
+      if (call.table === 'combat_participants' && call.op === 'select') return { data: [player] };
       if (call.table === 'combats') return { error: new Error('falhou') };
       return undefined;
     };
