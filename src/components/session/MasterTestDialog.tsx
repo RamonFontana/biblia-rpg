@@ -120,11 +120,11 @@ export function MasterTestDialog({
   // Determine if we are showing the creation form or the active dashboard
   if (currentActiveTest) {
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-2 sm:p-4">
         <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-serif text-amber-500">Teste em Andamento</h2>
-            <button onClick={onClose} className="text-stone-400 hover:text-white">
+            <button onClick={onClose} className="text-stone-400 hover:text-stone-100">
               ✕
             </button>
           </div>
@@ -215,7 +215,7 @@ export function MasterTestDialog({
             <button
               onClick={handleCompleteTest}
               disabled={isSubmitting}
-              className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded font-medium disabled:opacity-50 transition-colors"
+              className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-100 rounded font-medium disabled:opacity-50 transition-colors"
             >
               Encerrar Teste
             </button>
@@ -226,11 +226,11 @@ export function MasterTestDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-lg w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-serif text-amber-500">Solicitar Teste aos Jogadores</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-white">
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-100">
             ✕
           </button>
         </div>
@@ -364,14 +364,14 @@ export function MasterTestDialog({
         <div className="flex justify-end mt-6 pt-4 border-t border-stone-800 gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-stone-400 hover:text-white transition-colors"
+            className="px-4 py-2 text-stone-400 hover:text-stone-100 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleCreateTest}
             disabled={isSubmitting || selectedPlayers.length === 0}
-            className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-stone-100 rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? 'Enviando...' : 'Solicitar Teste'}
           </button>

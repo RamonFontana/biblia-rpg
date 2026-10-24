@@ -12,11 +12,11 @@ interface SubmittedResultProps {
 /** O aviso depois do envio: resultado, aprovação e a conta do dado, à espera do Mestre. */
 export function SubmittedResult({ test, result, sheet, onDismiss }: SubmittedResultProps) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-stone-900 border border-stone-700 rounded-lg p-4 sm:p-6 max-w-sm w-full max-h-[95vh] overflow-y-auto text-stone-200 shadow-2xl text-center relative">
         <button
           onClick={onDismiss}
-          className="absolute top-4 right-4 text-stone-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-stone-400 hover:text-stone-100 transition-colors"
           title="Fechar aviso"
         >
           ✕

@@ -52,7 +52,7 @@ export function TradeRequestNotification({
             <Button
               size="sm"
               onClick={() => onAccept(trade.id)}
-              className="bg-green-600 hover:bg-green-500 text-white"
+              className="bg-green-600 hover:bg-green-500 text-stone-100"
             >
               Aceitar
             </Button>

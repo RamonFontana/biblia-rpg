@@ -37,7 +37,7 @@ export function NewDayDialog({ isOpen, onClose, day }: NewDayDialogProps) {
         </div>
 
         <div className="flex justify-end mt-4">
-          <Button onClick={onClose} className="bg-amber-600 hover:bg-amber-700 text-white">
+          <Button onClick={onClose} className="bg-amber-600 hover:bg-amber-700 text-stone-100">
             Entendi
           </Button>
         </div>

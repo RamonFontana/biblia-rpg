@@ -44,7 +44,7 @@ export function FaithPenaltyForm({
               onSubmit();
             }
           }}
-          className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-red-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70"
+          className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-stone-100 focus:outline-none focus:border-red-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70"
           placeholder="0"
         />
       </div>
@@ -59,7 +59,7 @@ export function FaithPenaltyForm({
         <button
           onClick={onRoll}
           disabled={isSubmitting || isRolling}
-          className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-stone-600 text-white rounded-lg font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-stone-600 text-stone-100 rounded-lg font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           <span>🎲</span> {isRolling ? 'Rolando...' : 'Rolar 1d6'}
         </button>
@@ -67,7 +67,7 @@ export function FaithPenaltyForm({
         <button
           onClick={onSubmit}
           disabled={isSubmitting || isRolling || value === ''}
-          className="w-full py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] active:scale-[0.98]"
+          className="w-full py-3 bg-red-600 hover:bg-red-500 text-stone-100 rounded-lg font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] active:scale-[0.98]"
         >
           {isSubmitting ? 'Enviando...' : 'Confirmar Punição'}
         </button>

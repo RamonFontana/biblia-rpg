@@ -68,6 +68,19 @@ describe('findOffPalette: o que conta', () => {
   });
 });
 
+describe('findOffPalette: branco e preto', () => {
+  it.each(['text-white', 'bg-black', 'bg-black/60', 'hover:text-white', 'border-white/10'])(
+    '%s conta (a paleta usa pedra no lugar)',
+    (cls) => {
+      expect(classes(`"${cls}"`)).toEqual([cls]);
+    },
+  );
+
+  it('o nome dentro de outra palavra não conta', () => {
+    expect(classes('"text-whitespace bg-blackout my-text-white"')).toEqual([]);
+  });
+});
+
 describe('findOffPalette: o que não conta', () => {
   it.each([
     'bg-stone-900',
@@ -78,8 +91,6 @@ describe('findOffPalette: o que não conta', () => {
     'text-green-400',
     'bg-green-900/30',
     'border-green-700/50',
-    'text-white',
-    'bg-black/60',
     'bg-transparent',
     'text-muted-foreground',
     'bg-primary/10',

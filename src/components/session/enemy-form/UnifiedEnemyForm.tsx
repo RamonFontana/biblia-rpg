@@ -269,7 +269,7 @@ export function UnifiedEnemyForm({
           <button
             type="button"
             onClick={() => append({ name: '', description: '' })}
-            className="flex items-center text-xs text-stone-300 hover:text-white"
+            className="flex items-center text-xs text-stone-300 hover:text-stone-100"
           >
             <Plus size={14} className="mr-1" /> Adicionar
           </button>
