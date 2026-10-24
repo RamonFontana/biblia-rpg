@@ -1,3 +1,5 @@
+import { rollDie } from '@/domain/dice';
+import { systemRng } from '@/lib/systemRng';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -56,7 +58,7 @@ export function DeathSavesModal({ character, participantId }: DeathSavesModalPro
   };
 
   const handleAutoRoll = () => {
-    const roll = Math.floor(Math.random() * 20) + 1;
+    const roll = rollDie(20, systemRng);
     handleRollResult(roll);
   };
 

@@ -1,3 +1,5 @@
+import { rollDie } from '@/domain/dice';
+import { systemRng } from '@/lib/systemRng';
 import { useState, useRef, useEffect } from 'react';
 
 interface DiceRollerDialogProps {
@@ -52,10 +54,10 @@ export function DiceRollerDialog({ isOpen, onClose }: DiceRollerDialogProps) {
       const currentInterval = minInterval + (maxInterval - minInterval) * Math.pow(progress, 2);
 
       if (elapsed >= duration) {
-        setResult(Math.floor(Math.random() * selectedDice) + 1);
+        setResult(rollDie(selectedDice, systemRng));
         setIsRolling(false);
       } else {
-        setResult(Math.floor(Math.random() * selectedDice) + 1);
+        setResult(rollDie(selectedDice, systemRng));
         elapsed += currentInterval;
         setTimeout(rollStep, currentInterval);
       }

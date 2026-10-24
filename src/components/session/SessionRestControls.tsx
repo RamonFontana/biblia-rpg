@@ -1,3 +1,5 @@
+import { rollDie } from '@/domain/dice';
+import { systemRng } from '@/lib/systemRng';
 import { useState } from 'react';
 import { updateCharacterRest } from '@/data-access/characters';
 import { updateGameSession, type GameSession, type SessionNpc } from '@/data-access/sessions';
@@ -121,7 +123,7 @@ export function SessionRestControls({
       // 2. Check if there's a Priest for the Faith bonus
       const hasPriest = hasPriestInGroup(playerCharacters.map((pc) => pc.character?.vocation));
 
-      const baseFaithRoll = Math.floor(Math.random() * 4) + 1; // 1d4
+      const baseFaithRoll = rollDie(4, systemRng); // 1d4
       const faithRecovered = calculateFaithRecovery(baseFaithRoll, hasPriest);
 
       // 3. Update all characters (players and npcs)
