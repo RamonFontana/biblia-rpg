@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCombatStore } from '../../store/combatStore';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -8,6 +8,10 @@ import { ConditionBadge } from '../conditions/ConditionBadge';
 import { ConditionSelector } from '../conditions/ConditionSelector';
 import { mergeCondition, removeCondition } from '@/domain/conditions';
 import type { ConditionEntry } from '../../types/combat';
+
+// O PV novo chega pelo tempo real. Aplicar outro valor antes disso partiria do PV velho, então o
+// botão do participante espera este tempo depois de cada aplicação.
+const HEALTH_COOLDOWN_MS = 1500;
 
 interface CombatDashboardProps {
   availableEntities?: {
@@ -29,6 +33,25 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
     id: string;
     name: string;
   } | null>(null);
+
+  const [cooling, setCooling] = useState<ReadonlySet<string>>(new Set());
+  const cooldownTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const timers = cooldownTimers.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
+  const startHealthCooldown = (participantId: string) => {
+    setCooling((current) => new Set(current).add(participantId));
+    const timer = setTimeout(() => {
+      cooldownTimers.current.delete(timer);
+      setCooling((current) => {
+        const next = new Set(current);
+        next.delete(participantId);
+        return next;
+      });
+    }, HEALTH_COOLDOWN_MS);
+    cooldownTimers.current.add(timer);
+  };
 
   // O avanço e o fim leem o banco e gravam: enquanto um não termina, os dois botões esperam. Um
   // segundo clique partiria do mesmo turno (ou finalizaria o combate duas vezes).
@@ -187,6 +210,7 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
                       variant="outline"
                       size="sm"
                       className="w-full min-h-[44px]"
+                      disabled={cooling.has(participant.id)}
                       onClick={() => handleApplyDamage(participant.id, displayName)}
                     >
                       Modificar Vida
@@ -210,6 +234,7 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
         <HealthModificationModal
           isOpen={!!selectedParticipant}
           onClose={() => setSelectedParticipant(null)}
+          onApplied={() => startHealthCooldown(selectedParticipant.id)}
           participantId={selectedParticipant.id}
           participantName={selectedParticipant.name}
         />

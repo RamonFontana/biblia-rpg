@@ -250,6 +250,74 @@ describe('CombatDashboard: cada participante', () => {
     expect(document.querySelector('[data-stub="HealthModificationModal"]')).toBeNull();
   });
 
+  // O PV novo chega pelo tempo real. Aplicar outro valor antes disso partiria do PV velho, então o
+  // botão do participante espera um instante depois de cada aplicação.
+  describe('depois de aplicar dano ou cura', () => {
+    const twoParticipants = () => {
+      startCombat([
+        participant('p1', { entity_id: 'e1' }),
+        participant('p2', { entity_id: 'e2', initiative: 5 }),
+      ]);
+      render(
+        <CombatDashboard
+          availableEntities={[
+            { id: 'e1', name: 'Eli', type: 'player', hpCurrent: 10 },
+            { id: 'e2', name: 'Guarda', type: 'enemy', hpCurrent: 10 },
+          ]}
+        />,
+      );
+    };
+    const healthButton = (index: number) =>
+      screen.getAllByRole('button', { name: 'Modificar Vida' })[index] as HTMLButtonElement;
+    const applied = () =>
+      act(() => (stubProps('HealthModificationModal')!.onApplied as () => void)());
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('o botão do participante fica desabilitado por um instante e depois volta', () => {
+      twoParticipants();
+      fireEvent.click(healthButton(0));
+      applied();
+
+      expect(healthButton(0).disabled).toBe(true);
+      act(() => vi.advanceTimersByTime(1000));
+      expect(healthButton(0).disabled).toBe(true);
+      act(() => vi.advanceTimersByTime(600));
+      expect(healthButton(0).disabled).toBe(false);
+    });
+
+    it('o botão dos outros participantes continua livre', () => {
+      twoParticipants();
+      fireEvent.click(healthButton(0));
+      applied();
+
+      expect(healthButton(1).disabled).toBe(false);
+    });
+
+    it('sem aplicar (só fechar a janela), o botão não espera', () => {
+      twoParticipants();
+      fireEvent.click(healthButton(0));
+      act(() => (stubProps('HealthModificationModal')!.onClose as () => void)());
+
+      expect(healthButton(0).disabled).toBe(false);
+    });
+
+    it('sair da tela não deixa o tempo de espera pendurado', () => {
+      twoParticipants();
+      fireEvent.click(healthButton(0));
+      applied();
+      cleanup();
+
+      expect(() => act(() => vi.advanceTimersByTime(5000))).not.toThrow();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
   it('o jogador com PV 0 ganha os controles de morte', () => {
     startCombat([participant('p1', { hp_current: 0 }), participant('p2', { hp_current: 4 })]);
     render(<CombatDashboard />);
