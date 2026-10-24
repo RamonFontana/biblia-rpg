@@ -29,8 +29,8 @@ export function CharacterEdit() {
           tribe: data.tribe,
           vocation: data.vocation,
           coins: data.coins || 0,
-          // A lista de compras só existe na ficha recém-criada; depois o campo guarda as posições
-          // vestidas, e o Mercador recomeça de uma lista vazia.
+          // A lista de compras só existe em ficha criada antes do passo 9c do ROADMAP; a ficha nova
+          // guarda aí as posições vestidas, e o Mercador recomeça de uma lista vazia.
           equipment: Array.isArray(data.equipment) ? data.equipment : [],
           attributes: data.attributes,
           stats: data.stats,

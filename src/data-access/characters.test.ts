@@ -338,21 +338,24 @@ describe('saveCharacter', () => {
       temptation: null,
       stats: draft.stats,
       proficiencies: null,
-      equipment: [],
+      equipment: { head: null, body: null, mainHand: null, offHand: null },
       coins: 0,
       narrative: null,
     });
     expect(state.syncInventoryItems).not.toHaveBeenCalled();
   });
 
-  it('refaz o inventário com o equipamento e a vocação da ficha', async () => {
+  // Decisão do autor (ROADMAP, passo 9c, Q12): a coluna `equipment` guarda só as posições vestidas.
+  // A lista de compras vai para `character_items`; antes era gravada na coluna e o primeiro equipar
+  // misturava as chaves numéricas da lista com as posições.
+  it('refaz o inventário com a lista de compras e a vocação da ficha, sem gravá-la na coluna', async () => {
     state.respond = () => ({ data: { id: 'c1' } });
     const equipment = [{ id: 'kit_basico', name: 'Kit', type: 'kit' }];
     await saveCharacter({ ...draft, equipment, coins: 5, fortress: 'Coragem', temptation: 'Ira' });
 
     const [call] = callsOf(state.calls, 'characters', 'insert');
     expect(call.payload).toMatchObject({
-      equipment,
+      equipment: { head: null, body: null, mainHand: null, offHand: null },
       coins: 5,
       fortress: 'Coragem',
       temptation: 'Ira',

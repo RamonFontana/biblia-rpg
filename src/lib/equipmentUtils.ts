@@ -3,26 +3,20 @@ import type { CombatInventoryItem } from '../types/inventory';
 import type { Character } from '@/features/character-management/types';
 import { calculateArmorClass, UNARMORED_AC, type EquippedItemRef } from '@/domain/armorClass';
 import { calculateModifier } from '@/domain/attributes';
+import { EMPTY_EQUIPMENT } from '@/domain/equipment';
 import {
   getConditionResistanceLevels,
   getItemConditionResistances,
   resolveEquippedItems,
 } from '@/domain/armorResistance';
 
-export const EMPTY_EQUIPMENT: CharacterEquipment = {
-  head: null,
-  body: null,
-  mainHand: null,
-  offHand: null,
-};
-
 /**
- * As posições vestidas da ficha, ou todas vazias. Uma ficha recém-criada guarda aí a lista de
- * compras (um array) até o primeiro item ser equipado, e é esse array que sai daqui; ver ROADMAP,
- * passo 7d.
+ * As posições vestidas da ficha, ou todas vazias. Fichas criadas antes do passo 9c do ROADMAP
+ * guardam aí a lista de compras (um array), que não é equipamento vestido: vale como nada vestido.
  */
 export function getEquippedSlots(equipment: Character['equipment']): CharacterEquipment {
-  return (equipment || EMPTY_EQUIPMENT) as CharacterEquipment;
+  if (!equipment || Array.isArray(equipment)) return EMPTY_EQUIPMENT;
+  return equipment as CharacterEquipment;
 }
 
 export function canEquipItem(itemEffects: ItemEffects): boolean {
