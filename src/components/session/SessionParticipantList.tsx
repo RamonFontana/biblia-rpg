@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { TokenContextMenu } from './TokenContextMenu';
 import { TradeRequestNotification } from './TradeRequestNotification';
+import { TradePendingNotice } from './TradePendingNotice';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { updateCharacterStats } from '@/data-access/characters';
@@ -30,6 +31,8 @@ interface SessionParticipantListProps {
   gmId?: string;
   playerCharacters?: { user_id: string; character: Character }[];
   npcs?: SessionNpc[];
+  /** NPCs que podem ser alvo de uma Troca (os nomes dos avisos), se esta lista não os mostra. */
+  tradeNpcs?: SessionNpc[];
   activeTrades?: TradeWithItems[];
   onUpdatePlayerData?: (characterId: string, data: Partial<Character>) => void;
   onUpdateNPCData?: (npcId: string, data: Partial<Character>) => void;
@@ -49,6 +52,7 @@ export function SessionParticipantList({
   gmId,
   playerCharacters = [],
   npcs = [],
+  tradeNpcs,
   activeTrades = [],
   onUpdatePlayerData,
   onUpdateNPCData,
@@ -85,6 +89,22 @@ export function SessionParticipantList({
     }
     return false;
   });
+
+  // O pedido que a própria pessoa fez e que ainda espera resposta.
+  const pendingTradesFromUser = activeTrades.filter(
+    (t) => t.status === 'pending' && !!user && t.initiator_user_id === user.id,
+  );
+
+  const npcsForTradeNames = tradeNpcs ?? npcs;
+  const tradeNpcName = (trade: TradeWithItems) => {
+    const npcId = trade.target_npc_id ?? trade.target_character_id;
+    return npcId ? npcsForTradeNames.find((n) => n.id === npcId)?.name : undefined;
+  };
+  const tradeTargetName = (trade: TradeWithItems) =>
+    trade.type === 'npc_trade'
+      ? tradeNpcName(trade)
+      : playerCharacters.find((pc) => pc.character.id === trade.target_character_id)?.character
+          .name;
 
   const handlePlayerClick = (userId: string, e?: React.MouseEvent) => {
     const char = playerCharacters.find((pc) => pc.user_id === userId)?.character;
@@ -338,25 +358,26 @@ export function SessionParticipantList({
         )}
       </div>
 
-      {pendingTradesForUser.length > 0 && (
+      {(pendingTradesForUser.length > 0 || pendingTradesFromUser.length > 0) && (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col-reverse items-end gap-3 max-w-[calc(100vw-2rem)]">
-          {pendingTradesForUser.map((trade) => {
-            const npcName = trade.target_npc_id
-              ? npcs.find((n) => n.id === trade.target_npc_id)?.name
-              : trade.target_character_id
-                ? npcs.find((n) => n.id === trade.target_character_id)?.name
-                : undefined;
-            return (
-              <TradeRequestNotification
-                key={trade.id}
-                trade={trade}
-                playerCharacters={playerCharacters}
-                npcName={npcName}
-                onAccept={(id) => onAcceptTrade?.(id)}
-                onReject={(id) => onRejectTrade?.(id)}
-              />
-            );
-          })}
+          {pendingTradesForUser.map((trade) => (
+            <TradeRequestNotification
+              key={trade.id}
+              trade={trade}
+              playerCharacters={playerCharacters}
+              npcName={tradeNpcName(trade)}
+              onAccept={(id) => onAcceptTrade?.(id)}
+              onReject={(id) => onRejectTrade?.(id)}
+            />
+          ))}
+          {pendingTradesFromUser.map((trade) => (
+            <TradePendingNotice
+              key={trade.id}
+              trade={trade}
+              targetName={tradeTargetName(trade)}
+              onCancel={(id) => onRejectTrade?.(id)}
+            />
+          ))}
         </div>
       )}
 

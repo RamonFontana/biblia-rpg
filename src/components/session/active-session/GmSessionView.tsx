@@ -91,6 +91,7 @@ export function GmSessionView({
           playerCharacters={playerCharacters.filter(
             (pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
           )}
+          tradeNpcs={npcs}
           activeTrades={activeTrades}
           onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
           onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}

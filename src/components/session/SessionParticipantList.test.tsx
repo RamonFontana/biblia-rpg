@@ -48,6 +48,12 @@ vi.mock('./TradeRequestNotification', async () => ({
   ),
 }));
 
+vi.mock('./TradePendingNotice', async () => ({
+  TradePendingNotice: (await import('@/test/stubs')).makeStub('TradePendingNotice', (props) =>
+    String((props.trade as { id: string }).id),
+  ),
+}));
+
 import { clearStubs, stubProps } from '@/test/stubs';
 import type { PresenceState } from '@/data-access/realtime';
 import type { SessionNpc } from '@/data-access/sessions';
@@ -665,6 +671,74 @@ describe('SessionParticipantList: trocas pendentes', () => {
     (notice('t1')!.onAccept as (id: string) => void)('t1');
     (notice('t1')!.onReject as (id: string) => void)('t1');
     expect(onAcceptTrade).toHaveBeenCalledWith('t1');
+    expect(onRejectTrade).toHaveBeenCalledWith('t1');
+  });
+
+  it('o Mestre vê o nome do NPC pela lista de alvos de Troca, sem listar os NPCs de novo', () => {
+    renderList({
+      isGM: true,
+      tradeNpcs: [npc('n1', { name: 'Zacarias' })],
+      activeTrades: [trade({ id: 't2', type: 'npc_trade', target_npc_id: 'n1' })],
+    });
+    expect(notice('t2')).toMatchObject({ npcName: 'Zacarias' });
+    expect(screen.queryByText('Zacarias')).toBeNull();
+  });
+});
+
+describe('SessionParticipantList: o pedido que a própria pessoa fez', () => {
+  const players = [
+    { user_id: 'me', character: sheet('pc1') },
+    { user_id: 'outro', character: sheet('pc2', { name: 'Rute' }) },
+  ];
+  const waiting = (id: string) => stubProps('TradePendingNotice', id);
+  const mine = (over: Partial<TradeWithItems> = {}) =>
+    trade({
+      initiator_user_id: 'me',
+      initiator_character_id: 'pc1',
+      target_character_id: 'pc2',
+      ...over,
+    });
+
+  it('quem pediu a Troca a outro jogador vê para quem pediu', () => {
+    renderList({ playerCharacters: players, activeTrades: [mine()] });
+    expect(waiting('t1')).toMatchObject({ trade: { id: 't1' }, targetName: 'Rute' });
+  });
+
+  it('quem pediu a Troca a um NPC vê o nome do NPC', () => {
+    renderList({
+      playerCharacters: players,
+      npcs: [npc('n1', { name: 'Raabe' })],
+      activeTrades: [
+        mine({ id: 't2', type: 'npc_trade', target_character_id: null, target_npc_id: 'n1' }),
+      ],
+    });
+    expect(waiting('t2')).toMatchObject({ targetName: 'Raabe' });
+  });
+
+  it('o nome do NPC jogável vem da ficha alvo', () => {
+    renderList({
+      playerCharacters: players,
+      npcs: [npc('n1', { name: 'Zacarias' })],
+      activeTrades: [mine({ id: 't2', type: 'npc_trade', target_character_id: 'n1' })],
+    });
+    expect(waiting('t2')).toMatchObject({ targetName: 'Zacarias' });
+  });
+
+  it('quem recebeu o pedido não vê o aviso de espera', () => {
+    h.user = { id: 'outro' };
+    renderList({ playerCharacters: players, activeTrades: [mine()] });
+    expect(waiting('t1')).toBeUndefined();
+  });
+
+  it('Troca que já não está pendente não gera aviso de espera', () => {
+    renderList({ playerCharacters: players, activeTrades: [mine({ status: 'active' })] });
+    expect(waiting('t1')).toBeUndefined();
+  });
+
+  it('cancelar o pedido chega ao pai com o id da Troca', () => {
+    const onRejectTrade = vi.fn();
+    renderList({ playerCharacters: players, activeTrades: [mine()], onRejectTrade });
+    (waiting('t1')!.onCancel as (id: string) => void)('t1');
     expect(onRejectTrade).toHaveBeenCalledWith('t1');
   });
 });

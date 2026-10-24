@@ -313,31 +313,52 @@ describe('TradeDialog: execução automática', () => {
     expect(screen.getByText('permissão negada')).toBeTruthy();
   });
 
-  // GAP conhecido (ROADMAP, Onda 4, passo 7a): o efeito depende de `executing`. Ao fim da primeira
-  // execução ele roda de novo e, se a troca ainda chega como "os dois prontos", executa outra vez
-  // (o servidor responde "Trade não está ativa"). Aqui as props ficam velhas de propósito, e a
-  // chamada demora um instante, como a rede (a mutation só mostra "executando" se ela durar mais
-  // que um ciclo do navegador).
+  // O fim da execução devolve `executing` a `false` com as props ainda mostrando os dois prontos
+  // (a troca só chega atualizada depois do realtime). A chamada demora um instante, como a rede (a
+  // mutation só mostra "executando" se ela durar mais que um ciclo do navegador). Executar de novo
+  // ali faria o servidor responder "Trade não está ativa" e a recusa desmarcaria os dois lados de
+  // uma troca já concluída.
   const afterAWhile = <T,>(value: T) =>
     new Promise<T>((resolve) => setTimeout(() => resolve(value), 20));
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 80));
 
-  it('GAP: com as props ainda mostrando os dois prontos, executa uma segunda vez', async () => {
-    h.executeTrade
-      .mockReturnValueOnce(afterAWhile({ success: true }))
-      .mockReturnValue(new Promise(() => {}));
+  it('com as props ainda mostrando os dois prontos, executa uma vez só', async () => {
+    h.executeTrade.mockReturnValue(afterAWhile({ success: true }));
     show(ready());
-    await waitFor(() => expect(h.executeTrade).toHaveBeenCalledTimes(2));
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    await act(settled);
+    expect(h.executeTrade).toHaveBeenCalledTimes(1);
+    expect(h.setReady).not.toHaveBeenCalled();
   });
 
-  it('GAP: o erro de uma recusa some quando a segunda execução recomeça', async () => {
-    h.executeTrade
-      .mockReturnValueOnce(afterAWhile({ success: false, error: 'Saldo insuficiente.' }))
-      .mockReturnValue(new Promise(() => {}));
+  it('o erro de uma recusa continua na tela enquanto as props mostram os dois prontos', async () => {
+    h.executeTrade.mockReturnValue(afterAWhile({ success: false, error: 'Saldo insuficiente.' }));
     show(ready());
+    await waitFor(() => expect(h.setReady).toHaveBeenCalledWith('t1', 'target', false));
+    await act(settled);
+    expect(h.executeTrade).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Saldo insuficiente.')).toBeTruthy();
+  });
+
+  it('desmarcada a prontidão e marcada de novo, executa outra vez', async () => {
+    h.executeTrade.mockResolvedValue({ success: false, error: 'Saldo insuficiente.' });
+    const view = show(ready());
+    await waitFor(() => expect(h.executeTrade).toHaveBeenCalledTimes(1));
+    const rerender = (t: TradeWithItems) =>
+      view.rerender(
+        <TradeDialog
+          trade={t}
+          isOpen
+          currentUserId="u-eli"
+          isGM={false}
+          playerCharacters={players}
+          onClose={onClose}
+          onTradeUpdated={onTradeUpdated}
+        />,
+      );
+    rerender(trade());
+    rerender(ready());
     await waitFor(() => expect(h.executeTrade).toHaveBeenCalledTimes(2));
-    expect(screen.queryByText('Saldo insuficiente.')).toBeNull();
-    expect(h.setReady).toHaveBeenCalledWith('t1', 'initiator', false);
   });
 });
 
