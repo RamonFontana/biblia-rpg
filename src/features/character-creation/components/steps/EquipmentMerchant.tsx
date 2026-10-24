@@ -11,6 +11,7 @@ import remarkGfm from 'remark-gfm';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 import { KITS_DB } from '@/content/kits';
+import { formatSiclos } from '@/domain/coins';
 import {
   STARTING_COINS,
   buyItem,
@@ -98,7 +99,7 @@ export function EquipmentMerchant() {
         </div>
         <div className="flex items-center space-x-2 text-amber-500 font-bold text-2xl">
           <Coins className="w-8 h-8" />
-          <span>{wallet} Siclos</span>
+          <span>{formatSiclos(wallet)} Siclos</span>
         </div>
       </div>
 
