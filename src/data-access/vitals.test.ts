@@ -269,6 +269,20 @@ describe('reviveWithHp', () => {
     expect(filterOf(write!, 'eq', 'id')).toBe('p1');
   });
 
+  // Em combate o PV vive no participante (o dano do Mestre também só o altera) e a ficha o recebe
+  // no fim do combate. Levantar grava na ficha na hora o estado de vida, mas não o PV.
+  it('em combate, a ficha recebe o estado de vida mas não o PV: ele chega no fim do combate', async () => {
+    world({ stats: { pv: 20, current_pv: 12, status: 'Morrendo' } });
+    const result = await vitals.reviveWithHp('c1', 1, { death_saves_failures: 0 }, 'p1');
+    expect(result).toEqual({ pv: 20, current_pv: 12, status: 'Vivo' });
+    expect(lastWrite('characters')?.payload).toEqual({
+      stats: { pv: 20, current_pv: 12, status: 'Vivo' },
+      is_dead: false,
+      death_saves_failures: 0,
+    });
+    expect(lastWrite('combat_participants')?.payload).toEqual({ hp_current: 1 });
+  });
+
   it('sem participante, não mexe no combate', async () => {
     world();
     await vitals.reviveWithHp('c1', 1);

@@ -263,7 +263,8 @@ export const characterVitalsService = {
   // forces alive/Vivo — an explicit revival bypasses the sticky hp-based derivation on
   // purpose. Self-fetches stats fresh since the caller's character prop can be stale by
   // the time a nat-20 is rolled. `extra` carries the death-save counter reset fields
-  // (owned by useDeathSaves, out of scope here). Optionally syncs combat HP too.
+  // (owned by useDeathSaves, out of scope here). With a combat participant the HP goes to the
+  // participant only (the sheet gets it when the combat ends); without one, to the sheet.
   async reviveWithHp(
     characterId: string,
     newHp: number,
@@ -283,7 +284,13 @@ export const characterVitalsService = {
 
     const currentStats = (char?.stats as VitalsLike) || {};
     const clampedHp = clampHp(newHp, getMaxPv(currentStats));
-    const newStats = { ...currentStats, current_pv: clampedHp, status: 'Vivo' as const };
+    // Em combate o PV vive no participante (o dano do Mestre só o altera) e a ficha o recebe no
+    // fim do combate; aqui ela ganha só o estado de vida. Fora do combate o PV vai para a ficha.
+    const newStats = {
+      ...currentStats,
+      ...(participantId ? {} : { current_pv: clampedHp }),
+      status: 'Vivo' as const,
+    };
 
     const { error } = await supabase
       .from('characters')
