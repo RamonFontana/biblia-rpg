@@ -166,64 +166,74 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Clean up existing subscription if any
     get().combatUnsubscribe?.();
 
-    // Initial fetch
-    (async () => {
-      // Maybe there's a setup combat
-      const combat =
-        (await findSessionCombat(sessionId, 'active')) ??
-        (await findSessionCombat(sessionId, 'setup'));
-      if (combat) {
-        get().setCombatState(combat, await listCombatParticipants(combat.id));
-      }
-    })().catch((error) => console.error('Failed to load the combat', error));
+    // Lê o combate da sessão. Roda ao abrir a mesa e de novo quando o servidor confirma o canal
+    // (e a cada reconexão): o que acontece entre uma coisa e outra não chega por evento nenhum.
+    const loadCombat = () =>
+      (async () => {
+        // Maybe there's a setup combat
+        const combat =
+          (await findSessionCombat(sessionId, 'active')) ??
+          (await findSessionCombat(sessionId, 'setup'));
+        if (combat) {
+          get().setCombatState(combat, await listCombatParticipants(combat.id));
+        }
+      })().catch((error) => console.error('Failed to load the combat', error));
+    loadCombat();
 
     const channelId = Math.random().toString(36).substring(7);
-    const unsubscribe = subscribeToTables(`combat:session-${sessionId}-${channelId}`, [
-      {
-        table: 'combats',
-        filter: `session_id=eq.${sessionId}`,
-        onChange: (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newCombat = payload.new as Combat;
-            const { activeCombat, participants } = get();
+    const unsubscribe = subscribeToTables(
+      `combat:session-${sessionId}-${channelId}`,
+      [
+        {
+          table: 'combats',
+          filter: `session_id=eq.${sessionId}`,
+          onChange: (payload) => {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const newCombat = payload.new as Combat;
+              const { activeCombat, participants } = get();
 
-            if (activeCombat && activeCombat.current_turn_index !== newCombat.current_turn_index) {
-              get().resetTurnChecklist();
-            }
+              if (
+                activeCombat &&
+                activeCombat.current_turn_index !== newCombat.current_turn_index
+              ) {
+                get().resetTurnChecklist();
+              }
 
-            if (newCombat.status === 'finished') {
+              if (newCombat.status === 'finished') {
+                get().setCombatState(null, []);
+              } else {
+                get().setCombatState(newCombat, participants);
+              }
+            } else if (payload.eventType === 'DELETE') {
               get().setCombatState(null, []);
-            } else {
-              get().setCombatState(newCombat, participants);
             }
-          } else if (payload.eventType === 'DELETE') {
-            get().setCombatState(null, []);
-          }
+          },
         },
-      },
-      {
-        table: 'combat_participants',
-        onChange: (payload) => {
-          const { activeCombat, participants } = get();
-          if (!activeCombat) return;
+        {
+          table: 'combat_participants',
+          onChange: (payload) => {
+            const { activeCombat, participants } = get();
+            if (!activeCombat) return;
 
-          let newParticipants = [...participants];
-          if (payload.eventType === 'INSERT') {
-            if (payload.new.combat_id === activeCombat.id) {
-              newParticipants.push(payload.new as CombatParticipant);
+            let newParticipants = [...participants];
+            if (payload.eventType === 'INSERT') {
+              if (payload.new.combat_id === activeCombat.id) {
+                newParticipants.push(payload.new as CombatParticipant);
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              newParticipants = newParticipants.map((p) =>
+                p.id === payload.new.id ? (payload.new as CombatParticipant) : p,
+              );
+            } else if (payload.eventType === 'DELETE') {
+              newParticipants = newParticipants.filter((p) => p.id !== payload.old.id);
             }
-          } else if (payload.eventType === 'UPDATE') {
-            newParticipants = newParticipants.map((p) =>
-              p.id === payload.new.id ? (payload.new as CombatParticipant) : p,
-            );
-          } else if (payload.eventType === 'DELETE') {
-            newParticipants = newParticipants.filter((p) => p.id !== payload.old.id);
-          }
 
-          get().setCombatState(activeCombat, newParticipants);
+            get().setCombatState(activeCombat, newParticipants);
+          },
         },
-      },
-    ]);
+      ],
+      { onSubscribed: loadCombat },
+    );
 
     set({ combatUnsubscribe: unsubscribe });
   },
