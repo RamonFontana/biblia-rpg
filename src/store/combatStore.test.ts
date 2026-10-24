@@ -414,6 +414,41 @@ describe('endCombat', () => {
     expect(filterOf(softDeletes[0], 'in', 'id')).toEqual(['char-enemy']);
   });
 
+  // Morte Permanente (regras-base.md): quem morreu nos Testes de Morte (is_dead) sofre o soft delete
+  // ao fim do combate, e o jogador passa a só acompanhar a sessão. O personagem que apenas caiu
+  // (Morrendo) segue vivo.
+  it('o personagem que morreu nos Testes de Morte sai do jogo (is_deleted) ao fim do combate', async () => {
+    await run(
+      [player, downedPlayer],
+      [
+        { id: 'char-player', stats: { pv: 10 }, is_dead: true, is_enemy: false },
+        { id: 'char-downed', stats: { pv: 10 }, is_dead: false, is_enemy: false },
+      ],
+    );
+    const softDeletes = callsOf(state.calls, 'characters', 'update').filter(
+      (c) => (c.payload as { is_deleted?: boolean }).is_deleted === true,
+    );
+    expect(softDeletes).toHaveLength(1);
+    expect(filterOf(softDeletes[0], 'in', 'id')).toEqual(['char-player']);
+  });
+
+  it('o morto e o inimigo caído saem na mesma gravação, antes de encerrar o combate', async () => {
+    await run(
+      [player, deadEnemy],
+      [
+        { id: 'char-player', stats: { pv: 10 }, is_dead: true, is_enemy: false },
+        { id: 'char-enemy', stats: { pv: 8 }, is_dead: false, is_enemy: true },
+      ],
+    );
+    const softDeletes = callsOf(state.calls, 'characters', 'update').filter(
+      (c) => (c.payload as { is_deleted?: boolean }).is_deleted === true,
+    );
+    expect(softDeletes).toHaveLength(1);
+    expect(filterOf(softDeletes[0], 'in', 'id')).toEqual(['char-player', 'char-enemy']);
+    const order = state.calls.map((c) => `${c.table}:${c.op}`);
+    expect(order.lastIndexOf('characters:update')).toBeLessThan(order.indexOf('combats:update'));
+  });
+
   it('NPC leve (session_npcs) não tem ficha em characters e não é tocado', async () => {
     await run([player, lightweightNpc]);
     expect(writeOf('session-npc')).toBeUndefined();

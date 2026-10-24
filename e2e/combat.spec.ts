@@ -207,10 +207,11 @@ test.describe('queda e morte', () => {
     await expect(player.getByText('TESTE DE MORTE')).toHaveCount(0);
   });
 
-  test('três falhas nos testes de morte matam o personagem', async ({ seed, signIn }) => {
-    const { master, eliabe: eliabeId } = await openTable(seed, signIn);
+  test('três falhas nos testes de morte matam o personagem na hora', async ({ seed, signIn }) => {
+    const { master, player, eliabe: eliabeId } = await openTable(seed, signIn);
     await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
     await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    await expect(player.getByText('TESTE DE MORTE')).toBeVisible();
 
     const eliabe = participantCard(master, 'Eliabe');
     await expect(eliabe).toContainText('Morto: Não');
@@ -220,12 +221,38 @@ test.describe('queda e morte', () => {
     }
 
     await expect(eliabe).toContainText('Morto: Sim');
+    // Na hora, ainda dentro do combate: o painel de teste de morte dá lugar ao aviso de morte e a
+    // ficha já guarda o rótulo Morto.
+    await expect(player.getByText('Você Morreu')).toBeVisible();
+    await expect(player.getByText('TESTE DE MORTE')).toHaveCount(0);
     const { data } = await adminClient()
       .from('characters')
-      .select('is_dead, death_saves_failures')
+      .select('is_dead, death_saves_failures, is_deleted, stats')
       .eq('id', eliabeId)
       .single();
-    expect(data).toEqual({ is_dead: true, death_saves_failures: 3 });
+    expect(data).toMatchObject({
+      is_dead: true,
+      death_saves_failures: 3,
+      is_deleted: false,
+      stats: { status: 'Morto' },
+    });
+  });
+
+  test('Morte Instantânea marca o personagem como Morto na hora', async ({ seed, signIn }) => {
+    const { master, eliabe: eliabeId } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+
+    const eliabe = participantCard(master, 'Eliabe');
+    await eliabe.getByRole('button', { name: 'Morte Instantânea' }).click();
+
+    await expect(eliabe).toContainText('Morto: Sim');
+    const { data } = await adminClient()
+      .from('characters')
+      .select('is_dead, stats')
+      .eq('id', eliabeId)
+      .single();
+    expect(data).toMatchObject({ is_dead: true, stats: { status: 'Morto' } });
   });
 });
 
@@ -253,7 +280,9 @@ test.describe('finalizar o combate', () => {
     await expect(player.getByText('Inimigos na Cena')).toHaveCount(0);
     await expect(sheetPv(player)).toHaveText(/7\s*\/11\s*PV/);
 
-    // A lista de inimigos do Mestre só reflete a morte depois de recarregar.
+    // A lista de inimigos do Mestre mostra o inimigo morto na hora, sem recarregar, e ele
+    // continua listado como Morto.
+    await expect(master.getByText('Morto', { exact: true })).toBeVisible();
     await master.reload();
     await expect(master.getByText('Morto', { exact: true })).toBeVisible();
 
@@ -293,6 +322,32 @@ test.describe('finalizar o combate', () => {
       .eq('id', eliabeId)
       .single();
     expect(data?.stats).toMatchObject({ current_pv: 0, status: 'Morrendo' });
+  });
+
+  test('quem morreu nos testes de morte sai do jogo ao fim do combate e vira espectador', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player, eliabe: eliabeId } = await openTable(seed, signIn);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    await modifyHealth(master, 'Eliabe', 'Dano', 20);
+    const eliabe = participantCard(master, 'Eliabe');
+    for (const falhas of [1, 2, 3]) {
+      await eliabe.getByRole('button', { name: '+1 Falha' }).click();
+      await expect(eliabe).toContainText(`Falhas: ${falhas}`);
+    }
+    await expect(player.getByText('Você Morreu')).toBeVisible();
+
+    await master.getByRole('button', { name: 'Finalizar Combate' }).click();
+    await expect(master.getByText(/Painel de Combate/)).toHaveCount(0);
+
+    await expect(player.getByText(/não está mais entre os vivos/)).toBeVisible();
+    const { data } = await adminClient()
+      .from('characters')
+      .select('is_deleted, is_dead, stats')
+      .eq('id', eliabeId)
+      .single();
+    expect(data).toMatchObject({ is_deleted: true, is_dead: true, stats: { status: 'Morto' } });
   });
 
   test('quem termina o combate a 0 PV continua Morrendo', async ({ seed, signIn }) => {

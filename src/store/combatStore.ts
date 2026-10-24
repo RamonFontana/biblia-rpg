@@ -295,7 +295,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
 
       if (chars) {
-        const deadEnemyIds: string[] = [];
+        const deadIds: string[] = [];
 
         for (const char of chars) {
           const participant = participants.find((p) => p.entity_id === char.id);
@@ -307,7 +307,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               (participant.conditions as unknown as ConditionEntry[] | null) || [];
             const permanentConditions = cleanTemporaryConditions(currentConditions);
 
-            await characterVitalsService.syncFromCombatEnd(
+            const { isDead } = await characterVitalsService.syncFromCombatEnd(
               char.id,
               currentStats,
               participant.hp_current,
@@ -316,21 +316,21 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               permanentConditions,
             );
 
-            // Soft-delete list is driven by "died in this combat" (hp <= 0 now),
-            // not by the sticky is_dead result — a character already dead before
-            // this combat but currently above 0 HP should not be swept up here.
-            if (participant.hp_current <= 0 && char.is_enemy) {
-              deadEnemyIds.push(char.id);
+            // Morte Permanente: o inimigo sai da lista se morreu NESTE combate (hp <= 0 agora); um
+            // já morto antes, acima de 0 PV, não entra na varredura. O personagem (jogador ou NPC)
+            // sai do jogo se morreu nos Testes de Morte (`is_dead`, que é definitivo).
+            if (char.is_enemy ? participant.hp_current <= 0 : isDead) {
+              deadIds.push(char.id);
             }
           }
         }
 
-        // Soft delete dead enemies
-        if (deadEnemyIds.length > 0) {
+        // Soft delete: o inimigo morto continua na lista do Mestre como "Morto"; o personagem morto vira memorial.
+        if (deadIds.length > 0) {
           try {
-            await softDeleteCharacters(deadEnemyIds);
+            await softDeleteCharacters(deadIds);
           } catch (deleteError) {
-            console.error('Failed to soft delete dead enemies', deleteError);
+            console.error('Failed to soft delete the dead', deleteError);
           }
         }
       }

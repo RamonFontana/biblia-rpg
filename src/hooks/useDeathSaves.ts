@@ -16,10 +16,15 @@ export const useDeathSaves = () => {
   const addFailure = async (characterId: string, currentFailures: number, count: number = 1) => {
     const { newFailures, isDead } = addDeathSaveFailure(currentFailures, count);
 
-    await updateCharacterDeathState(characterId, {
-      death_saves_failures: newFailures,
-      is_dead: isDead,
-    });
+    if (isDead) {
+      // A terceira falha mata: `is_dead` e o rótulo "Morto" juntos.
+      await characterVitalsService.markDead(characterId, { death_saves_failures: newFailures });
+    } else {
+      await updateCharacterDeathState(characterId, {
+        death_saves_failures: newFailures,
+        is_dead: false,
+      });
+    }
     return { newFailures, isDead };
   };
 
@@ -31,10 +36,7 @@ export const useDeathSaves = () => {
   };
 
   const killInstant = async (characterId: string) => {
-    await updateCharacterDeathState(characterId, {
-      is_dead: true,
-      death_saves_failures: 3,
-    });
+    await characterVitalsService.markDead(characterId, { death_saves_failures: 3 });
   };
 
   const healAndAwake = async (characterId: string, participantId?: string, newHp: number = 1) => {
