@@ -42,11 +42,16 @@ export function useSessionTrades(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) return;
 
-    return subscribeToTables(`session_trades_realtime_${sessionId}_${Math.random()}`, [
-      { table: 'trades', filter: `session_id=eq.${sessionId}`, onChange: fetchTrades },
-      { table: 'trade_items', onChange: fetchTrades },
-    ]);
-  }, [sessionId, fetchTrades]);
+    return subscribeToTables(
+      `session_trades_realtime_${sessionId}_${Math.random()}`,
+      [
+        { table: 'trades', filter: `session_id=eq.${sessionId}`, onChange: fetchTrades },
+        { table: 'trade_items', onChange: fetchTrades },
+      ],
+      // Eventos antes da confirmação do canal (ou durante uma reconexão) se perdem: relê aqui.
+      { onSubscribed: () => loadTrades().catch(logFetchError) },
+    );
+  }, [sessionId, fetchTrades, loadTrades]);
 
   const tradingCharacterIds = useMemo(() => {
     const ids = new Set<string>();

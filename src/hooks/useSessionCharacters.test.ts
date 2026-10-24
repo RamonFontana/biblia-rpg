@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   fetchCount: 0,
   hold: undefined as Promise<void> | undefined,
   subscriptions: [] as unknown[],
+  options: undefined as { onSubscribed?: () => void } | undefined,
   stopped: 0,
 }));
 
@@ -24,8 +25,13 @@ vi.mock('@/data-access/sessions', () => ({
 }));
 
 vi.mock('@/data-access/realtime', () => ({
-  subscribeToTables: (_name: string, subscriptions: unknown[]) => {
+  subscribeToTables: (
+    _name: string,
+    subscriptions: unknown[],
+    options?: { onSubscribed?: () => void },
+  ) => {
     state.subscriptions = subscriptions;
+    state.options = options;
     return () => {
       state.stopped += 1;
     };
@@ -51,6 +57,7 @@ beforeEach(() => {
   state.fetchCount = 0;
   state.hold = undefined;
   state.subscriptions = [];
+  state.options = undefined;
   state.stopped = 0;
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(console.error).mockClear();
@@ -204,6 +211,39 @@ describe('useSessionCharacters', () => {
     });
     await waitFor(() => expect(console.error).toHaveBeenCalled());
     expect(result.current.isLoading).toBe(false);
+  });
+
+  // Os eventos entre a primeira consulta e a confirmação do canal se perdem (e uma reconexão
+  // também perde os seus): quando o servidor confirma, o hook consulta de novo, sem ligar isLoading.
+  it('consulta de novo quando o servidor confirma a assinatura, sem ligar isLoading', async () => {
+    const { result } = renderHook(() => useSessionCharacters('s1'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.npcs).toHaveLength(1);
+
+    // O Mestre tornou outro NPC visível antes de o canal estar no ar.
+    state.roster = {
+      ...grouped(),
+      npcs: [...grouped().npcs, { id: 'n2', name: 'Raabe', is_playable: false }],
+    };
+    act(() => {
+      state.options?.onSubscribed?.();
+    });
+
+    await waitFor(() => expect(result.current.npcs).toHaveLength(2));
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('se a consulta da confirmação falha, registra o erro e mantém o elenco', async () => {
+    const { result } = renderHook(() => useSessionCharacters('s1'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    state.fetchError = new Error('sem rede');
+    act(() => {
+      state.options?.onSubscribed?.();
+    });
+
+    await waitFor(() => expect(console.error).toHaveBeenCalled());
+    expect(result.current.npcs).toEqual(grouped().npcs);
   });
 
   it('cancela as assinaturas ao desmontar', async () => {

@@ -9,6 +9,7 @@ import type { TradeWithItems } from '@/types/trade';
 const h = vi.hoisted(() => ({
   getActiveTradesForSession: vi.fn(),
   subscriptions: [] as unknown[],
+  options: undefined as { onSubscribed?: () => void } | undefined,
   stopped: 0,
   subscribed: 0,
 }));
@@ -17,9 +18,14 @@ vi.mock('@/data-access/trades', () => ({
   getActiveTradesForSession: h.getActiveTradesForSession,
 }));
 vi.mock('@/data-access/realtime', () => ({
-  subscribeToTables: (_name: string, subscriptions: unknown[]) => {
+  subscribeToTables: (
+    _name: string,
+    subscriptions: unknown[],
+    options?: { onSubscribed?: () => void },
+  ) => {
     h.subscribed += 1;
     h.subscriptions = subscriptions;
+    h.options = options;
     return () => {
       h.stopped += 1;
     };
@@ -51,6 +57,7 @@ const deferred = <T>() => {
 beforeEach(() => {
   h.getActiveTradesForSession.mockReset().mockResolvedValue([trade()]);
   h.subscriptions = [];
+  h.options = undefined;
   h.stopped = 0;
   h.subscribed = 0;
 });
@@ -162,6 +169,38 @@ describe('useSessionTrades: realtime e atualização', () => {
     await act(async () => next.resolve([trade({ id: 't9' })]));
     expect(result.current.loading).toBe(false);
     expect(result.current.activeTrades.map((t) => t.id)).toEqual(['t9']);
+  });
+
+  // Os eventos entre a primeira consulta e a confirmação do canal se perdem (e uma reconexão
+  // também perde os seus): quando o servidor confirma, o hook consulta de novo, sem ligar `loading`.
+  it('consulta de novo quando o servidor confirma a assinatura, sem ligar `loading`', async () => {
+    h.getActiveTradesForSession.mockResolvedValue([]);
+    const { result } = renderHook(() => useSessionTrades('s1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.activeTrades).toEqual([]);
+
+    // Um pedido de troca chegou antes de o canal estar no ar.
+    h.getActiveTradesForSession.mockResolvedValue([trade()]);
+    act(() => {
+      h.options?.onSubscribed?.();
+    });
+
+    await waitFor(() => expect(result.current.activeTrades).toEqual([trade()]));
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('se a consulta da confirmação falha, registra o erro e mantém as trocas', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderHook(() => useSessionTrades('s1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    h.getActiveTradesForSession.mockRejectedValue(new Error('x'));
+    act(() => {
+      h.options?.onSubscribed?.();
+    });
+
+    await waitFor(() => expect(log).toHaveBeenCalled());
+    expect(result.current.activeTrades).toEqual([trade()]);
   });
 
   it('ao sair, cancela a assinatura', async () => {
