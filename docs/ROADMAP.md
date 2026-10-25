@@ -533,7 +533,18 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
      - **Próximo:** Q1 a Q5 viram uma feature da Onda 5 (`/to-spec` → `/to-tickets` → `/tdd`), junto com os Dados de Vida (Q6).
 
 ### Onda 5 em diante: features novas
-Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, e só começa depois que a área que ela toca foi refatorada. A lista de features do prompt estava vazia; preencher no ROADMAP.
+Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, e só começa depois que a área que ela toca foi refatorada.
+
+**Plano (autor, 2026-10-25).** Limites que não mudam: mesa presencial com dados físicos, o app como ficha e registro (ADR 0001), e tudo no plano gratuito do Supabase e da Vercel. Ordem:
+
+1. **Fé na mesa + Inspiração e Fortaleza** (M): as decisões Q1 a Q5 da Rodada 2 (dado virtual com Vantagem e Desvantagem, atalhos 0/−20/−50 na Tentação e no Testemunho, selo do Estado de Fé, alerta de Ruptura), Inspiração 1x/dia no Inabalável e a Fortaleza aplicada pelo Mestre (Vantagem ou +1d4 de Fé).
+2. **Ataque físico** (G): reescrever a tela parada de ataque e dano; zera as 4 supressões do `PhysicalRollForm`.
+3. **Dados de Vida** (M): Q6 da Rodada 2.
+4. **Efeitos de Habilidade** (G): Condições aplicadas pela Habilidade e Habilidades de inimigo.
+
+Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira zerada que volta a 50, iniciativa sorteada opcional). Quando a campanha pedir: itens próprios do Mestre (ADR 0003). Sem código, decisão do autor: a revisão dos 13 pontos de conteúdo bíblico (§2).
+
+**Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 
 ## 6. O que VOCÊ precisa fazer fora do código
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.
