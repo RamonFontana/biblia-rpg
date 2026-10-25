@@ -159,7 +159,15 @@ export type Database = {
           user_id?: string
           vocation?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "characters_inspiration_session_id_fkey"
+            columns: ["inspiration_session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       combat_participants: {
         Row: {
