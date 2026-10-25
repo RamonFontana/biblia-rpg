@@ -1,5 +1,6 @@
 import type { CharacterTestContext } from '@/data-access/characters';
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
+import { failureCostsFaith } from '@/domain/sessionTests';
 import { getTestBreakdown } from '@/features/character-management/utils/characterMath';
 
 interface SubmittedResultProps {
@@ -61,11 +62,17 @@ export function SubmittedResult({ test, result, sheet, onDismiss }: SubmittedRes
             </p>
           </div>
 
-          {!result.is_approved && test.test_type === 'Fé' && (
-            <div className="mt-4 text-red-400 italic bg-red-500/10 p-2 rounded border border-red-500/20">
-              Sua fé foi abalada... O personagem perdeu 1d6 pontos de Fé.
-            </div>
-          )}
+          {!result.is_approved &&
+            test.test_type === 'Fé' &&
+            (failureCostsFaith(test.faith_use, test.selfish_request) ? (
+              <div className="mt-4 text-red-400 italic bg-red-500/10 p-2 rounded border border-red-500/20">
+                Sua fé foi abalada... O personagem perdeu 1d6 pontos de Fé.
+              </div>
+            ) : (
+              <div className="mt-4 text-stone-300 italic bg-stone-700/40 p-2 rounded border border-stone-600">
+                A Vontade Divina disse &quot;agora não&quot;: silêncio divino, sem perda de Fé.
+              </div>
+            ))}
 
           <p className="mt-6 text-sm text-stone-500">O Mestre já pode ver o seu resultado.</p>
         </div>

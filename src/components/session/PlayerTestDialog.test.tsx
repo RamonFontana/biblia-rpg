@@ -35,6 +35,8 @@ const test = (over: Partial<SessionTest> = {}): SessionTest => ({
   difficulty: 12,
   status: 'active',
   created_at: '',
+  faith_use: null,
+  selfish_request: false,
   ...over,
 });
 const result = (over: Partial<SessionTestResult> = {}): SessionTestResult => ({
@@ -209,6 +211,7 @@ describe('enviar um Teste comum', () => {
       'Furtividade',
       undefined,
       9,
+      undefined,
     );
   });
 
@@ -226,6 +229,7 @@ describe('enviar um Teste comum', () => {
       'Destreza',
       undefined,
       10,
+      undefined,
     );
   });
 
@@ -283,7 +287,10 @@ describe('Teste de Fé', () => {
     roll('50'); // Fé 50
     send();
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 50, 0, 'c1', 'Fé', undefined, 50);
+    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 50, 0, 'c1', 'Fé', undefined, 50, {
+      use: null,
+      selfishRequest: false,
+    });
   });
 
   it('o Item Profano baixa a Fé Efetiva e a Misericórdia sobe o limite', async () => {
@@ -311,7 +318,10 @@ describe('Teste de Fé', () => {
     fireEvent.change(input(), { target: { value: '4' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Punição' }));
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 80, 0, 'c1', 'Fé', 4, 80);
+    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 80, 0, 'c1', 'Fé', 4, 80, {
+      use: null,
+      selfishRequest: false,
+    });
   });
 
   it.each([
@@ -363,6 +373,44 @@ describe('Teste de Fé', () => {
     send();
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalledTimes(1));
     expect(screen.queryByText(/Não foi possível ler a Fé/)).toBeNull();
+  });
+});
+
+describe('Teste de Fé: o uso decide a punição', () => {
+  const clamor = (selfish: boolean) =>
+    test({ test_type: 'Fé', difficulty: 0, faith_use: 'clamor', selfish_request: selfish });
+
+  it('o desafio mostra o uso e a marca de Pedido Egoísta', async () => {
+    await show(clamor(true));
+    expect(screen.getByText('Clamor')).toBeInTheDocument();
+    expect(screen.getByText('Pedido Egoísta')).toBeInTheDocument();
+  });
+
+  it('Clamor reprovado sem Pedido Egoísta: sem tela da punição, envia direto com o uso', async () => {
+    await show(clamor(false));
+    roll('80');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
+    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 80, 0, 'c1', 'Fé', undefined, 80, {
+      use: 'clamor',
+      selfishRequest: false,
+    });
+  });
+
+  it('Clamor reprovado com Pedido Egoísta: abre a tela da punição', async () => {
+    await show(clamor(true));
+    roll('80');
+    send();
+    expect(await screen.findByText('Teste de Fé Reprovado!')).toBeInTheDocument();
+    expect(mocks.submitTestResult).not.toHaveBeenCalled();
+  });
+
+  it('Tentação e Testemunho reprovados abrem a tela da punição', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0, faith_use: 'tentacao' }));
+    roll('80');
+    send();
+    expect(await screen.findByText('Teste de Fé Reprovado!')).toBeInTheDocument();
   });
 });
 
@@ -418,7 +466,10 @@ describe('dado virtual', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 90, 0, 'c1', 'Fé', 4, 90);
+    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 90, 0, 'c1', 'Fé', 4, 90, {
+      use: null,
+      selfishRequest: false,
+    });
   });
 });
 
@@ -448,6 +499,23 @@ describe('depois de enviado', () => {
     );
     expect(screen.getByText(/O personagem perdeu 1d6 pontos de Fé/)).toBeInTheDocument();
     expect(screen.getByText('1d100 (80)')).toBeInTheDocument();
+  });
+
+  it('o Clamor reprovado sem Pedido Egoísta fala em silêncio divino, sem perda de Fé', async () => {
+    await show(
+      test({ test_type: 'Fé', faith_use: 'clamor', selfish_request: false }),
+      submitted({ is_approved: false, result_value: 80, roll_value: 80 }),
+    );
+    expect(screen.getByText(/silêncio divino/i)).toBeInTheDocument();
+    expect(screen.queryByText(/perdeu 1d6 pontos de Fé/)).toBeNull();
+  });
+
+  it('o Clamor reprovado com Pedido Egoísta avisa da perda de 1d6', async () => {
+    await show(
+      test({ test_type: 'Fé', faith_use: 'clamor', selfish_request: true }),
+      submitted({ is_approved: false, result_value: 80, roll_value: 80 }),
+    );
+    expect(screen.getByText(/O personagem perdeu 1d6 pontos de Fé/)).toBeInTheDocument();
   });
 
   it('"Ocultar Janela" e o X fecham o aviso', async () => {

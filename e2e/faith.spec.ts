@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { adminClient } from './support/admin';
 import { expect, test } from './fixtures';
 
@@ -65,5 +66,80 @@ test.describe('Estado de Fé', () => {
     if (error) throw error;
 
     await expect(alert).toHaveCount(0);
+  });
+});
+
+const faithOf = async (characterId: string) => {
+  const { data, error } = await adminClient()
+    .from('characters')
+    .select('stats')
+    .eq('id', characterId)
+    .single();
+  if (error) throw error;
+  return (data.stats as { current_faith: number }).current_faith;
+};
+
+/** O Mestre pede um Teste de Fé de Clamor (Pequena Providência, Punição 0) ao personagem. */
+async function askClamor(master: Page, characterName: string, selfish: boolean) {
+  await master.getByRole('button', { name: /Solicitar Teste/ }).click();
+  const dialog = master.locator('div.fixed');
+  await dialog.getByRole('combobox').first().selectOption('Fé');
+  await dialog.getByRole('radio', { name: 'Clamor' }).click();
+  await dialog.getByRole('button', { name: /Pequena Providência/ }).click();
+  if (selfish) await dialog.getByRole('checkbox', { name: 'Pedido Egoísta' }).check();
+  await dialog.getByText(characterName).click();
+  await dialog.getByRole('button', { name: 'Solicitar Teste' }).click();
+}
+
+test.describe('Teste de Fé: Clamor', () => {
+  test('o Clamor que falha com Pedido Egoísta custa 1d6 de Fé', async ({ seed, signIn }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(50) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+
+    await askClamor(master, 'Eliabe', true);
+
+    await expect(player.getByText('O Mestre Exige um Teste!')).toBeVisible();
+    await expect(player.getByText('Clamor')).toBeVisible();
+    await expect(player.getByText('Pedido Egoísta')).toBeVisible();
+    await player.getByRole('spinbutton').fill('100');
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(player.getByText('Teste de Fé Reprovado!')).toBeVisible();
+    await player.getByRole('spinbutton').fill('4');
+    await player.getByRole('button', { name: 'Confirmar Punição' }).click();
+
+    await expect(player.getByText(/perdeu 1d6 pontos de Fé/)).toBeVisible();
+    await expect(master.getByText('Perdeu Fé (1d6)')).toBeVisible();
+    expect(await faithOf(eliabe)).toBe(46);
+  });
+
+  test('o Clamor que falha sem Pedido Egoísta é silêncio divino: a Fé não muda', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(50) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+
+    await askClamor(master, 'Eliabe', false);
+
+    await expect(player.getByText('O Mestre Exige um Teste!')).toBeVisible();
+    await player.getByRole('spinbutton').fill('100');
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+
+    await expect(player.getByText(/silêncio divino/i)).toBeVisible();
+    await expect(player.getByText('Teste de Fé Reprovado!')).toHaveCount(0);
+    await expect(master.getByText(/Silêncio divino/)).toBeVisible();
+    expect(await faithOf(eliabe)).toBe(50);
   });
 });

@@ -2,7 +2,12 @@ import { getCurrentFaith, getEffectiveFaith, isFaithTestPassed } from '@/domain/
 import { getCharacterStats, updateCharacterStats } from '@/data-access/characters';
 import { getItemFaithPenalty } from '@/data-access/inventory';
 import { saveTestResult } from '@/data-access/sessionTests';
-import { calculateFaithAfterFailure, isRegularTestApproved } from '@/domain/sessionTests';
+import {
+  calculateFaithAfterFailure,
+  failureCostsFaith,
+  isRegularTestApproved,
+  type FaithUse,
+} from '@/domain/sessionTests';
 import { systemRng } from '@/lib/systemRng';
 
 /** Lê os `stats` sem lançar: uma leitura que falha deixa a regra seguir sem eles, como sempre. */
@@ -23,6 +28,7 @@ export async function submitTestResult(
   testType?: string,
   faithPenalty?: number,
   rollValue?: number,
+  faithTest?: { use: FaithUse | null; selfishRequest: boolean },
 ): Promise<void> {
   let isApproved = isRegularTestApproved(resultValue, difficulty);
 
@@ -43,8 +49,9 @@ export async function submitTestResult(
 
   await saveTestResult(resultId, { resultValue, rollValue: rollValue ?? null, isApproved });
 
-  // Regra Bíblica: Falha em teste de Fé causa perda de 1d6 de Fé
-  if (testType === 'Fé' && !isApproved && characterId) {
+  // A falha custa 1d6 de Fé conforme o uso do Teste: o Clamor só com Pedido Egoísta.
+  const costsFaith = failureCostsFaith(faithTest?.use ?? null, faithTest?.selfishRequest ?? false);
+  if (testType === 'Fé' && !isApproved && costsFaith && characterId) {
     // Busca os stats atualizados do personagem
     const stats = await readStatsOrNull(characterId);
 

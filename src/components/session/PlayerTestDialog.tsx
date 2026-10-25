@@ -6,6 +6,7 @@ import { getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
 import {
   calculateSubmittedTotal,
   checkFaithPenaltyDie,
+  failureCostsFaith,
   isSubmittableResult,
   rollTestDie,
 } from '@/domain/sessionTests';
@@ -110,7 +111,9 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
       );
     }
 
-    if (isFailedFaithTest && penalty === undefined) {
+    // O Clamor que falha sem Pedido Egoísta é silêncio divino: não há punição a rolar.
+    const costsFaith = failureCostsFaith(activeTest.faith_use, activeTest.selfish_request);
+    if (isFailedFaithTest && costsFaith && penalty === undefined) {
       setShowPenaltyScreen(true);
       setInitialRollValue(val);
       setResultValue(''); // clear input just in case
@@ -130,6 +133,9 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
         activeTest.test_type,
         penalty,
         rollValue ?? val,
+        activeTest.test_type === 'Fé'
+          ? { use: activeTest.faith_use, selfishRequest: activeTest.selfish_request }
+          : undefined,
       );
       // The component will re-render in the 'submitted' state because of realtime update
     } catch (err) {

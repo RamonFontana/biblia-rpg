@@ -113,6 +113,43 @@ describe('submitTestResult: Teste de Fé', () => {
   });
 });
 
+describe('submitTestResult: o uso do Teste de Fé decide se a falha custa Fé', () => {
+  const fail = (use: 'clamor' | 'tentacao' | 'testemunho', selfishRequest: boolean) =>
+    submitTestResult('r1', 90, 0, 'char-1', 'Fé', 4, 90, { use, selfishRequest });
+
+  it('o Clamor que falha sem Pedido Egoísta é silêncio divino: reprova e não custa Fé', async () => {
+    world({ faith: 50 });
+    await fail('clamor', false);
+    expect(resultWrite()).toMatchObject({ is_approved: false });
+    expect(faithWrite()).toBeUndefined();
+  });
+
+  it('o Clamor que falha com Pedido Egoísta custa a perda de Fé', async () => {
+    world({ faith: 50 });
+    await fail('clamor', true);
+    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 46 } });
+  });
+
+  it('a Tentação e o Testemunho que falham custam Fé', async () => {
+    world({ faith: 50 });
+    await fail('tentacao', false);
+    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 46 } });
+    state.calls.length = 0;
+    await fail('testemunho', false);
+    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 46 } });
+  });
+
+  it('o Clamor que passa não custa Fé, com ou sem Pedido Egoísta', async () => {
+    world({ faith: 50 });
+    await submitTestResult('r1', 10, 0, 'char-1', 'Fé', undefined, 10, {
+      use: 'clamor',
+      selfishRequest: true,
+    });
+    expect(resultWrite()).toMatchObject({ is_approved: true });
+    expect(faithWrite()).toBeUndefined();
+  });
+});
+
 describe('submitTestResult: Teste comum', () => {
   it('passa quando o resultado alcança a CD, sem olhar Fé nem itens', async () => {
     world({ items: [amulet] });

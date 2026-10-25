@@ -551,7 +551,9 @@ export type Database = {
         Row: {
           created_at: string
           difficulty: number
+          faith_use: string | null
           id: string
+          selfish_request: boolean
           session_id: string
           status: string
           test_type: string
@@ -559,7 +561,9 @@ export type Database = {
         Insert: {
           created_at?: string
           difficulty: number
+          faith_use?: string | null
           id?: string
+          selfish_request?: boolean
           session_id: string
           status?: string
           test_type: string
@@ -567,7 +571,9 @@ export type Database = {
         Update: {
           created_at?: string
           difficulty?: number
+          faith_use?: string | null
           id?: string
+          selfish_request?: boolean
           session_id?: string
           status?: string
           test_type?: string

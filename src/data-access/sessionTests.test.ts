@@ -38,15 +38,23 @@ beforeEach(() => {
 describe('createSessionTest', () => {
   it('grava o Teste ativo e um resultado pendente para cada jogador alvo', async () => {
     state.respond = (call) => (call.table === 'session_tests' ? { data: { id: 't1' } } : undefined);
-    const test = await createSessionTest('s1', 'Destreza', 12, [
-      { characterId: 'c1', playerId: 'p1' },
-      { characterId: 'c2', playerId: 'p2' },
-    ]);
+    const test = await createSessionTest(
+      's1',
+      'Destreza',
+      12,
+      [
+        { characterId: 'c1', playerId: 'p1' },
+        { characterId: 'c2', playerId: 'p2' },
+      ],
+      null,
+    );
     expect(test).toEqual({ id: 't1' });
     expect(callsOf(state.calls, 'session_tests', 'insert')[0].payload).toEqual({
       session_id: 's1',
       test_type: 'Destreza',
       difficulty: 12,
+      faith_use: null,
+      selfish_request: false,
       status: 'active',
     });
     expect(callsOf(state.calls, 'session_test_results', 'insert')[0].payload).toEqual([
@@ -55,16 +63,32 @@ describe('createSessionTest', () => {
     ]);
   });
 
+  it('grava o uso do Teste de Fé e a marca de Pedido Egoísta', async () => {
+    state.respond = (call) => (call.table === 'session_tests' ? { data: { id: 't1' } } : undefined);
+    await createSessionTest('s1', 'Fé', -20, [{ characterId: 'c1', playerId: 'p1' }], {
+      use: 'clamor',
+      selfishRequest: true,
+    });
+    expect(callsOf(state.calls, 'session_tests', 'insert')[0].payload).toEqual({
+      session_id: 's1',
+      test_type: 'Fé',
+      difficulty: -20,
+      faith_use: 'clamor',
+      selfish_request: true,
+      status: 'active',
+    });
+  });
+
   it('se gravar o Teste falhar, não grava resultado nenhum', async () => {
     state.respond = () => ({ error: failure });
-    await expect(createSessionTest('s1', 'Fé', 0, [])).rejects.toBe(failure);
+    await expect(createSessionTest('s1', 'Fé', 0, [], null)).rejects.toBe(failure);
     expect(callsOf(state.calls, 'session_test_results')).toEqual([]);
   });
 
   it('lança o erro ao gravar os resultados', async () => {
     state.respond = (call) =>
       call.table === 'session_test_results' ? { error: failure } : { data: { id: 't1' } };
-    await expect(createSessionTest('s1', 'Fé', 0, [])).rejects.toBe(failure);
+    await expect(createSessionTest('s1', 'Fé', 0, [], null)).rejects.toBe(failure);
   });
 });
 

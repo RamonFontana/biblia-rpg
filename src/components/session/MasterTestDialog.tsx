@@ -19,7 +19,23 @@ interface MasterTestDialogProps {
 }
 
 import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
-import { toStoredDifficulty } from '@/domain/sessionTests';
+import {
+  FAITH_USES,
+  FAITH_USE_LABELS,
+  failureCostsFaith,
+  toStoredDifficulty,
+  type FaithUse,
+} from '@/domain/sessionTests';
+
+// Atalhos de Punição do Teste de Fé (0, −20, −50); no Clamor levam o nome do doc.
+const PUNISHMENT_SHORTCUTS = [0, 20, 50] as const;
+const CLAMOR_SHORTCUT_NAMES = ['Pequena Providência', 'Milagre Moderado', 'Milagre Extraordinário'];
+const shortcutLabel = (use: FaithUse, index: number) => {
+  const value = PUNISHMENT_SHORTCUTS[index];
+  return use === 'clamor'
+    ? `${CLAMOR_SHORTCUT_NAMES[index]} (${value === 0 ? '0' : `−${value}`})`
+    : `Punição ${value === 0 ? '0' : `−${value}`}`;
+};
 
 export function MasterTestDialog({
   sessionId,
@@ -32,6 +48,8 @@ export function MasterTestDialog({
   const [testType, setTestType] = useState(TEST_GROUPS[0].options[0]);
   const [difficulty, setDifficulty] = useState(10);
   const [faithModifierType, setFaithModifierType] = useState<'mercy' | 'punishment'>('mercy');
+  const [faithUse, setFaithUse] = useState<FaithUse>('clamor');
+  const [selfishRequest, setSelfishRequest] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +101,15 @@ export function MasterTestDialog({
         })
         .filter((t) => t.playerId !== '');
 
-      await createSessionTest(sessionId, testType, finalDifficulty, targets);
+      await createSessionTest(
+        sessionId,
+        testType,
+        finalDifficulty,
+        targets,
+        testType === 'Fé'
+          ? { use: faithUse, selfishRequest: faithUse === 'clamor' && selfishRequest }
+          : null,
+      );
       // The state will be updated via the realtime hook in the parent
     } catch (err) {
       setError(getErrorMessage(err, 'Erro ao criar o teste.'));
@@ -134,6 +160,16 @@ export function MasterTestDialog({
               <div>
                 <p className="text-sm text-stone-400">Tipo de Teste</p>
                 <p className="text-lg font-bold text-amber-400">{currentActiveTest.test_type}</p>
+                {currentActiveTest.faith_use && (
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-stone-300">
+                    <span>{FAITH_USE_LABELS[currentActiveTest.faith_use]}</span>
+                    {currentActiveTest.selfish_request && (
+                      <span className="rounded-full border border-red-700/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400">
+                        Pedido Egoísta
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm text-stone-400">
@@ -186,6 +222,16 @@ export function MasterTestDialog({
                             </span>
                           )}
                         </div>
+                        {currentActiveTest.test_type === 'Fé' && !result.is_approved && (
+                          <span className="text-xs text-stone-400">
+                            {failureCostsFaith(
+                              currentActiveTest.faith_use,
+                              currentActiveTest.selfish_request,
+                            )
+                              ? 'Perdeu Fé (1d6)'
+                              : 'Silêncio divino, sem perda de Fé'}
+                          </span>
+                        )}
                         <span className="text-xs font-mono text-stone-500">
                           {getTestBreakdown(
                             currentActiveTest.test_type,
@@ -288,6 +334,59 @@ export function MasterTestDialog({
               />
             </div>
           </div>
+
+          {testType === 'Fé' && (
+            <div className="space-y-3">
+              <div
+                role="radiogroup"
+                aria-label="Uso do Teste de Fé"
+                className="flex flex-wrap gap-2"
+              >
+                {FAITH_USES.map((use) => (
+                  <button
+                    key={use}
+                    type="button"
+                    role="radio"
+                    aria-checked={faithUse === use}
+                    onClick={() => setFaithUse(use)}
+                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                      faithUse === use
+                        ? 'border-amber-600 bg-amber-600 text-stone-900'
+                        : 'border-stone-600 bg-stone-800 text-stone-300 hover:bg-stone-700'
+                    }`}
+                  >
+                    {FAITH_USE_LABELS[use]}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {PUNISHMENT_SHORTCUTS.map((value, index) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setFaithModifierType('punishment');
+                      setDifficulty(value);
+                    }}
+                    className="rounded border border-stone-600 bg-stone-800 px-3 py-1 text-xs text-stone-300 hover:bg-stone-700"
+                  >
+                    {shortcutLabel(faithUse, index)}
+                  </button>
+                ))}
+              </div>
+              {faithUse === 'clamor' && (
+                <label className="flex items-center gap-2 text-sm text-stone-300">
+                  <input
+                    type="checkbox"
+                    checked={selfishRequest}
+                    onChange={(e) => setSelfishRequest(e.target.checked)}
+                    className="accent-amber-500"
+                  />
+                  Pedido Egoísta
+                </label>
+              )}
+            </div>
+          )}
 
           <div>
             <div className="flex justify-between items-center mb-2">
