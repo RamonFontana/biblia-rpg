@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration em `characters` com o dia da sessão em que a Inspiração foi usada, `gen:types` e `rls.sql` (o dono grava a própria ficha)
-- [ ] O motor diz se a Inspiração está disponível (Inabalável e não usada no dia atual) e a modalidade conta a Inspiração usada
-- [ ] Diálogo do jogador: "usar Inspiração" quando disponível; o envio grava a Inspiração usada no resultado e o dia na ficha
-- [ ] Ficha: estado da Inspiração e botão "usei"; cartão do Mestre: disponível ou usada hoje
-- [ ] O dia novo devolve a Inspiração sem zerar nada
-- [ ] Testes do motor e do serviço, componentes ajustados e um E2E (usar no Teste, sumir, voltar no dia novo), com mutação conferida
+- [x] Migration em `characters` com o dia da sessão em que a Inspiração foi usada, `gen:types` e `rls.sql` (o dono grava a própria ficha)
+- [x] O motor diz se a Inspiração está disponível (Inabalável e não usada no dia atual) e a modalidade conta a Inspiração usada
+- [x] Diálogo do jogador: "usar Inspiração" quando disponível; o envio grava a Inspiração usada no resultado e o dia na ficha
+- [x] Ficha: estado da Inspiração e botão "usei"; cartão do Mestre: disponível ou usada hoje
+- [x] O dia novo devolve a Inspiração sem zerar nada
+- [x] Testes do motor e do serviço, componentes ajustados e um E2E (usar no Teste, sumir, voltar no dia novo), com mutação conferida
 - [ ] Migration aplicada na produção, com o autor

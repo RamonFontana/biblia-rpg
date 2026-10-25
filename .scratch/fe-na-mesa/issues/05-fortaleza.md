@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] O motor calcula a Fé depois do 1d4 pelo `addFaith` (teto e piso); a Rolagem Virtual usa a `Rng` injetada
-- [ ] Botão e diálogo no cartão do jogador com o nome da Fortaleza, o d4 digitado (1 a 4) ou virtual
-- [ ] A Fé gravada muda e o jogador a vê em tempo real
-- [ ] Testes do motor, do componente e um E2E (Fortaleza dá +1d4; no teto fica em 100), com mutação conferida
+- [x] O motor calcula a Fé depois do 1d4 pelo `addFaith` (teto e piso); a Rolagem Virtual usa a `Rng` injetada
+- [x] Botão e diálogo no cartão do jogador com o nome da Fortaleza, o d4 digitado (1 a 4) ou virtual
+- [x] A Fé gravada muda e o jogador a vê em tempo real
+- [x] Testes do motor, do componente e um E2E (Fortaleza dá +1d4; no teto fica em 100), com mutação conferida

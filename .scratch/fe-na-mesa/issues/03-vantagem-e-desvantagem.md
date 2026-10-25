@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration em `session_test_results` com a marca do Mestre, a modalidade aplicada e os dois valores da Rolagem Virtual (o `roll_value` segue o dado que vale), `gen:types` e `rls.sql` por papel
-- [ ] O motor calcula a modalidade (Mestre, automáticas, anulação) e o dado que vale (invertido no Teste de Fé), e rola dois dados pela `Rng` injetada
-- [ ] Diálogo do Mestre: escolha por alvo e dica da Fortaleza
-- [ ] Diálogo do jogador: modalidade, motivo, lembrete do dado físico e Rolagem Virtual com dois dados destacando o que vale
-- [ ] Rolagem normal continua com um dado só
-- [ ] Testes do motor (todas as combinações), do serviço, componentes ajustados e um E2E (Teste de Fé com Vantagem pela Rolagem Virtual; Abalado em TR de SAB), com mutação conferida
+- [x] Migration em `session_test_results` com a marca do Mestre, a modalidade aplicada e os dois valores da Rolagem Virtual (o `roll_value` segue o dado que vale), `gen:types` e `rls.sql` por papel
+- [x] O motor calcula a modalidade (Mestre, automáticas, anulação) e o dado que vale (invertido no Teste de Fé), e rola dois dados pela `Rng` injetada
+- [x] Diálogo do Mestre: escolha por alvo e dica da Fortaleza
+- [x] Diálogo do jogador: modalidade, motivo, lembrete do dado físico e Rolagem Virtual com dois dados destacando o que vale
+- [x] Rolagem normal continua com um dado só
+- [x] Testes do motor (todas as combinações), do serviço, componentes ajustados e um E2E (Teste de Fé com Vantagem pela Rolagem Virtual; Abalado em TR de SAB), com mutação conferida
 - [ ] Migration aplicada na produção, com o autor

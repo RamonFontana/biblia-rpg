@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration em `session_tests` com o uso (Clamor, Tentação, Testemunho; nulo nos outros Testes) e o Pedido Egoísta (falso por padrão), RLS mantido, `gen:types` e `rls.sql` por papel
-- [ ] O motor diz se a falha custa Fé pelo uso e pelo Pedido Egoísta
-- [ ] Diálogo do Mestre: uso só para Fé, atalhos, valor livre, Pedido Egoísta só no Clamor
-- [ ] O serviço de envio aplica a perda conforme a regra nova; o resultado mostra a perda
-- [ ] Divergência doc × código registrada como resolvida no ROADMAP
-- [ ] Testes do motor e do serviço, componentes ajustados e um E2E (Clamor com e sem Pedido Egoísta, Tentação), com mutação conferida
+- [x] Migration em `session_tests` com o uso (Clamor, Tentação, Testemunho; nulo nos outros Testes) e o Pedido Egoísta (falso por padrão), RLS mantido, `gen:types` e `rls.sql` por papel
+- [x] O motor diz se a falha custa Fé pelo uso e pelo Pedido Egoísta
+- [x] Diálogo do Mestre: uso só para Fé, atalhos, valor livre, Pedido Egoísta só no Clamor
+- [x] O serviço de envio aplica a perda conforme a regra nova; o resultado mostra a perda
+- [x] Divergência doc × código registrada como resolvida no ROADMAP
+- [x] Testes do motor e do serviço, componentes ajustados e um E2E (Clamor com e sem Pedido Egoísta, Tentação), com mutação conferida
 - [ ] Migration aplicada na produção, com o autor
