@@ -9,7 +9,8 @@
 | 1 — Fundação | concluída (PR #1 mesclado). Falta só proteger a `main` no GitHub (o sistema bloqueou a minha tentativa via `gh api`; o autor configura no GitHub) |
 | 2 — Rede de segurança | concluída: grill, glossário, ADRs 0001–0002, correções de doc (PR #9), caracterização das regras (PRs #10, #11 e #13) e correções do bloco B (PR #14). O que sobrou do bloco B (Teste de Fé unificado, CA, Resistência a Condição) entrou nos passos da Onda 3 |
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
-| 4 — Restante + padronização visual | em andamento desde 2026-10-18 (passos abaixo, um PR cada) |
+| 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
+| Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
 | 5+ — Features novas | pendente (lista de features ainda vazia) |
 
 
@@ -511,6 +512,25 @@ A ordem põe a camada de dados antes de quebrar os componentes, porque eles pass
      - **Sorteios.** `DeathSavesModal` (d20), `DiceRollerDialog` (dado livre) e `SessionRestControls` (1d4 da Fé do descanso) passam por `rollDie` e `systemRng`, com a mesma fórmula. `systemRng` agora lê `Math.random` na hora da chamada (`() => Math.random()`), para os testes que espiam `Math.random` seguirem valendo; os testes de caracterização existentes passaram sem mudar. Já não há `Math.random` em regra nem em `src/`, fora de `systemRng`.
      - **Nome dos canais do tempo real.** `uniqueChannelName(prefixo)` (`lib/channelName.ts`, `crypto.randomUUID()`) substitui `Math.random` nos sete canais (três hooks da mesa, `combatStore`, `subscribeToGameSession`, a ficha e o estado de morte). O separador do canal da sessão mudou de `-` para `_`.
      - **Paleta.** O gate `check:palette` passa a contar `white` e `black` (com opacidade e variantes `hover:`). 46 usos em 20 arquivos: `text-white` virou `text-stone-100` e `bg-black/NN` virou `bg-stone-950/NN`. Diferença visível: o branco puro vira um branco levemente quente, e o preto puro dos fundos de diálogo vira o quase-preto da pedra. O gate foi visto falhando com uma violação temporária.
+   - **Fechamento da Onda 4 (2026-10-24).** Os gates cobrem tudo o que a onda pediu: camada de dados única (`src/data-access`), telas quebradas, nenhum `@ts-nocheck`, paleta zerada e agora sem branco e preto, E2E dos fluxos de login, sessão, combate e trocas (44 specs, fora do CI), e todos os GAPs de comportamento da rodada 1 resolvidos (9a a 9e). A migration das moedas (`20261024145205`) foi aplicada na produção em 2026-10-24 e conferida (`numeric(12,3)`, padrão 0).
+   - **Passa para a Onda 5 (ou para decisão do autor):**
+     - As 4 supressões do `PhysicalRollForm` (2 `any`, 1 `no-unused-vars`, 1 `no-restricted-imports`): a tela do ataque físico está parada e a reescrita da rolagem de ataque a substitui.
+     - Esconder de novo um NPC visível não some para o jogador sem recarregar (precisaria de Broadcast do Realtime; cabe no plano gratuito).
+     - A janela de leitura-depois-assinatura que sobra em `useGameSession`, `useCharacterSheet` e `MasterDeathControls`, e o `useSessionCharacters` que não descarta resposta antiga fora de ordem.
+     - A carteira com 0 Siclos que reabre o Mercador com 50 (GAP do 9d).
+     - Habilidades de inimigo e o efeito de Habilidade (a Fé gasta por inimigo, `applyConditions`).
+     - O E2E no CI e o E2E instável sem causa conhecida (1 falha em 5 execuções, passo 9b).
+   - **Rodada 2, a pergunta ao autor (regras, números e conteúdo):** Vantagem e Desvantagem no Teste de Fé; os números do Modificador de Fé para Tentação e Testemunho; "TR de Fé"; o efeito de Vulnerável e a definição de Ruptura; Dados de Vida nos descansos; o 1 e o 20 naturais nos Testes de Morte; elmos +1/+2 de CA e proficiências de armadura que divergem do doc; a Vocação Nobre (e a loja sem kit); a Desvantagem de furtividade; a direção "dados de jogo no banco"; e a decisão de rodar o E2E no CI.
+   - **Rodada 2, decisões do autor (2026-10-24).** Já resolvidos antes e fora da pergunta: elmos e proficiências de armadura (Onda 3, passo 3), Nobre (removido), dados de jogo no banco (ADR 0003) e "TR de Fé" (não aparece mais nos docs). As linhas "Pendências" do bloco de decisões da Onda 2 e a divergência de elmos/proficiências acima ficaram defasadas por isso.
+     - **Q1, Vantagem e Desvantagem no Teste de Fé:** Vantagem usa o **menor** de dois d100 e Desvantagem o **maior** (o teste passa com resultado baixo).
+     - **Q2, dado virtual:** com Vantagem ou Desvantagem o dado virtual rola dois dados e fica com o maior ou o menor (inverso no Teste de Fé, Q1). O dado físico continua como o jogador digita. Vale para a Desvantagem de furtividade.
+     - **Q3, Tentação e Testemunho:** atalhos 0 / −20 / −50 para o Modificador de Fé, como no Clamor, mais valor livre do Mestre. São só botões; nenhuma regra muda.
+     - **Q4, Vulnerável:** sem efeito automático; o estado aparece na ficha e no cartão do jogador para o Mestre lembrar o Testemunho.
+     - **Q5, Ruptura:** o app mostra o estado e um alerta ao Mestre; as Habilidades com custo de Fé já falham por Fé insuficiente; a tragédia e o ato de consagração são narrativos.
+     - **Q6, Dados de Vida:** implementar como feature da Onda 5 (Dados de Vida iguais ao nível, dado da Vocação, o jogador rola e o app soma CON; o Longo devolve metade dos gastos). Até lá o doc fica como está.
+     - **Q7, Testes de Morte:** o 1 natural (duas falhas) e o 20 natural (volta com 1 PV) valem.
+     - **Q8, E2E no CI:** workflow `.github/workflows/e2e.yml`, **uma vez por semana** (segunda, 06:00 UTC) e sob demanda, não em todo PR. **Não foi executado no GitHub ainda**: a primeira execução (aba Actions, "Run workflow") confirma o Supabase local no runner; se falhar, o rastro vai como artefato.
+     - **Próximo:** Q1 a Q5 viram uma feature da Onda 5 (`/to-spec` → `/to-tickets` → `/tdd`), junto com os Dados de Vida (Q6).
 
 ### Onda 5 em diante: features novas
 Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, e só começa depois que a área que ela toca foi refatorada. A lista de features do prompt estava vazia; preencher no ROADMAP.
