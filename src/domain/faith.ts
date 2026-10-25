@@ -1,5 +1,6 @@
 // Fé (0 a 100) e Teste de Fé. Uma só leitura da Fé Atual, um só teto, uma só fórmula do teste.
-// Termos: CONTEXT.md (Fé Atual, Fé Inicial, Fé Efetiva, Item Profano, Teste de Fé, Modificador de Fé).
+// Termos: CONTEXT.md (Fé Atual, Fé Inicial, Fé Efetiva, Item Profano, Teste de Fé, Modificador de Fé,
+// Estado de Fé).
 import { ITEMS_DB } from '@/content/items';
 
 /** Penalidade de Fé (negativa) de cada Item Profano do conteúdo, por slug. */
@@ -69,4 +70,66 @@ export function isFaithTestPassed(
   effectiveFaith: number,
 ): boolean {
   return rolled <= effectiveFaith + faithModifier;
+}
+
+export type FaithStateId = 'inabalavel' | 'comum' | 'abalado' | 'vulneravel' | 'ruptura';
+
+export interface FaithState {
+  id: FaithStateId;
+  label: string;
+  /** O efeito mecânico do doc (`docs/regras-base.md`, 4.2), para a dica do selo. */
+  effect: string;
+}
+
+/**
+ * Estado de Fé: Inabalável (70–100), Comum (31–69), Abalado (11–30), Vulnerável (1–10) ou Ruptura
+ * (0). Segue a Fé Atual, não a Fé Efetiva: Itens Profanos não mudam o estado.
+ */
+export function getFaithState(stats: FaithStats | null | undefined): FaithState {
+  const faith = getCurrentFaith(stats);
+  if (faith >= 70) {
+    return {
+      id: 'inabalavel',
+      label: 'Inabalável',
+      effect: 'Nenhuma penalidade. Profunda paz. Recebe Inspiração 1x/dia.',
+    };
+  }
+  if (faith >= 31) {
+    return {
+      id: 'comum',
+      label: 'Comum',
+      effect: 'Sem penalidades, sem bônus. Estado mundano.',
+    };
+  }
+  if (faith >= 11) {
+    return {
+      id: 'abalado',
+      label: 'Abalado',
+      effect: 'Desvantagem em testes de resistência de Sabedoria ou Carisma.',
+    };
+  }
+  if (faith >= 1) {
+    return {
+      id: 'vulneravel',
+      label: 'Vulnerável',
+      effect:
+        'Risco de surtos ou possessão ao testemunhar atrocidades ou heresias: o Mestre exige Testemunho com frequência.',
+    };
+  }
+  return {
+    id: 'ruptura',
+    label: 'Ruptura',
+    effect:
+      'O personagem sucumbe a menos que o grupo faça um ato de consagração e jejum liderado por um Sacerdote, até o nascer do sol. Habilidades que exigem Fé falham.',
+  };
+}
+
+/**
+ * O d4 da Fortaleza (1d4 de Fé, `docs/regras-base.md`, 4.1): vazio ou fora de 1 a 4 é recusado. A
+ * Fé depois do dado sai de `addFaith`, que respeita o teto.
+ */
+export function checkFortitudeDie(value: number | ''): 'empty' | 'range' | null {
+  if (value === '' || isNaN(value)) return 'empty';
+  if (value < 1 || value > 4) return 'range';
+  return null;
 }

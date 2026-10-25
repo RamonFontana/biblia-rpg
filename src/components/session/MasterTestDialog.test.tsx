@@ -167,7 +167,10 @@ describe('MasterTestDialog: Fé', () => {
     pickPlayer('Eliab');
     submit();
     await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
-    expect(h.createSessionTest).toHaveBeenCalledWith('s1', 'Fé', -30, expect.any(Array));
+    expect(h.createSessionTest).toHaveBeenCalledWith('s1', 'Fé', -30, expect.any(Array), {
+      use: 'clamor',
+      selfishRequest: false,
+    });
   });
 
   it('a Misericórdia é gravada como dificuldade positiva', async () => {
@@ -177,7 +180,139 @@ describe('MasterTestDialog: Fé', () => {
     pickPlayer('Eliab');
     submit();
     await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
-    expect(h.createSessionTest).toHaveBeenCalledWith('s1', 'Fé', 30, expect.any(Array));
+    expect(h.createSessionTest).toHaveBeenCalledWith('s1', 'Fé', 30, expect.any(Array), {
+      use: 'clamor',
+      selfishRequest: false,
+    });
+  });
+});
+
+describe('MasterTestDialog: usos do Teste de Fé', () => {
+  const chooseFaith = () =>
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Fé' } });
+  const use = (name: string) => fireEvent.click(screen.getByRole('radio', { name }));
+  const sentFaith = async () => {
+    pickPlayer('Eliab');
+    submit();
+    await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
+    return h.createSessionTest.mock.calls[0];
+  };
+
+  it('só o Teste de Fé pergunta o uso; o Clamor vem marcado', () => {
+    renderDialog();
+    expect(screen.queryByRole('radio', { name: 'Clamor' })).toBeNull();
+    chooseFaith();
+    expect(screen.getByRole('radio', { name: 'Clamor' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Tentação' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Testemunho' })).not.toBeChecked();
+  });
+
+  it('o Clamor tem os atalhos com os nomes do doc, que põem a Punição 0, 20 e 50', async () => {
+    renderDialog();
+    chooseFaith();
+    fireEvent.click(screen.getByRole('button', { name: /Milagre Moderado/ }));
+    expect(screen.getByText('Punição (0-100)')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton')).toHaveValue(20);
+    fireEvent.click(screen.getByRole('button', { name: /Milagre Extraordinário/ }));
+    expect(screen.getByRole('spinbutton')).toHaveValue(50);
+    fireEvent.click(screen.getByRole('button', { name: /Pequena Providência/ }));
+    expect(screen.getByRole('spinbutton')).toHaveValue(0);
+    fireEvent.click(screen.getByRole('button', { name: /Milagre Moderado/ }));
+    expect((await sentFaith())[2]).toBe(-20);
+  });
+
+  it('a Tentação e o Testemunho têm os atalhos Punição 0, −20 e −50', () => {
+    renderDialog();
+    chooseFaith();
+    use('Tentação');
+    expect(screen.queryByRole('button', { name: /Milagre Moderado/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Punição −50' }));
+    expect(screen.getByRole('spinbutton')).toHaveValue(50);
+    use('Testemunho');
+    fireEvent.click(screen.getByRole('button', { name: 'Punição −20' }));
+    expect(screen.getByRole('spinbutton')).toHaveValue(20);
+    expect(screen.getByRole('button', { name: 'Punição 0' })).toBeInTheDocument();
+  });
+
+  it('a Misericórdia e o valor livre continuam possíveis', async () => {
+    renderDialog();
+    chooseFaith();
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '35' } });
+    expect((await sentFaith())[2]).toBe(35);
+  });
+
+  it('o Pedido Egoísta só existe no Clamor e vai marcado no pedido', async () => {
+    renderDialog();
+    chooseFaith();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Pedido Egoísta' }));
+    use('Tentação');
+    expect(screen.queryByRole('checkbox', { name: 'Pedido Egoísta' })).toBeNull();
+    use('Clamor');
+    expect(screen.getByRole('checkbox', { name: 'Pedido Egoísta' })).toBeChecked();
+    const call = await sentFaith();
+    expect(call[4]).toEqual({ use: 'clamor', selfishRequest: true });
+  });
+
+  it('a marca de Pedido Egoísta não vai junto quando o uso não é Clamor', async () => {
+    renderDialog();
+    chooseFaith();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Pedido Egoísta' }));
+    use('Testemunho');
+    const call = await sentFaith();
+    expect(call[4]).toEqual({ use: 'testemunho', selfishRequest: false });
+  });
+});
+
+describe('MasterTestDialog: Vantagem e Desvantagem por alvo', () => {
+  const mark = (player: string, name: string) =>
+    fireEvent.click(screen.getByRole('radio', { name: `${name} (${player})` }));
+
+  it('cada jogador escolhido tem Normal, Vantagem e Desvantagem, com Normal marcado', () => {
+    renderDialog();
+    expect(screen.queryByRole('radiogroup', { name: /Modalidade de Eliab/ })).toBeNull();
+    pickPlayer('Eliab');
+    expect(screen.getByRole('radiogroup', { name: 'Modalidade de Eliab' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Normal (Eliab)' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Vantagem (Eliab)' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Desvantagem (Eliab)' })).not.toBeChecked();
+  });
+
+  it('envia a marca de cada alvo', async () => {
+    renderDialog();
+    pickPlayer('Eliab');
+    pickPlayer('Raquel');
+    mark('Eliab', 'Vantagem');
+    mark('Raquel', 'Desvantagem');
+    submit();
+    await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
+    expect(h.createSessionTest.mock.calls[0][3]).toEqual([
+      { characterId: 'c1', playerId: 'user-c1', masterMark: 'vantagem' },
+      { characterId: 'c2', playerId: 'user-c2', masterMark: 'desvantagem' },
+    ]);
+  });
+
+  it('a marca de quem foi desmarcado não vai, e Normal vai como nulo', async () => {
+    renderDialog();
+    pickPlayer('Eliab');
+    mark('Eliab', 'Vantagem');
+    pickPlayer('Eliab');
+    pickPlayer('Raquel');
+    submit();
+    await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
+    expect(h.createSessionTest.mock.calls[0][3]).toEqual([
+      { characterId: 'c2', playerId: 'user-c2', masterMark: null },
+    ]);
+  });
+
+  it('mostra a Fortaleza de cada personagem ao lado do nome', () => {
+    renderDialog({
+      playerCharacters: [
+        { character: sheet('c1', 'Eliab', { fortress: 'Coragem' }) },
+        { character: sheet('c2', 'Raquel') },
+      ],
+    });
+    expect(screen.getByText('Fortaleza: Coragem')).toBeInTheDocument();
+    expect(screen.getAllByText(/Fortaleza:/)).toHaveLength(1);
   });
 });
 
@@ -191,10 +326,16 @@ describe('MasterTestDialog: enviar o Teste', () => {
     submit();
 
     await waitFor(() => expect(h.createSessionTest).toHaveBeenCalledTimes(1));
-    expect(h.createSessionTest).toHaveBeenCalledWith('s1', 'Furtividade', 14, [
-      { characterId: 'c1', playerId: 'user-c1' },
-      { characterId: 'c2', playerId: 'user-c2' },
-    ]);
+    expect(h.createSessionTest).toHaveBeenCalledWith(
+      's1',
+      'Furtividade',
+      14,
+      [
+        { characterId: 'c1', playerId: 'user-c1', masterMark: null },
+        { characterId: 'c2', playerId: 'user-c2', masterMark: null },
+      ],
+      null,
+    );
   });
 
   it('deixa de fora o personagem sem dono', async () => {
@@ -210,7 +351,7 @@ describe('MasterTestDialog: enviar o Teste', () => {
 
     await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
     expect(h.createSessionTest.mock.calls[0][3]).toEqual([
-      { characterId: 'c1', playerId: 'user-c1' },
+      { characterId: 'c1', playerId: 'user-c1', masterMark: null },
     ]);
   });
 
@@ -285,6 +426,38 @@ describe('MasterTestDialog: Teste em andamento', () => {
     expect(screen.getByText('Misericórdia')).toBeInTheDocument();
   });
 
+  it('o Teste de Fé mostra o uso e a marca de Pedido Egoísta', () => {
+    running({
+      activeTests: [
+        active({ test_type: 'Fé', difficulty: -20, faith_use: 'clamor', selfish_request: true }),
+      ],
+    });
+    expect(screen.getByText('Clamor')).toBeInTheDocument();
+    expect(screen.getByText('Pedido Egoísta')).toBeInTheDocument();
+    cleanup();
+    running({
+      activeTests: [active({ test_type: 'Fé', faith_use: 'tentacao', selfish_request: false })],
+    });
+    expect(screen.getByText('Tentação')).toBeInTheDocument();
+    expect(screen.queryByText('Pedido Egoísta')).toBeNull();
+  });
+
+  it('mostra se a falha custou Fé: o Clamor é silêncio divino, o Pedido Egoísta custa', () => {
+    const failed = { status: 'submitted', result_value: 90, roll_value: 90, is_approved: false };
+    running({
+      activeTests: [active({ test_type: 'Fé', faith_use: 'clamor', selfish_request: false })],
+      testResults: { t1: [result(failed as Partial<SessionTestResult>)] },
+    });
+    expect(screen.getByText(/silêncio divino/i)).toBeInTheDocument();
+    expect(screen.queryByText(/perdeu Fé/i)).toBeNull();
+    cleanup();
+    running({
+      activeTests: [active({ test_type: 'Fé', faith_use: 'clamor', selfish_request: true })],
+      testResults: { t1: [result(failed as Partial<SessionTestResult>)] },
+    });
+    expect(screen.getByText(/perdeu Fé/i)).toBeInTheDocument();
+  });
+
   it('o resultado pendente espera, o enviado mostra o valor e a decisão', () => {
     running({
       testResults: {
@@ -315,6 +488,34 @@ describe('MasterTestDialog: Teste em andamento', () => {
     expect(screen.getByText('Reprovado')).toBeInTheDocument();
     // O detalhamento usa o dado gravado e os modificadores da ficha de agora.
     expect(screen.getByText('1d20 (12) + Mod (3) = 15')).toBeInTheDocument();
+  });
+
+  it('mostra a modalidade que valeu no resultado enviado', () => {
+    running({
+      testResults: {
+        t1: [
+          result({ id: 'r1', status: 'submitted', result_value: 15, applied_mode: 'vantagem' }),
+          result({
+            id: 'r2',
+            character_id: 'c2',
+            status: 'submitted',
+            result_value: 8,
+            applied_mode: 'desvantagem',
+          }),
+        ],
+      },
+    });
+    expect(screen.getByText('com Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('com Desvantagem')).toBeInTheDocument();
+  });
+
+  it('resultado normal não leva etiqueta de modalidade', () => {
+    running({
+      testResults: {
+        t1: [result({ status: 'submitted', result_value: 15, applied_mode: 'normal' })],
+      },
+    });
+    expect(screen.queryByText(/com (Vantagem|Desvantagem)/)).toBeNull();
   });
 
   it('só o Teste ativo conta, e o painel de pedido não aparece', () => {

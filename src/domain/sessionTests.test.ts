@@ -6,6 +6,9 @@ import {
   calculateFaithAfterFailure,
   calculateSubmittedTotal,
   checkFaithPenaltyDie,
+  FAITH_USE_LABELS,
+  FAITH_USES,
+  failureCostsFaith,
   getTestDieSides,
   isRegularTestApproved,
   isSubmittableResult,
@@ -109,5 +112,36 @@ describe('dado e envio do Teste do jogador', () => {
     expect(checkFaithPenaltyDie(7)).toBe('range');
     expect(checkFaithPenaltyDie(1)).toBeNull();
     expect(checkFaithPenaltyDie(6)).toBeNull();
+  });
+});
+
+describe('failureCostsFaith', () => {
+  it('o Clamor sem Pedido Egoísta não custa Fé (silêncio divino)', () => {
+    expect(failureCostsFaith('clamor', false)).toBe(false);
+  });
+
+  it('o Clamor com Pedido Egoísta custa Fé', () => {
+    expect(failureCostsFaith('clamor', true)).toBe(true);
+  });
+
+  it('a Tentação e o Testemunho sempre custam Fé, com ou sem a marca', () => {
+    expect(failureCostsFaith('tentacao', false)).toBe(true);
+    expect(failureCostsFaith('testemunho', false)).toBe(true);
+    expect(failureCostsFaith('tentacao', true)).toBe(true);
+  });
+
+  it('um Teste de Fé antigo, sem uso gravado, segue custando Fé como antes', () => {
+    expect(failureCostsFaith(null, false)).toBe(true);
+  });
+});
+
+describe('usos do Teste de Fé', () => {
+  it('são Clamor, Tentação e Testemunho, com nome para a tela', () => {
+    expect(FAITH_USES).toEqual(['clamor', 'tentacao', 'testemunho']);
+    expect(FAITH_USE_LABELS).toEqual({
+      clamor: 'Clamor',
+      tentacao: 'Tentação',
+      testemunho: 'Testemunho',
+    });
   });
 });

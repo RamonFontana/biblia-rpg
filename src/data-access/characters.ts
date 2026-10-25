@@ -53,6 +53,19 @@ export async function markCharactersParticipated(ids: string[]): Promise<void> {
   if (error) throw error;
 }
 
+/** Marca que a Inspiração foi usada hoje: o dia da sessão e a sessão. O dia novo a devolve. */
+export async function markInspirationUsed(
+  characterId: string,
+  sessionId: string,
+  day: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ inspiration_used_day: day, inspiration_session_id: sessionId })
+    .eq('id', characterId);
+  if (error) throw error;
+}
+
 /** Dos `ids`, os que são NPC ou inimigo (nunca um jogador). */
 export async function filterNpcAndEnemyIds(ids: string[]): Promise<string[]> {
   const { data, error } = await supabase
@@ -81,17 +94,26 @@ export async function grantPendingLevelUp(ids: string[]): Promise<void> {
 /** O que um Teste de sessão precisa da ficha para calcular o bônus de quem rola. */
 export type CharacterTestContext = Pick<
   CharacterRow,
-  'stats' | 'equipment' | 'level' | 'proficiencies' | 'attributes' | 'vocation'
->;
+  | 'equipment'
+  | 'level'
+  | 'proficiencies'
+  | 'attributes'
+  | 'vocation'
+  | 'inspiration_used_day'
+  | 'inspiration_session_id'
+> & { stats: CharacterStats | null };
 
 export async function getCharacterTestContext(id: string): Promise<CharacterTestContext> {
   const { data, error } = await supabase
     .from('characters')
-    .select('stats, equipment, level, proficiencies, attributes, vocation')
+    .select(
+      'stats, equipment, level, proficiencies, attributes, vocation, inspiration_used_day, inspiration_session_id',
+    )
     .eq('id', id)
     .single();
   if (error) throw error;
-  return data;
+  // `stats` é `jsonb`; quem grava é o app, com a forma de `CharacterStats`.
+  return { ...data, stats: data.stats as CharacterStats | null };
 }
 
 /** Os `stats` gravados de uma ficha, ou `null` se a ficha não tem. */

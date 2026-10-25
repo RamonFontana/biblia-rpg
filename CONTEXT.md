@@ -55,8 +55,12 @@ _Avoid_: item amaldiçoado, item mágico
 A faixa em que a Fé Atual (não a Efetiva) está: Inabalável (100–70), Comum (69–31), Abalado (30–11), Vulnerável (10–1) ou Ruptura (0). Cada faixa tem efeito mecânico próprio.
 _Avoid_: nível de fé, degradação (para o estado em si)
 
+**Inspiração**:
+Recurso do Estado Inabalável, uma vez por dia da sessão: o jogador a gasta para ter Vantagem numa rolagem que escolher. Some enquanto o personagem não estiver Inabalável e volta no dia seguinte.
+_Avoid_: bênção, bônus divino
+
 **Fortaleza**:
-A virtude escolhida na criação (Coragem, Zelo, Compaixão…). Agir conforme ela pode render Vantagem ou Fé, e ela isenta o personagem do Testemunho quando o Mestre julga que cobre a situação.
+A virtude escolhida na criação (Coragem, Zelo, Compaixão…). Agir conforme ela pode render Vantagem (o Mestre marca no pedido do Teste) ou 1d4 de Fé (o Mestre aplica), e ela isenta o personagem do Testemunho quando o Mestre julga que cobre a situação.
 _Avoid_: fortificação, virtude (como termo de regra)
 
 **Tentação**:
@@ -92,6 +96,14 @@ _Avoid_: pedido frívolo
 **Testemunho**:
 Teste de Fé de quem presencia algo sobrenatural, a menos que sua Fortaleza cubra a situação. A falha custa 1d6 de Fé e pode deixar o personagem Amedrontado; no Estado Vulnerável os Testemunhos ficam frequentes.
 _Avoid_: teste de sanidade, teste de medo
+
+**Vantagem**:
+Rolar dois dados e ficar com o melhor: o maior num Teste de d20, o **menor** num Teste de Fé (que passa com resultado baixo). Vantagem e Desvantagem no mesmo Teste se anulam.
+_Avoid_: bônus (para a Vantagem), rolagem dupla
+
+**Desvantagem**:
+Rolar dois dados e ficar com o pior: o menor num Teste de d20, o **maior** num Teste de Fé.
+_Avoid_: penalidade (para a Desvantagem)
 
 **Rolagem Virtual**:
 Sorteio feito pelo app no lugar dos dados físicos, sempre opcional para rolagens de jogador.

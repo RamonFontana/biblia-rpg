@@ -11,7 +11,7 @@
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
-| 5+ — Features novas | pendente (lista de features ainda vazia) |
+| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa), tickets em `.scratch/fe-na-mesa/`; ver o andamento na seção da Onda 5 |
 
 
 ## Contexto
@@ -543,6 +543,19 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 4. **Efeitos de Habilidade** (G): Condições aplicadas pela Habilidade e Habilidades de inimigo.
 
 Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira zerada que volta a 50, iniciativa sorteada opcional). Quando a campanha pedir: itens próprios do Mestre (ADR 0003). Sem código, decisão do autor: a revisão dos 13 pontos de conteúdo bíblico (§2).
+
+**Andamento da feature 1 (Fé na mesa).**
+- **Ticket 01, selo do Estado de Fé e aviso de Ruptura:** feito. `getFaithState` (motor, pela Fé Atual), `FaithStateBadge` (ficha e cartão do jogador do Mestre, dica com o efeito do doc e, para o Mestre no Vulnerável, o lembrete do Testemunho) e `RuptureAlert` (aviso fixo do Mestre com os nomes, que some quando a Fé passa de 0). Sem migration. E2E em `e2e/faith.spec.ts`.
+
+- **Ticket 02, usos do Teste de Fé e Pedido Egoísta:** feito. O Mestre escolhe Clamor, Tentação ou Testemunho (atalhos de Punição 0, −20 e −50; no Clamor com os nomes do doc) e marca Pedido Egoísta no Clamor. Migration `20261025120000_session_tests_faith_use` (`faith_use` e `selfish_request` em `session_tests`; Testes antigos sem uso seguem custando Fé). **Divergência doc × código resolvida:** o código cobrava 1d6 em toda falha de Teste de Fé; agora o Clamor só custa com Pedido Egoísta e a Tentação e o Testemunho sempre (`failureCostsFaith`, no motor). O resultado mostra se a falha custou Fé ou foi silêncio divino. Os tipos de `session_tests` em `database.types.ts` foram editados à mão (o `gen:types` roda contra o projeto ligado, que só tem a coluna depois do `db push`).
+
+- **Ticket 05, Fortaleza:** feito. O Mestre tem o botão "Fortaleza" no cartão do jogador: o diálogo mostra o nome da Fortaleza e dá +1d4 de Fé (d4 digitado ou Rolagem Virtual), com o teto de 100 do `addFaith` e sem limite por dia. A Vantagem da Fortaleza fica para o ticket 03 (o Mestre a marca no pedido do Teste). Sem migration.
+
+- **Ticket 03, Vantagem e Desvantagem nos Testes:** feito. Motor `testMode` (modalidade com Vantagem do Mestre e da Inspiração, Desvantagem do Mestre, da armadura que atrapalha a furtividade no Teste de Destreza e do Abalado nos TRs de Sabedoria e Carisma; fontes do mesmo lado não empilham e lados opostos se anulam; dado que vale invertido no Teste de Fé; Rolagem Virtual de dois dados pela `Rng`). Migration `20261025130000_session_test_results_mode` (`master_mark`, `applied_mode`, `roll_values`). O Mestre marca Normal, Vantagem ou Desvantagem por alvo, com a Fortaleza do personagem ao lado do nome; o jogador vê a modalidade, o motivo e o lembrete do dado físico. A Inspiração (`inspirationUsed`) já entra na conta e passa a ser usada no ticket 04. O `stats` de `CharacterTestContext` agora vem tipado (`CharacterStats | null`), com a asserção na camada de dados.
+
+- **Ticket 04, Inspiração:** feito. `getInspirationStatus` (motor): disponível para o Inabalável que não a gastou hoje, usada se foi gasta hoje nesta sessão, nenhuma nos demais casos; o dia novo a devolve pela comparação, sem zerar nada. Migration `20261025140000_inspiration` (`characters.inspiration_used_day` e `inspiration_session_id`, `session_test_results.inspiration_used`). **Refinamento da spec:** além do dia, a ficha guarda a sessão em que a Inspiração foi gasta, para o "dia 3" de uma sessão não valer como o "dia 3" de outra (um personagem passa por várias sessões). O jogador gasta a Inspiração num Teste do app (Vantagem, só conta no envio) ou pelo botão "Usei a Inspiração" no painel da tela da sessão; o cartão do Mestre mostra disponível ou usada hoje. Falhar ao marcar o dia depois do envio não desfaz o resultado (o pior caso é a Inspiração continuar disponível).
+
+**Feature 1 (Fé na mesa): os 5 tickets estão feitos.** Falta aplicar as 3 migrations na produção (`20261025120000`, `20261025130000`, `20261025140000`) e rodar `npm run gen:types` depois, para confirmar os tipos editados à mão.
 
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 

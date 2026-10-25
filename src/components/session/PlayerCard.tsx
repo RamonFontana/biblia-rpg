@@ -13,6 +13,8 @@ import { ConditionSelector } from '../conditions/ConditionSelector';
 import { applyConditionToCharacter, removeConditionFromCharacter } from '@/data-access/conditions';
 import type { ConditionEntry } from '@/types/combat';
 import { getCurrentFaith } from '@/domain/faith';
+import { FaithStateBadge } from '../faith/FaithStateBadge';
+
 interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
@@ -26,6 +28,9 @@ interface PlayerCardProps {
   onClick?: (userId: string, e: React.MouseEvent) => void;
   onNegotiate?: (userId: string) => void;
   onShop?: (userId: string) => void;
+  onFortitude?: () => void;
+  /** Só o Mestre recebe: a Inspiração do personagem hoje. */
+  inspiration?: 'disponivel' | 'usada' | null;
 }
 
 export function PlayerCard({
@@ -41,12 +46,15 @@ export function PlayerCard({
   onClick,
   onNegotiate,
   onShop,
+  onFortitude,
+  inspiration,
 }: PlayerCardProps) {
   const blocked = isBusy || isTrading;
   const clickable = isClickable && !isSessionGM && !blocked;
   const canOpenShop = viewerIsGM && !isSessionGM && onShop && !blocked;
   const canNegotiate = !isSessionGM && !viewerIsGM && onNegotiate && character && !blocked;
-  const hasActions = canOpenShop || canNegotiate || clickable;
+  const canFortitude = viewerIsGM && !isSessionGM && !!onFortitude && !!character;
+  const hasActions = canOpenShop || canNegotiate || canFortitude || clickable;
 
   const handleAddCondition = async (conditionId: string, duration: number) => {
     if (!character?.id) return;
@@ -146,6 +154,20 @@ export function PlayerCard({
               >
                 <Store className="mr-1 h-3.5 w-3.5" />
                 Lojinha
+              </Button>
+            )}
+            {canFortitude && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFortitude();
+                }}
+                className="h-8 whitespace-nowrap border-amber-600/50 px-2.5 text-xs text-amber-400 hover:bg-amber-600/20"
+              >
+                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                Fortaleza
               </Button>
             )}
             {canNegotiate && (
@@ -252,6 +274,12 @@ export function PlayerCard({
               </div>
             ) : (
               <span className="font-mono tabular-nums">{getCurrentFaith(character.stats)}/100</span>
+            )}
+            <FaithStateBadge stats={character.stats} viewerIsGM={viewerIsGM} />
+            {inspiration && (
+              <span className="rounded-full border border-green-700/50 bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
+                {inspiration === 'disponivel' ? 'Inspiração disponível' : 'Inspiração usada hoje'}
+              </span>
             )}
           </div>
         </div>

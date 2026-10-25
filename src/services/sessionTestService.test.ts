@@ -113,6 +113,123 @@ describe('submitTestResult: Teste de Fé', () => {
   });
 });
 
+describe('submitTestResult: o uso do Teste de Fé decide se a falha custa Fé', () => {
+  const fail = (use: 'clamor' | 'tentacao' | 'testemunho', selfishRequest: boolean) =>
+    submitTestResult('r1', 90, 0, 'char-1', 'Fé', 4, 90, { use, selfishRequest });
+
+  it('o Clamor que falha sem Pedido Egoísta é silêncio divino: reprova e não custa Fé', async () => {
+    world({ faith: 50 });
+    await fail('clamor', false);
+    expect(resultWrite()).toMatchObject({ is_approved: false });
+    expect(faithWrite()).toBeUndefined();
+  });
+
+  it('o Clamor que falha com Pedido Egoísta custa a perda de Fé', async () => {
+    world({ faith: 50 });
+    await fail('clamor', true);
+    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 46 } });
+  });
+
+  it('a Tentação e o Testemunho que falham custam Fé', async () => {
+    world({ faith: 50 });
+    await fail('tentacao', false);
+    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 46 } });
+    state.calls.length = 0;
+    await fail('testemunho', false);
+    expect(faithWrite()!.payload).toMatchObject({ stats: { current_faith: 46 } });
+  });
+
+  it('o Clamor que passa não custa Fé, com ou sem Pedido Egoísta', async () => {
+    world({ faith: 50 });
+    await submitTestResult('r1', 10, 0, 'char-1', 'Fé', undefined, 10, {
+      use: 'clamor',
+      selfishRequest: true,
+    });
+    expect(resultWrite()).toMatchObject({ is_approved: true });
+    expect(faithWrite()).toBeUndefined();
+  });
+});
+
+describe('submitTestResult: modalidade e dados', () => {
+  it('grava a modalidade aplicada e os dois dados da Rolagem Virtual', async () => {
+    world();
+    await submitTestResult('r1', 31, 0, 'char-1', 'Fé', undefined, 31, undefined, {
+      appliedMode: 'vantagem',
+      rollValues: [64, 31],
+    });
+    expect(resultWrite()).toMatchObject({
+      roll_value: 31,
+      applied_mode: 'vantagem',
+      roll_values: [64, 31],
+    });
+  });
+
+  it('sem Rolagem Virtual de dois dados, os dois valores ficam nulos', async () => {
+    world();
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza', undefined, 13, undefined, {
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+    expect(resultWrite()).toMatchObject({ applied_mode: 'normal', roll_values: null });
+  });
+
+  it('sem informação de modalidade, grava nulo', async () => {
+    world();
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza');
+    expect(resultWrite()).toMatchObject({ applied_mode: null, roll_values: null });
+  });
+});
+
+describe('submitTestResult: Inspiração', () => {
+  const withInspiration = (testType: string) =>
+    submitTestResult('r1', 31, 0, 'char-1', testType, undefined, 31, undefined, {
+      appliedMode: 'vantagem',
+      rollValues: null,
+      inspiration: { sessionId: 's1', day: 3 },
+    });
+
+  it('gasta a Inspiração ao enviar: grava no resultado e marca o dia na ficha', async () => {
+    world();
+    await withInspiration('Fé');
+    expect(resultWrite()).toMatchObject({ inspiration_used: true, applied_mode: 'vantagem' });
+    expect(callsOf(state.calls, 'characters', 'update').map((c) => c.payload)).toContainEqual({
+      inspiration_used_day: 3,
+      inspiration_session_id: 's1',
+    });
+  });
+
+  it('sem Inspiração, nada é marcado na ficha', async () => {
+    world();
+    await submitTestResult('r1', 31, 0, 'char-1', 'Fé', undefined, 31, undefined, {
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+    expect(resultWrite()).toMatchObject({ inspiration_used: false });
+    expect(callsOf(state.calls, 'characters', 'update')).toEqual([]);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('se o resultado não grava, a Inspiração não é gasta', async () => {
+    world();
+    const original = state.respond;
+    state.respond = (call) =>
+      call.table === 'session_test_results' ? { error: new Error('falhou') } : original?.(call);
+    await expect(withInspiration('Fé')).rejects.toThrow('falhou');
+    expect(callsOf(state.calls, 'characters', 'update')).toEqual([]);
+  });
+
+  it('se marcar o dia falha, o envio já feito não é desfeito nem lança', async () => {
+    world();
+    const original = state.respond;
+    state.respond = (call) =>
+      call.table === 'characters' && call.op === 'update'
+        ? { error: new Error('falhou') }
+        : original?.(call);
+    await expect(withInspiration('Destreza')).resolves.toBeUndefined();
+    expect(console.error).toHaveBeenCalled();
+  });
+});
+
 describe('submitTestResult: Teste comum', () => {
   it('passa quando o resultado alcança a CD, sem olhar Fé nem itens', async () => {
     world({ items: [amulet] });

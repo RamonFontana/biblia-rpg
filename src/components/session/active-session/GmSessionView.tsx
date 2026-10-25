@@ -2,6 +2,7 @@ import { SessionParticipantList } from '@/components/session/SessionParticipantL
 import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { SessionEnemyList } from '@/components/session/SessionEnemyList';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
+import { RuptureAlert } from '@/components/session/RuptureAlert';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import type { PresenceState } from '@/data-access/realtime';
 import type {
@@ -69,6 +70,8 @@ export function GmSessionView({
         </p>
       </div>
 
+      <RuptureAlert players={playerCharacters} />
+
       <SessionRestControls
         sessionId={sessionId}
         sessionData={sessionData}
@@ -87,6 +90,7 @@ export function GmSessionView({
           onlineUsers={onlineUsers}
           isGM
           sessionId={sessionId}
+          currentDay={sessionData.current_day || 1}
           gmId={sessionData.gm_id}
           playerCharacters={playerCharacters.filter(
             (pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,

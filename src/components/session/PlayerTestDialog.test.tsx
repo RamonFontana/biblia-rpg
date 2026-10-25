@@ -22,10 +22,16 @@ vi.mock('@/data-access/inventory', () => ({
   getItemFaithPenalty: mocks.getItemFaithPenalty,
   listCharacterItemEffects: mocks.listCharacterItemEffects,
 }));
+// A Rolagem Virtual com dois dados sai de `rollTestDice`; o teste fixa os dois valores.
+vi.mock('@/domain/testMode', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/domain/testMode')>();
+  return { ...actual, rollTestDice: vi.fn(actual.rollTestDice) };
+});
 // O sorteio do app lê Math.random na hora, para o teste fixar o valor com um spy.
 vi.mock('@/lib/systemRng', () => ({ systemRng: () => Math.random() }));
 
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
+import { rollTestDice } from '@/domain/testMode';
 import { PlayerTestDialog } from './PlayerTestDialog';
 
 const test = (over: Partial<SessionTest> = {}): SessionTest => ({
@@ -35,6 +41,8 @@ const test = (over: Partial<SessionTest> = {}): SessionTest => ({
   difficulty: 12,
   status: 'active',
   created_at: '',
+  faith_use: null,
+  selfish_request: false,
   ...over,
 });
 const result = (over: Partial<SessionTestResult> = {}): SessionTestResult => ({
@@ -45,6 +53,10 @@ const result = (over: Partial<SessionTestResult> = {}): SessionTestResult => ({
   status: 'pending',
   result_value: null,
   roll_value: null,
+  roll_values: null,
+  inspiration_used: false,
+  master_mark: null,
+  applied_mode: null,
   is_approved: null,
   created_at: '',
   updated_at: '',
@@ -62,7 +74,7 @@ const sheet = {
 };
 
 const show = async (t: SessionTest, r: SessionTestResult = result()) => {
-  const view = render(<PlayerTestDialog isOpen activeTest={t} testResult={r} />);
+  const view = render(<PlayerTestDialog isOpen activeTest={t} testResult={r} sessionDay={3} />);
   await waitFor(() => expect(mocks.getItemFaithPenalty).toHaveBeenCalled());
   await act(async () => {});
   return view;
@@ -88,10 +100,12 @@ afterEach(() => {
 describe('o desafio na tela', () => {
   it('nada aparece sem Teste, sem resultado ou fechado', () => {
     const { container, rerender } = render(
-      <PlayerTestDialog isOpen activeTest={null} testResult={null} />,
+      <PlayerTestDialog isOpen activeTest={null} testResult={null} sessionDay={3} />,
     );
     expect(container).toBeEmptyDOMElement();
-    rerender(<PlayerTestDialog isOpen={false} activeTest={test()} testResult={result()} />);
+    rerender(
+      <PlayerTestDialog isOpen={false} activeTest={test()} testResult={result()} sessionDay={3} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -185,9 +199,11 @@ describe('leituras que falham', () => {
   });
 
   it('sem Teste ativo ou sem resultado do jogador, não lê a ficha', async () => {
-    const { rerender } = render(<PlayerTestDialog isOpen activeTest={test()} testResult={null} />);
+    const { rerender } = render(
+      <PlayerTestDialog isOpen activeTest={test()} testResult={null} sessionDay={3} />,
+    );
     await act(async () => {});
-    rerender(<PlayerTestDialog isOpen activeTest={null} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={null} testResult={result()} sessionDay={3} />);
     await act(async () => {});
     expect(mocks.getCharacterTestContext).not.toHaveBeenCalled();
   });
@@ -209,6 +225,8 @@ describe('enviar um Teste comum', () => {
       'Furtividade',
       undefined,
       9,
+      undefined,
+      { appliedMode: 'normal', rollValues: null },
     );
   });
 
@@ -226,6 +244,8 @@ describe('enviar um Teste comum', () => {
       'Destreza',
       undefined,
       10,
+      undefined,
+      { appliedMode: 'normal', rollValues: null },
     );
   });
 
@@ -283,7 +303,20 @@ describe('Teste de Fé', () => {
     roll('50'); // Fé 50
     send();
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 50, 0, 'c1', 'Fé', undefined, 50);
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      50,
+      0,
+      'c1',
+      'Fé',
+      undefined,
+      50,
+      {
+        use: null,
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 
   it('o Item Profano baixa a Fé Efetiva e a Misericórdia sobe o limite', async () => {
@@ -311,7 +344,20 @@ describe('Teste de Fé', () => {
     fireEvent.change(input(), { target: { value: '4' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Punição' }));
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 80, 0, 'c1', 'Fé', 4, 80);
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      80,
+      0,
+      'c1',
+      'Fé',
+      4,
+      80,
+      {
+        use: null,
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 
   it.each([
@@ -363,6 +409,309 @@ describe('Teste de Fé', () => {
     send();
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalledTimes(1));
     expect(screen.queryByText(/Não foi possível ler a Fé/)).toBeNull();
+  });
+});
+
+describe('Vantagem e Desvantagem', () => {
+  const abalado = { ...sheet, stats: { pv: 10, faith: 50, current_faith: 20 } };
+
+  it('a marca de Vantagem do Mestre no Teste de Fé: motivo e lembrete do d100 menor', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('Motivo: Mestre')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d100 e use o menor.')).toBeInTheDocument();
+  });
+
+  it('a Desvantagem no d20 lembra de usar o menor', async () => {
+    await show(test({ test_type: 'Força' }), result({ master_mark: 'desvantagem' }));
+    expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d20 e use o menor.')).toBeInTheDocument();
+  });
+
+  it('Abalado tem Desvantagem automática nos TRs de Sabedoria e Carisma', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(abalado);
+    await show(test({ test_type: 'Resistência (Sabedoria)' }));
+    expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    expect(screen.getByText(/Abalado \(Fé\)/)).toBeInTheDocument();
+  });
+
+  it('Abalado não afeta outros Testes', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(abalado);
+    await show(test({ test_type: 'Força' }));
+    expect(screen.queryByText('⚠️ Desvantagem')).toBeNull();
+  });
+
+  it('Vantagem e Desvantagem se anulam: o Teste volta a um dado só', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(abalado);
+    await show(test({ test_type: 'Resistência (Carisma)' }), result({ master_mark: 'vantagem' }));
+    expect(screen.getByText(/se anulam/)).toBeInTheDocument();
+    expect(screen.queryByText(/Role dois/)).toBeNull();
+  });
+
+  it('o Teste normal não mostra aviso de modalidade', async () => {
+    await show(test({ test_type: 'Força' }));
+    expect(screen.queryByText(/Vantagem|Desvantagem/)).toBeNull();
+  });
+
+  it('digitado à mão, só o dado que vale é enviado, com a modalidade e sem os dois dados', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    roll('31');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      31,
+      0,
+      'c1',
+      'Fé',
+      undefined,
+      31,
+      { use: null, selfishRequest: false },
+      { appliedMode: 'vantagem', rollValues: null },
+    );
+  });
+
+  it('a Rolagem Virtual com Vantagem rola dois d100, mostra os dois e usa o menor', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.mocked(rollTestDice).mockReturnValueOnce([64, 31]);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D100/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(input().value).toBe('31');
+    const dice = screen.getByLabelText('Dados rolados');
+    expect(dice).toHaveTextContent('64');
+    expect(dice).toHaveTextContent('31');
+    expect(screen.getByText(/31 vale/)).toBeInTheDocument();
+  });
+
+  it('enviar depois da Rolagem Virtual manda os dois dados', async () => {
+    await show(test({ test_type: 'Força' }), result({ master_mark: 'vantagem' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.mocked(rollTestDice).mockReturnValueOnce([15, 5]);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D20/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    vi.useRealTimers();
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    const [, total, , , , , rolled, , rollInfo] = mocks.submitTestResult.mock.calls[0];
+    expect(rolled).toBe(15); // d20 de 15 e 5: a Vantagem fica com o maior
+    expect(total).toBeGreaterThan(rolled - 1);
+    expect(rollInfo).toEqual({ appliedMode: 'vantagem', rollValues: [15, 5] });
+  });
+
+  it('mudar o número depois da Rolagem Virtual apaga os dois dados', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.mocked(rollTestDice).mockReturnValueOnce([64, 31]);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D100/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    vi.useRealTimers();
+    roll('20');
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'vantagem',
+      rollValues: null,
+    });
+  });
+
+  it('a Rolagem Virtual normal rola um dado só', async () => {
+    await show(test({ test_type: 'Força' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D20/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+  });
+
+  it('o resultado enviado mostra a modalidade que valeu', async () => {
+    await show(
+      test({ test_type: 'Fé' }),
+      result({
+        status: 'submitted',
+        result_value: 31,
+        roll_value: 31,
+        roll_values: [64, 31],
+        applied_mode: 'vantagem',
+        is_approved: true,
+      }),
+    );
+    expect(screen.getByText(/com Vantagem/)).toBeInTheDocument();
+    expect(screen.getByText(/64/)).toBeInTheDocument();
+  });
+});
+
+describe('Inspiração no Teste', () => {
+  const inabalavel = (over: Record<string, unknown> = {}) => ({
+    ...sheet,
+    stats: { pv: 10, faith: 50, current_faith: 80 },
+    inspiration_used_day: null,
+    inspiration_session_id: null,
+    ...over,
+  });
+  const option = () => screen.queryByRole('checkbox', { name: /Usar Inspiração/ });
+
+  it('o Inabalável que não a usou hoje vê a opção de usar a Inspiração', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    expect(option()).toBeInTheDocument();
+    expect(option()).not.toBeChecked();
+  });
+
+  it('fora do Inabalável não há a opção', async () => {
+    await show(test({ test_type: 'Força' }));
+    expect(option()).toBeNull();
+  });
+
+  it('já usada hoje nesta sessão não há a opção; no dia novo ela volta', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(
+      inabalavel({ inspiration_used_day: 3, inspiration_session_id: 's1' }),
+    );
+    const { unmount } = await show(test({ test_type: 'Força' }));
+    expect(option()).toBeNull();
+    unmount();
+    mocks.getCharacterTestContext.mockResolvedValue(
+      inabalavel({ inspiration_used_day: 2, inspiration_session_id: 's1' }),
+    );
+    await show(test({ test_type: 'Força' }));
+    expect(option()).toBeInTheDocument();
+  });
+
+  it('marcar dá Vantagem pela Inspiração, com o lembrete do dado', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    fireEvent.click(option()!);
+    expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('Motivo: Inspiração')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d20 e use o maior.')).toBeInTheDocument();
+  });
+
+  it('a Inspiração anula uma Desvantagem do Mestre', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }), result({ master_mark: 'desvantagem' }));
+    fireEvent.click(option()!);
+    expect(screen.getByText(/se anulam/)).toBeInTheDocument();
+  });
+
+  it('enviar com a Inspiração marcada gasta a Inspiração (sessão e dia)', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    fireEvent.click(option()!);
+    roll('15');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'vantagem',
+      rollValues: null,
+      inspiration: { sessionId: 's1', day: 3 },
+    });
+  });
+
+  it('um Teste novo desmarca a opção de usar a Inspiração', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    const { rerender } = await show(test({ test_type: 'Força' }));
+    fireEvent.click(option()!);
+    expect(option()).toBeChecked();
+    rerender(
+      <PlayerTestDialog
+        isOpen
+        activeTest={test({ id: 't2', test_type: 'Força' })}
+        testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
+      />,
+    );
+    await act(async () => {});
+    expect(option()).not.toBeChecked();
+  });
+
+  it('se a Inspiração deixa de estar disponível depois de marcada, ela não vale nem é gasta', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    const t = test({ test_type: 'Força' });
+    const { rerender } = await show(t);
+    fireEvent.click(option()!);
+    mocks.getCharacterTestContext.mockResolvedValue(
+      inabalavel({ inspiration_used_day: 3, inspiration_session_id: 's1' }),
+    );
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result()} sessionDay={3} />);
+    await act(async () => {});
+    expect(option()).toBeNull();
+    expect(screen.queryByText('✨ Vantagem')).toBeNull();
+    roll('15');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+  });
+
+  it('sem marcar a opção, a Inspiração não é gasta', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    roll('15');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+  });
+});
+
+describe('Teste de Fé: o uso decide a punição', () => {
+  const clamor = (selfish: boolean) =>
+    test({ test_type: 'Fé', difficulty: 0, faith_use: 'clamor', selfish_request: selfish });
+
+  it('o desafio mostra o uso e a marca de Pedido Egoísta', async () => {
+    await show(clamor(true));
+    expect(screen.getByText('Clamor')).toBeInTheDocument();
+    expect(screen.getByText('Pedido Egoísta')).toBeInTheDocument();
+  });
+
+  it('Clamor reprovado sem Pedido Egoísta: sem tela da punição, envia direto com o uso', async () => {
+    await show(clamor(false));
+    roll('80');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      80,
+      0,
+      'c1',
+      'Fé',
+      undefined,
+      80,
+      {
+        use: 'clamor',
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
+  });
+
+  it('Clamor reprovado com Pedido Egoísta: abre a tela da punição', async () => {
+    await show(clamor(true));
+    roll('80');
+    send();
+    expect(await screen.findByText('Teste de Fé Reprovado!')).toBeInTheDocument();
+    expect(mocks.submitTestResult).not.toHaveBeenCalled();
+  });
+
+  it('Tentação e Testemunho reprovados abrem a tela da punição', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0, faith_use: 'tentacao' }));
+    roll('80');
+    send();
+    expect(await screen.findByText('Teste de Fé Reprovado!')).toBeInTheDocument();
   });
 });
 
@@ -418,7 +767,20 @@ describe('dado virtual', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 90, 0, 'c1', 'Fé', 4, 90);
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      90,
+      0,
+      'c1',
+      'Fé',
+      4,
+      90,
+      {
+        use: null,
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 });
 
@@ -450,6 +812,23 @@ describe('depois de enviado', () => {
     expect(screen.getByText('1d100 (80)')).toBeInTheDocument();
   });
 
+  it('o Clamor reprovado sem Pedido Egoísta fala em silêncio divino, sem perda de Fé', async () => {
+    await show(
+      test({ test_type: 'Fé', faith_use: 'clamor', selfish_request: false }),
+      submitted({ is_approved: false, result_value: 80, roll_value: 80 }),
+    );
+    expect(screen.getByText(/silêncio divino/i)).toBeInTheDocument();
+    expect(screen.queryByText(/perdeu 1d6 pontos de Fé/)).toBeNull();
+  });
+
+  it('o Clamor reprovado com Pedido Egoísta avisa da perda de 1d6', async () => {
+    await show(
+      test({ test_type: 'Fé', faith_use: 'clamor', selfish_request: true }),
+      submitted({ is_approved: false, result_value: 80, roll_value: 80 }),
+    );
+    expect(screen.getByText(/O personagem perdeu 1d6 pontos de Fé/)).toBeInTheDocument();
+  });
+
   it('"Ocultar Janela" e o X fecham o aviso', async () => {
     const { container } = await show(test(), submitted());
     fireEvent.click(screen.getByRole('button', { name: 'Ocultar Janela' }));
@@ -465,6 +844,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ id: 't2' })}
         testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
       />,
     );
     expect(await screen.findByText('O Mestre Exige um Teste!')).toBeInTheDocument();
@@ -476,7 +856,7 @@ describe('depois de enviado', () => {
     const { rerender } = await show(test());
     roll('14');
     expect(input().value).toBe('14');
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} sessionDay={3} />);
     await act(async () => {});
     expect(input().value).toBe('14');
   });
@@ -489,6 +869,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test()}
         testResult={result({ updated_at: '2026-10-24T10:00:00Z' })}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -499,7 +880,9 @@ describe('depois de enviado', () => {
     const r = result();
     const { rerender } = await show(test(), r);
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={test({ id: 't2' })} testResult={r} />);
+    rerender(
+      <PlayerTestDialog isOpen activeTest={test({ id: 't2' })} testResult={r} sessionDay={3} />,
+    );
     await act(async () => {});
     expect(input().value).toBe('');
   });
@@ -508,7 +891,9 @@ describe('depois de enviado', () => {
     const t = test();
     const { rerender } = await show(t, result());
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result({ id: 'r2' })} />);
+    rerender(
+      <PlayerTestDialog isOpen activeTest={t} testResult={result({ id: 'r2' })} sessionDay={3} />,
+    );
     await act(async () => {});
     expect(input().value).toBe('');
   });
@@ -523,6 +908,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ test_type: 'Fé', difficulty: 0 })}
         testResult={result()}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -534,7 +920,7 @@ describe('depois de enviado', () => {
     roll('99');
     send();
     await screen.findByText('Valor fora do intervalo aceitável (0-100).');
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} sessionDay={3} />);
     await act(async () => {});
     expect(screen.getByText('Valor fora do intervalo aceitável (0-100).')).toBeInTheDocument();
   });
@@ -543,7 +929,9 @@ describe('depois de enviado', () => {
     const { container, rerender } = await show(test(), submitted());
     fireEvent.click(screen.getByTitle('Fechar aviso'));
     expect(container).toBeEmptyDOMElement();
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={submitted()} />);
+    rerender(
+      <PlayerTestDialog isOpen activeTest={test()} testResult={submitted()} sessionDay={3} />,
+    );
     await act(async () => {});
     expect(container).toBeEmptyDOMElement();
   });
@@ -558,6 +946,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ id: 't2', test_type: 'Fé', difficulty: 0 })}
         testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -575,6 +964,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ id: 't2' })}
         testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -586,7 +976,7 @@ describe('depois de enviado', () => {
     const r = result();
     const { rerender } = await show(t, r);
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={r} />);
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={r} sessionDay={3} />);
     await act(async () => {});
     expect(input().value).toBe('14');
   });

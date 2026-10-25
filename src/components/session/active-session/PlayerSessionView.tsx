@@ -1,5 +1,6 @@
 import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
+import { InspirationPanel } from '@/components/session/InspirationPanel';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
@@ -73,6 +74,15 @@ export function PlayerSessionView({
       </div>
 
       <PlayerRestIndicator sessionData={sessionData} />
+
+      {myCharacter && (
+        <InspirationPanel
+          character={myCharacter}
+          sessionId={sessionId}
+          day={sessionData.current_day || 1}
+          onUsed={(patch) => updateLocal('player', myCharacter.id, patch)}
+        />
+      )}
 
       {myCharacter &&
         getCurrentPv(myCharacter.stats) <= 0 &&

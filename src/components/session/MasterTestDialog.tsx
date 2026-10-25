@@ -19,7 +19,31 @@ interface MasterTestDialogProps {
 }
 
 import { TEST_GROUPS, getTestBreakdown } from '@/features/character-management/utils/characterMath';
-import { toStoredDifficulty } from '@/domain/sessionTests';
+import {
+  FAITH_USES,
+  FAITH_USE_LABELS,
+  failureCostsFaith,
+  toStoredDifficulty,
+  type FaithUse,
+} from '@/domain/sessionTests';
+import type { MasterMark } from '@/domain/testMode';
+
+// A escolha do Mestre por alvo: Normal (sem marca), Vantagem ou Desvantagem.
+const MODE_CHOICES: { value: MasterMark; label: string }[] = [
+  { value: null, label: 'Normal' },
+  { value: 'vantagem', label: 'Vantagem' },
+  { value: 'desvantagem', label: 'Desvantagem' },
+];
+
+// Atalhos de Punição do Teste de Fé (0, −20, −50); no Clamor levam o nome do doc.
+const PUNISHMENT_SHORTCUTS = [0, 20, 50] as const;
+const CLAMOR_SHORTCUT_NAMES = ['Pequena Providência', 'Milagre Moderado', 'Milagre Extraordinário'];
+const shortcutLabel = (use: FaithUse, index: number) => {
+  const value = PUNISHMENT_SHORTCUTS[index];
+  return use === 'clamor'
+    ? `${CLAMOR_SHORTCUT_NAMES[index]} (${value === 0 ? '0' : `−${value}`})`
+    : `Punição ${value === 0 ? '0' : `−${value}`}`;
+};
 
 export function MasterTestDialog({
   sessionId,
@@ -32,6 +56,9 @@ export function MasterTestDialog({
   const [testType, setTestType] = useState(TEST_GROUPS[0].options[0]);
   const [difficulty, setDifficulty] = useState(10);
   const [faithModifierType, setFaithModifierType] = useState<'mercy' | 'punishment'>('mercy');
+  const [faithUse, setFaithUse] = useState<FaithUse>('clamor');
+  const [selfishRequest, setSelfishRequest] = useState(false);
+  const [marks, setMarks] = useState<Record<string, MasterMark>>({});
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,11 +106,20 @@ export function MasterTestDialog({
           return {
             characterId: charId,
             playerId: pc?.character.user_id || '',
+            masterMark: marks[charId] ?? null,
           };
         })
         .filter((t) => t.playerId !== '');
 
-      await createSessionTest(sessionId, testType, finalDifficulty, targets);
+      await createSessionTest(
+        sessionId,
+        testType,
+        finalDifficulty,
+        targets,
+        testType === 'Fé'
+          ? { use: faithUse, selfishRequest: faithUse === 'clamor' && selfishRequest }
+          : null,
+      );
       // The state will be updated via the realtime hook in the parent
     } catch (err) {
       setError(getErrorMessage(err, 'Erro ao criar o teste.'));
@@ -134,6 +170,16 @@ export function MasterTestDialog({
               <div>
                 <p className="text-sm text-stone-400">Tipo de Teste</p>
                 <p className="text-lg font-bold text-amber-400">{currentActiveTest.test_type}</p>
+                {currentActiveTest.faith_use && (
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-stone-300">
+                    <span>{FAITH_USE_LABELS[currentActiveTest.faith_use]}</span>
+                    {currentActiveTest.selfish_request && (
+                      <span className="rounded-full border border-red-700/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400">
+                        Pedido Egoísta
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm text-stone-400">
@@ -186,6 +232,21 @@ export function MasterTestDialog({
                             </span>
                           )}
                         </div>
+                        {result.applied_mode && result.applied_mode !== 'normal' && (
+                          <span className="text-xs text-stone-400">
+                            com {result.applied_mode === 'vantagem' ? 'Vantagem' : 'Desvantagem'}
+                          </span>
+                        )}
+                        {currentActiveTest.test_type === 'Fé' && !result.is_approved && (
+                          <span className="text-xs text-stone-400">
+                            {failureCostsFaith(
+                              currentActiveTest.faith_use,
+                              currentActiveTest.selfish_request,
+                            )
+                              ? 'Perdeu Fé (1d6)'
+                              : 'Silêncio divino, sem perda de Fé'}
+                          </span>
+                        )}
                         <span className="text-xs font-mono text-stone-500">
                           {getTestBreakdown(
                             currentActiveTest.test_type,
@@ -289,6 +350,59 @@ export function MasterTestDialog({
             </div>
           </div>
 
+          {testType === 'Fé' && (
+            <div className="space-y-3">
+              <div
+                role="radiogroup"
+                aria-label="Uso do Teste de Fé"
+                className="flex flex-wrap gap-2"
+              >
+                {FAITH_USES.map((use) => (
+                  <button
+                    key={use}
+                    type="button"
+                    role="radio"
+                    aria-checked={faithUse === use}
+                    onClick={() => setFaithUse(use)}
+                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                      faithUse === use
+                        ? 'border-amber-600 bg-amber-600 text-stone-900'
+                        : 'border-stone-600 bg-stone-800 text-stone-300 hover:bg-stone-700'
+                    }`}
+                  >
+                    {FAITH_USE_LABELS[use]}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {PUNISHMENT_SHORTCUTS.map((value, index) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setFaithModifierType('punishment');
+                      setDifficulty(value);
+                    }}
+                    className="rounded border border-stone-600 bg-stone-800 px-3 py-1 text-xs text-stone-300 hover:bg-stone-700"
+                  >
+                    {shortcutLabel(faithUse, index)}
+                  </button>
+                ))}
+              </div>
+              {faithUse === 'clamor' && (
+                <label className="flex items-center gap-2 text-sm text-stone-300">
+                  <input
+                    type="checkbox"
+                    checked={selfishRequest}
+                    onChange={(e) => setSelfishRequest(e.target.checked)}
+                    className="accent-amber-500"
+                  />
+                  Pedido Egoísta
+                </label>
+              )}
+            </div>
+          )}
+
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-sm font-medium text-stone-400">
@@ -313,44 +427,79 @@ export function MasterTestDialog({
               ) : (
                 playerCharacters.map((pc) => {
                   const isSelected = selectedPlayers.includes(pc.character.id);
+                  const name = pc.character.name;
+                  const mark = marks[pc.character.id] ?? null;
                   return (
-                    <div
-                      key={pc.character.id}
-                      onClick={() => handleTogglePlayer(pc.character.id)}
-                      className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-stone-800 border border-amber-500/30'
-                          : 'hover:bg-stone-800 border border-transparent'
-                      }`}
-                    >
+                    <div key={pc.character.id}>
                       <div
-                        className={`w-4 h-4 rounded flex items-center justify-center border ${
+                        onClick={() => handleTogglePlayer(pc.character.id)}
+                        className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
                           isSelected
-                            ? 'bg-amber-500 border-amber-500 text-stone-900'
-                            : 'border-stone-600'
+                            ? 'bg-stone-800 border border-amber-500/30'
+                            : 'hover:bg-stone-800 border border-transparent'
                         }`}
                       >
-                        {isSelected && (
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center border ${
+                            isSelected
+                              ? 'bg-amber-500 border-amber-500 text-stone-900'
+                              : 'border-stone-600'
+                          }`}
+                        >
+                          {isSelected && (
+                            <svg
+                              className="w-3 h-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <span
+                          className={isSelected ? 'text-stone-200 font-medium' : 'text-stone-400'}
+                        >
+                          {name}
+                        </span>
+                        {pc.character.fortress && (
+                          <span className="text-xs text-stone-500">
+                            Fortaleza: {pc.character.fortress}
+                          </span>
                         )}
                       </div>
-                      <span
-                        className={isSelected ? 'text-stone-200 font-medium' : 'text-stone-400'}
-                      >
-                        {pc.character.name}
-                      </span>
+                      {isSelected && (
+                        <div
+                          role="radiogroup"
+                          aria-label={`Modalidade de ${name}`}
+                          className="mt-1 ml-7 flex flex-wrap gap-1"
+                        >
+                          {MODE_CHOICES.map(({ value, label }) => (
+                            <button
+                              key={label}
+                              type="button"
+                              role="radio"
+                              aria-checked={mark === value}
+                              aria-label={`${label} (${name})`}
+                              onClick={() =>
+                                setMarks((prev) => ({ ...prev, [pc.character.id]: value }))
+                              }
+                              className={`rounded-full border px-2 py-0.5 text-xs transition-colors ${
+                                mark === value
+                                  ? 'border-amber-600 bg-amber-600 text-stone-900'
+                                  : 'border-stone-600 bg-stone-800 text-stone-300 hover:bg-stone-700'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })

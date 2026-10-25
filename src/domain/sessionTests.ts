@@ -2,9 +2,28 @@
 // MasterTestDialog e sessionTestService sem alteração de comportamento.
 // Decisões: ROADMAP.md, Onda 2 (bloco B): a perda de 1d6 só ocorre em Tentação, Testemunho e
 // Pedido Egoísta (hoje toda falha de Teste de Fé perde); Modificador de Fé no lugar de dificuldade.
-// Termos: CONTEXT.md (Modificador de Fé, Misericórdia, Punição, Teste de Fé).
+// Termos: CONTEXT.md (Modificador de Fé, Misericórdia, Punição, Teste de Fé, Clamor, Tentação,
+// Testemunho, Pedido Egoísta).
 import { rollDie } from './dice';
 import type { Rng } from './rng';
+
+/** Os usos do Teste de Fé (docs/regras-base.md, 4.4). */
+export const FAITH_USES = ['clamor', 'tentacao', 'testemunho'] as const;
+export type FaithUse = (typeof FAITH_USES)[number];
+
+export const FAITH_USE_LABELS: Record<FaithUse, string> = {
+  clamor: 'Clamor',
+  tentacao: 'Tentação',
+  testemunho: 'Testemunho',
+};
+
+/**
+ * Se a falha de um Teste de Fé custa 1d6 de Fé: a Tentação e o Testemunho sempre; o Clamor só com
+ * Pedido Egoísta (sem ele a falha é silêncio divino). Um Teste antigo, sem uso gravado, custa.
+ */
+export function failureCostsFaith(use: FaithUse | null, selfishRequest: boolean): boolean {
+  return use === 'clamor' ? selfishRequest : true;
+}
 
 export type FaithModifierType = 'mercy' | 'punishment';
 

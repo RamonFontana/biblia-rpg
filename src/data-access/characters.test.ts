@@ -50,6 +50,7 @@ import {
   insertCharacter,
   listCampaignNpcs,
   markCharactersParticipated,
+  markInspirationUsed,
   saveCharacter,
   setCharacterVisible,
   subscribeToCharacterSheet,
@@ -527,7 +528,9 @@ describe('fichas de uma sessão (criar, marcar, apagar)', () => {
       vocation: 'Guerreiro',
     });
     const [call] = callsOf(state.calls, 'characters', 'select');
-    expect(call.columns).toBe('stats, equipment, level, proficiencies, attributes, vocation');
+    expect(call.columns).toBe(
+      'stats, equipment, level, proficiencies, attributes, vocation, inspiration_used_day, inspiration_session_id',
+    );
     expect(filterOf(call, 'eq', 'id')).toBe('c1');
   });
 
@@ -536,6 +539,13 @@ describe('fichas de uma sessão (criar, marcar, apagar)', () => {
     await expect(insertCharacter(newRow)).resolves.toBe('novo');
     const [call] = callsOf(state.calls, 'characters', 'insert');
     expect(call.payload).toEqual(newRow);
+  });
+
+  it('markInspirationUsed grava o dia e a sessão em que a Inspiração foi usada', async () => {
+    await markInspirationUsed('c1', 's1', 3);
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ inspiration_used_day: 3, inspiration_session_id: 's1' });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
   });
 
   it('markCharactersParticipated marca só os ids dados', async () => {
@@ -569,6 +579,7 @@ describe('fichas de uma sessão (criar, marcar, apagar)', () => {
     await expect(getCharacterTestContext('c1')).rejects.toBe(failure);
     await expect(insertCharacter(newRow)).rejects.toBe(failure);
     await expect(markCharactersParticipated(['a'])).rejects.toBe(failure);
+    await expect(markInspirationUsed('c1', 's1', 1)).rejects.toBe(failure);
     await expect(filterNpcAndEnemyIds(['a'])).rejects.toBe(failure);
     await expect(deleteCharacters(['a'])).rejects.toBe(failure);
     await expect(grantPendingLevelUp(['a'])).rejects.toBe(failure);

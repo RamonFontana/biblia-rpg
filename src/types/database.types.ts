@@ -74,6 +74,8 @@ export type Database = {
           fortress: string | null
           has_participated_in_session: boolean | null
           id: string
+          inspiration_session_id: string | null
+          inspiration_used_day: number | null
           is_dead: boolean
           is_deleted: boolean
           is_enemy: boolean
@@ -104,6 +106,8 @@ export type Database = {
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          inspiration_session_id?: string | null
+          inspiration_used_day?: number | null
           is_dead?: boolean
           is_deleted?: boolean
           is_enemy?: boolean
@@ -134,6 +138,8 @@ export type Database = {
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          inspiration_session_id?: string | null
+          inspiration_used_day?: number | null
           is_dead?: boolean
           is_deleted?: boolean
           is_enemy?: boolean
@@ -153,7 +159,15 @@ export type Database = {
           user_id?: string
           vocation?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "characters_inspiration_session_id_fkey"
+            columns: ["inspiration_session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       combat_participants: {
         Row: {
@@ -495,37 +509,49 @@ export type Database = {
       }
       session_test_results: {
         Row: {
+          applied_mode: string | null
           character_id: string
           created_at: string
           id: string
+          inspiration_used: boolean
           is_approved: boolean | null
+          master_mark: string | null
           player_id: string
           result_value: number | null
           roll_value: number | null
+          roll_values: number[] | null
           status: string
           test_id: string
           updated_at: string
         }
         Insert: {
+          applied_mode?: string | null
           character_id: string
           created_at?: string
           id?: string
+          inspiration_used?: boolean
           is_approved?: boolean | null
+          master_mark?: string | null
           player_id: string
           result_value?: number | null
           roll_value?: number | null
+          roll_values?: number[] | null
           status?: string
           test_id: string
           updated_at?: string
         }
         Update: {
+          applied_mode?: string | null
           character_id?: string
           created_at?: string
           id?: string
+          inspiration_used?: boolean
           is_approved?: boolean | null
+          master_mark?: string | null
           player_id?: string
           result_value?: number | null
           roll_value?: number | null
+          roll_values?: number[] | null
           status?: string
           test_id?: string
           updated_at?: string
@@ -551,7 +577,9 @@ export type Database = {
         Row: {
           created_at: string
           difficulty: number
+          faith_use: string | null
           id: string
+          selfish_request: boolean
           session_id: string
           status: string
           test_type: string
@@ -559,7 +587,9 @@ export type Database = {
         Insert: {
           created_at?: string
           difficulty: number
+          faith_use?: string | null
           id?: string
+          selfish_request?: boolean
           session_id: string
           status?: string
           test_type: string
@@ -567,7 +597,9 @@ export type Database = {
         Update: {
           created_at?: string
           difficulty?: number
+          faith_use?: string | null
           id?: string
+          selfish_request?: boolean
           session_id?: string
           status?: string
           test_type?: string
