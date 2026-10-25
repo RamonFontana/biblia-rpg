@@ -93,6 +93,9 @@ vi.mock('@/components/session/TradeDialog', async () => ({
 vi.mock('@/components/session/MasterTestDialog', async () => ({
   MasterTestDialog: (await import('@/test/stubs')).makeStub('MasterTestDialog'),
 }));
+vi.mock('@/components/session/InspirationPanel', async () => ({
+  InspirationPanel: (await import('@/test/stubs')).makeStub('InspirationPanel'),
+}));
 vi.mock('@/components/session/PlayerTestDialog', async () => ({
   PlayerTestDialog: (await import('@/test/stubs')).makeStub('PlayerTestDialog'),
 }));
