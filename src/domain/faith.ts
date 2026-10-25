@@ -123,3 +123,13 @@ export function getFaithState(stats: FaithStats | null | undefined): FaithState 
       'O personagem sucumbe a menos que o grupo faça um ato de consagração e jejum liderado por um Sacerdote, até o nascer do sol. Habilidades que exigem Fé falham.',
   };
 }
+
+/**
+ * O d4 da Fortaleza (1d4 de Fé, `docs/regras-base.md`, 4.1): vazio ou fora de 1 a 4 é recusado. A
+ * Fé depois do dado sai de `addFaith`, que respeita o teto.
+ */
+export function checkFortitudeDie(value: number | ''): 'empty' | 'range' | null {
+  if (value === '' || isNaN(value)) return 'empty';
+  if (value < 1 || value > 4) return 'range';
+  return null;
+}

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FAITH_MAX,
   addFaith,
+  checkFortitudeDie,
   getCurrentFaith,
   getEffectiveFaith,
   getFaithState,
@@ -168,5 +169,21 @@ describe('getFaithState', () => {
       effect: expect.stringContaining('sucumbe'),
     });
     expect(getFaithState({ current_faith: 50 }).label).toBe('Comum');
+  });
+});
+
+describe('Fortaleza: o 1d4 de Fé', () => {
+  it('aceita só o d4 de 1 a 4', () => {
+    for (const die of [1, 2, 3, 4]) expect(checkFortitudeDie(die)).toBeNull();
+    expect(checkFortitudeDie('')).toBe('empty');
+    expect(checkFortitudeDie(NaN)).toBe('empty');
+    expect(checkFortitudeDie(0)).toBe('range');
+    expect(checkFortitudeDie(5)).toBe('range');
+  });
+
+  it('soma ao addFaith, que respeita o teto e o piso', () => {
+    expect(addFaith({ current_faith: 40 }, 3)).toBe(43);
+    expect(addFaith({ current_faith: 99 }, 4)).toBe(100);
+    expect(addFaith({ current_faith: 100 }, 2)).toBe(100);
   });
 });

@@ -337,6 +337,61 @@ describe('SessionParticipantList: PV e Fé do jogador', () => {
   });
 });
 
+describe('SessionParticipantList: Fortaleza', () => {
+  const withFortress = (faith: number) =>
+    [{ user_id: 'u1', character: sheet('pc1', { fortress: 'Coragem' } as Partial<Character>) }].map(
+      (p) => ({
+        ...p,
+        character: { ...p.character, stats: { ...p.character.stats!, current_faith: faith } },
+      }),
+    );
+  const open = (
+    faith: number,
+    onUpdatePlayerData?: (id: string, data: Partial<Character>) => void,
+  ) => {
+    renderList({
+      onlineUsers: [online('u1')],
+      playerCharacters: withFortress(faith),
+      isGM: true,
+      onUpdatePlayerData,
+    });
+    act(() => (card('u1').onFortitude as () => void)());
+  };
+  const give = async (die: string) => {
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: die } });
+    fireEvent.click(screen.getByRole('button', { name: /Aplicar/ }));
+    await act(async () => {});
+  };
+
+  it('só o Mestre recebe o gancho da Fortaleza', () => {
+    renderList({ onlineUsers: [online('u1')], playerCharacters: withFortress(40), isGM: false });
+    expect(card('u1').onFortitude).toBeUndefined();
+  });
+
+  it('abre o diálogo com o nome da Fortaleza e grava a Fé com o d4', async () => {
+    const onUpdatePlayerData = vi.fn();
+    open(40, onUpdatePlayerData);
+    expect(screen.getByText('Coragem')).toBeTruthy();
+    await give('3');
+    expect(h.updateCharacterStats).toHaveBeenCalledWith(
+      'pc1',
+      expect.objectContaining({ current_faith: 43 }),
+    );
+    expect(onUpdatePlayerData).toHaveBeenCalledWith('pc1', {
+      stats: expect.objectContaining({ current_faith: 43 }),
+    });
+  });
+
+  it('respeita o teto de 100', async () => {
+    open(99);
+    await give('4');
+    expect(h.updateCharacterStats).toHaveBeenCalledWith(
+      'pc1',
+      expect.objectContaining({ current_faith: 100 }),
+    );
+  });
+});
+
 describe('SessionParticipantList: abrir a ficha e o menu', () => {
   const players = [
     { user_id: 'u1', character: sheet('pc1') },

@@ -549,6 +549,8 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 
 - **Ticket 02, usos do Teste de Fé e Pedido Egoísta:** feito. O Mestre escolhe Clamor, Tentação ou Testemunho (atalhos de Punição 0, −20 e −50; no Clamor com os nomes do doc) e marca Pedido Egoísta no Clamor. Migration `20261025120000_session_tests_faith_use` (`faith_use` e `selfish_request` em `session_tests`; Testes antigos sem uso seguem custando Fé). **Divergência doc × código resolvida:** o código cobrava 1d6 em toda falha de Teste de Fé; agora o Clamor só custa com Pedido Egoísta e a Tentação e o Testemunho sempre (`failureCostsFaith`, no motor). O resultado mostra se a falha custou Fé ou foi silêncio divino. Os tipos de `session_tests` em `database.types.ts` foram editados à mão (o `gen:types` roda contra o projeto ligado, que só tem a coluna depois do `db push`).
 
+- **Ticket 05, Fortaleza:** feito. O Mestre tem o botão "Fortaleza" no cartão do jogador: o diálogo mostra o nome da Fortaleza e dá +1d4 de Fé (d4 digitado ou Rolagem Virtual), com o teto de 100 do `addFaith` e sem limite por dia. A Vantagem da Fortaleza fica para o ticket 03 (o Mestre a marca no pedido do Teste). Sem migration.
+
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 
 ## 6. O que VOCÊ precisa fazer fora do código

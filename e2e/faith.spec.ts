@@ -143,3 +143,46 @@ test.describe('Teste de Fé: Clamor', () => {
     expect(await faithOf(eliabe)).toBe(50);
   });
 });
+
+test.describe('Fortaleza', () => {
+  test('o Mestre dá +1d4 de Fé, o jogador vê a Fé mudar e o teto de 100 vale', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      fortress: 'Coragem',
+      stats: stats(40),
+    });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+
+    const giveFortitude = async (die: string) => {
+      await master.getByRole('button', { name: 'Fortaleza' }).click();
+      await expect(master.getByText('Coragem')).toBeVisible();
+      await master.getByRole('spinbutton').fill(die);
+      await master.getByRole('button', { name: 'Aplicar Fortaleza' }).click();
+      await expect(master.getByText('Coragem')).toHaveCount(0);
+    };
+
+    await giveFortitude('3');
+    await expect(player.getByText('43/100').first()).toBeVisible();
+    expect(await faithOf(eliabe)).toBe(43);
+
+    // Sem limite por dia, e o teto de 100 vale.
+    const { error } = await adminClient()
+      .from('characters')
+      .update({ stats: stats(99) })
+      .eq('id', eliabe);
+    if (error) throw error;
+    await expect(master.getByText('99/100')).toBeVisible();
+    await giveFortitude('4');
+    await expect(player.getByText('100/100').first()).toBeVisible();
+    expect(await faithOf(eliabe)).toBe(100);
+  });
+});

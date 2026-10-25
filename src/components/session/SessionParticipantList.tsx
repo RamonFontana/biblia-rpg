@@ -3,6 +3,7 @@ import type { PresenceState } from '@/data-access/realtime';
 import type { SessionNpc } from '@/data-access/sessions';
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
 import { PlayerCard } from './PlayerCard';
+import { FortitudeDialog } from './FortitudeDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { TokenContextMenu } from './TokenContextMenu';
@@ -66,6 +67,7 @@ export function SessionParticipantList({
 }: SessionParticipantListProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedNPC, setSelectedNPC] = useState<SessionNpc | null>(null);
+  const [fortitudeTarget, setFortitudeTarget] = useState<Character | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { user } = useAuthStore();
 
@@ -121,6 +123,15 @@ export function SessionParticipantList({
 
   const closeSheet = () => setSelectedUserId(null);
   const closeNPCSheet = () => setSelectedNPC(null);
+
+  // A Fortaleza soma o d4 à Fé (teto de 100). Diferente do ajuste de +/-, lança o erro: o diálogo
+  // o mostra ao Mestre.
+  const applyFortitude = async (character: Character, die: number) => {
+    if (!character.stats) return;
+    const newStats = { ...character.stats, current_faith: addFaith(character.stats, die) };
+    await updateCharacterStats(character.id, newStats);
+    if (onUpdatePlayerData) onUpdatePlayerData(character.id, { stats: newStats });
+  };
   const closeContextMenu = () => setContextMenuPos(null);
 
   const updatePlayerStat = async (
@@ -253,6 +264,11 @@ export function SessionParticipantList({
                             : undefined
                         }
                         onShop={!blocked && onShop ? onShop : undefined}
+                        onFortitude={
+                          isGM && associatedCharacter
+                            ? () => setFortitudeTarget(associatedCharacter)
+                            : undefined
+                        }
                       />
                     </li>
                   );
@@ -393,6 +409,16 @@ export function SessionParticipantList({
           </div>
         </DialogContent>
       </Dialog>
+
+      {fortitudeTarget && (
+        <FortitudeDialog
+          isOpen
+          characterName={fortitudeTarget.name ?? 'Personagem'}
+          fortress={fortitudeTarget.fortress}
+          onApply={(die) => applyFortitude(fortitudeTarget, die)}
+          onClose={() => setFortitudeTarget(null)}
+        />
+      )}
 
       <Dialog open={!!selectedNPC} onOpenChange={(open: boolean) => !open && closeNPCSheet()}>
         <DialogContent className="w-full sm:max-w-4xl bg-stone-950 border border-stone-800 p-0 text-stone-200 overflow-hidden flex flex-col gap-0">
