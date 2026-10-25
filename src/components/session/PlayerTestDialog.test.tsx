@@ -54,6 +54,7 @@ const result = (over: Partial<SessionTestResult> = {}): SessionTestResult => ({
   result_value: null,
   roll_value: null,
   roll_values: null,
+  inspiration_used: false,
   master_mark: null,
   applied_mode: null,
   is_approved: null,
@@ -73,7 +74,7 @@ const sheet = {
 };
 
 const show = async (t: SessionTest, r: SessionTestResult = result()) => {
-  const view = render(<PlayerTestDialog isOpen activeTest={t} testResult={r} />);
+  const view = render(<PlayerTestDialog isOpen activeTest={t} testResult={r} sessionDay={3} />);
   await waitFor(() => expect(mocks.getItemFaithPenalty).toHaveBeenCalled());
   await act(async () => {});
   return view;
@@ -99,10 +100,12 @@ afterEach(() => {
 describe('o desafio na tela', () => {
   it('nada aparece sem Teste, sem resultado ou fechado', () => {
     const { container, rerender } = render(
-      <PlayerTestDialog isOpen activeTest={null} testResult={null} />,
+      <PlayerTestDialog isOpen activeTest={null} testResult={null} sessionDay={3} />,
     );
     expect(container).toBeEmptyDOMElement();
-    rerender(<PlayerTestDialog isOpen={false} activeTest={test()} testResult={result()} />);
+    rerender(
+      <PlayerTestDialog isOpen={false} activeTest={test()} testResult={result()} sessionDay={3} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -196,9 +199,11 @@ describe('leituras que falham', () => {
   });
 
   it('sem Teste ativo ou sem resultado do jogador, não lê a ficha', async () => {
-    const { rerender } = render(<PlayerTestDialog isOpen activeTest={test()} testResult={null} />);
+    const { rerender } = render(
+      <PlayerTestDialog isOpen activeTest={test()} testResult={null} sessionDay={3} />,
+    );
     await act(async () => {});
-    rerender(<PlayerTestDialog isOpen activeTest={null} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={null} testResult={result()} sessionDay={3} />);
     await act(async () => {});
     expect(mocks.getCharacterTestContext).not.toHaveBeenCalled();
   });
@@ -545,6 +550,123 @@ describe('Vantagem e Desvantagem', () => {
   });
 });
 
+describe('Inspiração no Teste', () => {
+  const inabalavel = (over: Record<string, unknown> = {}) => ({
+    ...sheet,
+    stats: { pv: 10, faith: 50, current_faith: 80 },
+    inspiration_used_day: null,
+    inspiration_session_id: null,
+    ...over,
+  });
+  const option = () => screen.queryByRole('checkbox', { name: /Usar Inspiração/ });
+
+  it('o Inabalável que não a usou hoje vê a opção de usar a Inspiração', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    expect(option()).toBeInTheDocument();
+    expect(option()).not.toBeChecked();
+  });
+
+  it('fora do Inabalável não há a opção', async () => {
+    await show(test({ test_type: 'Força' }));
+    expect(option()).toBeNull();
+  });
+
+  it('já usada hoje nesta sessão não há a opção; no dia novo ela volta', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(
+      inabalavel({ inspiration_used_day: 3, inspiration_session_id: 's1' }),
+    );
+    const { unmount } = await show(test({ test_type: 'Força' }));
+    expect(option()).toBeNull();
+    unmount();
+    mocks.getCharacterTestContext.mockResolvedValue(
+      inabalavel({ inspiration_used_day: 2, inspiration_session_id: 's1' }),
+    );
+    await show(test({ test_type: 'Força' }));
+    expect(option()).toBeInTheDocument();
+  });
+
+  it('marcar dá Vantagem pela Inspiração, com o lembrete do dado', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    fireEvent.click(option()!);
+    expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('Motivo: Inspiração')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d20 e use o maior.')).toBeInTheDocument();
+  });
+
+  it('a Inspiração anula uma Desvantagem do Mestre', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }), result({ master_mark: 'desvantagem' }));
+    fireEvent.click(option()!);
+    expect(screen.getByText(/se anulam/)).toBeInTheDocument();
+  });
+
+  it('enviar com a Inspiração marcada gasta a Inspiração (sessão e dia)', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    fireEvent.click(option()!);
+    roll('15');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'vantagem',
+      rollValues: null,
+      inspiration: { sessionId: 's1', day: 3 },
+    });
+  });
+
+  it('um Teste novo desmarca a opção de usar a Inspiração', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    const { rerender } = await show(test({ test_type: 'Força' }));
+    fireEvent.click(option()!);
+    expect(option()).toBeChecked();
+    rerender(
+      <PlayerTestDialog
+        isOpen
+        activeTest={test({ id: 't2', test_type: 'Força' })}
+        testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
+      />,
+    );
+    await act(async () => {});
+    expect(option()).not.toBeChecked();
+  });
+
+  it('se a Inspiração deixa de estar disponível depois de marcada, ela não vale nem é gasta', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    const t = test({ test_type: 'Força' });
+    const { rerender } = await show(t);
+    fireEvent.click(option()!);
+    mocks.getCharacterTestContext.mockResolvedValue(
+      inabalavel({ inspiration_used_day: 3, inspiration_session_id: 's1' }),
+    );
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result()} sessionDay={3} />);
+    await act(async () => {});
+    expect(option()).toBeNull();
+    expect(screen.queryByText('✨ Vantagem')).toBeNull();
+    roll('15');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+  });
+
+  it('sem marcar a opção, a Inspiração não é gasta', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(inabalavel());
+    await show(test({ test_type: 'Força' }));
+    roll('15');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+  });
+});
+
 describe('Teste de Fé: o uso decide a punição', () => {
   const clamor = (selfish: boolean) =>
     test({ test_type: 'Fé', difficulty: 0, faith_use: 'clamor', selfish_request: selfish });
@@ -722,6 +844,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ id: 't2' })}
         testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
       />,
     );
     expect(await screen.findByText('O Mestre Exige um Teste!')).toBeInTheDocument();
@@ -733,7 +856,7 @@ describe('depois de enviado', () => {
     const { rerender } = await show(test());
     roll('14');
     expect(input().value).toBe('14');
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} sessionDay={3} />);
     await act(async () => {});
     expect(input().value).toBe('14');
   });
@@ -746,6 +869,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test()}
         testResult={result({ updated_at: '2026-10-24T10:00:00Z' })}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -756,7 +880,9 @@ describe('depois de enviado', () => {
     const r = result();
     const { rerender } = await show(test(), r);
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={test({ id: 't2' })} testResult={r} />);
+    rerender(
+      <PlayerTestDialog isOpen activeTest={test({ id: 't2' })} testResult={r} sessionDay={3} />,
+    );
     await act(async () => {});
     expect(input().value).toBe('');
   });
@@ -765,7 +891,9 @@ describe('depois de enviado', () => {
     const t = test();
     const { rerender } = await show(t, result());
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={result({ id: 'r2' })} />);
+    rerender(
+      <PlayerTestDialog isOpen activeTest={t} testResult={result({ id: 'r2' })} sessionDay={3} />,
+    );
     await act(async () => {});
     expect(input().value).toBe('');
   });
@@ -780,6 +908,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ test_type: 'Fé', difficulty: 0 })}
         testResult={result()}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -791,7 +920,7 @@ describe('depois de enviado', () => {
     roll('99');
     send();
     await screen.findByText('Valor fora do intervalo aceitável (0-100).');
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} />);
+    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={result()} sessionDay={3} />);
     await act(async () => {});
     expect(screen.getByText('Valor fora do intervalo aceitável (0-100).')).toBeInTheDocument();
   });
@@ -800,7 +929,9 @@ describe('depois de enviado', () => {
     const { container, rerender } = await show(test(), submitted());
     fireEvent.click(screen.getByTitle('Fechar aviso'));
     expect(container).toBeEmptyDOMElement();
-    rerender(<PlayerTestDialog isOpen activeTest={test()} testResult={submitted()} />);
+    rerender(
+      <PlayerTestDialog isOpen activeTest={test()} testResult={submitted()} sessionDay={3} />,
+    );
     await act(async () => {});
     expect(container).toBeEmptyDOMElement();
   });
@@ -815,6 +946,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ id: 't2', test_type: 'Fé', difficulty: 0 })}
         testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -832,6 +964,7 @@ describe('depois de enviado', () => {
         isOpen
         activeTest={test({ id: 't2' })}
         testResult={result({ id: 'r2', test_id: 't2' })}
+        sessionDay={3}
       />,
     );
     await act(async () => {});
@@ -843,7 +976,7 @@ describe('depois de enviado', () => {
     const r = result();
     const { rerender } = await show(t, r);
     roll('14');
-    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={r} />);
+    rerender(<PlayerTestDialog isOpen activeTest={t} testResult={r} sessionDay={3} />);
     await act(async () => {});
     expect(input().value).toBe('14');
   });

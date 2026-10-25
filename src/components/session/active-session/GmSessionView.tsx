@@ -90,6 +90,7 @@ export function GmSessionView({
           onlineUsers={onlineUsers}
           isGM
           sessionId={sessionId}
+          currentDay={sessionData.current_day || 1}
           gmId={sessionData.gm_id}
           playerCharacters={playerCharacters.filter(
             (pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,

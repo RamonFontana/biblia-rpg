@@ -119,3 +119,36 @@ describe('PlayerCard: botão Fortaleza', () => {
     expect(screen.queryByRole('button', { name: 'Fortaleza' })).toBeNull();
   });
 });
+
+describe('PlayerCard: Inspiração', () => {
+  const card = (inspiration?: 'disponivel' | 'usada' | null) =>
+    render(
+      <PlayerCard
+        user={user}
+        viewerIsGM
+        inspiration={inspiration}
+        character={
+          {
+            id: 'c1',
+            name: 'Eli',
+            stats: { pv: 10, current_pv: 10, ca: 10, faith: 50, current_faith: 80 },
+          } as never
+        }
+      />,
+    );
+
+  it('o Mestre vê quando a Inspiração está disponível', () => {
+    card('disponivel');
+    expect(screen.getByText('Inspiração disponível')).toBeTruthy();
+  });
+
+  it('o Mestre vê quando foi usada hoje', () => {
+    card('usada');
+    expect(screen.getByText('Inspiração usada hoje')).toBeTruthy();
+  });
+
+  it('sem Inspiração, nada aparece', () => {
+    card(null);
+    expect(screen.queryByText(/Inspiração/)).toBeNull();
+  });
+});

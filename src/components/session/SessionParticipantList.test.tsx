@@ -392,6 +392,47 @@ describe('SessionParticipantList: Fortaleza', () => {
   });
 });
 
+describe('SessionParticipantList: Inspiração no cartão', () => {
+  const withFaith = (current_faith: number, over: Partial<Character> = {}) => [
+    {
+      user_id: 'u1',
+      character: {
+        ...sheet('pc1'),
+        stats: { pv: 12, current_pv: 9, ca: 11, faith: 50, current_faith },
+        ...over,
+      },
+    },
+  ];
+  const show = (players: ReturnType<typeof withFaith>, isGM = true) =>
+    renderList({
+      onlineUsers: [online('u1')],
+      playerCharacters: players,
+      isGM,
+      sessionId: 's1',
+      currentDay: 3,
+    });
+
+  it('o Mestre recebe a Inspiração disponível do Inabalável', () => {
+    show(withFaith(80));
+    expect(card('u1').inspiration).toBe('disponivel');
+  });
+
+  it('usada hoje nesta sessão', () => {
+    show(withFaith(80, { inspiration_used_day: 3, inspiration_session_id: 's1' }));
+    expect(card('u1').inspiration).toBe('usada');
+  });
+
+  it('sem Inspiração fora do Inabalável', () => {
+    show(withFaith(40));
+    expect(card('u1').inspiration).toBeNull();
+  });
+
+  it('o jogador não recebe a Inspiração dos outros', () => {
+    show(withFaith(80), false);
+    expect(card('u1').inspiration).toBeUndefined();
+  });
+});
+
 describe('SessionParticipantList: abrir a ficha e o menu', () => {
   const players = [
     { user_id: 'u1', character: sheet('pc1') },

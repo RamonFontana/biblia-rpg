@@ -86,6 +86,8 @@ export interface SubmittedTestResult {
   appliedMode: TestMode | null;
   /** Os dois dados da Rolagem Virtual com Vantagem ou Desvantagem; nulo nos demais casos. */
   rollValues: number[] | null;
+  /** O jogador gastou a Inspiração neste Teste. */
+  inspirationUsed: boolean;
 }
 
 export async function saveTestResult(resultId: string, result: SubmittedTestResult): Promise<void> {
@@ -97,6 +99,7 @@ export async function saveTestResult(resultId: string, result: SubmittedTestResu
       is_approved: result.isApproved,
       applied_mode: result.appliedMode,
       roll_values: result.rollValues,
+      inspiration_used: result.inspirationUsed,
       status: 'submitted',
       updated_at: new Date().toISOString(),
     })

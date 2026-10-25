@@ -10,6 +10,7 @@ import {
   isSubmittableResult,
   rollTestDie,
 } from '@/domain/sessionTests';
+import { getInspirationStatus } from '@/domain/inspiration';
 import { pickCountingDie, resolveTestMode, rollTestDice } from '@/domain/testMode';
 import { getCharacterStats } from '@/data-access/characters';
 import { rollDie } from '@/domain/dice';
@@ -27,15 +28,23 @@ interface PlayerTestDialogProps {
   isOpen: boolean;
   activeTest: SessionTest | null;
   testResult: SessionTestResult | null;
+  /** O dia atual da sessão: a Inspiração volta no dia novo. */
+  sessionDay: number;
 }
 
-export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestDialogProps) {
+export function PlayerTestDialog({
+  isOpen,
+  activeTest,
+  testResult,
+  sessionDay,
+}: PlayerTestDialogProps) {
   const [resultValue, setResultValue] = useState<number | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
   const [rolledDice, setRolledDice] = useState<number[] | null>(null);
+  const [useInspiration, setUseInspiration] = useState(false);
 
   // Faith test penalty state
   const [showPenaltyScreen, setShowPenaltyScreen] = useState(false);
@@ -67,6 +76,7 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
       setDismissed(false);
       setIsRolling(false);
       setRolledDice(null);
+      setUseInspiration(false);
       setShowPenaltyScreen(false);
       setInitialRollValue(0);
       setFaithPenaltyResult('');
@@ -88,12 +98,20 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
     );
   }
 
+  const inspirationAvailable =
+    getInspirationStatus({
+      stats: sheet?.stats,
+      usedDay: sheet?.inspiration_used_day,
+      usedSessionId: sheet?.inspiration_session_id,
+      sessionId: activeTest.session_id,
+      day: sessionDay,
+    }) === 'disponivel';
   const resolved = resolveTestMode({
     testType: activeTest.test_type,
     masterMark: testResult.master_mark,
     hasStealthDisadvantage,
     faithState: getFaithState(sheet?.stats).id,
-    inspirationUsed: false,
+    inspirationUsed: inspirationAvailable && useInspiration,
   });
 
   const executeSubmit = async (val: number, penalty?: number, rollValue?: number) => {
@@ -147,7 +165,13 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
         activeTest.test_type === 'Fé'
           ? { use: activeTest.faith_use, selfishRequest: activeTest.selfish_request }
           : undefined,
-        { appliedMode: resolved.mode, rollValues: rolledDice },
+        {
+          appliedMode: resolved.mode,
+          rollValues: rolledDice,
+          ...(inspirationAvailable && useInspiration
+            ? { inspiration: { sessionId: activeTest.session_id, day: sessionDay } }
+            : {}),
+        },
       );
       // The component will re-render in the 'submitted' state because of realtime update
     } catch (err) {
@@ -254,6 +278,9 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
               sheet={sheet}
               resolvedMode={resolved}
               rolledDice={rolledDice}
+              inspirationAvailable={inspirationAvailable}
+              useInspiration={useInspiration}
+              onToggleInspiration={setUseInspiration}
               faithPenalty={faithPenalty}
               value={resultValue}
               onChange={(value) => {

@@ -11,6 +11,10 @@ interface RollFormProps {
   resolvedMode: ResolvedTestMode;
   /** Os dois dados da Rolagem Virtual com Vantagem ou Desvantagem. */
   rolledDice: number[] | null;
+  /** O Inabalável que ainda não gastou a Inspiração hoje pode usá-la neste Teste. */
+  inspirationAvailable: boolean;
+  useInspiration: boolean;
+  onToggleInspiration: (use: boolean) => void;
   faithPenalty: number;
   value: number | '';
   onChange: (value: number | '') => void;
@@ -27,6 +31,9 @@ export function RollForm({
   sheet,
   resolvedMode,
   rolledDice,
+  inspirationAvailable,
+  useInspiration,
+  onToggleInspiration,
   faithPenalty,
   value: resultValue,
   onChange,
@@ -38,6 +45,18 @@ export function RollForm({
 }: RollFormProps) {
   return (
     <>
+      {inspirationAvailable && (
+        <label className="mb-4 flex items-center justify-center gap-2 text-sm text-green-400">
+          <input
+            type="checkbox"
+            checked={useInspiration}
+            onChange={(e) => onToggleInspiration(e.target.checked)}
+            className="accent-green-500"
+          />
+          Usar Inspiração (Vantagem)
+        </label>
+      )}
+
       <ModeBanner testType={test.test_type} resolved={resolvedMode} />
 
       {test.test_type === 'Fé' && faithPenalty < 0 && (

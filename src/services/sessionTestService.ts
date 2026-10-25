@@ -1,5 +1,9 @@
 import { getCurrentFaith, getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
-import { getCharacterStats, updateCharacterStats } from '@/data-access/characters';
+import {
+  getCharacterStats,
+  markInspirationUsed,
+  updateCharacterStats,
+} from '@/data-access/characters';
 import { getItemFaithPenalty } from '@/data-access/inventory';
 import { saveTestResult } from '@/data-access/sessionTests';
 import {
@@ -30,7 +34,12 @@ export async function submitTestResult(
   faithPenalty?: number,
   rollValue?: number,
   faithTest?: { use: FaithUse | null; selfishRequest: boolean },
-  rollInfo?: { appliedMode: TestMode; rollValues: number[] | null },
+  rollInfo?: {
+    appliedMode: TestMode;
+    rollValues: number[] | null;
+    /** Presente quando o jogador gastou a Inspiração neste Teste: a sessão e o dia de agora. */
+    inspiration?: { sessionId: string; day: number };
+  },
 ): Promise<void> {
   let isApproved = isRegularTestApproved(resultValue, difficulty);
 
@@ -55,7 +64,22 @@ export async function submitTestResult(
     isApproved,
     appliedMode: rollInfo?.appliedMode ?? null,
     rollValues: rollInfo?.rollValues ?? null,
+    inspirationUsed: !!rollInfo?.inspiration,
   });
+
+  // A Inspiração só conta depois que o resultado foi enviado. Se marcar o dia falhar, o envio já
+  // feito fica: o pior caso é a Inspiração continuar disponível.
+  if (rollInfo?.inspiration && characterId) {
+    try {
+      await markInspirationUsed(
+        characterId,
+        rollInfo.inspiration.sessionId,
+        rollInfo.inspiration.day,
+      );
+    } catch (error) {
+      console.error('Error marking the Inspiration as used:', error);
+    }
+  }
 
   // A falha custa 1d6 de Fé conforme o uso do Teste: o Clamor só com Pedido Egoísta.
   const costsFaith = failureCostsFaith(faithTest?.use ?? null, faithTest?.selfishRequest ?? false);

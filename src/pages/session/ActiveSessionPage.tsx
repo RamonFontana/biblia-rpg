@@ -232,6 +232,7 @@ export function ActiveSessionPage() {
         isOpen={hasPendingTest && !isGM}
         activeTest={currentActiveTest || null}
         testResult={myResult || null}
+        sessionDay={sessionData.current_day || 1}
       />
 
       <DiceRollerDialog isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />

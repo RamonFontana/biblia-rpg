@@ -24,11 +24,14 @@ import { getCurrentPv } from '@/domain/vitals';
 import { getCharacterLevel } from '@/domain/levelUp';
 import type { ConditionEntry } from '@/types/combat';
 import { addFaith } from '@/domain/faith';
+import { getInspirationStatus } from '@/domain/inspiration';
 
 interface SessionParticipantListProps {
   onlineUsers: PresenceState[];
   isGM?: boolean;
   sessionId?: string;
+  /** O dia atual da sessão (para a Inspiração no cartão do Mestre). */
+  currentDay?: number;
   gmId?: string;
   playerCharacters?: { user_id: string; character: Character }[];
   npcs?: SessionNpc[];
@@ -50,6 +53,7 @@ export function SessionParticipantList({
   onlineUsers,
   isGM = false,
   sessionId,
+  currentDay,
   gmId,
   playerCharacters = [],
   npcs = [],
@@ -264,6 +268,17 @@ export function SessionParticipantList({
                             : undefined
                         }
                         onShop={!blocked && onShop ? onShop : undefined}
+                        inspiration={
+                          isGM && associatedCharacter && sessionId && currentDay !== undefined
+                            ? getInspirationStatus({
+                                stats: associatedCharacter.stats,
+                                usedDay: associatedCharacter.inspiration_used_day,
+                                usedSessionId: associatedCharacter.inspiration_session_id,
+                                sessionId,
+                                day: currentDay,
+                              })
+                            : undefined
+                        }
                         onFortitude={
                           isGM && associatedCharacter
                             ? () => setFortitudeTarget(associatedCharacter)

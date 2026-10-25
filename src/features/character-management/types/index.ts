@@ -19,6 +19,9 @@ export interface Character extends Omit<DraftCharacter, 'equipment'> {
   is_dead?: boolean;
   is_stable?: boolean;
   pending_level_up?: boolean;
+  /** O dia da sessão (e a sessão) em que a Inspiração foi usada; `null` = nunca. */
+  inspiration_used_day?: number | null;
+  inspiration_session_id?: string | null;
   death_saves_successes?: number;
   death_saves_failures?: number;
   created_at: string;

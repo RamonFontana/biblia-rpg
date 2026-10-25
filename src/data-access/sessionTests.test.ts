@@ -131,6 +131,7 @@ describe('saveTestResult', () => {
       isApproved: true,
       appliedMode: 'vantagem',
       rollValues: [13, 9],
+      inspirationUsed: true,
     });
     const [call] = callsOf(state.calls, 'session_test_results', 'update');
     expect(call.payload).toMatchObject({
@@ -139,6 +140,7 @@ describe('saveTestResult', () => {
       is_approved: true,
       applied_mode: 'vantagem',
       roll_values: [13, 9],
+      inspiration_used: true,
       status: 'submitted',
     });
     expect(typeof (call.payload as { updated_at: unknown }).updated_at).toBe('string');
@@ -154,6 +156,7 @@ describe('saveTestResult', () => {
         isApproved: false,
         appliedMode: null,
         rollValues: null,
+        inspirationUsed: false,
       }),
     ).rejects.toBe(failure);
   });

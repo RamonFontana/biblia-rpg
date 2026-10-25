@@ -29,6 +29,8 @@ interface PlayerCardProps {
   onNegotiate?: (userId: string) => void;
   onShop?: (userId: string) => void;
   onFortitude?: () => void;
+  /** Só o Mestre recebe: a Inspiração do personagem hoje. */
+  inspiration?: 'disponivel' | 'usada' | null;
 }
 
 export function PlayerCard({
@@ -45,6 +47,7 @@ export function PlayerCard({
   onNegotiate,
   onShop,
   onFortitude,
+  inspiration,
 }: PlayerCardProps) {
   const blocked = isBusy || isTrading;
   const clickable = isClickable && !isSessionGM && !blocked;
@@ -273,6 +276,11 @@ export function PlayerCard({
               <span className="font-mono tabular-nums">{getCurrentFaith(character.stats)}/100</span>
             )}
             <FaithStateBadge stats={character.stats} viewerIsGM={viewerIsGM} />
+            {inspiration && (
+              <span className="rounded-full border border-green-700/50 bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
+                {inspiration === 'disponivel' ? 'Inspiração disponível' : 'Inspiração usada hoje'}
+              </span>
+            )}
           </div>
         </div>
       )}

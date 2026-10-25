@@ -266,3 +266,86 @@ test.describe('Vantagem e Desvantagem', () => {
     });
   });
 });
+
+test.describe('Inspiração', () => {
+  test('o Inabalável gasta a Inspiração num Teste, ela some e volta no dia novo', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(80) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+
+    await expect(player.getByText('Inspiração disponível')).toBeVisible();
+    await expect(master.getByText('Inspiração disponível')).toBeVisible();
+
+    await master.getByRole('button', { name: /Solicitar Teste/ }).click();
+    const dialog = master.locator('div.fixed');
+    await dialog.getByRole('combobox').first().selectOption('Força');
+    await dialog.getByText('Eliabe').click();
+    await dialog.getByRole('button', { name: 'Solicitar Teste' }).click();
+
+    await player.getByRole('checkbox', { name: /Usar Inspiração/ }).check();
+    await expect(player.getByText('Motivo: Inspiração')).toBeVisible();
+    await player.getByRole('spinbutton').fill('15');
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(player.getByText('Resultado Enviado!')).toBeVisible();
+
+    const { data: result, error } = await adminClient()
+      .from('session_test_results')
+      .select('inspiration_used, applied_mode')
+      .eq('character_id', eliabe)
+      .single();
+    if (error) throw error;
+    expect(result).toEqual({ inspiration_used: true, applied_mode: 'vantagem' });
+
+    await expect(player.getByText('Inspiração usada hoje')).toBeVisible();
+    await expect(master.getByText('Inspiração usada hoje')).toBeVisible();
+
+    const next = await adminClient()
+      .from('game_sessions')
+      .update({ current_day: 2 })
+      .eq('id', sessionId);
+    if (next.error) throw next.error;
+
+    await expect(player.getByText('Inspiração disponível')).toBeVisible();
+    await expect(master.getByText('Inspiração disponível')).toBeVisible();
+  });
+
+  test('"Usei a Inspiração" marca a Inspiração para uma rolagem fora do Teste', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(80) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await player.getByRole('button', { name: 'Usei a Inspiração' }).click();
+    await expect(player.getByText('Inspiração usada hoje')).toBeVisible();
+    await expect(player.getByRole('button', { name: 'Usei a Inspiração' })).toHaveCount(0);
+
+    const { data, error } = await adminClient()
+      .from('characters')
+      .select('inspiration_used_day, inspiration_session_id')
+      .eq('id', eliabe)
+      .single();
+    if (error) throw error;
+    expect(data).toEqual({ inspiration_used_day: 1, inspiration_session_id: sessionId });
+  });
+
+  test('quem não está Inabalável não tem Inspiração', async ({ seed, signIn }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(50) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await expect(player.getByText('Comum').first()).toBeVisible();
+    await expect(player.getByText(/Inspiração/)).toHaveCount(0);
+  });
+});

@@ -74,6 +74,8 @@ export type Database = {
           fortress: string | null
           has_participated_in_session: boolean | null
           id: string
+          inspiration_session_id: string | null
+          inspiration_used_day: number | null
           is_dead: boolean
           is_deleted: boolean
           is_enemy: boolean
@@ -104,6 +106,8 @@ export type Database = {
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          inspiration_session_id?: string | null
+          inspiration_used_day?: number | null
           is_dead?: boolean
           is_deleted?: boolean
           is_enemy?: boolean
@@ -134,6 +138,8 @@ export type Database = {
           fortress?: string | null
           has_participated_in_session?: boolean | null
           id?: string
+          inspiration_session_id?: string | null
+          inspiration_used_day?: number | null
           is_dead?: boolean
           is_deleted?: boolean
           is_enemy?: boolean
@@ -499,6 +505,7 @@ export type Database = {
           character_id: string
           created_at: string
           id: string
+          inspiration_used: boolean
           is_approved: boolean | null
           master_mark: string | null
           player_id: string
@@ -514,6 +521,7 @@ export type Database = {
           character_id: string
           created_at?: string
           id?: string
+          inspiration_used?: boolean
           is_approved?: boolean | null
           master_mark?: string | null
           player_id: string
@@ -529,6 +537,7 @@ export type Database = {
           character_id?: string
           created_at?: string
           id?: string
+          inspiration_used?: boolean
           is_approved?: boolean | null
           master_mark?: string | null
           player_id?: string
