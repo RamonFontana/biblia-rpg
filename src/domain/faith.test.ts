@@ -7,6 +7,7 @@ import {
   addFaith,
   getCurrentFaith,
   getEffectiveFaith,
+  getFaithState,
   isFaithTestPassed,
   spendFaith,
   sumItemFaithPenalty,
@@ -125,5 +126,47 @@ describe('isFaithTestPassed: 1d100 passa se rolou <= Fé Efetiva + Modificador d
     const effective = getEffectiveFaith({ current_faith: 50 }, -10);
     expect(isFaithTestPassed(45, 0, effective)).toBe(false);
     expect(isFaithTestPassed(40, 0, effective)).toBe(true);
+  });
+});
+
+describe('getFaithState', () => {
+  const idAt = (faith: number) => getFaithState({ current_faith: faith }).id;
+
+  it('classifica as fronteiras do doc: 0, 1–10, 11–30, 31–69 e 70–100', () => {
+    expect(idAt(0)).toBe('ruptura');
+    expect(idAt(1)).toBe('vulneravel');
+    expect(idAt(10)).toBe('vulneravel');
+    expect(idAt(11)).toBe('abalado');
+    expect(idAt(30)).toBe('abalado');
+    expect(idAt(31)).toBe('comum');
+    expect(idAt(69)).toBe('comum');
+    expect(idAt(70)).toBe('inabalavel');
+    expect(idAt(100)).toBe('inabalavel');
+  });
+
+  it('segue a Fé Atual, caindo para a Fé Inicial gravada sem current_faith', () => {
+    expect(getFaithState({ faith: 50 }).id).toBe('comum');
+    expect(getFaithState({ current_faith: 5, faith: 80 }).id).toBe('vulneravel');
+    expect(getFaithState(null).id).toBe('ruptura');
+  });
+
+  it('traz o nome e o efeito do doc para a dica', () => {
+    expect(getFaithState({ current_faith: 80 })).toMatchObject({
+      label: 'Inabalável',
+      effect: expect.stringContaining('Inspiração'),
+    });
+    expect(getFaithState({ current_faith: 20 })).toMatchObject({
+      label: 'Abalado',
+      effect: expect.stringContaining('Desvantagem'),
+    });
+    expect(getFaithState({ current_faith: 5 })).toMatchObject({
+      label: 'Vulnerável',
+      effect: expect.stringContaining('Testemunho'),
+    });
+    expect(getFaithState({ current_faith: 0 })).toMatchObject({
+      label: 'Ruptura',
+      effect: expect.stringContaining('sucumbe'),
+    });
+    expect(getFaithState({ current_faith: 50 }).label).toBe('Comum');
   });
 });

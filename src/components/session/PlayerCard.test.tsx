@@ -65,3 +65,30 @@ describe('PlayerCard: selos de estado', () => {
     );
   });
 });
+
+describe('PlayerCard: selo do Estado de Fé', () => {
+  const withFaith = (current_faith: number, viewerIsGM = false) =>
+    render(
+      <PlayerCard
+        user={user}
+        viewerIsGM={viewerIsGM}
+        character={
+          {
+            id: 'c1',
+            name: 'Eli',
+            stats: { pv: 10, current_pv: 10, ca: 10, faith: 50, current_faith },
+          } as never
+        }
+      />,
+    );
+
+  it('mostra o Estado de Fé do personagem', () => {
+    withFaith(20);
+    expect(screen.getByText('Abalado')).toBeTruthy();
+  });
+
+  it('o Mestre vê o lembrete do Testemunho no Vulnerável', () => {
+    withFaith(4, true);
+    expect(screen.getByText('Vulnerável').getAttribute('title')).toContain('Testemunho');
+  });
+});

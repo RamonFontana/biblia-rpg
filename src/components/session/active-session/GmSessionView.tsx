@@ -2,6 +2,7 @@ import { SessionParticipantList } from '@/components/session/SessionParticipantL
 import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { SessionEnemyList } from '@/components/session/SessionEnemyList';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
+import { RuptureAlert } from '@/components/session/RuptureAlert';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import type { PresenceState } from '@/data-access/realtime';
 import type {
@@ -68,6 +69,8 @@ export function GmSessionView({
           Você é o mestre desta sessão. Aqui você gerencia os inimigos, NPCs e a narrativa.
         </p>
       </div>
+
+      <RuptureAlert players={playerCharacters} />
 
       <SessionRestControls
         sessionId={sessionId}

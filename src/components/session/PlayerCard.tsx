@@ -13,6 +13,8 @@ import { ConditionSelector } from '../conditions/ConditionSelector';
 import { applyConditionToCharacter, removeConditionFromCharacter } from '@/data-access/conditions';
 import type { ConditionEntry } from '@/types/combat';
 import { getCurrentFaith } from '@/domain/faith';
+import { FaithStateBadge } from '../faith/FaithStateBadge';
+
 interface PlayerCardProps {
   user: PresenceState;
   isClickable?: boolean;
@@ -253,6 +255,7 @@ export function PlayerCard({
             ) : (
               <span className="font-mono tabular-nums">{getCurrentFaith(character.stats)}/100</span>
             )}
+            <FaithStateBadge stats={character.stats} viewerIsGM={viewerIsGM} />
           </div>
         </div>
       )}

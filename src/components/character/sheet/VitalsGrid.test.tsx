@@ -37,3 +37,20 @@ describe('VitalsGrid: moedas', () => {
     expect(sp()).toBe('49.98');
   });
 });
+
+describe('VitalsGrid: Estado de Fé', () => {
+  it('mostra o selo do Estado de Fé pela Fé Atual', () => {
+    render(
+      <VitalsGrid
+        stats={{ pv: 10, current_pv: 10, ca: 11, faith: 80, current_faith: 25 }}
+        coins={0}
+        totalAc={11}
+        baseAc={11}
+        bonusAc={0}
+        resistances={[]}
+        conditionResistanceLevels={{}}
+      />,
+    );
+    expect(screen.getByText('Abalado')).toBeTruthy();
+  });
+});

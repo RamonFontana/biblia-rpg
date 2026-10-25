@@ -11,7 +11,7 @@
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
-| 5+ — Features novas | pendente (lista de features ainda vazia) |
+| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa), tickets em `.scratch/fe-na-mesa/`; ver o andamento na seção da Onda 5 |
 
 
 ## Contexto
@@ -543,6 +543,9 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 4. **Efeitos de Habilidade** (G): Condições aplicadas pela Habilidade e Habilidades de inimigo.
 
 Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira zerada que volta a 50, iniciativa sorteada opcional). Quando a campanha pedir: itens próprios do Mestre (ADR 0003). Sem código, decisão do autor: a revisão dos 13 pontos de conteúdo bíblico (§2).
+
+**Andamento da feature 1 (Fé na mesa).**
+- **Ticket 01, selo do Estado de Fé e aviso de Ruptura:** feito. `getFaithState` (motor, pela Fé Atual), `FaithStateBadge` (ficha e cartão do jogador do Mestre, dica com o efeito do doc e, para o Mestre no Vulnerável, o lembrete do Testemunho) e `RuptureAlert` (aviso fixo do Mestre com os nomes, que some quando a Fé passa de 0). Sem migration. E2E em `e2e/faith.spec.ts`.
 
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 
