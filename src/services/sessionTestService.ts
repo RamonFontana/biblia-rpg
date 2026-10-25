@@ -8,6 +8,7 @@ import {
   isRegularTestApproved,
   type FaithUse,
 } from '@/domain/sessionTests';
+import type { TestMode } from '@/domain/testMode';
 import { systemRng } from '@/lib/systemRng';
 
 /** Lê os `stats` sem lançar: uma leitura que falha deixa a regra seguir sem eles, como sempre. */
@@ -29,6 +30,7 @@ export async function submitTestResult(
   faithPenalty?: number,
   rollValue?: number,
   faithTest?: { use: FaithUse | null; selfishRequest: boolean },
+  rollInfo?: { appliedMode: TestMode; rollValues: number[] | null },
 ): Promise<void> {
   let isApproved = isRegularTestApproved(resultValue, difficulty);
 
@@ -47,7 +49,13 @@ export async function submitTestResult(
     }
   }
 
-  await saveTestResult(resultId, { resultValue, rollValue: rollValue ?? null, isApproved });
+  await saveTestResult(resultId, {
+    resultValue,
+    rollValue: rollValue ?? null,
+    isApproved,
+    appliedMode: rollInfo?.appliedMode ?? null,
+    rollValues: rollInfo?.rollValues ?? null,
+  });
 
   // A falha custa 1d6 de Fé conforme o uso do Teste: o Clamor só com Pedido Egoísta.
   const costsFaith = failureCostsFaith(faithTest?.use ?? null, faithTest?.selfishRequest ?? false);

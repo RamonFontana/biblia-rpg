@@ -3,6 +3,7 @@
 // `services/sessionTestService`.
 import { supabase } from '@/lib/supabase';
 import type { FaithUse } from '@/domain/sessionTests';
+import type { MasterMark, TestMode } from '@/domain/testMode';
 import type { Tables } from '@/types/database.types';
 
 export type SessionTest = Omit<Tables<'session_tests'>, 'status' | 'faith_use'> & {
@@ -10,8 +11,15 @@ export type SessionTest = Omit<Tables<'session_tests'>, 'status' | 'faith_use'> 
   faith_use: FaithUse | null;
 };
 
-export type SessionTestResult = Omit<Tables<'session_test_results'>, 'status'> & {
+export type SessionTestResult = Omit<
+  Tables<'session_test_results'>,
+  'status' | 'master_mark' | 'applied_mode'
+> & {
   status: 'pending' | 'submitted';
+  /** A marca do Mestre para este alvo; nula é Normal. */
+  master_mark: MasterMark;
+  /** A modalidade que valeu, gravada no envio; nula antes dele. */
+  applied_mode: TestMode | null;
 };
 
 /**
@@ -37,7 +45,7 @@ export async function createSessionTest(
   sessionId: string,
   testType: string,
   difficulty: number,
-  targetPlayers: { characterId: string; playerId: string }[],
+  targetPlayers: { characterId: string; playerId: string; masterMark?: MasterMark }[],
   faith: FaithTestOptions | null,
 ): Promise<SessionTest> {
   const { data: test, error: testError } = await supabase
@@ -60,6 +68,7 @@ export async function createSessionTest(
       test_id: test.id,
       character_id: p.characterId,
       player_id: p.playerId,
+      master_mark: p.masterMark ?? null,
       status: 'pending',
     })),
   );
@@ -73,6 +82,10 @@ export interface SubmittedTestResult {
   resultValue: number;
   rollValue: number | null;
   isApproved: boolean;
+  /** A modalidade que valeu (com as Desvantagens automáticas e a Inspiração). */
+  appliedMode: TestMode | null;
+  /** Os dois dados da Rolagem Virtual com Vantagem ou Desvantagem; nulo nos demais casos. */
+  rollValues: number[] | null;
 }
 
 export async function saveTestResult(resultId: string, result: SubmittedTestResult): Promise<void> {
@@ -82,6 +95,8 @@ export async function saveTestResult(resultId: string, result: SubmittedTestResu
       result_value: result.resultValue,
       roll_value: result.rollValue,
       is_approved: result.isApproved,
+      applied_mode: result.appliedMode,
+      roll_values: result.rollValues,
       status: 'submitted',
       updated_at: new Date().toISOString(),
     })

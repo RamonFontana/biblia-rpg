@@ -1,12 +1,16 @@
 import type { CharacterTestContext } from '@/data-access/characters';
 import type { SessionTest } from '@/data-access/sessionTests';
 import { getTestModifiers } from '@/features/character-management/utils/characterMath';
+import { pickCountingDie, type ResolvedTestMode } from '@/domain/testMode';
 import { BonusBreakdown } from './BonusBreakdown';
+import { ModeBanner } from './ModeBanner';
 
 interface RollFormProps {
   test: SessionTest;
   sheet: CharacterTestContext | null;
-  hasStealthDisadvantage: boolean;
+  resolvedMode: ResolvedTestMode;
+  /** Os dois dados da Rolagem Virtual com Vantagem ou Desvantagem. */
+  rolledDice: number[] | null;
   faithPenalty: number;
   value: number | '';
   onChange: (value: number | '') => void;
@@ -21,7 +25,8 @@ interface RollFormProps {
 export function RollForm({
   test,
   sheet,
-  hasStealthDisadvantage,
+  resolvedMode,
+  rolledDice,
   faithPenalty,
   value: resultValue,
   onChange,
@@ -33,15 +38,7 @@ export function RollForm({
 }: RollFormProps) {
   return (
     <>
-      {hasStealthDisadvantage && test.test_type === 'Destreza' && (
-        <div className="bg-red-900/30 border border-red-500/50 p-2 rounded mb-4 text-center">
-          <p className="text-red-400 text-sm font-bold">⚠️ Desvantagem</p>
-          <p className="text-stone-300 text-xs">
-            Sua armadura pesada prejudica seus reflexos e furtividade. Role 2 dados e escolha o
-            pior!
-          </p>
-        </div>
-      )}
+      <ModeBanner testType={test.test_type} resolved={resolvedMode} />
 
       {test.test_type === 'Fé' && faithPenalty < 0 && (
         <div className="bg-amber-900/30 border border-amber-500/50 p-2 rounded mb-4 text-center">
@@ -79,6 +76,15 @@ export function RollForm({
           className="w-full bg-stone-950 border-2 border-stone-700 rounded-lg px-4 py-4 text-stone-100 focus:outline-none focus:border-amber-500 text-center font-mono text-4xl placeholder-stone-700 transition-colors disabled:opacity-70 mb-2"
           placeholder="0"
         />
+
+        {rolledDice && !isRolling && (
+          <p aria-label="Dados rolados" className="mb-2 text-center text-sm text-stone-300">
+            Dados: {rolledDice.join(' e ')}.{' '}
+            <strong className="text-amber-400">
+              {pickCountingDie(resolvedMode.mode, test.test_type, rolledDice)} vale
+            </strong>
+          </p>
+        )}
 
         {resultValue !== '' && !isRolling && test.test_type !== 'Fé' && (
           <BonusBreakdown

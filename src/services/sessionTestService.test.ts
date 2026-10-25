@@ -150,6 +150,36 @@ describe('submitTestResult: o uso do Teste de Fé decide se a falha custa Fé', 
   });
 });
 
+describe('submitTestResult: modalidade e dados', () => {
+  it('grava a modalidade aplicada e os dois dados da Rolagem Virtual', async () => {
+    world();
+    await submitTestResult('r1', 31, 0, 'char-1', 'Fé', undefined, 31, undefined, {
+      appliedMode: 'vantagem',
+      rollValues: [64, 31],
+    });
+    expect(resultWrite()).toMatchObject({
+      roll_value: 31,
+      applied_mode: 'vantagem',
+      roll_values: [64, 31],
+    });
+  });
+
+  it('sem Rolagem Virtual de dois dados, os dois valores ficam nulos', async () => {
+    world();
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza', undefined, 13, undefined, {
+      appliedMode: 'normal',
+      rollValues: null,
+    });
+    expect(resultWrite()).toMatchObject({ applied_mode: 'normal', roll_values: null });
+  });
+
+  it('sem informação de modalidade, grava nulo', async () => {
+    world();
+    await submitTestResult('r1', 15, 10, 'char-1', 'Destreza');
+    expect(resultWrite()).toMatchObject({ applied_mode: null, roll_values: null });
+  });
+});
+
 describe('submitTestResult: Teste comum', () => {
   it('passa quando o resultado alcança a CD, sem olhar Fé nem itens', async () => {
     world({ items: [amulet] });

@@ -263,6 +263,59 @@ describe('MasterTestDialog: usos do Teste de Fé', () => {
   });
 });
 
+describe('MasterTestDialog: Vantagem e Desvantagem por alvo', () => {
+  const mark = (player: string, name: string) =>
+    fireEvent.click(screen.getByRole('radio', { name: `${name} (${player})` }));
+
+  it('cada jogador escolhido tem Normal, Vantagem e Desvantagem, com Normal marcado', () => {
+    renderDialog();
+    expect(screen.queryByRole('radiogroup', { name: /Modalidade de Eliab/ })).toBeNull();
+    pickPlayer('Eliab');
+    expect(screen.getByRole('radiogroup', { name: 'Modalidade de Eliab' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Normal (Eliab)' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Vantagem (Eliab)' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Desvantagem (Eliab)' })).not.toBeChecked();
+  });
+
+  it('envia a marca de cada alvo', async () => {
+    renderDialog();
+    pickPlayer('Eliab');
+    pickPlayer('Raquel');
+    mark('Eliab', 'Vantagem');
+    mark('Raquel', 'Desvantagem');
+    submit();
+    await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
+    expect(h.createSessionTest.mock.calls[0][3]).toEqual([
+      { characterId: 'c1', playerId: 'user-c1', masterMark: 'vantagem' },
+      { characterId: 'c2', playerId: 'user-c2', masterMark: 'desvantagem' },
+    ]);
+  });
+
+  it('a marca de quem foi desmarcado não vai, e Normal vai como nulo', async () => {
+    renderDialog();
+    pickPlayer('Eliab');
+    mark('Eliab', 'Vantagem');
+    pickPlayer('Eliab');
+    pickPlayer('Raquel');
+    submit();
+    await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
+    expect(h.createSessionTest.mock.calls[0][3]).toEqual([
+      { characterId: 'c2', playerId: 'user-c2', masterMark: null },
+    ]);
+  });
+
+  it('mostra a Fortaleza de cada personagem ao lado do nome', () => {
+    renderDialog({
+      playerCharacters: [
+        { character: sheet('c1', 'Eliab', { fortress: 'Coragem' }) },
+        { character: sheet('c2', 'Raquel') },
+      ],
+    });
+    expect(screen.getByText('Fortaleza: Coragem')).toBeInTheDocument();
+    expect(screen.getAllByText(/Fortaleza:/)).toHaveLength(1);
+  });
+});
+
 describe('MasterTestDialog: enviar o Teste', () => {
   it('envia o tipo, a dificuldade e um alvo por personagem escolhido', async () => {
     renderDialog();
@@ -278,8 +331,8 @@ describe('MasterTestDialog: enviar o Teste', () => {
       'Furtividade',
       14,
       [
-        { characterId: 'c1', playerId: 'user-c1' },
-        { characterId: 'c2', playerId: 'user-c2' },
+        { characterId: 'c1', playerId: 'user-c1', masterMark: null },
+        { characterId: 'c2', playerId: 'user-c2', masterMark: null },
       ],
       null,
     );
@@ -298,7 +351,7 @@ describe('MasterTestDialog: enviar o Teste', () => {
 
     await waitFor(() => expect(h.createSessionTest).toHaveBeenCalled());
     expect(h.createSessionTest.mock.calls[0][3]).toEqual([
-      { characterId: 'c1', playerId: 'user-c1' },
+      { characterId: 'c1', playerId: 'user-c1', masterMark: null },
     ]);
   });
 
@@ -435,6 +488,34 @@ describe('MasterTestDialog: Teste em andamento', () => {
     expect(screen.getByText('Reprovado')).toBeInTheDocument();
     // O detalhamento usa o dado gravado e os modificadores da ficha de agora.
     expect(screen.getByText('1d20 (12) + Mod (3) = 15')).toBeInTheDocument();
+  });
+
+  it('mostra a modalidade que valeu no resultado enviado', () => {
+    running({
+      testResults: {
+        t1: [
+          result({ id: 'r1', status: 'submitted', result_value: 15, applied_mode: 'vantagem' }),
+          result({
+            id: 'r2',
+            character_id: 'c2',
+            status: 'submitted',
+            result_value: 8,
+            applied_mode: 'desvantagem',
+          }),
+        ],
+      },
+    });
+    expect(screen.getByText('com Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('com Desvantagem')).toBeInTheDocument();
+  });
+
+  it('resultado normal não leva etiqueta de modalidade', () => {
+    running({
+      testResults: {
+        t1: [result({ status: 'submitted', result_value: 15, applied_mode: 'normal' })],
+      },
+    });
+    expect(screen.queryByText(/com (Vantagem|Desvantagem)/)).toBeNull();
   });
 
   it('só o Teste ativo conta, e o painel de pedido não aparece', () => {

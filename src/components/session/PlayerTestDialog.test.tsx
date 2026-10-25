@@ -22,10 +22,16 @@ vi.mock('@/data-access/inventory', () => ({
   getItemFaithPenalty: mocks.getItemFaithPenalty,
   listCharacterItemEffects: mocks.listCharacterItemEffects,
 }));
+// A Rolagem Virtual com dois dados sai de `rollTestDice`; o teste fixa os dois valores.
+vi.mock('@/domain/testMode', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/domain/testMode')>();
+  return { ...actual, rollTestDice: vi.fn(actual.rollTestDice) };
+});
 // O sorteio do app lê Math.random na hora, para o teste fixar o valor com um spy.
 vi.mock('@/lib/systemRng', () => ({ systemRng: () => Math.random() }));
 
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
+import { rollTestDice } from '@/domain/testMode';
 import { PlayerTestDialog } from './PlayerTestDialog';
 
 const test = (over: Partial<SessionTest> = {}): SessionTest => ({
@@ -47,6 +53,9 @@ const result = (over: Partial<SessionTestResult> = {}): SessionTestResult => ({
   status: 'pending',
   result_value: null,
   roll_value: null,
+  roll_values: null,
+  master_mark: null,
+  applied_mode: null,
   is_approved: null,
   created_at: '',
   updated_at: '',
@@ -212,6 +221,7 @@ describe('enviar um Teste comum', () => {
       undefined,
       9,
       undefined,
+      { appliedMode: 'normal', rollValues: null },
     );
   });
 
@@ -230,6 +240,7 @@ describe('enviar um Teste comum', () => {
       undefined,
       10,
       undefined,
+      { appliedMode: 'normal', rollValues: null },
     );
   });
 
@@ -287,10 +298,20 @@ describe('Teste de Fé', () => {
     roll('50'); // Fé 50
     send();
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 50, 0, 'c1', 'Fé', undefined, 50, {
-      use: null,
-      selfishRequest: false,
-    });
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      50,
+      0,
+      'c1',
+      'Fé',
+      undefined,
+      50,
+      {
+        use: null,
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 
   it('o Item Profano baixa a Fé Efetiva e a Misericórdia sobe o limite', async () => {
@@ -318,10 +339,20 @@ describe('Teste de Fé', () => {
     fireEvent.change(input(), { target: { value: '4' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Punição' }));
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 80, 0, 'c1', 'Fé', 4, 80, {
-      use: null,
-      selfishRequest: false,
-    });
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      80,
+      0,
+      'c1',
+      'Fé',
+      4,
+      80,
+      {
+        use: null,
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 
   it.each([
@@ -376,6 +407,144 @@ describe('Teste de Fé', () => {
   });
 });
 
+describe('Vantagem e Desvantagem', () => {
+  const abalado = { ...sheet, stats: { pv: 10, faith: 50, current_faith: 20 } };
+
+  it('a marca de Vantagem do Mestre no Teste de Fé: motivo e lembrete do d100 menor', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('Motivo: Mestre')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d100 e use o menor.')).toBeInTheDocument();
+  });
+
+  it('a Desvantagem no d20 lembra de usar o menor', async () => {
+    await show(test({ test_type: 'Força' }), result({ master_mark: 'desvantagem' }));
+    expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d20 e use o menor.')).toBeInTheDocument();
+  });
+
+  it('Abalado tem Desvantagem automática nos TRs de Sabedoria e Carisma', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(abalado);
+    await show(test({ test_type: 'Resistência (Sabedoria)' }));
+    expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    expect(screen.getByText(/Abalado \(Fé\)/)).toBeInTheDocument();
+  });
+
+  it('Abalado não afeta outros Testes', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(abalado);
+    await show(test({ test_type: 'Força' }));
+    expect(screen.queryByText('⚠️ Desvantagem')).toBeNull();
+  });
+
+  it('Vantagem e Desvantagem se anulam: o Teste volta a um dado só', async () => {
+    mocks.getCharacterTestContext.mockResolvedValue(abalado);
+    await show(test({ test_type: 'Resistência (Carisma)' }), result({ master_mark: 'vantagem' }));
+    expect(screen.getByText(/se anulam/)).toBeInTheDocument();
+    expect(screen.queryByText(/Role dois/)).toBeNull();
+  });
+
+  it('o Teste normal não mostra aviso de modalidade', async () => {
+    await show(test({ test_type: 'Força' }));
+    expect(screen.queryByText(/Vantagem|Desvantagem/)).toBeNull();
+  });
+
+  it('digitado à mão, só o dado que vale é enviado, com a modalidade e sem os dois dados', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    roll('31');
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      31,
+      0,
+      'c1',
+      'Fé',
+      undefined,
+      31,
+      { use: null, selfishRequest: false },
+      { appliedMode: 'vantagem', rollValues: null },
+    );
+  });
+
+  it('a Rolagem Virtual com Vantagem rola dois d100, mostra os dois e usa o menor', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.mocked(rollTestDice).mockReturnValueOnce([64, 31]);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D100/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(input().value).toBe('31');
+    const dice = screen.getByLabelText('Dados rolados');
+    expect(dice).toHaveTextContent('64');
+    expect(dice).toHaveTextContent('31');
+    expect(screen.getByText(/31 vale/)).toBeInTheDocument();
+  });
+
+  it('enviar depois da Rolagem Virtual manda os dois dados', async () => {
+    await show(test({ test_type: 'Força' }), result({ master_mark: 'vantagem' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.mocked(rollTestDice).mockReturnValueOnce([15, 5]);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D20/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    vi.useRealTimers();
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    const [, total, , , , , rolled, , rollInfo] = mocks.submitTestResult.mock.calls[0];
+    expect(rolled).toBe(15); // d20 de 15 e 5: a Vantagem fica com o maior
+    expect(total).toBeGreaterThan(rolled - 1);
+    expect(rollInfo).toEqual({ appliedMode: 'vantagem', rollValues: [15, 5] });
+  });
+
+  it('mudar o número depois da Rolagem Virtual apaga os dois dados', async () => {
+    await show(test({ test_type: 'Fé', difficulty: 0 }), result({ master_mark: 'vantagem' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.mocked(rollTestDice).mockReturnValueOnce([64, 31]);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D100/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    vi.useRealTimers();
+    roll('20');
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+    send();
+    await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
+    expect(mocks.submitTestResult.mock.calls[0][8]).toEqual({
+      appliedMode: 'vantagem',
+      rollValues: null,
+    });
+  });
+
+  it('a Rolagem Virtual normal rola um dado só', async () => {
+    await show(test({ test_type: 'Força' }));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    fireEvent.click(screen.getByRole('button', { name: /Rolar D20/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+  });
+
+  it('o resultado enviado mostra a modalidade que valeu', async () => {
+    await show(
+      test({ test_type: 'Fé' }),
+      result({
+        status: 'submitted',
+        result_value: 31,
+        roll_value: 31,
+        roll_values: [64, 31],
+        applied_mode: 'vantagem',
+        is_approved: true,
+      }),
+    );
+    expect(screen.getByText(/com Vantagem/)).toBeInTheDocument();
+    expect(screen.getByText(/64/)).toBeInTheDocument();
+  });
+});
+
 describe('Teste de Fé: o uso decide a punição', () => {
   const clamor = (selfish: boolean) =>
     test({ test_type: 'Fé', difficulty: 0, faith_use: 'clamor', selfish_request: selfish });
@@ -392,10 +561,20 @@ describe('Teste de Fé: o uso decide a punição', () => {
     send();
     await waitFor(() => expect(mocks.submitTestResult).toHaveBeenCalled());
     expect(screen.queryByText('Teste de Fé Reprovado!')).toBeNull();
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 80, 0, 'c1', 'Fé', undefined, 80, {
-      use: 'clamor',
-      selfishRequest: false,
-    });
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      80,
+      0,
+      'c1',
+      'Fé',
+      undefined,
+      80,
+      {
+        use: 'clamor',
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 
   it('Clamor reprovado com Pedido Egoísta: abre a tela da punição', async () => {
@@ -466,10 +645,20 @@ describe('dado virtual', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(mocks.submitTestResult).toHaveBeenCalledWith('r1', 90, 0, 'c1', 'Fé', 4, 90, {
-      use: null,
-      selfishRequest: false,
-    });
+    expect(mocks.submitTestResult).toHaveBeenCalledWith(
+      'r1',
+      90,
+      0,
+      'c1',
+      'Fé',
+      4,
+      90,
+      {
+        use: null,
+        selfishRequest: false,
+      },
+      { appliedMode: 'normal', rollValues: null },
+    );
   });
 });
 

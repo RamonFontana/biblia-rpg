@@ -186,3 +186,83 @@ test.describe('Fortaleza', () => {
     expect(await faithOf(eliabe)).toBe(100);
   });
 });
+
+const resultOf = async (characterId: string) => {
+  const { data, error } = await adminClient()
+    .from('session_test_results')
+    .select('applied_mode, master_mark, roll_value, roll_values, status')
+    .eq('character_id', characterId)
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+test.describe('Vantagem e Desvantagem', () => {
+  test('Teste de Fé com Vantagem: a Rolagem Virtual rola dois d100 e vale o menor', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(50) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+
+    await master.getByRole('button', { name: /Solicitar Teste/ }).click();
+    const dialog = master.locator('div.fixed');
+    await dialog.getByRole('combobox').first().selectOption('Fé');
+    await dialog.getByText('Eliabe').click();
+    await dialog.getByRole('radio', { name: 'Vantagem (Eliabe)', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Solicitar Teste' }).click();
+
+    await expect(player.getByText('✨ Vantagem')).toBeVisible();
+    await expect(player.getByText('Role dois d100 e use o menor.')).toBeVisible();
+    await player.getByRole('button', { name: /Rolar D100/ }).click();
+    await expect(player.getByLabel('Dados rolados')).toBeVisible();
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(player.getByText('Resultado Enviado!')).toBeVisible();
+
+    const result = await resultOf(eliabe);
+    expect(result).toMatchObject({ status: 'submitted', applied_mode: 'vantagem' });
+    expect(result.roll_values).toHaveLength(2);
+    expect(result.roll_value).toBe(Math.min(...result.roll_values!));
+    await expect(master.getByText('com Vantagem')).toBeVisible();
+  });
+
+  test('o Abalado tem Desvantagem automática em TR de Sabedoria, e o dado digitado vale', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', stats: stats(20) });
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+
+    await master.getByRole('button', { name: /Solicitar Teste/ }).click();
+    const dialog = master.locator('div.fixed');
+    await dialog.getByRole('combobox').first().selectOption('Resistência (Sabedoria)');
+    await dialog.getByText('Eliabe').click();
+    await dialog.getByRole('button', { name: 'Solicitar Teste' }).click();
+
+    await expect(player.getByText('⚠️ Desvantagem')).toBeVisible();
+    await expect(player.getByText('Motivo: Abalado (Fé)')).toBeVisible();
+    await expect(player.getByText('Role dois d20 e use o menor.')).toBeVisible();
+    await player.getByRole('spinbutton').fill('12');
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(player.getByText('Resultado Enviado!')).toBeVisible();
+
+    expect(await resultOf(eliabe)).toMatchObject({
+      applied_mode: 'desvantagem',
+      master_mark: null,
+      roll_value: 12,
+      roll_values: null,
+    });
+  });
+});

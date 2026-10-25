@@ -58,9 +58,40 @@ describe('createSessionTest', () => {
       status: 'active',
     });
     expect(callsOf(state.calls, 'session_test_results', 'insert')[0].payload).toEqual([
-      { test_id: 't1', character_id: 'c1', player_id: 'p1', status: 'pending' },
-      { test_id: 't1', character_id: 'c2', player_id: 'p2', status: 'pending' },
+      {
+        test_id: 't1',
+        character_id: 'c1',
+        player_id: 'p1',
+        status: 'pending',
+        master_mark: null,
+      },
+      {
+        test_id: 't1',
+        character_id: 'c2',
+        player_id: 'p2',
+        status: 'pending',
+        master_mark: null,
+      },
     ]);
+  });
+
+  it('grava a marca de Vantagem ou Desvantagem de cada alvo; sem marca é Normal (nulo)', async () => {
+    state.respond = (call) => (call.table === 'session_tests' ? { data: { id: 't1' } } : undefined);
+    await createSessionTest(
+      's1',
+      'Força',
+      12,
+      [
+        { characterId: 'c1', playerId: 'p1', masterMark: 'vantagem' },
+        { characterId: 'c2', playerId: 'p2', masterMark: 'desvantagem' },
+        { characterId: 'c3', playerId: 'p3' },
+      ],
+      null,
+    );
+    const rows = callsOf(state.calls, 'session_test_results', 'insert')[0].payload as {
+      master_mark: unknown;
+    }[];
+    expect(rows.map((r) => r.master_mark)).toEqual(['vantagem', 'desvantagem', null]);
   });
 
   it('grava o uso do Teste de Fé e a marca de Pedido Egoísta', async () => {
@@ -94,12 +125,20 @@ describe('createSessionTest', () => {
 
 describe('saveTestResult', () => {
   it('marca o resultado como enviado, com o total, o dado e a aprovação', async () => {
-    await saveTestResult('r1', { resultValue: 15, rollValue: 13, isApproved: true });
+    await saveTestResult('r1', {
+      resultValue: 15,
+      rollValue: 13,
+      isApproved: true,
+      appliedMode: 'vantagem',
+      rollValues: [13, 9],
+    });
     const [call] = callsOf(state.calls, 'session_test_results', 'update');
     expect(call.payload).toMatchObject({
       result_value: 15,
       roll_value: 13,
       is_approved: true,
+      applied_mode: 'vantagem',
+      roll_values: [13, 9],
       status: 'submitted',
     });
     expect(typeof (call.payload as { updated_at: unknown }).updated_at).toBe('string');
@@ -109,7 +148,13 @@ describe('saveTestResult', () => {
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(
-      saveTestResult('r1', { resultValue: 1, rollValue: null, isApproved: false }),
+      saveTestResult('r1', {
+        resultValue: 1,
+        rollValue: null,
+        isApproved: false,
+        appliedMode: null,
+        rollValues: null,
+      }),
     ).rejects.toBe(failure);
   });
 });

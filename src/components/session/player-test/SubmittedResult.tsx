@@ -57,6 +57,12 @@ export function SubmittedResult({ test, result, sheet, onDismiss }: SubmittedRes
                 </span>
               )}
             </div>
+            {result.applied_mode && result.applied_mode !== 'normal' && (
+              <p className="text-stone-300 text-sm">
+                com {result.applied_mode === 'vantagem' ? 'Vantagem' : 'Desvantagem'}
+                {result.roll_values && ` (dados: ${result.roll_values.join(' e ')})`}
+              </p>
+            )}
             <p className="text-stone-400 font-mono text-sm mt-2">
               {getTestBreakdown(test.test_type, result.result_value, sheet, result.roll_value)}
             </p>

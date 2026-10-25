@@ -81,8 +81,8 @@ export async function grantPendingLevelUp(ids: string[]): Promise<void> {
 /** O que um Teste de sessão precisa da ficha para calcular o bônus de quem rola. */
 export type CharacterTestContext = Pick<
   CharacterRow,
-  'stats' | 'equipment' | 'level' | 'proficiencies' | 'attributes' | 'vocation'
->;
+  'equipment' | 'level' | 'proficiencies' | 'attributes' | 'vocation'
+> & { stats: CharacterStats | null };
 
 export async function getCharacterTestContext(id: string): Promise<CharacterTestContext> {
   const { data, error } = await supabase
@@ -91,7 +91,8 @@ export async function getCharacterTestContext(id: string): Promise<CharacterTest
     .eq('id', id)
     .single();
   if (error) throw error;
-  return data;
+  // `stats` é `jsonb`; quem grava é o app, com a forma de `CharacterStats`.
+  return { ...data, stats: data.stats as CharacterStats | null };
 }
 
 /** Os `stats` gravados de uma ficha, ou `null` se a ficha não tem. */

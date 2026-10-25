@@ -551,6 +551,8 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 
 - **Ticket 05, Fortaleza:** feito. O Mestre tem o botão "Fortaleza" no cartão do jogador: o diálogo mostra o nome da Fortaleza e dá +1d4 de Fé (d4 digitado ou Rolagem Virtual), com o teto de 100 do `addFaith` e sem limite por dia. A Vantagem da Fortaleza fica para o ticket 03 (o Mestre a marca no pedido do Teste). Sem migration.
 
+- **Ticket 03, Vantagem e Desvantagem nos Testes:** feito. Motor `testMode` (modalidade com Vantagem do Mestre e da Inspiração, Desvantagem do Mestre, da armadura que atrapalha a furtividade no Teste de Destreza e do Abalado nos TRs de Sabedoria e Carisma; fontes do mesmo lado não empilham e lados opostos se anulam; dado que vale invertido no Teste de Fé; Rolagem Virtual de dois dados pela `Rng`). Migration `20261025130000_session_test_results_mode` (`master_mark`, `applied_mode`, `roll_values`). O Mestre marca Normal, Vantagem ou Desvantagem por alvo, com a Fortaleza do personagem ao lado do nome; o jogador vê a modalidade, o motivo e o lembrete do dado físico. A Inspiração (`inspirationUsed`) já entra na conta e passa a ser usada no ticket 04. O `stats` de `CharacterTestContext` agora vem tipado (`CharacterStats | null`), com a asserção na camada de dados.
+
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 
 ## 6. O que VOCÊ precisa fazer fora do código

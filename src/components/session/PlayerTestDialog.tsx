@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
 import { submitTestResult } from '@/services/sessionTestService';
 import { getTestModifiers } from '@/features/character-management/utils/characterMath';
-import { getEffectiveFaith, isFaithTestPassed } from '@/domain/faith';
+import { getEffectiveFaith, getFaithState, isFaithTestPassed } from '@/domain/faith';
 import {
   calculateSubmittedTotal,
   checkFaithPenaltyDie,
@@ -10,6 +10,7 @@ import {
   isSubmittableResult,
   rollTestDie,
 } from '@/domain/sessionTests';
+import { pickCountingDie, resolveTestMode, rollTestDice } from '@/domain/testMode';
 import { getCharacterStats } from '@/data-access/characters';
 import { rollDie } from '@/domain/dice';
 import { getErrorMessage } from '@/lib/errorMessage';
@@ -34,6 +35,7 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
+  const [rolledDice, setRolledDice] = useState<number[] | null>(null);
 
   // Faith test penalty state
   const [showPenaltyScreen, setShowPenaltyScreen] = useState(false);
@@ -64,6 +66,7 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
       setIsSubmitting(false);
       setDismissed(false);
       setIsRolling(false);
+      setRolledDice(null);
       setShowPenaltyScreen(false);
       setInitialRollValue(0);
       setFaithPenaltyResult('');
@@ -84,6 +87,14 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
       />
     );
   }
+
+  const resolved = resolveTestMode({
+    testType: activeTest.test_type,
+    masterMark: testResult.master_mark,
+    hasStealthDisadvantage,
+    faithState: getFaithState(sheet?.stats).id,
+    inspirationUsed: false,
+  });
 
   const executeSubmit = async (val: number, penalty?: number, rollValue?: number) => {
     if (!isSubmittableResult(val)) {
@@ -136,6 +147,7 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
         activeTest.test_type === 'Fé'
           ? { use: activeTest.faith_use, selfishRequest: activeTest.selfish_request }
           : undefined,
+        { appliedMode: resolved.mode, rollValues: rolledDice },
       );
       // The component will re-render in the 'submitted' state because of realtime update
     } catch (err) {
@@ -211,7 +223,10 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
       isActive: () => isMounted.current,
       onTick: () => setResultValue(rollTestDie(activeTest.test_type, systemRng)),
       onFinish: () => {
-        setResultValue(rollTestDie(activeTest.test_type, systemRng));
+        // Com Vantagem ou Desvantagem rola dois dados e o que vale vai para o campo.
+        const dice = rollTestDice(activeTest.test_type, resolved.mode, systemRng);
+        setRolledDice(dice.length > 1 ? dice : null);
+        setResultValue(pickCountingDie(resolved.mode, activeTest.test_type, dice));
         setIsRolling(false); // Parar o estado de rolando
       },
     });
@@ -237,10 +252,14 @@ export function PlayerTestDialog({ isOpen, activeTest, testResult }: PlayerTestD
             <RollForm
               test={activeTest}
               sheet={sheet}
-              hasStealthDisadvantage={hasStealthDisadvantage}
+              resolvedMode={resolved}
+              rolledDice={rolledDice}
               faithPenalty={faithPenalty}
               value={resultValue}
-              onChange={setResultValue}
+              onChange={(value) => {
+                setResultValue(value);
+                setRolledDice(null);
+              }}
               isRolling={isRolling}
               isSubmitting={isSubmitting}
               error={error}

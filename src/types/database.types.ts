@@ -495,37 +495,46 @@ export type Database = {
       }
       session_test_results: {
         Row: {
+          applied_mode: string | null
           character_id: string
           created_at: string
           id: string
           is_approved: boolean | null
+          master_mark: string | null
           player_id: string
           result_value: number | null
           roll_value: number | null
+          roll_values: number[] | null
           status: string
           test_id: string
           updated_at: string
         }
         Insert: {
+          applied_mode?: string | null
           character_id: string
           created_at?: string
           id?: string
           is_approved?: boolean | null
+          master_mark?: string | null
           player_id: string
           result_value?: number | null
           roll_value?: number | null
+          roll_values?: number[] | null
           status?: string
           test_id: string
           updated_at?: string
         }
         Update: {
+          applied_mode?: string | null
           character_id?: string
           created_at?: string
           id?: string
           is_approved?: boolean | null
+          master_mark?: string | null
           player_id?: string
           result_value?: number | null
           roll_value?: number | null
+          roll_values?: number[] | null
           status?: string
           test_id?: string
           updated_at?: string
