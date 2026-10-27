@@ -1,5 +1,5 @@
 import { adminClient } from './support/admin';
-import { startCombat } from './support/combat';
+import { addCondition, startCombat } from './support/combat';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
@@ -49,7 +49,7 @@ async function openFight(
   // Os jogadores recebem o combate pelo tempo real: cada teste só começa com a tela de combate no ar.
   await expect(player.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
   await expect(ally.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
-  return { master, player, ally, eliabe, filisteu, bandido };
+  return { master, player, ally, eliabe, rute, filisteu, bandido };
 }
 
 /**
@@ -205,5 +205,43 @@ test.describe('efeito de Habilidade', () => {
     expect(await conditionsOf(filisteu)).toEqual(['amedrontado']);
     expect(await conditionsOf(bandido!)).toEqual([]);
     await expect(player.getByLabel('Ação Bônus')).toBeChecked();
+  });
+
+  test('Purificação tira a Condição escolhida do aliado e deixa as outras', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player, rute } = await openFight(seed, signIn);
+    await addCondition(master, 'Rute', 'Envenenado', 0);
+    await addCondition(master, 'Rute', 'Cego', 0);
+
+    await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
+    await abilityCard(player, 'Purificação').getByRole('button', { name: 'Usar' }).click();
+    await expect(
+      player.getByText('O app tira: Amedrontado, Atordoado ou Envenenado do aliado', {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await usePanel(player).getByLabel('Alvo').selectOption({ label: 'Rute' });
+    // Só as Condições da lista que Rute tem entram na escolha: o Cego fica de fora.
+    const choice = usePanel(player).getByLabel('Condição que sai de Rute');
+    await expect(choice.getByRole('option', { name: 'Envenenado' })).toBeAttached({
+      timeout: 15_000,
+    });
+    await expect(choice.getByRole('option', { name: 'Cego' })).toHaveCount(0);
+    await expect(usePanel(player).getByRole('button', { name: 'Usar Habilidade' })).toBeDisabled();
+    await choice.selectOption({ label: 'Envenenado' });
+    await usePanel(player).getByRole('button', { name: 'Usar Habilidade' }).click();
+
+    await expect(player.getByText('Rute: deixou de estar Envenenado')).toBeVisible();
+    await expect(master.getByText(/Eliabe usou Purificação/).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    expect(await conditionsOf(rute)).toEqual(['cego']);
+    // Ação gasta e Habilidade sem usos até o próximo Descanso Curto.
+    await expect(player.getByLabel('Ação Principal')).toBeChecked();
+    await expect(
+      abilityCard(player, 'Purificação').getByRole('button', { name: 'Usar' }),
+    ).toBeDisabled();
   });
 });
