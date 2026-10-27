@@ -227,6 +227,8 @@ export interface AbilityUseRecord {
   actionType: string;
   /** Por alvo: as Condições que chegam depois da Resistência a Condição e das imunidades. */
   targets: { participantId: string; conditions: ConditionEntry[] }[];
+  /** O TR dos alvos: o uso fica pendente até o Mestre lançar (as Condições não entram agora). */
+  save?: { attribute: string; cd: number };
 }
 
 /**
@@ -241,9 +243,36 @@ export async function recordAbilityUse(use: AbilityUseRecord): Promise<string> {
     p_ability_name: use.abilityName,
     p_action_type: use.actionType,
     p_targets: toJson(use.targets),
+    ...(use.save && { p_save: toJson(use.save) }),
   });
   if (error) throw error;
   return data;
+}
+
+/** O resultado do TR de um alvo, já calculado pelo motor (`failed` decide se as Condições entram). */
+export interface AbilitySaveOutcome {
+  participantId: string;
+  natural: number;
+  total: number;
+  failed: boolean;
+  mode: string;
+  conditions: ConditionEntry[];
+}
+
+/**
+ * O Mestre resolve um uso pendente pela função do banco (ADR 0007): aplica as Condições de quem
+ * falhou. Devolve `resolved`, ou `expired` se o combate já acabou (o uso cai sem efeito).
+ */
+export async function resolveAbilityUse(
+  useId: string,
+  results: AbilitySaveOutcome[],
+): Promise<'resolved' | 'expired'> {
+  const { data, error } = await supabase.rpc('resolve_ability_use', {
+    p_use_id: useId,
+    p_results: toJson(results),
+  });
+  if (error) throw error;
+  return data as 'resolved' | 'expired';
 }
 
 /** Os últimos usos de Habilidade do combate, do mais novo para o mais antigo. */

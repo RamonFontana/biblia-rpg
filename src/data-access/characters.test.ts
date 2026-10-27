@@ -40,6 +40,7 @@ import {
   findLatestCharacterOfUser,
   getActiveSessionCharacterIds,
   getCharacterById,
+  getCharactersAttributes,
   getCharacterDeathState,
   getCharacterProtectionSource,
   getCharacterResistanceSource,
@@ -523,6 +524,34 @@ describe('getCharacterProtectionSource', () => {
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(getCharacterProtectionSource('c1')).rejects.toBe(failure);
+  });
+});
+
+describe('getCharactersAttributes', () => {
+  it('lê os atributos das fichas pedidas e devolve por id', async () => {
+    state.respond = () => ({
+      data: [
+        { id: 'c1', attributes: { sab: 14 } },
+        { id: 'c2', attributes: null },
+      ],
+    });
+    await expect(getCharactersAttributes(['c1', 'c2'])).resolves.toEqual({
+      c1: { sab: 14 },
+      c2: null,
+    });
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe('id, attributes');
+    expect(filterOf(call, 'in', 'id')).toEqual(['c1', 'c2']);
+  });
+
+  it('sem fichas não consulta o banco', async () => {
+    await expect(getCharactersAttributes([])).resolves.toEqual({});
+    expect(callsOf(state.calls, 'characters', 'select')).toHaveLength(0);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(getCharactersAttributes(['c1'])).rejects.toBe(failure);
   });
 });
 

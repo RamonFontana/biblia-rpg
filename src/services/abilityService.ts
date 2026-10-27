@@ -1,17 +1,36 @@
+import { ABILITIES } from '@/content/abilities';
 import type { AbilityDefinition } from '@/content/schemas';
-import { getCharacterProtectionSource, updateCharacter } from '@/data-access/characters';
-import { recordAbilityUse } from '@/data-access/combat';
+import {
+  getCharacterProtectionSource,
+  getCharactersAttributes,
+  updateCharacter,
+} from '@/data-access/characters';
+import {
+  recordAbilityUse,
+  resolveAbilityUse,
+  type AbilitySaveOutcome,
+  type CombatAbilityUse,
+  type CombatParticipant,
+} from '@/data-access/combat';
 import {
   abilityImmunities,
+  abilityUseTargets,
   resolveAbilityEffect,
   type TargetProtection,
 } from '@/domain/abilityEffect';
+import {
+  abilityCd,
+  resolveAbilitySave,
+  saveModifierOf,
+  type SaveAttribute,
+} from '@/domain/abilitySave';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { getConditionResistanceLevels, resolveEquippedItems } from '@/domain/armorResistance';
 import type { AttackTarget } from '@/lib/attackSetup';
 import type { CharacterEquipment, ConditionEntry } from '@/types/combat';
 import type { CharacterSkills } from '@/features/character-creation/types';
 import type { FaithStats } from '@/domain/faith';
+import type { MasterMark } from '@/domain/testMode';
 import { abilitySkills, getAbilitiesForCharacter } from '@/utils/abilityUtils';
 
 export interface AbilityUseSubmission {
@@ -20,8 +39,18 @@ export interface AbilityUseSubmission {
   userParticipantId: string;
   /** Os alvos que o jogador marcou. */
   targets: AttackTarget[];
-  /** A ficha de quem usa: os usos e a Fé gastos saem dela. */
-  character: { id: string; skills: unknown; stats: FaithStats | null | undefined };
+  /**
+   * A ficha de quem usa: os usos e a Fé gastos saem dela; a Vocação, o nível e os atributos dão a
+   * CD da Habilidade quando ela impõe um TR.
+   */
+  character: {
+    id: string;
+    skills: unknown;
+    stats: FaithStats | null | undefined;
+    vocation?: string | null;
+    level?: number | string | null;
+    attributes?: unknown;
+  };
 }
 
 export interface AbilityTargetResult {
@@ -36,6 +65,8 @@ export interface AbilityTargetResult {
 export interface AbilityUseOutcome {
   id: string;
   results: AbilityTargetResult[];
+  /** Só nos usos com TR: a CD e o atributo do TR que o Mestre vai lançar. As Condições esperam. */
+  pending?: { cd: number; attribute: SaveAttribute };
 }
 
 /** As skills de uma ficha comum (`jsonb` no banco), ou nada se for a lista de um inimigo. */
@@ -86,12 +117,24 @@ export async function submitAbilityUse(use: AbilityUseSubmission): Promise<Abili
   const spent = applyAbilityUse(ability, skills, character.stats);
   if (!spent) throw new Error('Fé Insuficiente');
 
+  // Com TR as Condições esperam o Mestre lançar os testes: a proteção de cada alvo é lida na hora
+  // de resolver (`resolveAbilityUseRolls`).
+  const pending = effect.save
+    ? {
+        attribute: effect.save.attribute,
+        cd: abilityCd({
+          vocation: character.vocation,
+          level: Number(character.level) || 1,
+          attributes: character.attributes,
+        }),
+      }
+    : undefined;
+
   const results: AbilityTargetResult[] = [];
   for (const target of use.targets) {
-    const resolved = resolveAbilityEffect(
-      effect,
-      await protectionOf(target.entityId, target.entityType),
-    );
+    const resolved = pending
+      ? { conditions: [], messages: [] }
+      : resolveAbilityEffect(effect, await protectionOf(target.entityId, target.entityType));
     results.push({
       participantId: target.participantId,
       name: target.name,
@@ -106,6 +149,7 @@ export async function submitAbilityUse(use: AbilityUseSubmission): Promise<Abili
     abilityName: ability.name,
     actionType: ability.actionType,
     targets: results.map(({ participantId, conditions }) => ({ participantId, conditions })),
+    ...(pending && { save: pending }),
   });
 
   try {
@@ -124,5 +168,105 @@ export async function submitAbilityUse(use: AbilityUseSubmission): Promise<Abili
       );
     }
   }
-  return { id, results };
+  return { id, results, ...(pending && { pending }) };
+}
+
+/** O d20 que o Mestre lançou (ou a Rolagem Virtual sorteou) para um alvo de um uso pendente. */
+export interface AbilitySaveRoll {
+  participantId: string;
+  /** O dado que vale (com Vantagem ou Desvantagem, o maior ou o menor dos dois). */
+  natural: number;
+  mark: MasterMark;
+}
+
+export interface AbilityResolution {
+  status: 'resolved' | 'expired';
+  results: (AbilitySaveOutcome & { name: string; messages: string[] })[];
+}
+
+/**
+ * O Mestre resolve o TR de um uso pendente (ADR 0007): soma o modificador do atributo de cada alvo
+ * ao d20, compara com a CD, calcula as Condições de quem falhou (depois da Resistência a Condição e
+ * das imunidades) e manda tudo à função do banco. Se o combate já acabou, o uso expira sem efeito.
+ */
+export async function resolveAbilityUseRolls(input: {
+  use: Pick<CombatAbilityUse, 'id' | 'ability_id' | 'cd' | 'targets'>;
+  participants: Pick<CombatParticipant, 'id' | 'entity_id' | 'entity_type'>[];
+  rolls: AbilitySaveRoll[];
+}): Promise<AbilityResolution> {
+  const { use, participants, rolls } = input;
+  const effect = ABILITIES.find((a) => a.id === use.ability_id)?.combatEffect;
+  if (!effect?.save || use.cd === null) throw new Error('A Habilidade não tem TR');
+
+  const targets = abilityUseTargets(use.targets);
+  for (const roll of rolls) {
+    if (!Number.isInteger(roll.natural) || roll.natural < 1 || roll.natural > 20) {
+      throw new Error('O d20 precisa estar entre 1 e 20');
+    }
+  }
+  const rollOf = (participantId: string) => rolls.find((r) => r.participantId === participantId);
+  for (const target of targets) {
+    if (!rollOf(target.participantId)) throw new Error(`Falta o dado de ${target.name}`);
+  }
+
+  const entityOf = (participantId: string) => participants.find((p) => p.id === participantId);
+  const entityIds = targets.flatMap((t) => entityOf(t.participantId)?.entity_id ?? []);
+  const attributesById = await getCharactersAttributes(entityIds).catch(
+    () => ({}) as Record<string, unknown>,
+  );
+
+  const results: AbilityResolution['results'] = [];
+  for (const target of targets) {
+    const roll = rollOf(target.participantId)!;
+    const participant = entityOf(target.participantId);
+    const save = resolveAbilitySave({
+      dice: [roll.natural],
+      mark: roll.mark,
+      modifier: saveModifierOf(
+        participant ? attributesById[participant.entity_id] : null,
+        effect.save.attribute,
+      ),
+      cd: use.cd,
+    });
+    const applied = save.failed
+      ? resolveAbilityEffect(
+          effect,
+          participant
+            ? await protectionOf(participant.entity_id, participant.entity_type)
+            : NO_PROTECTION,
+        )
+      : { conditions: [], messages: [] };
+    results.push({
+      participantId: target.participantId,
+      name: target.name,
+      natural: save.natural,
+      total: save.total,
+      failed: save.failed,
+      mode: save.mode,
+      conditions: applied.conditions,
+      messages: applied.messages,
+    });
+  }
+
+  const status = await resolveAbilityUse(
+    use.id,
+    results.map(({ participantId, natural, total, failed, mode, conditions }) => ({
+      participantId,
+      natural,
+      total,
+      failed,
+      mode,
+      conditions,
+    })),
+  );
+  if (status === 'resolved') {
+    for (const result of results) {
+      for (const message of result.messages) {
+        window.dispatchEvent(
+          new CustomEvent('combat-toast', { detail: { message: `${result.name}: ${message}` } }),
+        );
+      }
+    }
+  }
+  return { status, results };
 }

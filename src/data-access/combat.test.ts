@@ -32,6 +32,7 @@ import {
   listCombatAttacks,
   listCombatParticipants,
   recordAbilityUse,
+  resolveAbilityUse,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
@@ -325,6 +326,54 @@ describe('recordAbilityUse', () => {
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(recordAbilityUse(use)).rejects.toBe(failure);
+  });
+
+  it('com TR manda o atributo e a CD, e as Condições ficam de fora', async () => {
+    state.respond = () => ({ data: 'use-2' });
+    await recordAbilityUse({
+      ...use,
+      save: { attribute: 'sab', cd: 13 },
+      targets: [{ participantId: 'p2', conditions: [] }],
+    });
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).toMatchObject({ p_save: { attribute: 'sab', cd: 13 } });
+  });
+
+  it('sem TR não manda o parâmetro do TR', async () => {
+    state.respond = () => ({ data: 'use-1' });
+    await recordAbilityUse(use);
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).not.toHaveProperty('p_save');
+  });
+});
+
+describe('resolveAbilityUse', () => {
+  const results = [
+    {
+      participantId: 'p2',
+      natural: 4,
+      total: 9,
+      failed: true,
+      mode: 'normal',
+      conditions: [{ conditionId: 'amedrontado', duration: 10 }],
+    },
+  ];
+
+  it('chama a função do banco com o resultado de cada alvo e devolve o estado do uso', async () => {
+    state.respond = () => ({ data: 'resolved' });
+    await expect(resolveAbilityUse('use-1', results)).resolves.toBe('resolved');
+    const [call] = callsOf(state.calls, 'resolve_ability_use', 'rpc');
+    expect(call.payload).toEqual({ p_use_id: 'use-1', p_results: results });
+  });
+
+  it('devolve expired quando o combate já acabou', async () => {
+    state.respond = () => ({ data: 'expired' });
+    await expect(resolveAbilityUse('use-1', results)).resolves.toBe('expired');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(resolveAbilityUse('use-1', results)).rejects.toBe(failure);
   });
 });
 

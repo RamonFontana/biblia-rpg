@@ -20,7 +20,7 @@ vi.mock('../lib/supabase', async () => {
 });
 
 import { callsOf } from '../test/fakeSupabase';
-import { submitAbilityUse } from './abilityService';
+import { resolveAbilityUseRolls, submitAbilityUse } from './abilityService';
 import type { AbilityDefinition } from '@/content/schemas';
 
 const ability: AbilityDefinition = {
@@ -179,5 +179,225 @@ describe('submitAbilityUse: proteção do alvo', () => {
         { participantId: 'p3', conditions: [{ conditionId: 'paralisado', duration: 1 }] },
       ],
     });
+  });
+});
+
+describe('submitAbilityUse: Habilidade com TR', () => {
+  const tactic: AbilityDefinition = {
+    id: 'vocation-guerreiro-18-grito-de-guerra',
+    name: 'Grito de Guerra',
+    sourceType: 'vocation',
+    sourceId: 'guerreiro',
+    minLevel: 18,
+    actionType: 'action',
+    usageType: 'long_rest',
+    maxUses: 1,
+    effect: 'Inimigos TR SAB.',
+    combatEffect: {
+      targets: 'enemies',
+      save: { attribute: 'sab' },
+      apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+    },
+  };
+  const saveBase = {
+    ...base,
+    ability: tactic,
+    character: {
+      id: 'char-1',
+      skills: {},
+      stats: { current_faith: 40 },
+      vocation: 'Guerreiro',
+      level: 18,
+      attributes: { for: 16 },
+    },
+  };
+
+  it('manda o atributo do TR e a CD da Habilidade, sem Condições', async () => {
+    await submitAbilityUse(saveBase);
+    expect(sent()).toEqual({
+      p_user_participant_id: 'p1',
+      p_ability_id: 'vocation-guerreiro-18-grito-de-guerra',
+      p_ability_name: 'Grito de Guerra',
+      p_action_type: 'action',
+      p_targets: [{ participantId: 'p2', conditions: [] }],
+      p_save: { attribute: 'sab', cd: 17 },
+    });
+  });
+
+  it('devolve o uso como pendente, com a CD e o atributo, e nenhuma Condição', async () => {
+    const outcome = await submitAbilityUse(saveBase);
+    expect(outcome.pending).toEqual({ cd: 17, attribute: 'sab' });
+    expect(outcome.results[0].conditions).toEqual([]);
+  });
+
+  it('gasta o uso e a Fé como numa Habilidade sem TR', async () => {
+    await submitAbilityUse({ ...saveBase, ability: { ...tactic, faithCost: 8 } });
+    expect(charUpdates()[0].payload).toEqual({
+      skills: { ability_uses: { [tactic.id]: 1 } },
+      stats: { current_faith: 32 },
+    });
+  });
+
+  it('sem Vocação a CD usa o atributo de SAB e a ficha sem atributos vale 0', async () => {
+    const outcome = await submitAbilityUse({
+      ...saveBase,
+      character: { id: 'char-1', skills: {}, stats: { current_faith: 40 } },
+    });
+    expect(outcome.pending).toEqual({ cd: 10, attribute: 'sab' });
+  });
+
+  it('o uso sem TR não é pendente', async () => {
+    const outcome = await submitAbilityUse(base);
+    expect(outcome.pending).toBeUndefined();
+  });
+});
+
+describe('resolveAbilityUseRolls', () => {
+  const pendingUse = {
+    id: 'use-9',
+    ability_id: 'vocation-guerreiro-18-grito-de-guerra',
+    cd: 13,
+    targets: [
+      { participantId: 'p2', name: 'Filisteu', conditions: [] },
+      { participantId: 'p3', name: 'Bandido', conditions: [] },
+    ],
+  };
+  const participants = [
+    { id: 'p2', entity_id: 'e1', entity_type: 'enemy' as const },
+    { id: 'p3', entity_id: 'e2', entity_type: 'enemy' as const },
+  ];
+  const resolved = () =>
+    callsOf(state.calls, 'resolve_ability_use', 'rpc')[0].payload as {
+      p_use_id: string;
+      p_results: Record<string, unknown>[];
+    };
+  const attributesRows = [
+    { id: 'e1', attributes: { sab: 10 } },
+    { id: 'e2', attributes: { sab: 14 } },
+  ];
+
+  beforeEach(() => {
+    state.respond = (call) =>
+      call.table === 'characters' ? { data: attributesRows } : { data: 'resolved' };
+  });
+
+  it('quem não alcança a CD falha e recebe a Condição; quem alcança passa', async () => {
+    const outcome = await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 12, mark: null },
+        { participantId: 'p3', natural: 12, mark: null },
+      ],
+    });
+    expect(outcome.status).toBe('resolved');
+    expect(resolved().p_use_id).toBe('use-9');
+    expect(resolved().p_results).toEqual([
+      {
+        participantId: 'p2',
+        natural: 12,
+        total: 12,
+        failed: true,
+        mode: 'normal',
+        conditions: [{ conditionId: 'amedrontado', duration: 10 }],
+      },
+      {
+        participantId: 'p3',
+        natural: 12,
+        total: 14,
+        failed: false,
+        mode: 'normal',
+        conditions: [],
+      },
+    ]);
+  });
+
+  it('soma o modificador do atributo do TR de cada alvo', async () => {
+    await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 13, mark: null },
+        { participantId: 'p3', natural: 11, mark: null },
+      ],
+    });
+    // e2 tem SAB 14 (+2): 11 + 2 = 13, alcança a CD 13.
+    expect(resolved().p_results.map((r) => r.failed)).toEqual([false, false]);
+  });
+
+  it('a marca do Mestre fica gravada como a modalidade do alvo', async () => {
+    await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 5, mark: 'desvantagem' },
+        { participantId: 'p3', natural: 18, mark: 'vantagem' },
+      ],
+    });
+    expect(resolved().p_results.map((r) => r.mode)).toEqual(['desvantagem', 'vantagem']);
+  });
+
+  it('a ficha sem atributo ou fora do banco vale modificador 0', async () => {
+    state.respond = (call) => (call.table === 'characters' ? { data: [] } : { data: 'resolved' });
+    await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 13, mark: null },
+        { participantId: 'p3', natural: 12, mark: null },
+      ],
+    });
+    expect(resolved().p_results.map((r) => [r.total, r.failed])).toEqual([
+      [13, false],
+      [12, true],
+    ]);
+  });
+
+  it('devolve expired quando o combate acabou', async () => {
+    state.respond = (call) =>
+      call.table === 'characters' ? { data: attributesRows } : { data: 'expired' };
+    const outcome = await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 12, mark: null },
+        { participantId: 'p3', natural: 12, mark: null },
+      ],
+    });
+    expect(outcome.status).toBe('expired');
+  });
+
+  it('falta o dado de um alvo: não chama o banco', async () => {
+    await expect(
+      resolveAbilityUseRolls({
+        use: pendingUse,
+        participants,
+        rolls: [{ participantId: 'p2', natural: 12, mark: null }],
+      }),
+    ).rejects.toThrow('Falta o dado');
+    expect(callsOf(state.calls, 'resolve_ability_use', 'rpc')).toEqual([]);
+  });
+
+  it('o d20 fora de 1 a 20 é recusado', async () => {
+    await expect(
+      resolveAbilityUseRolls({
+        use: pendingUse,
+        participants,
+        rolls: [
+          { participantId: 'p2', natural: 21, mark: null },
+          { participantId: 'p3', natural: 12, mark: null },
+        ],
+      }),
+    ).rejects.toThrow('entre 1 e 20');
+  });
+
+  it('uma Habilidade sem TR não tem o que resolver', async () => {
+    await expect(
+      resolveAbilityUseRolls({
+        use: { ...pendingUse, ability_id: 'tribe-levi-16-palavra-de-auto' },
+        participants,
+        rolls: [],
+      }),
+    ).rejects.toThrow('não tem TR');
   });
 });

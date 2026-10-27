@@ -26,7 +26,8 @@ import {
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import { uniqueChannelName } from '@/lib/channelName';
-import { abilityUseTargets, describeAbilityUse } from '@/domain/abilityEffect';
+import { abilityUseTargets, describeAbilityUse, describePendingUse } from '@/domain/abilityEffect';
+import type { SaveAttribute } from '@/domain/abilitySave';
 import { describeAttack, describeWeaponEffect } from '@/domain/attack';
 import type { ConditionEntry } from '../types/combat';
 
@@ -37,6 +38,24 @@ const RECENT_ATTACKS = 10;
 
 /** Quantos usos de Habilidade o armazém guarda para o histórico do combate. */
 const RECENT_ABILITY_USES = 10;
+
+/** O aviso de um uso de Habilidade: o resultado, ou o TR que espera o Mestre. */
+function toastAbilityUse(use: CombatAbilityUse) {
+  const message =
+    use.status === 'pending' && use.cd !== null && use.save_attribute
+      ? describePendingUse({
+          userName: use.user_name,
+          abilityName: use.ability_name,
+          cd: use.cd,
+          attribute: use.save_attribute as SaveAttribute,
+        })
+      : describeAbilityUse({
+          userName: use.user_name,
+          abilityName: use.ability_name,
+          targets: abilityUseTargets(use.targets),
+        });
+  window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message } }));
+}
 
 interface PlayerCombatState {
   hasUsedMovement: boolean;
@@ -281,25 +300,24 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         },
         {
           table: 'combat_ability_uses',
-          event: 'INSERT',
           onChange: (payload) => {
             const { activeCombat, abilityUses } = get();
             const use = payload.new as CombatAbilityUse;
             if (!activeCombat || use.combat_id !== activeCombat.id) return;
+
+            if (payload.eventType === 'UPDATE') {
+              // O Mestre lançou o TR (resolved) ou o combate acabou antes (expired): o uso é
+              // trocado no lugar e só o resultado avisa a mesa.
+              set({ abilityUses: abilityUses.map((u) => (u.id === use.id ? use : u)) });
+              window.dispatchEvent(new CustomEvent('combat-ability', { detail: use }));
+              if (use.status === 'resolved') toastAbilityUse(use);
+              return;
+            }
+
             set({ abilityUses: [use, ...abilityUses].slice(0, RECENT_ABILITY_USES) });
             // Quem está olhando decide o que fazer com o uso ao vivo (o resultado do jogador).
             window.dispatchEvent(new CustomEvent('combat-ability', { detail: use }));
-            window.dispatchEvent(
-              new CustomEvent('combat-toast', {
-                detail: {
-                  message: describeAbilityUse({
-                    userName: use.user_name,
-                    abilityName: use.ability_name,
-                    targets: abilityUseTargets(use.targets),
-                  }),
-                },
-              }),
-            );
+            toastAbilityUse(use);
           },
         },
         {

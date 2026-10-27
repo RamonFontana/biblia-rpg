@@ -5,6 +5,7 @@
 import { CONDITIONS } from '@/content/conditions';
 import type { AbilityEffect } from '@/content/schemas';
 import type { ConditionEntry } from '@/types/combat';
+import { saveAttributeLabel, type SaveAttribute } from './abilitySave';
 import { applyConditionResistance } from './armorResistance';
 
 /** O que o efeito lê de um participante do combate para saber se ele é um alvo possível. */
@@ -118,26 +119,54 @@ export function resolveAbilityEffect(
 export function describeAbilityUse(use: {
   userName: string;
   abilityName: string;
-  targets: { name: string; conditionIds: string[] }[];
+  targets: { name: string; conditionIds: string[]; failed?: boolean }[];
 }): string {
-  const parts = use.targets.map((t) =>
-    t.conditionIds.length === 0
-      ? `${t.name} resistiu`
-      : `${t.name} ficou ${t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')}`,
-  );
+  const parts = use.targets.map((t) => {
+    if (t.conditionIds.length > 0) {
+      return `${t.name} ficou ${t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')}`;
+    }
+    if (t.failed === undefined) return `${t.name} resistiu`;
+    return t.failed ? `${t.name} falhou no TR, mas resistiu à Condição` : `${t.name} passou no TR`;
+  });
   return `${use.userName} usou ${use.abilityName}: ${parts.join('; ')}.`;
 }
 
-/** Os alvos de um uso gravado (`targets` é `jsonb`): o nome e os ids das Condições que chegaram. */
-export function abilityUseTargets(
-  targets: unknown,
-): { participantId: string; name: string; conditionIds: string[] }[] {
+/** A frase de um uso com TR que espera o Mestre lançar os testes. */
+export function describePendingUse(use: {
+  userName: string;
+  abilityName: string;
+  cd: number;
+  attribute: SaveAttribute;
+}): string {
+  return `${use.userName} usou ${use.abilityName}: aguardando o Mestre lançar o TR de ${saveAttributeLabel(use.attribute)} (CD ${use.cd}).`;
+}
+
+export interface AbilityUseTarget {
+  participantId: string;
+  name: string;
+  conditionIds: string[];
+  /** Só nos usos com TR já resolvidos: o dado que valeu, o total e se o alvo falhou. */
+  natural?: number;
+  total?: number;
+  failed?: boolean;
+}
+
+/** Os alvos de um uso gravado (`targets` é `jsonb`): o nome, as Condições que chegaram e o TR. */
+export function abilityUseTargets(targets: unknown): AbilityUseTarget[] {
   if (!Array.isArray(targets)) return [];
   return targets.map(
-    (t: { participantId: string; name: string; conditions?: ConditionEntry[] }) => ({
+    (t: {
+      participantId: string;
+      name: string;
+      conditions?: ConditionEntry[];
+      natural?: number;
+      total?: number;
+      failed?: boolean;
+    }) => ({
       participantId: t.participantId,
       name: t.name,
       conditionIds: (t.conditions ?? []).map((c) => c.conditionId),
+      ...(t.failed !== undefined && { natural: t.natural, total: t.total, failed: t.failed }),
     }),
   );
 }

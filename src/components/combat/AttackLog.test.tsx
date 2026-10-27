@@ -139,6 +139,7 @@ const use = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
   action_type: 'action',
   status: 'applied',
   cd: null,
+  save_attribute: null,
   targets: [
     {
       participantId: 'p2',

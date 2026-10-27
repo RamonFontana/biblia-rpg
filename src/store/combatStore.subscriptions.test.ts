@@ -279,6 +279,7 @@ describe('usos de Habilidade do combate', () => {
     combat_id: 'combat-1',
     user_name: 'Eliabe',
     ability_name: 'Palavra de Autoridade',
+    status: 'applied',
     targets: [
       { participantId: 'p2', name: 'Filisteu', conditions: [{ conditionId: 'paralisado' }] },
     ],
@@ -344,6 +345,90 @@ describe('usos de Habilidade do combate', () => {
     useHandler()({ eventType: 'INSERT', new: useRow({ id: 'u7' }) });
     window.removeEventListener('combat-ability', listener);
     expect(seen.map((u) => u.id)).toEqual(['u7']);
+  });
+
+  it('um uso com TR chega pendente: o aviso diz o TR e a CD que o Mestre vai lançar', async () => {
+    database({ active: combat() });
+    store().initSubscriptions('session-1');
+    await settle();
+    useHandler()({
+      eventType: 'INSERT',
+      new: useRow({
+        status: 'pending',
+        cd: 13,
+        save_attribute: 'sab',
+        ability_name: 'Tática do Cântaro Quebrado',
+        targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }],
+      }),
+    });
+    expect(toasts).toEqual([
+      'Eliabe usou Tática do Cântaro Quebrado: aguardando o Mestre lançar o TR de Sabedoria (CD 13).',
+    ]);
+  });
+
+  it('o Mestre resolve o TR: o uso é trocado no lugar e o resultado avisa a mesa', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockResolvedValue([
+      useRow({ id: 'u0' }),
+      useRow({ id: 'u1', status: 'pending' }),
+    ]);
+    store().initSubscriptions('session-1');
+    await settle();
+    useHandler()({
+      eventType: 'UPDATE',
+      new: useRow({
+        id: 'u1',
+        status: 'resolved',
+        ability_name: 'Tática do Cântaro Quebrado',
+        targets: [
+          {
+            participantId: 'p2',
+            name: 'Filisteu',
+            conditions: [{ conditionId: 'amedrontado' }],
+            natural: 4,
+            total: 9,
+            failed: true,
+          },
+          {
+            participantId: 'p3',
+            name: 'Bandido',
+            conditions: [],
+            natural: 15,
+            total: 19,
+            failed: false,
+          },
+        ],
+      }),
+    });
+    expect(store().abilityUses.map((u) => [u.id, u.status])).toEqual([
+      ['u0', 'applied'],
+      ['u1', 'resolved'],
+    ]);
+    expect(toasts).toEqual([
+      'Eliabe usou Tática do Cântaro Quebrado: Filisteu ficou Amedrontado; Bandido passou no TR.',
+    ]);
+  });
+
+  it('uma atualização que não resolve nada (expirou) troca o uso e não avisa', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockResolvedValue([useRow({ id: 'u1', status: 'pending' })]);
+    store().initSubscriptions('session-1');
+    await settle();
+    useHandler()({ eventType: 'UPDATE', new: useRow({ id: 'u1', status: 'expired' }) });
+    expect(store().abilityUses[0].status).toBe('expired');
+    expect(toasts).toEqual([]);
+  });
+
+  it('a atualização de um uso de outro combate é ignorada', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockResolvedValue([useRow({ id: 'u1', status: 'pending' })]);
+    store().initSubscriptions('session-1');
+    await settle();
+    useHandler()({
+      eventType: 'UPDATE',
+      new: useRow({ id: 'u1', combat_id: 'outro', status: 'resolved' }),
+    });
+    expect(store().abilityUses[0].status).toBe('pending');
   });
 
   it('limpar a assinatura esvazia os usos', async () => {

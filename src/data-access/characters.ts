@@ -474,6 +474,14 @@ export async function getCharacterProtectionSource(characterId: string) {
   return data;
 }
 
+/** Os atributos de várias fichas (inimigos e NPCs jogáveis também são fichas), por id. */
+export async function getCharactersAttributes(ids: string[]): Promise<Record<string, unknown>> {
+  if (ids.length === 0) return {};
+  const { data, error } = await supabase.from('characters').select('id, attributes').in('id', ids);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.id, row.attributes]));
+}
+
 export type DeathState = Pick<
   CharacterRow,
   'id' | 'death_saves_successes' | 'death_saves_failures' | 'is_stable' | 'is_dead'

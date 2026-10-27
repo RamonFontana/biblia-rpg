@@ -6,6 +6,7 @@ import {
   abilityImmunities,
   abilityUseTargets,
   describeAbilityUse,
+  describePendingUse,
   getAbilityEffectBlock,
   isSingleTarget,
   resolveAbilityEffect,
@@ -238,5 +239,85 @@ describe('alvos de um uso gravado', () => {
   it('um valor que não é lista não tem alvos', () => {
     expect(abilityUseTargets(null)).toEqual([]);
     expect(abilityUseTargets({})).toEqual([]);
+  });
+});
+
+describe('uso com TR: textos', () => {
+  it('o alvo que passou no TR passou', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'Tática do Cântaro Quebrado',
+        targets: [
+          { name: 'Filisteu', conditionIds: ['amedrontado'], failed: true },
+          { name: 'Bandido', conditionIds: [], failed: false },
+        ],
+      }),
+    ).toBe(
+      'Eliabe usou Tática do Cântaro Quebrado: Filisteu ficou Amedrontado; Bandido passou no TR.',
+    );
+  });
+
+  it('quem falhou no TR mas teve a Condição anulada resistiu', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'X',
+        targets: [{ name: 'A', conditionIds: [], failed: true }],
+      }),
+    ).toBe('Eliabe usou X: A falhou no TR, mas resistiu à Condição.');
+  });
+
+  it('o uso pendente diz o atributo e a CD do TR', () => {
+    expect(
+      describePendingUse({
+        userName: 'Eliabe',
+        abilityName: 'Tática do Cântaro Quebrado',
+        cd: 13,
+        attribute: 'sab',
+      }),
+    ).toBe(
+      'Eliabe usou Tática do Cântaro Quebrado: aguardando o Mestre lançar o TR de Sabedoria (CD 13).',
+    );
+  });
+
+  it('lê o resultado do TR de cada alvo de um uso resolvido', () => {
+    expect(
+      abilityUseTargets([
+        {
+          participantId: 'p2',
+          name: 'Filisteu',
+          conditions: [{ conditionId: 'amedrontado' }],
+          natural: 4,
+          total: 9,
+          failed: true,
+        },
+        {
+          participantId: 'p3',
+          name: 'Bandido',
+          conditions: [],
+          natural: 15,
+          total: 19,
+          failed: false,
+        },
+      ]),
+    ).toEqual([
+      {
+        participantId: 'p2',
+        name: 'Filisteu',
+        conditionIds: ['amedrontado'],
+        natural: 4,
+        total: 9,
+        failed: true,
+      },
+      {
+        participantId: 'p3',
+        name: 'Bandido',
+        conditionIds: [],
+        natural: 15,
+        total: 19,
+        failed: false,
+      },
+    ]);
   });
 });
