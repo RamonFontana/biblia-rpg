@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Coffee, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HitDiceSpender, type SpenderCharacter } from './HitDiceSpender';
 import { closeShortRest, openShortRest } from '@/data-access/sessions';
 import {
   getShortRestState,
@@ -13,13 +14,24 @@ interface ShortRestCardProps {
   sessionId: string;
   session: ShortRestSession;
   hasActiveCombat: boolean;
+  /** Quem gasta Dados de Vida neste cartão: o jogador, o próprio personagem; o Mestre, os NPCs jogáveis. */
+  spenders?: SpenderCharacter[];
+  /** Avisa a tela do que mudou na ficha de quem gastou um dado. */
+  onSpent?: (characterId: string, patch: Record<string, unknown>) => void;
 }
 
 /**
  * O cartão "Descanso Curto", igual nas duas telas (ADR 0006): quantos restam no dia, por que não
  * dá para abrir, quem abriu o descanso. Só o Mestre abre e encerra.
  */
-export function ShortRestCard({ role, sessionId, session, hasActiveCombat }: ShortRestCardProps) {
+export function ShortRestCard({
+  role,
+  sessionId,
+  session,
+  hasActiveCombat,
+  spenders = [],
+  onSpent,
+}: ShortRestCardProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const state = getShortRestState(session, hasActiveCombat);
@@ -60,6 +72,20 @@ export function ShortRestCard({ role, sessionId, session, hasActiveCombat }: Sho
             <p className="text-sm text-stone-400 mt-2">Aguardando o Mestre abrir o descanso.</p>
           )}
         </>
+      )}
+
+      {state.isOpen && spenders.length > 0 && (
+        <div className="mt-3 flex flex-col gap-2">
+          {spenders.map((character) => (
+            <HitDiceSpender
+              key={character.id}
+              character={character}
+              restOpen
+              showName={role === 'master'}
+              onSpent={(id, patch) => onSpent?.(id, patch)}
+            />
+          ))}
+        </div>
       )}
 
       {role === 'master' && (

@@ -86,6 +86,8 @@ export function GmSessionView({
         sessionId={sessionId}
         session={sessionData}
         hasActiveCombat={hasActiveCombat}
+        spenders={playableNpcs}
+        onSpent={(id, patch) => updateLocal('npc', id, patch)}
       />
 
       <SessionRestControls

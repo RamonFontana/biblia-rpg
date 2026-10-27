@@ -88,6 +88,8 @@ export function PlayerSessionView({
         sessionId={sessionId}
         session={sessionData}
         hasActiveCombat={hasActiveCombat}
+        spenders={rechargeTargets}
+        onSpent={(id, patch) => updateLocal('player', id, patch)}
       />
 
       <PlayerRestIndicator sessionData={sessionData} />

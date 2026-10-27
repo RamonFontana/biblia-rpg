@@ -10,7 +10,10 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('@/data-access/sessions', () => data);
 
+vi.mock('@/data-access/characters', () => ({ spendHitDie: vi.fn() }));
+
 import { ShortRestCard } from './ShortRestCard';
+import type { SpenderCharacter } from './HitDiceSpender';
 
 import type { ShortRestSession } from '@/domain/shortRest';
 
@@ -120,5 +123,58 @@ describe('ShortRestCard: jogador', () => {
   it('bloqueado por combate: vê o motivo', () => {
     renderCard('player', closed, true);
     expect(screen.getByText('Indisponível: combate em andamento.')).toBeInTheDocument();
+  });
+});
+
+const spender = (id: string, name: string): SpenderCharacter => ({
+  id,
+  name,
+  tribe: 'Judá',
+  vocation: 'Guerreiro',
+  level: 2,
+  hit_dice_spent: 0,
+  attributes: { for: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
+  stats: { pv: 20, current_pv: 5, ca: 12, faith: 50, current_faith: 50 },
+  skills: {},
+});
+
+describe('ShortRestCard: Dados de Vida', () => {
+  const renderWith = (
+    session: ShortRestSession,
+    spenders: SpenderCharacter[],
+    role: 'master' | 'player' = 'player',
+  ) =>
+    render(
+      <ShortRestCard
+        role={role}
+        sessionId="s1"
+        session={session}
+        hasActiveCombat={false}
+        spenders={spenders}
+        onSpent={vi.fn()}
+      />,
+    );
+
+  it('com o descanso aberto mostra o gasto de cada personagem da lista', () => {
+    renderWith(open('master'), [spender('c1', 'Eliabe'), spender('c2', 'Rute')], 'master');
+    expect(screen.getAllByLabelText(/Resultado do d10/)).toHaveLength(2);
+    expect(screen.getByText('Eliabe')).toBeInTheDocument();
+    expect(screen.getByText('Rute')).toBeInTheDocument();
+  });
+
+  it('o jogador vê só o próprio personagem, sem o nome repetido', () => {
+    renderWith(open('master'), [spender('c1', 'Eliabe')]);
+    expect(screen.getAllByLabelText(/Resultado do d10/)).toHaveLength(1);
+    expect(screen.queryByText('Eliabe')).not.toBeInTheDocument();
+  });
+
+  it('com o descanso fechado não mostra o gasto', () => {
+    renderWith(closed, [spender('c1', 'Eliabe')]);
+    expect(screen.queryByLabelText(/Resultado do d10/)).not.toBeInTheDocument();
+  });
+
+  it('sem personagens na lista não mostra nada de Dados de Vida', () => {
+    renderWith(open('master'), []);
+    expect(screen.queryByLabelText(/Resultado do d/)).not.toBeInTheDocument();
   });
 });
