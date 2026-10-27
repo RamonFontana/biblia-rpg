@@ -184,6 +184,7 @@ export type Database = {
           combat_id: string
           created_at: string
           id: string
+          save_attribute: string | null
           status: string
           targets: Json
           user_name: string
@@ -197,6 +198,7 @@ export type Database = {
           combat_id: string
           created_at?: string
           id?: string
+          save_attribute?: string | null
           status?: string
           targets?: Json
           user_name: string
@@ -210,6 +212,7 @@ export type Database = {
           combat_id?: string
           created_at?: string
           id?: string
+          save_attribute?: string | null
           status?: string
           targets?: Json
           user_name?: string
@@ -987,6 +990,7 @@ export type Database = {
           p_ability_id: string
           p_ability_name: string
           p_action_type: string
+          p_save?: Json
           p_targets: Json
           p_user_participant_id: string
         }
@@ -996,6 +1000,10 @@ export type Database = {
       request_short_rest: {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
+      }
+      resolve_ability_use: {
+        Args: { p_results: Json; p_use_id: string }
+        Returns: string
       }
       short_rest_player_ids: { Args: { p_session_id: string }; Returns: string[] }
       use_consumable_item: {
