@@ -29,6 +29,7 @@ vi.mock('./realtime', () => ({
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
   addSessionParticipant,
+  closeShortRest,
   createGameSessionRecord,
   fetchSessionRoster,
   findGmActiveSessionId,
@@ -37,6 +38,7 @@ import {
   groupSessionRoster,
   listSessionParticipantCharacterIds,
   listPlayerActiveSessions,
+  openShortRest,
   setSimpleNpcVisible,
   subscribeToGameSession,
   toActivePlayerSessions,
@@ -351,5 +353,32 @@ describe('criação e fim de uma sessão', () => {
   it('listSessionParticipantCharacterIds lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(listSessionParticipantCharacterIds('s1')).rejects.toBe(failure);
+  });
+});
+
+describe('openShortRest', () => {
+  it('abre o Descanso Curto pela função do banco e devolve a identidade dele', async () => {
+    state.respond = () => ({ data: 'rest-1' });
+    await expect(openShortRest('s1')).resolves.toBe('rest-1');
+    const [call] = callsOf(state.calls, 'open_short_rest', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1' });
+  });
+
+  it('lança o erro do banco (combate ativo, sem restante, não é o Mestre)', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(openShortRest('s1')).rejects.toBe(failure);
+  });
+});
+
+describe('closeShortRest', () => {
+  it('encerra o Descanso Curto pela função do banco', async () => {
+    await closeShortRest('s1');
+    const [call] = callsOf(state.calls, 'close_short_rest', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1' });
+  });
+
+  it('lança o erro do banco', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(closeShortRest('s1')).rejects.toBe(failure);
   });
 });

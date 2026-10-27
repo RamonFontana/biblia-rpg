@@ -57,6 +57,7 @@ import {
   subscribeToCharacterUpdates,
   updateCharacter,
   updateCharacterDeathState,
+  markShortRestRecharge,
   updateCharacterEquipment,
   updateCharacterRest,
   updateCharacterSkills,
@@ -119,6 +120,21 @@ describe('updateCharacterRest', () => {
   it('lança o erro ao gravar', async () => {
     state.respond = () => ({ error: failure });
     await expect(updateCharacterRest('c1', { stats, skills: {} })).rejects.toBe(failure);
+  });
+});
+
+describe('markShortRestRecharge', () => {
+  it('grava as Habilidades recarregadas e a identidade do descanso na ficha', async () => {
+    const skills = { ability_uses: { golpe: 0 } };
+    await markShortRestRecharge('c1', skills, 'rest-1');
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ skills, last_short_rest_recharge: 'rest-1' });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(markShortRestRecharge('c1', {}, 'rest-1')).rejects.toBe(failure);
   });
 });
 

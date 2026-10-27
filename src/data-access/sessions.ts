@@ -26,6 +26,23 @@ export async function updateGameSession(
   if (error) throw error;
 }
 
+/**
+ * O Mestre abre o Descanso Curto (ADR 0006). A função confere que é o Mestre, que não há combate
+ * ativo, que sobra Descanso Curto no dia e que não há outro aberto; soma 1 ao dia. Devolve a
+ * identidade do descanso.
+ */
+export async function openShortRest(sessionId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('open_short_rest', { p_session_id: sessionId });
+  if (error) throw error;
+  return data;
+}
+
+/** O Mestre encerra o Descanso Curto aberto; zera os pedidos e quem terminou. */
+export async function closeShortRest(sessionId: string): Promise<void> {
+  const { error } = await supabase.rpc('close_short_rest', { p_session_id: sessionId });
+  if (error) throw error;
+}
+
 /** Cria a sessão, o Mestre e os participantes numa só chamada (RPC `create_game_session`). */
 export async function createGameSessionRecord(input: {
   name: string;

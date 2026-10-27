@@ -138,6 +138,18 @@ insert into public.combat_participants (id, combat_id, entity_id, entity_type, i
   ('aaaaaaaa-0000-0000-0000-000000000009', '99999999-0000-0000-0000-000000000005', '33333333-0000-0000-0000-000000000001', 'player', 20, 0),
   ('aaaaaaaa-0000-0000-0000-00000000000a', '99999999-0000-0000-0000-000000000005', '33333333-0000-0000-0000-000000000002', 'player', 15, 20);
 
+-- Sessões de apoio para o Descanso Curto (open_short_rest / close_short_rest): S3 sem combate e sem
+-- descanso aberto; S4 com um descanso aberto, um pedido e um "terminei". Dave é jogador nas duas.
+insert into public.game_sessions (id, name, gm_id, status) values
+  ('22222222-0000-0000-0000-000000000003', 'S3 sem combate', (select gm from who), 'active');
+insert into public.game_sessions (id, name, gm_id, status, short_rests_today, short_rest_id, short_rest_opened_by, short_rest_requested, short_rest_finished) values
+  ('22222222-0000-0000-0000-000000000004', 'S4 com descanso aberto', (select gm from who), 'active', 1,
+   'bbbbbbbb-0000-0000-0000-000000000001', 'group',
+   array['33333333-0000-0000-0000-000000000005'::uuid], array['33333333-0000-0000-0000-000000000005'::uuid]);
+insert into public.session_participants (session_id, character_id, user_id) values
+  ('22222222-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000005', (select dave from who)),
+  ('22222222-0000-0000-0000-000000000004', '33333333-0000-0000-0000-000000000005', (select dave from who));
+
 create temp table results (name text, actual text, expected text);
 
 -- uid helpers para ler legível
@@ -334,6 +346,30 @@ select pg_temp.t('apply_attack: efeito resistido registra o gatilho sem Condiç�
 
 select pg_temp.t('apply_attack: ninguém ataca a si mesmo', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001',14,19,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000001'$q$), 'error=42501');
 select pg_temp.t('apply_attack: quem está a 0 PV não ataca', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000009','aaaaaaaa-0000-0000-0000-00000000000a',14,19,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-00000000000a'$q$), 'error=42501');
+
+-- ================= game_sessions / open_short_rest / close_short_rest =================
+select pg_temp.t('open_short_rest: anon não abre', pg_temp.run_as(null, $q$select public.open_short_rest('22222222-0000-0000-0000-000000000003')$q$), 'error=42501');
+select pg_temp.t('open_short_rest: jogador da sessão não abre', pg_temp.run_as((select dave from who), $q$select public.open_short_rest('22222222-0000-0000-0000-000000000003')$q$), 'error=42501');
+select pg_temp.t('open_short_rest: Mestre de outra sessão não abre', pg_temp.run_as((select carol from who), $q$select public.open_short_rest('22222222-0000-0000-0000-000000000003')$q$), 'error=42501');
+select pg_temp.t('open_short_rest: Mestre abre e marca "aberto pelo Mestre"', pg_temp.after_as((select gm from who), array[$q$select public.open_short_rest('22222222-0000-0000-0000-000000000003')$q$], $q$select (short_rest_id is not null)::text || '/' || short_rest_opened_by from public.game_sessions where id='22222222-0000-0000-0000-000000000003'$q$), 'true/master');
+select pg_temp.t('open_short_rest: abrir conta 1 dos 2 do dia', pg_temp.after_as((select gm from who), array[$q$select public.open_short_rest('22222222-0000-0000-0000-000000000003')$q$], $q$select short_rests_today::text from public.game_sessions where id='22222222-0000-0000-0000-000000000003'$q$), '1');
+select pg_temp.t('open_short_rest: devolve a identidade que ficou gravada', pg_temp.after_as((select gm from who), array[$q$create temp table opened as select public.open_short_rest('22222222-0000-0000-0000-000000000003') as id$q$], $q$select (o.id = s.short_rest_id)::text from opened o, public.game_sessions s where s.id='22222222-0000-0000-0000-000000000003'$q$), 'true');
+select pg_temp.t('open_short_rest: não abre outro com um aberto', pg_temp.run_as((select gm from who), $q$select public.open_short_rest('22222222-0000-0000-0000-000000000004')$q$), 'error=42501');
+select pg_temp.t('open_short_rest: combate ativo bloqueia', pg_temp.run_as((select gm from who), $q$select public.open_short_rest('22222222-0000-0000-0000-000000000001')$q$), 'error=42501');
+select pg_temp.t('open_short_rest: combate encerrado não bloqueia', pg_temp.after_as((select gm from who), array[$q$update public.combats set status='finished' where session_id='22222222-0000-0000-0000-000000000001'$q$, $q$select public.open_short_rest('22222222-0000-0000-0000-000000000001')$q$], $q$select short_rest_opened_by from public.game_sessions where id='22222222-0000-0000-0000-000000000001'$q$), 'master');
+select pg_temp.t('open_short_rest: sem Descanso Curto restante bloqueia', pg_temp.after_as((select gm from who), array[$q$update public.game_sessions set short_rests_today=2 where id='22222222-0000-0000-0000-000000000003'$q$, $q$select public.open_short_rest('22222222-0000-0000-0000-000000000003')$q$], $q$select short_rests_today::text from public.game_sessions where id='22222222-0000-0000-0000-000000000003'$q$), 'error=42501');
+select pg_temp.t('open_short_rest: sessão que não existe', pg_temp.run_as((select gm from who), $q$select public.open_short_rest('22222222-0000-0000-0000-0000000000ff')$q$), 'error=42501');
+select pg_temp.t('close_short_rest: anon não encerra', pg_temp.run_as(null, $q$select public.close_short_rest('22222222-0000-0000-0000-000000000004')$q$), 'error=42501');
+select pg_temp.t('close_short_rest: jogador não encerra', pg_temp.run_as((select dave from who), $q$select public.close_short_rest('22222222-0000-0000-0000-000000000004')$q$), 'error=42501');
+select pg_temp.t('close_short_rest: Mestre de outra sessão não encerra', pg_temp.run_as((select carol from who), $q$select public.close_short_rest('22222222-0000-0000-0000-000000000004')$q$), 'error=42501');
+select pg_temp.t('close_short_rest: Mestre encerra', pg_temp.after_as((select gm from who), array[$q$select public.close_short_rest('22222222-0000-0000-0000-000000000004')$q$], $q$select (short_rest_id is null)::text || '/' || (short_rest_opened_by is null)::text from public.game_sessions where id='22222222-0000-0000-0000-000000000004'$q$), 'true/true');
+select pg_temp.t('close_short_rest: zera os pedidos e quem terminou', pg_temp.after_as((select gm from who), array[$q$select public.close_short_rest('22222222-0000-0000-0000-000000000004')$q$], $q$select cardinality(short_rest_requested)::text || '/' || cardinality(short_rest_finished)::text from public.game_sessions where id='22222222-0000-0000-0000-000000000004'$q$), '0/0');
+select pg_temp.t('close_short_rest: encerrar não devolve o Descanso Curto do dia', pg_temp.after_as((select gm from who), array[$q$select public.close_short_rest('22222222-0000-0000-0000-000000000004')$q$], $q$select short_rests_today::text from public.game_sessions where id='22222222-0000-0000-0000-000000000004'$q$), '1');
+select pg_temp.t('close_short_rest: sem descanso aberto não dá erro', pg_temp.run_as((select gm from who), $q$select public.close_short_rest('22222222-0000-0000-0000-000000000003')$q$), 'rows=1');
+select pg_temp.t('game_sessions: o Mestre fecha o descanso pela atualização direta (Descanso Longo, período)', pg_temp.after_as((select gm from who), array[$q$update public.game_sessions set short_rest_id=null, short_rest_opened_by=null, short_rest_requested='{}', short_rest_finished='{}' where id='22222222-0000-0000-0000-000000000004'$q$], $q$select (short_rest_id is null)::text from public.game_sessions where id='22222222-0000-0000-0000-000000000004'$q$), 'true');
+select pg_temp.t('game_sessions: jogador não altera o descanso direto', pg_temp.run_as((select dave from who), $q$update public.game_sessions set short_rest_id=null, short_rest_opened_by=null where id='22222222-0000-0000-0000-000000000004'$q$), 'rows=0');
+select pg_temp.t('game_sessions: o banco recusa "aberto por" desconhecido', pg_temp.run_as((select gm from who), $q$update public.game_sessions set short_rest_opened_by='todos' where id='22222222-0000-0000-0000-000000000004'$q$), 'error=23514');
+select pg_temp.t('game_sessions: o banco recusa descanso aberto sem "aberto por"', pg_temp.run_as((select gm from who), $q$update public.game_sessions set short_rest_opened_by=null where id='22222222-0000-0000-0000-000000000004'$q$), 'error=23514');
 
 -- ============================ resultado ============================
 do $$

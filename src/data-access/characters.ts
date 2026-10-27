@@ -144,6 +144,19 @@ export async function updateCharacterRest(
   if (error) throw error;
 }
 
+/** Grava as Habilidades recarregadas no Descanso Curto e a identidade do descanso (ADR 0006). */
+export async function markShortRestRecharge(
+  id: string,
+  skills: CharacterSkills | EnemySkill[],
+  restId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ skills: toJson(skills), last_short_rest_recharge: restId })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function setCharacterVisible(id: string, isVisible: boolean): Promise<void> {
   const { error } = await supabase
     .from('characters')

@@ -364,6 +364,10 @@ export type Database = {
           id: string
           last_long_rest_day: number | null
           name: string
+          short_rest_finished: string[]
+          short_rest_id: string | null
+          short_rest_opened_by: string | null
+          short_rest_requested: string[]
           short_rests_today: number | null
           status: string
           updated_at: string
@@ -377,6 +381,10 @@ export type Database = {
           id?: string
           last_long_rest_day?: number | null
           name: string
+          short_rest_finished?: string[]
+          short_rest_id?: string | null
+          short_rest_opened_by?: string | null
+          short_rest_requested?: string[]
           short_rests_today?: number | null
           status: string
           updated_at?: string
@@ -390,6 +398,10 @@ export type Database = {
           id?: string
           last_long_rest_day?: number | null
           name?: string
+          short_rest_finished?: string[]
+          short_rest_id?: string | null
+          short_rest_opened_by?: string | null
+          short_rest_requested?: string[]
           short_rests_today?: number | null
           status?: string
           updated_at?: string
@@ -877,6 +889,10 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: undefined
       }
+      close_short_rest: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
       create_game_session: {
         Args: {
           enemies: Json
@@ -897,6 +913,7 @@ export type Database = {
         Args: { check_trade_id: string }
         Returns: boolean
       }
+      open_short_rest: { Args: { p_session_id: string }; Returns: string }
       use_consumable_item: {
         Args: { p_character_item_id: string; p_target_character_id?: string }
         Returns: boolean
