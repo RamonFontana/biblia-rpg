@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: se pode gastar (com motivo) e a cura de um dado, com testes de seed fixa
-- [ ] Gasto grava PV novo e gastos + 1 numa só atualização
-- [ ] Botões desabilitados com o motivo à vista
-- [ ] Mestre gasta pelos NPCs jogáveis
-- [ ] Teste de componente e E2E (o PV sobe na tela do Mestre)
+- [x] Motor: se pode gastar (com motivo) e a cura de um dado, com testes de seed fixa
+- [x] Gasto grava PV novo e gastos + 1 numa só atualização
+- [x] Botões desabilitados com o motivo à vista
+- [x] Mestre gasta pelos NPCs jogáveis
+- [x] Teste de componente e E2E (o PV sobe na tela do Mestre)

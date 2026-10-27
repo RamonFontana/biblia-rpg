@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration: estado do descanso em `game_sessions` (aberto, identidade, quem abriu, pediram, terminaram) e funções de abrir e encerrar (`SECURITY DEFINER`, `search_path` fixo, revoke de public/anon)
-- [ ] Cartão "Descanso Curto" nas duas telas
-- [ ] Recarga das Habilidades uma vez por descanso, também para quem abre o app com o descanso aberto
-- [ ] Descanso Longo e avanço de período fecham o Descanso Curto aberto
-- [ ] Testes em `rls.sql` por papel, teste de componente e E2E
+- [x] Migration: estado do descanso em `game_sessions` (aberto, identidade, quem abriu, pediram, terminaram) e funções de abrir e encerrar (`SECURITY DEFINER`, `search_path` fixo, revoke de public/anon)
+- [x] Cartão "Descanso Curto" nas duas telas
+- [x] Recarga das Habilidades uma vez por descanso, também para quem abre o app com o descanso aberto
+- [x] Descanso Longo e avanço de período fecham o Descanso Curto aberto
+- [x] Testes em `rls.sql` por papel, teste de componente e E2E

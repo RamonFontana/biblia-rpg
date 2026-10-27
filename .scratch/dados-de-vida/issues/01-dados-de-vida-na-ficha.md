@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] O motor tem o dado da Vocação (10 Guerreiro/Caçador, 8 demais) e o estado dos Dados de Vida (total = nível, restantes, dado)
-- [ ] PV inicial e média do level-up leem do motor; os testes atuais continuam verdes
-- [ ] Migration: coluna de Dados de Vida gastos em `characters` (inteiro, padrão 0, não negativo) e a do último Descanso Curto recarregado
-- [ ] Ficha e cartão do jogador do Mestre mostram "Dados de Vida restantes/total (dX)"
-- [ ] Teste de componente e E2E da exibição
+- [x] O motor tem o dado da Vocação (10 Guerreiro/Caçador, 8 demais) e o estado dos Dados de Vida (total = nível, restantes, dado)
+- [x] PV inicial e média do level-up leem do motor; os testes atuais continuam verdes
+- [x] Migration: coluna de Dados de Vida gastos em `characters` (inteiro, padrão 0, não negativo) e a do último Descanso Curto recarregado
+- [x] Ficha e cartão do jogador do Mestre mostram "Dados de Vida restantes/total (dX)"
+- [x] Teste de componente e E2E da exibição

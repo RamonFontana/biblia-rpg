@@ -6,6 +6,6 @@
 
 **Status:** ready-for-agent
 
-- [ ] `fix:` o 1d4 de Fé é digitado ou rolado pela Rolagem Virtual, com teste do comportamento certo
-- [ ] `fix:` o indicador do jogador usa a regra de 1 Descanso Longo por dia (a mesma do motor)
-- [ ] Teste de componente do diálogo e do indicador
+- [x] `fix:` o 1d4 de Fé é digitado ou rolado pela Rolagem Virtual, com teste do comportamento certo
+- [x] `fix:` o indicador do jogador usa a regra de 1 Descanso Longo por dia (a mesma do motor)
+- [x] Teste de componente do diálogo e do indicador

@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: quem conta no "todos" (sem Morto, Morrendo conta), motivo de bloqueio, abrir no último pedido, fechar no último "Terminei"
-- [ ] Funções no banco para pedir, retirar e terminar; as ações do Mestre usam as mesmas; pedidos zeram ao abrir e na virada do dia
-- [ ] Testes em `rls.sql` por papel (anon, jogador, jogador de fora, Mestre)
-- [ ] Cartão com pedir/retirar/recusar/Terminei
-- [ ] Teste de componente e E2E com dois jogadores
+- [x] Motor: quem conta no "todos" (sem Morto, Morrendo conta), motivo de bloqueio, abrir no último pedido, fechar no último "Terminei"
+- [x] Funções no banco para pedir, retirar e terminar; as ações do Mestre usam as mesmas; pedidos zeram ao abrir e na virada do dia
+- [x] Testes em `rls.sql` por papel (anon, jogador, jogador de fora, Mestre)
+- [x] Cartão com pedir/retirar/recusar/Terminei
+- [x] Teste de componente e E2E com dois jogadores

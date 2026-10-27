@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: devolução de metade dos gastos (0, 1, 3 e 5 gastos)
-- [ ] Descanso Longo aplica a devolução
-- [ ] `fix:` sessão nova restaura PV máximo e usos de Habilidade, com teste do comportamento certo; zera os Dados de Vida gastos
-- [ ] E2E do Longo e da sessão nova
+- [x] Motor: devolução de metade dos gastos (0, 1, 3 e 5 gastos)
+- [x] Descanso Longo aplica a devolução
+- [x] `fix:` sessão nova restaura PV máximo e usos de Habilidade, com teste do comportamento certo; zera os Dados de Vida gastos
+- [x] E2E do Longo e da sessão nova
