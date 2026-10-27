@@ -42,6 +42,14 @@ describe('esquema do efeito de Habilidade de inimigo', () => {
     expect(parse({ ...base, faithLoss: { sides: 8 } })).toBe(false);
   });
 
+  it('a perda de Fé exige um TR: sem ele ninguém falha e a Fé nunca seria tirada', () => {
+    const parse = (v: unknown) => enemyAbilityEffectSchema.safeParse(v).success;
+    const semTr = { usage: 'unlimited', faithLoss: { sides: 4 } };
+    expect(parse(semTr)).toBe(false);
+    expect(parse({ ...semTr, apply: [{ conditionId: 'caido' }] })).toBe(false);
+    expect(parse({ ...semTr, save: { attribute: 'sab', cd: 12 } })).toBe(true);
+  });
+
   it('a Habilidade da biblioteca exige id enemy-, nome e descrição', () => {
     const effect = { ...base, apply: [{ conditionId: 'caido' }] };
     expect(

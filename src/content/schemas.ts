@@ -124,6 +124,9 @@ export const enemyAbilityEffectSchema = z
   })
   .refine((effect) => effect.apply !== undefined || effect.faithLoss !== undefined, {
     message: 'O efeito precisa aplicar uma Condição ou tirar Fé',
+  })
+  .refine((effect) => effect.faithLoss === undefined || effect.save !== undefined, {
+    message: 'A perda de Fé só vale para quem falha num TR',
   });
 
 export const enemyAbilitySchema = z.strictObject({
