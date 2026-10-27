@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AbilityPendingPanel } from './AbilityPendingPanel';
 import { AttackLog } from './AttackLog';
+import { abilityStateOf } from '@/domain/enemyAbility';
 import { EnemyAbilityPanel } from './EnemyAbilityPanel';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
@@ -287,7 +288,9 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
             participantId: p.id,
             entityId: p.entity_id,
             name: nameOf(p.entity_id),
+            abilityState: abilityStateOf(p.ability_state),
           }))}
+        currentTurnParticipantId={currentTurnParticipant?.id}
         characters={participants
           .filter((p) => p.entity_type !== 'enemy')
           .map((p) => ({

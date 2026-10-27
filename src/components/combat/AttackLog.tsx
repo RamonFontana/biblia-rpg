@@ -45,12 +45,15 @@ function abilityTargetsText(use: CombatAbilityUse): string {
           ? t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')
           : t.failed === false
             ? 'passou'
-            : 'resistiu';
+            : t.faithLost !== undefined
+              ? 'falhou'
+              : 'resistiu';
+      const faith = t.failed && t.faithLost !== undefined ? ` · perdeu ${t.faithLost} de Fé` : '';
       const roll =
         t.failed !== undefined && use.cd !== null
           ? `d20 ${t.natural} (${t.total} contra CD ${use.cd}) · `
           : '';
-      return `${t.name}: ${roll}${outcome}`;
+      return `${t.name}: ${roll}${outcome}${faith}`;
     })
     .join(' · ');
 }

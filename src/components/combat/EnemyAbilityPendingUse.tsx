@@ -9,6 +9,7 @@ import {
   saveReminder,
   type SaveAttribute,
 } from '@/domain/abilitySave';
+import { checkFaithDie, enemyEffectOfUse, rollEnemyFaithDie } from '@/domain/enemyAbility';
 import { pickCountingDie, type MasterMark } from '@/domain/testMode';
 import { useTestResults } from '@/hooks/useTestResults';
 import { getErrorMessage } from '@/lib/errorMessage';
@@ -26,6 +27,9 @@ interface RollDraft {
   virtual?: number[];
 }
 
+/** O texto do campo de Fé vira número; vazio ou texto que não é número vira `''`. */
+const faithValue = (text: string): number | '' => (text === '' ? '' : Number(text));
+
 const validRoll = (value: string) => {
   const n = Number(value);
   return value !== '' && Number.isInteger(n) && n >= 1 && n <= 20;
@@ -40,6 +44,7 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
   const targets = abilityUseTargets(use.targets);
   const results = useTestResults(use.test_id);
   const [drafts, setDrafts] = useState<Record<string, RollDraft>>({});
+  const [faithDrafts, setFaithDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const attribute = use.save_attribute as SaveAttribute | null;
@@ -50,7 +55,29 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
   const draftOf = (id: string): RollDraft => drafts[id] ?? { value: '', mark: null };
   const update = (id: string, patch: Partial<RollDraft>) =>
     setDrafts((current) => ({ ...current, [id]: { ...draftOf(id), ...patch } }));
-  const ready = npcTargets.every((t) => validRoll(draftOf(t.participantId).value));
+  const effect = enemyEffectOfUse(use);
+  const faithSides = effect?.faithLoss?.sides ?? null;
+  const faithOf = (id: string) => faithDrafts[id] ?? '';
+  const faithValid = (id: string) =>
+    faithSides !== null && checkFaithDie(faithValue(faithOf(id)), faithSides) === null;
+
+  // Quem já se sabe que falhou: o jogador que respondeu e foi reprovado. O NPC jogável só se sabe
+  // pelo d20 que o Mestre lança, então o campo dele fica aberto e a falta é cobrada pelo serviço.
+  const knownFailed = (participantId: string): boolean => {
+    const entityId = participants.find((p) => p.id === participantId)?.entity_id;
+    const row = results.find((r) => r.character_id === entityId);
+    return row?.status === 'submitted' && row.is_approved === false;
+  };
+  const showsFaithDie = (participantId: string) =>
+    faithSides !== null && (isPlayer(participantId) ? knownFailed(participantId) : true);
+  const faithReady = targets.every(
+    (t) =>
+      faithSides === null ||
+      !isPlayer(t.participantId) ||
+      !knownFailed(t.participantId) ||
+      faithValid(t.participantId),
+  );
+  const ready = npcTargets.every((t) => validRoll(draftOf(t.participantId).value)) && faithReady;
 
   const statusOf = (participantId: string): string => {
     const entityId = participants.find((p) => p.id === participantId)?.entity_id;
@@ -69,6 +96,14 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
     });
   };
 
+  const rollFaithVirtually = (id: string) => {
+    if (faithSides === null) return;
+    setFaithDrafts((current) => ({
+      ...current,
+      [id]: String(rollEnemyFaithDie(faithSides, systemRng)),
+    }));
+  };
+
   const apply = async () => {
     setBusy(true);
     setError(null);
@@ -81,6 +116,11 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
           natural: Number(draftOf(t.participantId).value),
           mark: draftOf(t.participantId).mark,
         })),
+        faithRolls: targets.flatMap((t) =>
+          showsFaithDie(t.participantId) && faithValid(t.participantId)
+            ? [{ participantId: t.participantId, value: Number(faithOf(t.participantId)) }]
+            : [],
+        ),
       });
     } catch (e) {
       setError(getErrorMessage(e, 'Não foi possível aplicar os resultados.'));
@@ -109,8 +149,21 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
           {targets.map((t) => {
             if (isPlayer(t.participantId)) {
               return (
-                <li key={t.participantId} className="text-sm text-stone-200">
-                  {t.name}: {statusOf(t.participantId)}
+                <li key={t.participantId} className="space-y-1 text-sm text-stone-200">
+                  <p>
+                    {t.name}: {statusOf(t.participantId)}
+                  </p>
+                  {showsFaithDie(t.participantId) && faithSides !== null && (
+                    <FaithDie
+                      name={t.name}
+                      sides={faithSides}
+                      value={faithOf(t.participantId)}
+                      onChange={(value) =>
+                        setFaithDrafts((current) => ({ ...current, [t.participantId]: value }))
+                      }
+                      onRoll={() => rollFaithVirtually(t.participantId)}
+                    />
+                  )}
                 </li>
               );
             }
@@ -164,10 +217,23 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
                       : `Rolou ${draft.virtual.join(' e ')}, vale ${draft.value}.`}
                   </p>
                 )}
+                {faithSides !== null && (
+                  <FaithDie
+                    name={t.name}
+                    sides={faithSides}
+                    value={faithOf(t.participantId)}
+                    hint="só vale se falhar"
+                    onChange={(value) =>
+                      setFaithDrafts((current) => ({ ...current, [t.participantId]: value }))
+                    }
+                    onRoll={() => rollFaithVirtually(t.participantId)}
+                  />
+                )}
               </li>
             );
           })}
         </ul>
+        {effect?.reminder && <p className="text-xs text-amber-400">Lembrete: {effect.reminder}</p>}
         <p className="text-xs text-stone-500">
           Quem não responder fica sem efeito quando você aplicar os resultados.
         </p>
@@ -181,5 +247,48 @@ export function EnemyAbilityPendingUse({ use, participants }: Props) {
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+/** O dado de Fé (1d4 ou 1d6) de um alvo que falhou: digitado, ou pela Rolagem Virtual. */
+function FaithDie({
+  name,
+  sides,
+  value,
+  hint,
+  onChange,
+  onRoll,
+}: {
+  name: string;
+  sides: 4 | 6;
+  value: string;
+  hint?: string;
+  onChange: (value: string) => void;
+  onRoll: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={sides}
+        aria-label={`Dado de Fé de ${name} (1d${sides})`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-20 rounded border border-stone-700 bg-stone-800 px-2 py-1 text-sm text-stone-200"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={onRoll}
+        aria-label={`Rolagem Virtual de Fé de ${name}`}
+      >
+        Rolagem Virtual
+      </Button>
+      <span className="text-xs text-stone-400">
+        perde 1d{sides} de Fé{hint ? ` (${hint})` : ''}
+      </span>
+    </div>
   );
 }

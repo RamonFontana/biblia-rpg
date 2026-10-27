@@ -543,7 +543,9 @@ describe('CombatDashboard: Habilidades dos inimigos', () => {
     render(<CombatDashboard availableEntities={entities} />);
     const props = stubProps('EnemyAbilityPanel')!;
     expect(props.sessionId).toBe('s');
-    expect(props.enemies).toEqual([{ participantId: 'p2', entityId: 'ent-p2', name: 'Anakim' }]);
+    expect(props.enemies).toEqual([
+      { participantId: 'p2', entityId: 'ent-p2', name: 'Anakim', abilityState: {} },
+    ]);
     expect(props.characters).toEqual([
       { participantId: 'p1', entityId: 'ent-p1', entityType: 'player', name: 'Eliabe' },
       { participantId: 'p4', entityId: 'ent-p4', entityType: 'npc', name: 'Jonas' },
@@ -555,7 +557,26 @@ describe('CombatDashboard: Habilidades dos inimigos', () => {
     render(<CombatDashboard availableEntities={[]} />);
     const props = stubProps('EnemyAbilityPanel')!;
     expect(props.enemies).toEqual([
-      { participantId: 'p2', entityId: 'ent-p2', name: 'Desconhecido' },
+      { participantId: 'p2', entityId: 'ent-p2', name: 'Desconhecido', abilityState: {} },
     ]);
+  });
+
+  it('leva ao painel o estado de uso de cada inimigo e de quem é o turno', () => {
+    startCombat(
+      [
+        participant('p1'),
+        participant('p2', {
+          entity_type: 'enemy',
+          ability_state: { 'enemy-grito-atormentador': 'recharging', lixo: 'x' },
+        } as Partial<CombatParticipant>),
+      ],
+      1,
+    );
+    render(<CombatDashboard availableEntities={entities} />);
+    const props = stubProps('EnemyAbilityPanel')!;
+    expect((props.enemies as { abilityState: unknown }[])[0].abilityState).toEqual({
+      'enemy-grito-atormentador': 'recharging',
+    });
+    expect(props.currentTurnParticipantId).toBe('p2');
   });
 });

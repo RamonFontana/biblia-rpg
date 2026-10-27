@@ -144,3 +144,98 @@ describe('EnemyAbilityPendingUse', () => {
     expect(screen.getByRole('button', { name: 'Aplicar resultados' })).toBeEnabled();
   });
 });
+
+describe('EnemyAbilityPendingUse: Fé perdida', () => {
+  const grito = () => pendingRow({ ability_id: 'enemy-grito-atormentador', cd: 12 });
+  const faithInput = (name: string) => screen.queryByLabelText(`Dado de Fé de ${name} (1d4)`);
+
+  it('pede o dado de Fé só de quem falhou; quem passou ou ainda não respondeu não pede', () => {
+    h.results = [
+      result({ status: 'submitted', is_approved: false, result_value: 9, roll_value: 6 }),
+      result({ id: 'r2', character_id: 'c-rute', status: 'submitted', is_approved: true }),
+    ];
+    render(<EnemyAbilityPendingUse use={grito()} participants={participants} />);
+    expect(faithInput('Eliabe')).toBeInTheDocument();
+    expect(faithInput('Rute')).not.toBeInTheDocument();
+  });
+
+  it('aplicar fica desabilitado até o dado de Fé de quem falhou valer de 1 a 4', () => {
+    h.results = [
+      result({ status: 'submitted', is_approved: false, result_value: 9, roll_value: 6 }),
+    ];
+    render(<EnemyAbilityPendingUse use={grito()} participants={participants} />);
+    const apply = screen.getByRole('button', { name: 'Aplicar resultados' });
+    expect(apply).toBeDisabled();
+    for (const bad of ['0', '5', '2.5']) {
+      fireEvent.change(faithInput('Eliabe')!, { target: { value: bad } });
+      expect(apply).toBeDisabled();
+    }
+    fireEvent.change(faithInput('Eliabe')!, { target: { value: '4' } });
+    expect(apply).toBeEnabled();
+  });
+
+  it('manda o dado de Fé de quem falhou ao serviço', async () => {
+    h.results = [
+      result({ status: 'submitted', is_approved: false, result_value: 9, roll_value: 6 }),
+    ];
+    render(<EnemyAbilityPendingUse use={grito()} participants={participants} />);
+    fireEvent.change(faithInput('Eliabe')!, { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar resultados' }));
+    await waitFor(() => expect(h.resolveEnemyAbilityUse).toHaveBeenCalled());
+    expect(h.resolveEnemyAbilityUse.mock.calls[0][0].faithRolls).toEqual([
+      { participantId: 'p-eliabe', value: 3 },
+    ]);
+  });
+
+  it('a Rolagem Virtual de Fé usa as faces do efeito', () => {
+    h.results = [
+      result({ status: 'submitted', is_approved: false, result_value: 9, roll_value: 6 }),
+    ];
+    render(<EnemyAbilityPendingUse use={grito()} participants={participants} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rolagem Virtual de Fé de Eliabe' }));
+    const value = Number((faithInput('Eliabe') as HTMLInputElement).value);
+    expect(value).toBeGreaterThanOrEqual(1);
+    expect(value).toBeLessThanOrEqual(4);
+  });
+
+  it('o NPC jogável mostra o dado de Fé sempre, para o caso de falhar', () => {
+    const use = grito();
+    use.targets = [{ participantId: 'p-npc', name: 'Jonas', conditions: [] }];
+    render(<EnemyAbilityPendingUse use={use} participants={participants} />);
+    expect(screen.getByLabelText('Dado de Fé de Jonas (1d4)')).toBeInTheDocument();
+  });
+
+  it('mostra o lembrete da Habilidade', () => {
+    render(<EnemyAbilityPendingUse use={grito()} participants={participants} />);
+    expect(
+      screen.getByText(/Desvantagem na próxima jogada de ataque de quem falhou\./),
+    ).toBeInTheDocument();
+  });
+
+  it('uma Habilidade sem perda de Fé não pede dado de Fé nem manda faithRolls', async () => {
+    h.results = [
+      result({ status: 'submitted', is_approved: false, result_value: 9, roll_value: 6 }),
+    ];
+    render(<EnemyAbilityPendingUse use={pendingRow()} participants={participants} />);
+    expect(faithInput('Eliabe')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar resultados' }));
+    await waitFor(() => expect(h.resolveEnemyAbilityUse).toHaveBeenCalled());
+    expect(h.resolveEnemyAbilityUse.mock.calls[0][0].faithRolls).toEqual([]);
+  });
+
+  it('a Maldição de Baal usa 1d6', () => {
+    h.results = [
+      result({ status: 'submitted', is_approved: false, result_value: 9, roll_value: 6 }),
+    ];
+    render(
+      <EnemyAbilityPendingUse
+        use={pendingRow({ ability_id: 'enemy-maldicao-de-baal', cd: 13 })}
+        participants={participants}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Dado de Fé de Eliabe (1d6)'), {
+      target: { value: '6' },
+    });
+    expect(screen.getByRole('button', { name: 'Aplicar resultados' })).toBeEnabled();
+  });
+});

@@ -249,6 +249,46 @@ describe('AttackLog: usos de Habilidade', () => {
     expect(row).toHaveTextContent('Bandido: d20 15 (19 contra CD 13) · passou');
   });
 
+  it('um uso que tira Fé mostra quanto cada alvo perdeu', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            status: 'resolved',
+            cd: 12,
+            save_attribute: 'sab',
+            ability_id: 'enemy-grito-atormentador',
+            targets: [
+              {
+                participantId: 'p2',
+                name: 'Eliabe',
+                conditions: [],
+                natural: 4,
+                total: 6,
+                failed: true,
+                faithLost: 3,
+              },
+              {
+                participantId: 'p3',
+                name: 'Rute',
+                conditions: [],
+                natural: 15,
+                total: 17,
+                failed: false,
+                faithLost: 0,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent('Eliabe: d20 4 (6 contra CD 12) · falhou · perdeu 3 de Fé');
+    expect(row).toHaveTextContent('Rute: d20 15 (17 contra CD 12) · passou');
+    expect(row).not.toHaveTextContent('Rute: d20 15 (17 contra CD 12) · passou · perdeu');
+  });
+
   it('um uso que expirou sem o TR diz que não teve efeito', () => {
     render(<AttackLog attacks={[]} abilityUses={[use({ status: 'expired', cd: 13 })]} />);
     expect(screen.getByRole('listitem')).toHaveTextContent('expirou sem efeito');

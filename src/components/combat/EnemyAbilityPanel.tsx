@@ -3,19 +3,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { getCharactersSkills } from '@/data-access/characters';
 import {
+  abilityStateKey,
   describeEnemyEffect,
   enemyAbilityOf,
+  enemyAbilityStatus,
+  rollRecharge,
   type EnemyAbility,
+  type EnemyAbilityStateMap,
   type EnemySkillLike,
 } from '@/domain/enemyAbility';
 import type { MasterMark } from '@/domain/testMode';
 import { getErrorMessage } from '@/lib/errorMessage';
-import { fireEnemyAbility } from '@/services/enemyAbilityService';
+import { systemRng } from '@/lib/systemRng';
+import { fireEnemyAbility, rechargeEnemyAbility } from '@/services/enemyAbilityService';
 
 interface EnemyRef {
   participantId: string;
   entityId: string;
   name: string;
+  /** O estado de uso das Habilidades deste inimigo neste combate (usada, em recarga). */
+  abilityState?: EnemyAbilityStateMap;
 }
 
 interface CharacterRef {
@@ -31,6 +38,8 @@ interface Props {
   enemies: EnemyRef[];
   /** Os personagens do combate (jogadores e NPCs) que a Habilidade pode mirar. */
   characters: CharacterRef[];
+  /** O participante de quem é o turno: no início dele, a Recarga é lançada. */
+  currentTurnParticipantId?: string;
 }
 
 interface EnemyWithAbilities extends EnemyRef {
@@ -42,10 +51,17 @@ interface EnemyWithAbilities extends EnemyRef {
  * e os personagens que ela atinge. O TR chega aos celulares dos jogadores; o NPC jogável é rolado
  * por ele (ADR 0007). Habilidades só com texto ficam na ficha do inimigo.
  */
-export function EnemyAbilityPanel({ sessionId, enemies, characters }: Props) {
+export function EnemyAbilityPanel({
+  sessionId,
+  enemies,
+  characters,
+  currentTurnParticipantId,
+}: Props) {
   const [rows, setRows] = useState<Record<string, { name: string; skills: unknown }>>({});
   const [chosen, setChosen] = useState<{ enemy: EnemyRef; ability: EnemyAbility } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [d6, setD6] = useState<Record<string, string>>({});
+  const [rechargeError, setRechargeError] = useState<string | null>(null);
 
   // Só os ids interessam à leitura: `enemies` muda de identidade a cada atualização do combate.
   const enemyKey = enemies.map((e) => e.entityId).join(',');
@@ -71,6 +87,26 @@ export function EnemyAbilityPanel({ sessionId, enemies, characters }: Props) {
   const withAbilities = list.filter((e) => e.abilities.length > 0);
   if (withAbilities.length === 0 && !notice) return null;
 
+  const recharge = async (enemy: EnemyWithAbilities, ability: EnemyAbility) => {
+    const key = abilityStateKey(ability);
+    setRechargeError(null);
+    try {
+      const back = await rechargeEnemyAbility({
+        participantId: enemy.participantId,
+        abilityKey: key,
+        abilityState: enemy.abilityState ?? {},
+        d6: Number(d6[key + enemy.participantId]),
+      });
+      setNotice(
+        back
+          ? `${ability.name} voltou: ${enemy.name} pode usá-la de novo.`
+          : `${ability.name} continua em Recarga: ${enemy.name} tenta de novo no próximo turno.`,
+      );
+    } catch (e) {
+      setRechargeError(getErrorMessage(e, 'Não foi possível recarregar a Habilidade.'));
+    }
+  };
+
   return (
     <section className="space-y-3" aria-label="Habilidades dos inimigos">
       {notice && (
@@ -93,31 +129,94 @@ export function EnemyAbilityPanel({ sessionId, enemies, characters }: Props) {
               <div key={enemy.participantId} className="space-y-2">
                 <p className="text-sm font-semibold text-stone-200">{enemy.name}</p>
                 <ul className="space-y-2">
-                  {enemy.abilities.map((ability, index) => (
-                    <li
-                      key={`${ability.id}-${index}`}
-                      className="flex items-start justify-between gap-3 rounded-md border border-stone-800 bg-stone-800/30 p-2"
-                    >
-                      <div>
-                        <p className="text-sm text-stone-200">{ability.name}</p>
-                        <p className="text-xs text-stone-400">
-                          {describeEnemyEffect(ability.effect)}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        aria-label={`Usar ${ability.name} (${enemy.name})`}
-                        onClick={() => {
-                          setNotice(null);
-                          setChosen({ enemy, ability });
-                        }}
+                  {enemy.abilities.map((ability, index) => {
+                    const key = abilityStateKey(ability);
+                    const status = enemyAbilityStatus(key, enemy.abilityState);
+                    const recharging = enemy.abilityState?.[key] === 'recharging';
+                    const draft = d6[key + enemy.participantId] ?? '';
+                    const d6Valid = /^[1-6]$/.test(draft);
+                    return (
+                      <li
+                        key={`${ability.id}-${index}`}
+                        className="space-y-2 rounded-md border border-stone-800 bg-stone-800/30 p-2"
                       >
-                        Usar
-                      </Button>
-                    </li>
-                  ))}
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm text-stone-200">{ability.name}</p>
+                            <p className="text-xs text-stone-400">
+                              {describeEnemyEffect(ability.effect)}
+                            </p>
+                            {!status.ready && (
+                              <p className="text-xs text-amber-400">{status.reason}</p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            aria-label={`Usar ${ability.name} (${enemy.name})`}
+                            disabled={!status.ready}
+                            onClick={() => {
+                              setNotice(null);
+                              setChosen({ enemy, ability });
+                            }}
+                          >
+                            Usar
+                          </Button>
+                        </div>
+                        {recharging && currentTurnParticipantId === enemy.participantId && (
+                          <div className="space-y-1 rounded border border-amber-700/50 p-2">
+                            <p className="text-xs font-medium text-amber-300">
+                              Recarga (5-6): início do turno de {enemy.name}
+                            </p>
+                            <div className="flex flex-wrap items-end gap-2">
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min={1}
+                                max={6}
+                                aria-label={`d6 da Recarga de ${ability.name} (${enemy.name})`}
+                                value={draft}
+                                onChange={(e) =>
+                                  setD6((current) => ({
+                                    ...current,
+                                    [key + enemy.participantId]: e.target.value,
+                                  }))
+                                }
+                                className="w-20 rounded border border-stone-700 bg-stone-800 px-2 py-1 text-sm text-stone-200"
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                aria-label={`Rolagem Virtual da Recarga (${enemy.name})`}
+                                onClick={() =>
+                                  setD6((current) => ({
+                                    ...current,
+                                    [key + enemy.participantId]: String(rollRecharge(systemRng)),
+                                  }))
+                                }
+                              >
+                                Rolagem Virtual
+                              </Button>
+                              <Button
+                                size="sm"
+                                aria-label={`Recarregar ${ability.name} (${enemy.name})`}
+                                disabled={!d6Valid}
+                                onClick={() => recharge(enemy, ability)}
+                              >
+                                Recarregar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
+                {rechargeError && (
+                  <p role="alert" className="text-sm font-medium text-red-400">
+                    {rechargeError}
+                  </p>
+                )}
               </div>
             ))}
             {chosen && (
@@ -171,6 +270,7 @@ function TargetPicker({
         sessionId,
         enemyParticipantId: enemy.participantId,
         ability,
+        abilityState: enemy.abilityState ?? {},
         targets: picked.map((c) => {
           const mark = marks[c.participantId];
           return { ...c, mark: mark === 'off' || mark === undefined ? null : mark };
