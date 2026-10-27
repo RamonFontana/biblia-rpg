@@ -163,9 +163,9 @@ describe('fireEnemyAbility: sem TR', () => {
 
 describe('resolveEnemyAbilityUse', () => {
   const participants = [
-    { id: 'p-eliabe', entity_id: 'c-eliabe', entity_type: 'player' },
-    { id: 'p-rute', entity_id: 'c-rute', entity_type: 'player' },
-    { id: 'p-npc', entity_id: 'c-npc', entity_type: 'npc' },
+    { id: 'p-eliabe', entity_id: 'c-eliabe', entity_type: 'player' as const },
+    { id: 'p-rute', entity_id: 'c-rute', entity_type: 'player' as const },
+    { id: 'p-npc', entity_id: 'c-npc', entity_type: 'npc' as const },
   ];
   const use = {
     id: 'use-1',

@@ -1,3 +1,5 @@
+import type { EnemyAbilityEffect } from '@/content/schemas';
+
 export interface CharacterAttributes {
   for: number;
   des: number;
@@ -39,6 +41,10 @@ export interface CharacterNarrative {
 export interface EnemySkill {
   name: string;
   description: string;
+  /** A Habilidade da biblioteca do bestiário (`src/content/enemyAbilities.ts`). */
+  libraryId?: string;
+  /** O efeito de uma Habilidade personalizada (a biblioteca vale mais, se houver as duas). */
+  effect?: EnemyAbilityEffect;
 }
 
 export interface CharacterSkills {

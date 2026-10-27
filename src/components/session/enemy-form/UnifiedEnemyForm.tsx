@@ -1,7 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { enemyFormSchema, type EnemyFormValues } from './schema';
+import { EnemyAbilityEffectEditor } from './EnemyAbilityEffectEditor';
+import { MOCK_BESTIARY } from './bestiaryPresets';
+import { ENEMY_ABILITIES, findEnemyAbility } from '@/content/enemyAbilities';
+import { describeEnemyEffect } from '@/domain/enemyAbility';
 import { Plus, Upload, Trash2 } from 'lucide-react';
 import {
   Select,
@@ -19,57 +23,11 @@ export interface UnifiedEnemyFormProps {
   isSubmitting?: boolean;
 }
 
-const MOCK_BESTIARY = [
-  {
-    id: 'bandido-deserto',
-    name: 'Bandido do Deserto',
-    max_hp: 11,
-    ca: 11,
-    desc: 'Salteadores de beira de estrada com ataque furtivo e funda.',
-    attributes: { for: 10, des: 14, con: 12, int: 10, sab: 10, car: 10 },
-    vocation: 'Ladrão',
-    skills: [
-      { name: 'Ataque Furtivo', description: 'Causa dano extra se o alvo estiver distraído' },
-    ],
-  },
-  {
-    id: 'soldado-filisteu',
-    name: 'Soldado Filisteu',
-    max_hp: 16,
-    ca: 16,
-    desc: 'Soldados bem treinados com cota de escamas e formação em parede.',
-    attributes: { for: 15, des: 12, con: 14, int: 10, sab: 10, car: 10 },
-    vocation: 'Guerreiro',
-    skills: [
-      {
-        name: 'Ataque Poderoso',
-        description: 'Pode reduzir a chance de acerto para aumentar o dano',
-      },
-    ],
-  },
-  {
-    id: 'general-guerra',
-    name: 'General de Guerra',
-    max_hp: 52,
-    ca: 18,
-    desc: 'Líder tático que pode comandar aliados a atacar com reação.',
-    attributes: { for: 16, des: 14, con: 16, int: 14, sab: 12, car: 16 },
-    vocation: 'Guerreiro',
-    skills: [{ name: 'Comando', description: 'Aliados próximos ganham bônus no ataque' }],
-  },
-  {
-    id: 'leao-judeia',
-    name: 'Leão da Judeia',
-    max_hp: 26,
-    ca: 13,
-    desc: 'Fera com tática de matilha, salto e bote.',
-    attributes: { for: 16, des: 15, con: 14, int: 3, sab: 12, car: 8 },
-    vocation: 'Fera',
-    skills: [
-      { name: 'Bote', description: 'Se mover antes de atacar e acertar, pode derrubar o alvo' },
-    ],
-  },
-];
+/** O efeito da Habilidade da biblioteca em uma linha, ou nada se o id não é da biblioteca. */
+function skillLibraryEffect(libraryId: string | undefined): string | null {
+  const ability = findEnemyAbility(libraryId);
+  return ability ? describeEnemyEffect(ability.effect) : null;
+}
 
 export function UnifiedEnemyForm({
   initialValues,
@@ -266,13 +224,37 @@ export function UnifiedEnemyForm({
       <div className="pt-2">
         <div className="flex items-center justify-between mb-2 border-b border-stone-700 pb-1">
           <h4 className="text-sm font-medium">Habilidades</h4>
-          <button
-            type="button"
-            onClick={() => append({ name: '', description: '' })}
-            className="flex items-center text-xs text-stone-300 hover:text-stone-100"
-          >
-            <Plus size={14} className="mr-1" /> Adicionar
-          </button>
+          <div className="flex items-center gap-3">
+            <select
+              aria-label="Adicionar da biblioteca"
+              value=""
+              onChange={(e) => {
+                const ability = findEnemyAbility(e.target.value);
+                if (ability) {
+                  append({
+                    name: ability.name,
+                    description: ability.description,
+                    libraryId: ability.id,
+                  });
+                }
+              }}
+              className="h-7 rounded-md border border-stone-700 bg-stone-800 px-2 text-xs text-stone-300"
+            >
+              <option value="">Da biblioteca…</option>
+              {ENEMY_ABILITIES.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => append({ name: '', description: '' })}
+              className="flex items-center text-xs text-stone-300 hover:text-stone-100"
+            >
+              <Plus size={14} className="mr-1" /> Adicionar
+            </button>
+          </div>
         </div>
 
         {fields.length === 0 ? (
@@ -295,6 +277,19 @@ export function UnifiedEnemyForm({
                     placeholder="Descrição do efeito"
                     className="flex h-8 w-full rounded-md border border-stone-700 bg-stone-800 px-2 py-1 text-xs shadow-sm transition-colors"
                   />
+                  {skillLibraryEffect(watch(`skills.${index}.libraryId`)) ? (
+                    <p className="text-xs text-amber-400">
+                      Efeito do bestiário: {skillLibraryEffect(watch(`skills.${index}.libraryId`))}
+                    </p>
+                  ) : (
+                    <Controller
+                      control={form.control}
+                      name={`skills.${index}.effect`}
+                      render={({ field }) => (
+                        <EnemyAbilityEffectEditor value={field.value} onChange={field.onChange} />
+                      )}
+                    />
+                  )}
                 </div>
                 <button
                   type="button"

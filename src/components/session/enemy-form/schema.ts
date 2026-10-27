@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { enemyAbilityEffectSchema } from '@/content/schemas';
 
 export const enemyFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -19,6 +20,10 @@ export const enemyFormSchema = z.object({
       z.object({
         name: z.string().min(1, 'Nome da habilidade é obrigatório'),
         description: z.string(),
+        /** A Habilidade da biblioteca do bestiário (o efeito vem de lá). */
+        libraryId: z.string().optional(),
+        /** O efeito de uma Habilidade personalizada. */
+        effect: enemyAbilityEffectSchema.optional(),
       }),
     )
     .optional(),
