@@ -49,8 +49,7 @@ interface RestSkills {
 
 /**
  * O personagem no Início de Partida (regras-base 6.3): PV máximo, usos de Habilidade restaurados,
- * Dados de Vida devolvidos e o estado de morte zerado (quem estava Estável acorda). A Fé não muda:
- * ela persiste entre as sessões.
+ * Dados de Vida devolvidos. O estado de morte e a Fé não mudam: a Fé persiste entre as sessões.
  */
 export function restedForNewSession<T extends RestStats, S extends RestSkills>(sheet: {
   stats: T;
@@ -60,6 +59,5 @@ export function restedForNewSession<T extends RestStats, S extends RestSkills>(s
     stats: { ...sheet.stats, current_pv: getMaxPv(sheet.stats) },
     skills: { ...(sheet.skills ?? ({} as S)), ability_uses: {} as Record<string, number> },
     hit_dice_spent: 0,
-    deathState: { is_stable: false, death_saves_successes: 0, death_saves_failures: 0 },
   };
 }

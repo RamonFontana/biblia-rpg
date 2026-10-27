@@ -80,7 +80,6 @@ export async function restCharactersForNewSession(ids: string[]): Promise<void> 
             stats: toJson(rested.stats),
             skills: toJson(rested.skills),
             hit_dice_spent: rested.hit_dice_spent,
-            ...rested.deathState,
           })
           .eq('id', row.id);
         return updateError;

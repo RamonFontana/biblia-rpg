@@ -110,14 +110,6 @@ describe('Início de Partida: o personagem entra Descansado (regras-base 6.3)', 
     expect(sheet.skills.ability_uses).toEqual({ a: 1, b: 2 });
   });
 
-  it('quem estava Estável acorda: zera o estado de morte', () => {
-    expect(restedForNewSession(sheet).deathState).toEqual({
-      is_stable: false,
-      death_saves_successes: 0,
-      death_saves_failures: 0,
-    });
-  });
-
   it('sem PV máximo gravado, enche até o padrão de 10', () => {
     expect(restedForNewSession({ stats: { current_pv: 1 }, skills: null }).stats.current_pv).toBe(
       10,

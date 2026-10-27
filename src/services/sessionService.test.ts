@@ -262,9 +262,6 @@ describe('createGameSession', () => {
         stats: { pv: 30, current_pv: 30, current_faith: 40 },
         skills: { ability_uses: {}, path_choices: { tribe: 'A' } },
         hit_dice_spent: 0,
-        is_stable: false,
-        death_saves_successes: 0,
-        death_saves_failures: 0,
       });
     });
 

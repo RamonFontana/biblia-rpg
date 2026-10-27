@@ -57,7 +57,6 @@ test.describe('Dados de Vida: Descanso Longo e sessão nova', () => {
       hit_dice_spent: 4,
       stats: { pv: 30, current_pv: 3, ca: 11, faith: 50, current_faith: 40 },
       skills: { ability_uses: { [longRestAbility]: 1 } },
-      is_stable: true,
     });
     const master = await signIn('master');
 
@@ -75,7 +74,7 @@ test.describe('Dados de Vida: Descanso Longo e sessão nova', () => {
       .poll(async () => {
         const { data, error } = await adminClient()
           .from('characters')
-          .select('hit_dice_spent, stats, skills, is_stable')
+          .select('hit_dice_spent, stats, skills')
           .eq('id', eliabe)
           .single();
         if (error) throw error;
@@ -84,9 +83,8 @@ test.describe('Dados de Vida: Descanso Longo e sessão nova', () => {
           pv: (data.stats as { current_pv: number; current_faith: number }).current_pv,
           faith: (data.stats as { current_faith: number }).current_faith,
           uses: (data.skills as { ability_uses: Record<string, number> }).ability_uses,
-          stable: data.is_stable,
         };
       })
-      .toEqual({ spent: 0, pv: 30, faith: 40, uses: {}, stable: false });
+      .toEqual({ spent: 0, pv: 30, faith: 40, uses: {} });
   });
 });
