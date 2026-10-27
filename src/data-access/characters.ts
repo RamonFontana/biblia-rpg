@@ -71,7 +71,7 @@ export async function restCharactersForNewSession(ids: string[]): Promise<void> 
       .filter((row) => !row.is_dead)
       .map(async (row) => {
         const rested = restedForNewSession({
-          stats: (row.stats ?? {}) as CharacterStats,
+          stats: (row.stats as CharacterStats | null) ?? {},
           skills: row.skills as CharacterSkills | null,
         });
         const { error: updateError } = await supabase
