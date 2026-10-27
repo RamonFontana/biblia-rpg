@@ -2,7 +2,7 @@
 // CA, o resultado e o dano. Termos: CONTEXT.md (Ataque, Acerto Crítico, Falha Crítica, CA).
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { CombatAttack } from '@/data-access/combat';
+import type { CombatAbilityUse, CombatAttack } from '@/data-access/combat';
 import { AttackLog } from './AttackLog';
 
 afterEach(cleanup);
@@ -126,5 +126,69 @@ describe('AttackLog: efeito de arma', () => {
   it('sem disparo, não fala em efeito de arma', () => {
     render(<AttackLog attacks={[attack()]} />);
     expect(screen.getByRole('listitem')).not.toHaveTextContent('Efeito de arma');
+  });
+});
+
+const use = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
+  id: 'u1',
+  combat_id: 'c1',
+  user_participant_id: 'p1',
+  user_name: 'Eliabe',
+  ability_id: 'tribe-levi-16-palavra-de-auto',
+  ability_name: 'Palavra de Autoridade',
+  action_type: 'action',
+  status: 'applied',
+  cd: null,
+  targets: [
+    {
+      participantId: 'p2',
+      name: 'Filisteu',
+      conditions: [{ conditionId: 'paralisado', duration: 1 }],
+    },
+  ],
+  created_at: '2026-10-27T10:05:00Z',
+  ...over,
+});
+
+describe('AttackLog: usos de Habilidade', () => {
+  it('só com usos, a lista aparece', () => {
+    render(<AttackLog attacks={[]} abilityUses={[use()]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'Eliabe usou Palavra de Autoridade · Filisteu: Paralisado',
+    );
+  });
+
+  it('o alvo que resistiu aparece como resistiu', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({ targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }] }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent('Filisteu: resistiu');
+  });
+
+  it('ataques e usos ficam juntos, do mais novo para o mais antigo', () => {
+    render(
+      <AttackLog
+        attacks={[attack({ id: 'a1', created_at: '2026-10-27T10:00:00Z' })]}
+        abilityUses={[use({ created_at: '2026-10-27T10:05:00Z' })]}
+      />,
+    );
+    const rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('Palavra de Autoridade');
+    expect(rows[1]).toHaveTextContent('Eliabe → Filisteu');
+  });
+
+  it('o título diz ataques e Habilidades quando há usos', () => {
+    render(<AttackLog attacks={[attack()]} abilityUses={[use()]} />);
+    expect(screen.getByRole('heading', { name: 'Últimos ataques e Habilidades' })).toBeVisible();
+  });
+
+  it('sem usos, o título continua "Últimos ataques"', () => {
+    render(<AttackLog attacks={[attack()]} abilityUses={[]} />);
+    expect(screen.getByRole('heading', { name: 'Últimos ataques' })).toBeVisible();
   });
 });

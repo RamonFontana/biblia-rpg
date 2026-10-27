@@ -9,6 +9,7 @@ import { updateCharacter } from '@/data-access/characters';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
 import { AttackPanel } from './AttackPanel';
+import { AbilityUsePanel } from './AbilityUsePanel';
 import { abilitySkills, getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '@/content/schemas';
@@ -19,6 +20,8 @@ import { describeHitOnTarget } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import type { CombatInventoryItem } from '@/types/inventory';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
+import { effectTargetPool, getAbilityEffectBlock } from '@/domain/abilityEffect';
+import { submitAbilityUse } from '@/services/abilityService';
 import { getMaxPv } from '@/domain/vitals';
 
 interface PlayerCombatViewProps {
@@ -61,8 +64,17 @@ export function PlayerCombatView({
     toggleReaction,
   } = useCombatStore();
 
+  const [usingAbilityId, setUsingAbilityId] = useState<string | null>(null);
+
   const handleUseAbility = async (ability: AbilityDefinition) => {
     if (!character || isUpdating) return;
+
+    // Com combate ativo, a Habilidade com efeito abre o painel de alvos (ADR 0007); sem combate,
+    // ou sem efeito, só gasta o uso e a Fé.
+    if (ability.combatEffect && activeCombat) {
+      setUsingAbilityId(ability.id);
+      return;
+    }
 
     // Optimistic UI state could be handled here if we tracked it locally,
     // but we'll rely on the parent component's real-time subscription or fast refetch.
@@ -120,6 +132,32 @@ export function PlayerCombatView({
   const isMyTurn = activeCombat && currentTurnParticipant?.entity_id === playerId;
   const participant = participants.find((p) => p.entity_id === playerId);
   const isDying = activeCombat && participant && participant.hp_current <= 0;
+
+  // A Habilidade com efeito que o jogador está usando agora (o painel de alvos).
+  const usingAbility = characterAbilities.find((a) => a.id === usingAbilityId);
+  const abilityBlock = (ability: AbilityDefinition) => {
+    const availability = getAbilityAvailability(
+      ability,
+      abilitySkills(character),
+      character?.stats,
+    );
+    if (availability.disabled) return availability.reason;
+    return getAbilityEffectBlock({
+      actionType: ability.actionType,
+      hasActiveCombat: !!activeCombat,
+      dying: !!isDying,
+      isMyTurn: !!isMyTurn,
+      actionUsed: hasUsedAction,
+      bonusActionUsed: hasUsedBonusAction,
+      reactionUsed: hasUsedReaction,
+    });
+  };
+  // Usar a Habilidade ocupa o espaço do turno dela (Ação, Ação Bônus ou Reação).
+  const markTurnSlot = (actionType: string) => {
+    if (actionType === 'action' && !hasUsedAction) toggleAction();
+    if (actionType === 'bonus_action' && !hasUsedBonusAction) toggleBonusAction();
+    if (actionType === 'reaction' && !hasUsedReaction) toggleReaction();
+  };
 
   return (
     <div className="space-y-6">
@@ -260,6 +298,27 @@ export function PlayerCombatView({
 
       <div className="space-y-4 mt-8">
         <h3 className="text-xl font-bold text-stone-200">Habilidades</h3>
+        {usingAbility?.combatEffect && character && participant && (
+          <AbilityUsePanel
+            ability={usingAbility}
+            targets={effectTargetPool(
+              usingAbility.combatEffect,
+              buildAttackTargets(participants, participant.id, entities),
+            )}
+            blockedReason={abilityBlock(usingAbility)}
+            onUse={async (selected) => {
+              const outcome = await submitAbilityUse({
+                ability: usingAbility,
+                userParticipantId: participant.id,
+                targets: selected,
+                character: { id: character.id, skills: character.skills, stats: character.stats },
+              });
+              markTurnSlot(usingAbility.actionType);
+              return outcome;
+            }}
+            onClose={() => setUsingAbilityId(null)}
+          />
+        )}
         {characterAbilities.length === 0 ? (
           <p className="text-muted-foreground text-sm">Nenhuma habilidade disponível.</p>
         ) : (

@@ -29,8 +29,15 @@ interface CombatDashboardProps {
 }
 
 export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps) {
-  const { activeCombat, participants, attacks, currentTurnParticipant, nextTurn, endCombat } =
-    useCombatStore();
+  const {
+    activeCombat,
+    participants,
+    attacks,
+    abilityUses,
+    currentTurnParticipant,
+    nextTurn,
+    endCombat,
+  } = useCombatStore();
 
   // O golpe que atinge quem já estava Morrendo: o Mestre marca a falha no Teste de Morte, então o
   // aviso fica até ele dispensar. O inimigo a 0 PV não faz Teste de Morte.
@@ -267,7 +274,7 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
         </div>
       ))}
 
-      <AttackLog attacks={attacks} />
+      <AttackLog attacks={attacks} abilityUses={abilityUses} />
 
       {selectedParticipant && (
         <HealthModificationModal

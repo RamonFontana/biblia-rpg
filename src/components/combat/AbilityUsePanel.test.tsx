@@ -1,0 +1,154 @@
+// O painel de uso de uma Habilidade com efeito de combate: o jogador marca os alvos, vê o que o app
+// aplica e o que fica com o Mestre, usa e lê o resultado por alvo. Termos: CONTEXT.md (Habilidade).
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { AbilityDefinition } from '@/content/schemas';
+import type { AttackTarget } from '@/lib/attackSetup';
+import { AbilityUsePanel } from './AbilityUsePanel';
+
+afterEach(cleanup);
+
+const base: AbilityDefinition = {
+  id: 'tribe-levi-16-palavra-de-auto',
+  name: 'Palavra de Autoridade',
+  sourceType: 'tribe',
+  sourceId: 'levi',
+  minLevel: 16,
+  actionType: 'action',
+  usageType: 'combat',
+  maxUses: 1,
+  effect: 'Paralisa inimigo por 1 turno (peso da culpa).',
+  combatEffect: { targets: 'enemy', apply: [{ conditionId: 'paralisado', rounds: 1 }] },
+};
+const target = (id: string, name: string): AttackTarget => ({
+  participantId: id,
+  entityId: `e-${id}`,
+  entityType: 'enemy',
+  name,
+  ac: 12,
+  conditionIds: [],
+});
+const pool = [target('p2', 'Filisteu'), target('p3', 'Bandido')];
+
+const setup = (over: Partial<Parameters<typeof AbilityUsePanel>[0]> = {}) => {
+  const onUse = vi.fn().mockResolvedValue({
+    id: 'use-1',
+    results: [
+      {
+        participantId: 'p2',
+        name: 'Filisteu',
+        conditions: [{ conditionId: 'paralisado', duration: 1 }],
+        messages: [],
+      },
+    ],
+  });
+  const onClose = vi.fn();
+  render(
+    <AbilityUsePanel
+      ability={base}
+      targets={pool}
+      blockedReason={null}
+      onUse={onUse}
+      onClose={onClose}
+      {...over}
+    />,
+  );
+  return { onUse, onClose };
+};
+
+describe('AbilityUsePanel', () => {
+  it('mostra a Habilidade, o que o app aplica e o texto que fica com o Mestre', () => {
+    setup();
+    expect(screen.getByRole('heading', { name: 'Palavra de Autoridade' })).toBeVisible();
+    expect(screen.getByText('O app aplica: Paralisado por 1 rodada')).toBeVisible();
+    expect(screen.getByText(/Paralisa inimigo por 1 turno/)).toBeVisible();
+  });
+
+  it('uma Condição sem duração fica até ser removida', () => {
+    setup({
+      ability: {
+        ...base,
+        combatEffect: { targets: 'aggressor', apply: [{ conditionId: 'amedrontado' }] },
+      },
+    });
+    expect(screen.getByText('O app aplica: Amedrontado até ser removido')).toBeVisible();
+  });
+
+  it('um alvo só: escolhe de uma lista e usa', async () => {
+    const { onUse } = setup();
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(onUse).toHaveBeenCalledWith([pool[0]]);
+  });
+
+  it('vários alvos: marca quantos quiser', async () => {
+    const { onUse } = setup({
+      ability: { ...base, combatEffect: { targets: 'enemies', apply: base.combatEffect!.apply } },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Filisteu' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Bandido' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(onUse).toHaveBeenCalledWith(pool);
+  });
+
+  it('sem alvo marcado, o botão fica desabilitado', () => {
+    setup();
+    expect(screen.getByRole('button', { name: 'Usar Habilidade' })).toBeDisabled();
+  });
+
+  it('bloqueada, mostra o motivo e não deixa usar nem com alvo marcado', async () => {
+    setup({ blockedReason: 'Não é o seu turno' });
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p2' } });
+    expect(screen.getByText('Não é o seu turno')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Usar Habilidade' })).toBeDisabled();
+  });
+
+  it('sem alvos possíveis no combate, avisa', () => {
+    setup({ targets: [] });
+    expect(screen.getByText('Nenhum alvo possível no combate.')).toBeVisible();
+  });
+
+  it('depois de usar, mostra o resultado por alvo', async () => {
+    setup();
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(await screen.findByText('Filisteu: Paralisado')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Usar Habilidade' })).not.toBeInTheDocument();
+  });
+
+  it('o alvo que resistiu aparece como resistiu, com a frase de proteção', async () => {
+    const onUse = vi.fn().mockResolvedValue({
+      id: 'use-1',
+      results: [
+        {
+          participantId: 'p2',
+          name: 'Filisteu',
+          conditions: [],
+          messages: ['Resistência Nv4: imune a Paralisado'],
+        },
+      ],
+    });
+    setup({ onUse });
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(await screen.findByText('Filisteu: resistiu')).toBeVisible();
+    expect(screen.getByText('Resistência Nv4: imune a Paralisado')).toBeVisible();
+  });
+
+  it('mostra o erro do banco e deixa tentar de novo', async () => {
+    const onUse = vi.fn().mockRejectedValue(new Error('Não é o turno de quem usa a Habilidade'));
+    setup({ onUse });
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não é o turno de quem usa');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Usar Habilidade' })).toBeEnabled(),
+    );
+  });
+
+  it('fechar chama onClose', async () => {
+    const { onClose } = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(onClose).toHaveBeenCalled();
+  });
+});
