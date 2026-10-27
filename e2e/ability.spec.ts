@@ -320,4 +320,126 @@ test.describe('efeito de Habilidade', () => {
     expect(await conditionsOf(rute)).toEqual([]);
     await expect(master.getByText(/Anakim usou Presença Aterradora/).first()).toBeVisible();
   });
+
+  test('Grito Atormentador: quem falha perde a Fé pelo dado, a Habilidade entra em Recarga e volta com 5 ou 6', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      stats: { pv: 40, current_pv: 40, ca: 11, faith: 80, current_faith: 80 },
+    });
+    const rute = await seed.createCharacter('player2', {
+      name: 'Rute',
+      stats: { pv: 11, current_pv: 11, ca: 11, faith: 50, current_faith: 50 },
+    });
+    // O Endemoniado traz o Grito Atormentador da biblioteca: TR de Sabedoria CD 12, 1d4 de Fé, Recarga 5-6.
+    const endemoniado = await seed.createCharacter('master', {
+      name: 'Endemoniado',
+      is_enemy: true,
+      tribe: 'Inimigo',
+      has_participated_in_session: true,
+      stats: { pv: 30, current_pv: 30, ca: 12, faith: 0, current_faith: 0 },
+      skills: [
+        {
+          name: 'Grito Atormentador',
+          description: 'Um ruído inumano.',
+          libraryId: 'enemy-grito-atormentador',
+        },
+      ],
+    });
+    const sessionId = await seed.createSession({ characters: [eliabe, rute, endemoniado] });
+
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const ally = await signIn('player2');
+    await ally.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    // O Endemoniado age primeiro: é o turno dele quando a Recarga for lançada.
+    await startCombat(master, { Endemoniado: 20, Eliabe: 10, Rute: 5 });
+    await expect(player.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
+    await expect(ally.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
+
+    const panel = master.getByRole('region', { name: 'Habilidades dos inimigos' });
+    await expect(
+      panel.getByText(/TR de Sabedoria CD 12.*perde 1d4 de Fé.*Recarga 5-6/),
+    ).toBeVisible({
+      timeout: 15_000,
+    });
+    await panel.getByRole('button', { name: 'Usar Grito Atormentador (Endemoniado)' }).click();
+    await panel.getByLabel('Eliabe').check();
+    await panel.getByLabel('Rute').check();
+    await panel.getByRole('button', { name: 'Usar a Habilidade' }).click();
+    await expect(panel.getByRole('status')).toContainText('o TR foi para os jogadores');
+
+    // Eliabe falha (2) e Rute passa (20).
+    await expect(player.getByText('Resistência (Sabedoria)')).toBeVisible({ timeout: 15_000 });
+    await player.getByRole('spinbutton').fill('2');
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(player.getByText('Resultado Enviado!')).toBeVisible();
+    await expect(ally.getByText('Resistência (Sabedoria)')).toBeVisible({ timeout: 15_000 });
+    await ally.getByRole('spinbutton').fill('20');
+    await ally.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(ally.getByText('Resultado Enviado!')).toBeVisible();
+
+    // O Mestre rola o dado de Fé só de quem falhou, e o lembrete da Desvantagem aparece.
+    const pending = master.getByRole('region', { name: 'TRs de Habilidades pendentes' });
+    await expect(pending.getByText(/Eliabe: falhou/)).toBeVisible({ timeout: 15_000 });
+    await expect(pending.getByText(/Rute: passou/)).toBeVisible();
+    await expect(pending.getByLabel('Dado de Fé de Rute (1d4)')).toHaveCount(0);
+    await expect(
+      pending.getByText(/Lembrete: Desvantagem na próxima jogada de ataque/),
+    ).toBeVisible();
+    const faithDie = pending.getByLabel('Dado de Fé de Eliabe (1d4)');
+    await faithDie.fill('5');
+    await expect(pending.getByRole('button', { name: 'Aplicar resultados' })).toBeDisabled();
+    await faithDie.fill('3');
+    await pending.getByRole('button', { name: 'Aplicar resultados' }).click();
+    await expect(pending).toBeHidden({ timeout: 15_000 });
+
+    const faithOf = async (id: string) => {
+      const { data, error } = await adminClient()
+        .from('characters')
+        .select('stats')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return (data.stats as { current_faith: number }).current_faith;
+    };
+    expect(await faithOf(eliabe)).toBe(77);
+    expect(await faithOf(rute)).toBe(50);
+    await expect(
+      master.getByText(/Eliabe: d20 2 .* · falhou · perdeu 3 de Fé/).first(),
+    ).toBeVisible();
+
+    // A Habilidade entrou em Recarga: não dá para usar de novo.
+    await expect(
+      panel.getByRole('button', { name: 'Usar Grito Atormentador (Endemoniado)' }),
+    ).toBeDisabled({ timeout: 15_000 });
+    await expect(panel.getByText('Em Recarga (5-6)', { exact: true })).toBeVisible();
+
+    // No turno do Endemoniado o Mestre lança o d6: 4 não volta, 5 volta.
+    const d6 = panel.getByLabel('d6 da Recarga de Grito Atormentador (Endemoniado)');
+    const recharge = panel.getByRole('button', {
+      name: 'Recarregar Grito Atormentador (Endemoniado)',
+    });
+    await d6.fill('4');
+    await recharge.click();
+    await expect(panel.getByRole('status')).toContainText('continua em Recarga');
+    await d6.fill('5');
+    await recharge.click();
+    await expect(panel.getByRole('status')).toContainText('Grito Atormentador voltou');
+    await expect(
+      panel.getByRole('button', { name: 'Usar Grito Atormentador (Endemoniado)' }),
+    ).toBeEnabled({ timeout: 15_000 });
+    const { data: state, error } = await adminClient()
+      .from('combat_participants')
+      .select('ability_state')
+      .eq('entity_id', endemoniado)
+      .single();
+    if (error) throw error;
+    expect(state.ability_state).toEqual({});
+  });
 });
