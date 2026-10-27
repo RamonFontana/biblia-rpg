@@ -35,14 +35,14 @@ test.describe('Descanso Curto', () => {
     const { master, player, eliabe, sessionId } = await openTable(seed, signIn);
 
     await expect(master.getByText('2 restantes hoje')).toBeVisible();
-    await expect(player.getByText('Aguardando o Mestre abrir o descanso.')).toBeVisible();
+    await expect(player.getByRole('button', { name: 'Pedir Descanso Curto' })).toBeVisible();
 
     await master.getByRole('button', { name: 'Abrir Descanso Curto' }).click();
 
     await expect(master.getByText('Aberto pelo Mestre')).toBeVisible();
     await expect(master.getByText('1 restante hoje')).toBeVisible();
     await expect(player.getByText('Aberto pelo Mestre')).toBeVisible();
-    await expect(player.getByText('Aguardando o Mestre abrir o descanso.')).toHaveCount(0);
+    await expect(player.getByRole('button', { name: 'Pedir Descanso Curto' })).toHaveCount(0);
 
     // O celular do jogador recarrega as Habilidades do Descanso Curto e registra o descanso.
     const admin = adminClient();
@@ -69,7 +69,7 @@ test.describe('Descanso Curto', () => {
 
     await master.getByRole('button', { name: 'Encerrar descanso' }).click();
     await expect(master.getByRole('button', { name: 'Abrir Descanso Curto' })).toBeVisible();
-    await expect(player.getByText('Aguardando o Mestre abrir o descanso.')).toBeVisible();
+    await expect(player.getByRole('button', { name: 'Pedir Descanso Curto' })).toBeVisible();
     await expect(player.getByText('Aberto pelo Mestre')).toHaveCount(0);
   });
 
@@ -212,5 +212,94 @@ test.describe('Descanso Curto', () => {
       hit_dice_spent: 1,
     });
     expect((data.stats as { current_pv: number }).current_pv).toBe(4);
+  });
+  test('todos os jogadores pedem: o descanso abre sozinho, eles gastam um dado e terminam', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      vocation: 'Guerreiro',
+      level: 2,
+      attributes: { for: 14, des: 12, con: 12, int: 10, sab: 10, car: 8 },
+      stats: { pv: 22, current_pv: 5, ca: 11, faith: 50 },
+    });
+    const rute = await seed.createCharacter('player2', { name: 'Rute' });
+    const sessionId = await seed.createSession({
+      name: SESSION_NAME,
+      characters: [eliabe, rute],
+    });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const pEliabe = await signIn('player1');
+    await pEliabe.goto(`/session/${sessionId}`);
+    const pRute = await signIn('player2');
+    await pRute.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+
+    await expect(master.getByText('0 de 2 pediram')).toBeVisible();
+
+    // O primeiro pedido ainda não abre; o Mestre e a Rute veem quem pediu.
+    await pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
+    await expect(pEliabe.getByRole('button', { name: 'Retirar pedido' })).toBeVisible();
+    await expect(master.getByText('1 de 2 pediram (Eliabe)')).toBeVisible({ timeout: 15_000 });
+    await expect(pRute.getByText('1 de 2 pediram (Eliabe)')).toBeVisible({ timeout: 15_000 });
+    await expect(master.getByText('Aberto a pedido do grupo')).toHaveCount(0);
+
+    // O último pedido abre o descanso "a pedido do grupo", sem o Mestre.
+    await pRute.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
+    await expect(master.getByText('Aberto a pedido do grupo')).toBeVisible({ timeout: 15_000 });
+    await expect(pEliabe.getByText('Aberto a pedido do grupo')).toBeVisible({ timeout: 15_000 });
+    await expect(master.getByText('1 restante hoje')).toBeVisible();
+
+    // Eliabe gasta um dado: 4 + 1 de CON = 5 PV.
+    await pEliabe.getByLabel('Resultado do d10').fill('4');
+    await pEliabe.getByRole('button', { name: 'Gastar dado' }).click();
+    await expect(pEliabe.getByText(/Curou 5 PV \(5 → 10\)/)).toBeVisible();
+
+    // O Mestre vê quem terminou; o último "Terminei" fecha o descanso.
+    await pEliabe.getByRole('button', { name: 'Terminei' }).click();
+    await expect(master.getByText('1 de 2 terminaram (Eliabe)')).toBeVisible({ timeout: 15_000 });
+    await expect(pEliabe.getByText('Você terminou.')).toBeVisible();
+    await expect(master.getByText('Aberto a pedido do grupo')).toBeVisible();
+    await pRute.getByRole('button', { name: 'Terminei' }).click();
+    await expect(master.getByText('Aberto a pedido do grupo')).toHaveCount(0, { timeout: 15_000 });
+    await expect(master.getByRole('button', { name: 'Abrir Descanso Curto' })).toBeVisible();
+    await expect(pRute.getByRole('button', { name: 'Pedir Descanso Curto' })).toBeVisible();
+
+    // Fechar não devolve o Descanso Curto do dia.
+    await expect(master.getByText('1 restante hoje')).toBeVisible();
+  });
+
+  test('o jogador retira o pedido e o Mestre recusa os pedidos', async ({ seed, signIn }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const rute = await seed.createCharacter('player2', { name: 'Rute' });
+    const sessionId = await seed.createSession({
+      name: SESSION_NAME,
+      characters: [eliabe, rute],
+    });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const pEliabe = await signIn('player1');
+    await pEliabe.goto(`/session/${sessionId}`);
+    const pRute = await signIn('player2');
+    await pRute.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+
+    await pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
+    await expect(master.getByText('1 de 2 pediram (Eliabe)')).toBeVisible({ timeout: 15_000 });
+
+    await pEliabe.getByRole('button', { name: 'Retirar pedido' }).click();
+    await expect(master.getByText('0 de 2 pediram')).toBeVisible({ timeout: 15_000 });
+    await expect(master.getByRole('button', { name: 'Recusar pedido' })).toHaveCount(0);
+
+    await pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
+    await expect(master.getByText('1 de 2 pediram (Eliabe)')).toBeVisible({ timeout: 15_000 });
+    await master.getByRole('button', { name: 'Recusar pedido' }).click();
+    await expect(master.getByText('0 de 2 pediram')).toBeVisible();
+    await expect(pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(pRute.getByText('0 de 2 pediram')).toBeVisible({ timeout: 15_000 });
   });
 });
