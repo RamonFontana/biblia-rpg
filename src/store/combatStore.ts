@@ -238,6 +238,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const attack = payload.new as CombatAttack;
             if (!activeCombat || attack.combat_id !== activeCombat.id) return;
             set({ attacks: [attack, ...attacks].slice(0, RECENT_ATTACKS) });
+            // Quem está olhando decide o que fazer com o ataque ao vivo (o aviso de quem foi
+            // atingido, o do Mestre para o alvo Morrendo).
+            window.dispatchEvent(new CustomEvent('combat-attack', { detail: attack }));
             window.dispatchEvent(
               new CustomEvent('combat-toast', {
                 detail: {

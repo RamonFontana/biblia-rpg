@@ -6,6 +6,6 @@
 
 **Status:** ready-for-agent
 
-- [ ] Aviso ao jogador atingido, pelo registro do ataque em tempo real
-- [ ] Aviso ao Mestre de alvo Morrendo
-- [ ] Testes dos componentes e um E2E (ataque a aliado avisa o atingido), com mutação conferida
+- [x] Aviso ao jogador atingido, pelo registro do ataque em tempo real
+- [x] Aviso ao Mestre de alvo Morrendo
+- [x] Testes dos componentes e um E2E (ataque a aliado avisa o atingido), com mutação conferida

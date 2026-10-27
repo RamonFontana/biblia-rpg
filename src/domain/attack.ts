@@ -256,3 +256,17 @@ export function resolveWeaponEffect(
   }
   return { conditions, messages };
 }
+
+/** O aviso para quem foi atingido (aliado ou NPC controlado por jogador). */
+export function describeHitOnTarget(hit: {
+  attackerName: string;
+  damage: number;
+  critical: boolean;
+}): string {
+  return `Você foi atingido por ${hit.attackerName}${hit.critical ? ' (crítico)' : ''}: ${hit.damage} de dano.`;
+}
+
+/** O aviso do Mestre: o golpe atingiu quem já estava Morrendo; a falha no Teste de Morte é dele. */
+export function describeStrikeOnDying(strike: { targetName: string; critical: boolean }): string {
+  return `${strike.targetName} já estava Morrendo e foi atingido${strike.critical ? ' (crítico)' : ''}: marque a falha no Teste de Morte.`;
+}

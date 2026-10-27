@@ -12,6 +12,8 @@ import {
   computeDamage,
   damageReminder,
   describeAttack,
+  describeHitOnTarget,
+  describeStrikeOnDying,
   isWeaponProficient,
   resolveAttack,
   resolveAttackMode,
@@ -480,5 +482,25 @@ describe('resolveWeaponEffect: a Condição que chega ao alvo', () => {
 
   it('o nível de uma Condição não afeta as outras', () => {
     expect(resolveWeaponEffect(effects, { outra: 4 }).conditions).toHaveLength(2);
+  });
+});
+
+describe('avisos do ataque', () => {
+  it('describeHitOnTarget: o aviso de quem foi atingido', () => {
+    expect(describeHitOnTarget({ attackerName: 'Eliabe', damage: 5, critical: false })).toBe(
+      'Você foi atingido por Eliabe: 5 de dano.',
+    );
+    expect(describeHitOnTarget({ attackerName: 'Eliabe', damage: 11, critical: true })).toBe(
+      'Você foi atingido por Eliabe (crítico): 11 de dano.',
+    );
+  });
+
+  it('describeStrikeOnDying: o aviso do Mestre para marcar a falha no Teste de Morte', () => {
+    expect(describeStrikeOnDying({ targetName: 'Rute', critical: false })).toBe(
+      'Rute já estava Morrendo e foi atingido: marque a falha no Teste de Morte.',
+    );
+    expect(describeStrikeOnDying({ targetName: 'Rute', critical: true })).toBe(
+      'Rute já estava Morrendo e foi atingido (crítico): marque a falha no Teste de Morte.',
+    );
   });
 });

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AttackLog } from './AttackLog';
+import { describeStrikeOnDying } from '@/domain/attack';
+import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import { useCombatStore } from '../../store/combatStore';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -29,6 +31,23 @@ interface CombatDashboardProps {
 export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps) {
   const { activeCombat, participants, attacks, currentTurnParticipant, nextTurn, endCombat } =
     useCombatStore();
+
+  // O golpe que atinge quem já estava Morrendo: o Mestre marca a falha no Teste de Morte, então o
+  // aviso fica até ele dispensar. O inimigo a 0 PV não faz Teste de Morte.
+  const [dyingNotices, setDyingNotices] = useState<{ id: string; text: string }[]>([]);
+  useCombatAttackEvents((attack) => {
+    const target = participants.find((p) => p.id === attack.target_participant_id);
+    if (!attack.hit || attack.target_hp_before > 0 || !target || target.entity_type === 'enemy') {
+      return;
+    }
+    setDyingNotices((notices) => [
+      ...notices,
+      {
+        id: attack.id,
+        text: describeStrikeOnDying({ targetName: attack.target_name, critical: attack.critical }),
+      },
+    ]);
+  });
 
   const [selectedParticipant, setSelectedParticipant] = useState<{
     id: string;
@@ -230,6 +249,23 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
           );
         })}
       </div>
+
+      {dyingNotices.map((notice) => (
+        <div
+          key={notice.id}
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-md border border-red-700/50 bg-red-900/30 p-3 text-sm text-red-400"
+        >
+          <span>{notice.text}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDyingNotices((all) => all.filter((n) => n.id !== notice.id))}
+          >
+            Entendi
+          </Button>
+        </div>
+      ))}
 
       <AttackLog attacks={attacks} />
 

@@ -190,6 +190,31 @@ describe('ataques do combate', () => {
     expect(toasts).toEqual(['Eliabe acertou Filisteu: 7 de dano.']);
   });
 
+  it('um ataque ao vivo também chega à tela como evento do ataque inteiro', async () => {
+    database({ active: combat() });
+    store().initSubscriptions('session-1');
+    await settle();
+    const seen: { id: string }[] = [];
+    const listener = (e: Event) => seen.push((e as CustomEvent).detail);
+    window.addEventListener('combat-attack', listener);
+    attackHandler()({ eventType: 'INSERT', new: attackRow({ id: 'a7' }) });
+    attackHandler()({ eventType: 'INSERT', new: attackRow({ id: 'a8', combat_id: 'outro' }) });
+    window.removeEventListener('combat-attack', listener);
+    expect(seen.map((a) => a.id)).toEqual(['a7']);
+  });
+
+  it('o histórico carregado ao abrir não dispara o evento do ataque', async () => {
+    database({ active: combat() });
+    h.listCombatAttacks.mockResolvedValue([attackRow({ id: 'velho' })]);
+    const seen: unknown[] = [];
+    const listener = (e: Event) => seen.push(e);
+    window.addEventListener('combat-attack', listener);
+    store().initSubscriptions('session-1');
+    await settle();
+    window.removeEventListener('combat-attack', listener);
+    expect(seen).toEqual([]);
+  });
+
   it('guarda só os 10 últimos', async () => {
     database({ active: combat() });
     store().initSubscriptions('session-1');

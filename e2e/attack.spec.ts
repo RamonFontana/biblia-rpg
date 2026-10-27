@@ -29,7 +29,14 @@ async function openFight(
     weapon = 'espada_curta',
     ammo,
     effect,
-  }: { faith?: number; weapon?: string; ammo?: [string, number]; effect?: string } = {},
+    ruteHp = 11,
+  }: {
+    faith?: number;
+    weapon?: string;
+    ammo?: [string, number];
+    effect?: string;
+    ruteHp?: number;
+  } = {},
 ) {
   const eliabe = await seed.createCharacter('player1', {
     name: 'Eliabe',
@@ -37,7 +44,7 @@ async function openFight(
   });
   const rute = await seed.createCharacter('player2', {
     name: 'Rute',
-    stats: { pv: 11, current_pv: 11, ca: 11, faith: 50 },
+    stats: { pv: 11, current_pv: ruteHp, ca: 11, faith: 50 },
   });
   const filisteu = await seed.createEnemy(FILISTEU, { pv: 20, ca: 12 });
   await equipWeapon(seed, eliabe, weapon);
@@ -60,6 +67,9 @@ async function openFight(
   await expect(master.getByText('Participantes Online (3)')).toBeVisible();
 
   await startCombat(master, { Eliabe: 20, [FILISTEU]: 10, Rute: 5 });
+  // Os jogadores recebem o combate pelo tempo real: cada teste só começa com a tela de combate no ar.
+  await expect(player.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
+  await expect(ally.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
   return { master, player, ally, eliabe, rute };
 }
 
@@ -83,7 +93,7 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('6 de dano.')).toBeVisible(); // 4 + 2
     await expect(player.getByText(/contra CA/)).toHaveCount(0);
-    await expect(participantCard(master, FILISTEU)).toContainText('14');
+    await expect(participantCard(master, FILISTEU)).toContainText('14', { timeout: 15_000 });
     await expect(master.getByText('Últimos ataques')).toBeVisible();
     await expect(master.getByText(/Eliabe → Filisteu/)).toBeVisible();
     await expect(master.getByText(/contra CA 12/)).toBeVisible();
@@ -119,7 +129,7 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('Errou')).toBeVisible();
     await expect(master.getByText('Eliabe errou Filisteu.')).toBeVisible();
-    await expect(participantCard(master, FILISTEU)).toContainText('20');
+    await expect(participantCard(master, FILISTEU)).toContainText('20', { timeout: 15_000 });
   });
 
   test('20 natural é Acerto Crítico: os dados dobram e o aliado pode ser o alvo', async ({
@@ -138,7 +148,7 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
 
     await expect(player.getByText('9 de dano.')).toBeVisible(); // 7 + 2, o modificador uma vez só
-    await expect(participantCard(master, 'Rute')).toContainText('2'); // 11 - 9
+    await expect(participantCard(master, 'Rute')).toContainText('2', { timeout: 15_000 }); // 11 - 9
   });
 
   test('fora do turno, não há painel de ataque', async ({ seed, signIn }) => {
@@ -266,7 +276,7 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
 
     await expect(player.getByText('Efeito de arma ativado!')).toBeVisible();
-    await expect(participantCard(master, FILISTEU)).toContainText('Sangrando');
+    await expect(participantCard(master, FILISTEU)).toContainText('Sangrando', { timeout: 15_000 });
     await expect(master.getByText(/Efeito de arma: Sangrando/)).toBeVisible();
     const { data } = await adminClient()
       .from('combat_participants')
@@ -287,6 +297,43 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('4 de dano.')).toBeVisible();
     await expect(player.getByText('Efeito de arma ativado!')).toHaveCount(0);
-    await expect(participantCard(master, FILISTEU)).not.toContainText('Sangrando');
+    await expect(participantCard(master, FILISTEU)).not.toContainText('Sangrando', {
+      timeout: 15_000,
+    });
+  });
+
+  test('o aliado atingido recebe o aviso com o nome de quem o atingiu', async ({
+    seed,
+    signIn,
+  }) => {
+    const { player, ally } = await openFight(seed, signIn);
+
+    await player.getByLabel('Alvo').selectOption({ label: 'Rute' });
+    await player.getByLabel('d20 natural').fill('15');
+    await player.getByRole('button', { name: 'Atacar' }).click();
+    await player.getByLabel('Dano rolado').fill('3');
+    await player.getByRole('button', { name: 'Aplicar dano' }).click();
+
+    await expect(ally.getByText('Você foi atingido por Eliabe: 5 de dano.')).toBeVisible();
+    await expect(player.getByText(/Você foi atingido/)).toHaveCount(0);
+  });
+
+  test('golpe em quem já estava Morrendo avisa o Mestre para marcar o Teste de Morte', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await openFight(seed, signIn, { ruteHp: 0 });
+
+    await player.getByLabel('Alvo').selectOption({ label: 'Rute' });
+    await player.getByLabel('d20 natural').fill('15');
+    await player.getByRole('button', { name: 'Atacar' }).click();
+    await player.getByLabel('Dano rolado').fill('3');
+    await player.getByRole('button', { name: 'Aplicar dano' }).click();
+
+    await expect(
+      master.getByText('Rute já estava Morrendo e foi atingido: marque a falha no Teste de Morte.'),
+    ).toBeVisible();
+    await master.getByRole('button', { name: 'Entendi' }).click();
+    await expect(master.getByText(/já estava Morrendo/)).toHaveCount(0);
   });
 });

@@ -483,3 +483,61 @@ describe('PlayerCombatView: o ataque', () => {
     expect(stubProps('AttackPanel')).toMatchObject({ actionUsed: true });
   });
 });
+
+describe('PlayerCombatView: o aviso de quem foi atingido', () => {
+  const parts = [
+    participant({ id: 'part-1', entity_id: 'c1', initiative: 20 }),
+    participant({ id: 'part-2', entity_id: 'c2', initiative: 15 }),
+  ];
+  const hit = (over: Record<string, unknown> = {}) =>
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('combat-attack', {
+          detail: {
+            id: 'a1',
+            target_participant_id: 'part-1',
+            attacker_name: 'Rute',
+            hit: true,
+            critical: false,
+            damage: 5,
+            ...over,
+          },
+        }),
+      );
+    });
+
+  beforeEach(() => {
+    startCombat(parts, 1);
+    view();
+  });
+
+  it('avisa quem foi atingido, com o nome do atacante e o dano', () => {
+    hit();
+    expect(screen.getByText('Você foi atingido por Rute: 5 de dano.')).toBeInTheDocument();
+  });
+
+  it('marca o crítico', () => {
+    hit({ critical: true, damage: 11 });
+    expect(
+      screen.getByText('Você foi atingido por Rute (crítico): 11 de dano.'),
+    ).toBeInTheDocument();
+  });
+
+  it('não avisa quem não foi o alvo, nem erro, nem dano zero', () => {
+    hit({ target_participant_id: 'part-2' });
+    hit({ hit: false, damage: 0 });
+    hit({ damage: 0 });
+    expect(screen.queryByText(/Você foi atingido/)).toBeNull();
+  });
+
+  it('o aviso some depois de alguns segundos', () => {
+    vi.useFakeTimers();
+    hit();
+    expect(screen.getByText(/Você foi atingido/)).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(7000);
+    });
+    expect(screen.queryByText(/Você foi atingido/)).toBeNull();
+    vi.useRealTimers();
+  });
+});
