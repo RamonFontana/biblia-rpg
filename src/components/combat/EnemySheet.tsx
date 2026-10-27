@@ -4,6 +4,7 @@ import type { CombatParticipant } from '@/data-access/combat';
 import { Shield, Heart } from 'lucide-react';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
+import { describeEnemyEffect, enemyAbilityOf } from '@/domain/enemyAbility';
 
 const ATTRIBUTE_KEYS = ['for', 'des', 'con', 'int', 'sab', 'car'] as const;
 
@@ -102,6 +103,7 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
                 {enemy.skills.map((skill, idx) => {
                   const title = skill.name || skill.description;
                   const hasDesc = skill.name && skill.description;
+                  const effect = enemyAbilityOf(skill);
                   return (
                     <li
                       key={idx}
@@ -111,6 +113,11 @@ export function EnemySheet({ enemy, participant, isOpen, onOpenChange }: EnemySh
                       {hasDesc && (
                         <p className="text-sm text-stone-400 mt-1 leading-relaxed">
                           {skill.description}
+                        </p>
+                      )}
+                      {effect && (
+                        <p className="text-xs text-amber-400 mt-1">
+                          Efeito: {describeEnemyEffect(effect.effect)}
                         </p>
                       )}
                     </li>
