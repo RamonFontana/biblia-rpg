@@ -10,9 +10,16 @@ import { SKILLS_LIST } from '@/features/character-management/utils/characterMath
 import { VOCATION_RULES } from '@/features/character-management/utils/rules/vocations';
 import { ABILITIES } from './abilities';
 import { CONDITIONS } from './conditions';
+import { ENEMY_ABILITIES } from './enemyAbilities';
 import { ITEMS_DB } from './items';
 import { KITS_DB } from './kits';
-import { abilitySchema, conditionSchema, itemSchema, kitSchema } from './schemas';
+import {
+  abilitySchema,
+  conditionSchema,
+  enemyAbilitySchema,
+  itemSchema,
+  kitSchema,
+} from './schemas';
 import knownViolations from './known-violations.json';
 
 const normalize = (s: string) =>
@@ -104,6 +111,17 @@ function collectViolations(): string[] {
   // Habilidades
   for (const id of duplicates(ABILITIES.map((a) => a.id)))
     violations.push(`ability:${id}:duplicate-id`);
+
+  // Habilidades de inimigo (biblioteca do bestiário).
+  for (const id of duplicates(ENEMY_ABILITIES.map((a) => a.id)))
+    violations.push(`enemy-ability:${id}:duplicate-id`);
+  for (const ability of ENEMY_ABILITIES) {
+    const p = `enemy-ability:${ability.id}`;
+    violations.push(...schemaViolations(p, enemyAbilitySchema, ability));
+    for (const { conditionId } of ability.effect.apply ?? []) {
+      if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
+    }
+  }
 
   const vocationIds = new Set(Object.keys(VOCATION_RULES).map(normalize));
 
