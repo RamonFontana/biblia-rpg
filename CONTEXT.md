@@ -108,6 +108,17 @@ _Avoid_: penalidade (para a Desvantagem)
 **Rolagem Virtual**:
 Sorteio feito pelo app no lugar dos dados físicos, sempre opcional para rolagens de jogador.
 
+**Ataque**:
+Rolagem de 1d20 + modificador de atributo (FOR; DES com arma de munição; o maior dos dois com Acuidade) + Proficiência (só com arma em que a Vocação é proficiente), que acerta se igualar ou superar a CA do alvo. O alvo pode ser inimigo, NPC ou aliado. No acerto, o dano é o dado da arma mais o mesmo modificador.
+_Avoid_: golpe, rolagem física
+
+**Acerto Crítico**:
+Ataque com 20 natural: acerta sempre, e os dados de dano da arma são rolados duas vezes (o modificador entra uma vez só).
+_Avoid_: crit
+
+**Falha Crítica**:
+Ataque com 1 natural: erra sempre, qualquer que seja a CA do alvo.
+
 ## Condições e dano
 
 **Condição**:

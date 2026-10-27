@@ -409,3 +409,93 @@ describe('CombatDashboard: Condições', () => {
     expect(updateConditions).toHaveBeenCalledWith('p1', [{ conditionId: 'cego', duration: 2 }]);
   });
 });
+
+describe('CombatDashboard: ataques', () => {
+  it('lista os últimos ataques do combate', () => {
+    startCombat([participant('p1')]);
+    useCombatStore.setState({
+      attacks: [
+        {
+          id: 'a1',
+          combat_id: 'combat-1',
+          attacker_participant_id: 'p1',
+          target_participant_id: 'p1',
+          attacker_name: 'Eliabe',
+          target_name: 'Filisteu',
+          natural_roll: 14,
+          total: 19,
+          target_ac: 15,
+          hit: true,
+          critical: false,
+          fumble: false,
+          damage: 7,
+          target_hp_before: 12,
+          target_hp_after: 5,
+          applied_mode: 'normal',
+          rolls: null,
+          inspiration_used: false,
+          weapon_effect_triggered: false,
+          weapon_effect_conditions: [],
+          created_at: '',
+        },
+      ],
+    });
+    render(<CombatDashboard />);
+    expect(screen.getByText('Últimos ataques')).toBeInTheDocument();
+    expect(screen.getByText(/Eliabe → Filisteu/)).toBeInTheDocument();
+  });
+
+  it('sem ataques, a lista não aparece', () => {
+    startCombat([participant('p1')]);
+    useCombatStore.setState({ attacks: [] });
+    render(<CombatDashboard />);
+    expect(screen.queryByText('Últimos ataques')).toBeNull();
+  });
+});
+
+describe('CombatDashboard: golpe em quem já estava Morrendo', () => {
+  const strike = (over: Record<string, unknown> = {}) =>
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('combat-attack', {
+          detail: {
+            id: 'a1',
+            target_participant_id: 'p-player',
+            target_name: 'Rute',
+            hit: true,
+            critical: false,
+            target_hp_before: 0,
+            ...over,
+          },
+        }),
+      );
+    });
+
+  beforeEach(() => {
+    startCombat([
+      participant('p-player', { entity_type: 'player' }),
+      participant('p-enemy', { entity_type: 'enemy' }),
+    ]);
+    render(<CombatDashboard />);
+  });
+
+  it('avisa o Mestre para marcar a falha no Teste de Morte, até ele dispensar', () => {
+    strike();
+    expect(
+      screen.getByText('Rute já estava Morrendo e foi atingido: marque a falha no Teste de Morte.'),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Entendi' }));
+    expect(screen.queryByText(/já estava Morrendo/)).toBeNull();
+  });
+
+  it('o inimigo a 0 PV não gera o aviso (não faz Teste de Morte)', () => {
+    strike({ target_participant_id: 'p-enemy', target_name: 'Filisteu' });
+    expect(screen.queryByText(/já estava Morrendo/)).toBeNull();
+  });
+
+  it('só se o alvo já estava a 0 PV e o golpe acertou', () => {
+    strike({ target_hp_before: 3 });
+    strike({ hit: false });
+    expect(screen.queryByText(/já estava Morrendo/)).toBeNull();
+  });
+});

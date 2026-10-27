@@ -13,6 +13,7 @@ import type {
 } from '@/data-access/sessions';
 import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
 import { getCurrentPv } from '@/domain/vitals';
+import { buildCombatEntities } from '@/lib/combatEntities';
 import type { TradeWithItems } from '@/types/trade';
 
 interface PlayerSessionViewProps {
@@ -99,6 +100,11 @@ export function PlayerSessionView({
             character={myCharacter}
             enemies={enemies}
             isLoading={isCharactersLoading}
+            entities={buildCombatEntities({ playerCharacters, npcs, enemies })}
+            inspirationContext={{ sessionId, day: sessionData.current_day || 1 }}
+            onInspirationUsed={
+              myCharacter ? (patch) => updateLocal('player', myCharacter.id, patch) : undefined
+            }
           />
         </div>
       )}

@@ -2,7 +2,7 @@ import { mergeCondition } from '@/domain/conditions';
 import { getCharacterResistanceSource } from '@/data-access/characters';
 import type { AbilityDefinition } from '@/content/schemas';
 import { useCombatStore } from '../store/combatStore';
-import type { ConditionEntry, CharacterEquipment, WeaponEffect } from '../types/combat';
+import type { ConditionEntry, CharacterEquipment } from '../types/combat';
 import {
   applyConditionResistance,
   getConditionResistanceLevels,
@@ -10,33 +10,6 @@ import {
 } from '@/domain/armorResistance';
 
 export const combatEngine = {
-  /**
-   * Verifica efeitos da arma (ex: Sangramento com Natural 18+) e os aplica
-   */
-  async checkWeaponEffects(
-    weaponEffects: WeaponEffect[],
-    naturalRoll: number,
-    targetParticipantId: string,
-  ) {
-    if (naturalRoll < 18 || !weaponEffects || weaponEffects.length === 0) return;
-
-    const applyConditions = weaponEffects.map((eff) => ({
-      conditionId: eff.conditionId,
-      duration: 3, // Efeitos de arma padrão duram 3 rodadas se não curados
-    }));
-
-    await this.executeAbilityOnTarget({ applyConditions }, targetParticipantId);
-
-    // Notifica via toast
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('combat-toast', {
-          detail: { message: `Efeito de Arma Ativado (Nat ${naturalRoll})!` },
-        }),
-      );
-    }
-  },
-
   /**
    * Executa uma habilidade em um alvo, aplicando os efeitos mecânicos automatizados
    * (como applyConditions) se existirem.

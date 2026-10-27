@@ -169,6 +169,100 @@ export type Database = {
           },
         ]
       }
+      combat_attacks: {
+        Row: {
+          applied_mode: string
+          attacker_name: string
+          attacker_participant_id: string
+          combat_id: string
+          created_at: string
+          critical: boolean
+          damage: number
+          fumble: boolean
+          hit: boolean
+          id: string
+          inspiration_used: boolean
+          natural_roll: number
+          rolls: number[] | null
+          target_ac: number
+          target_hp_after: number
+          target_hp_before: number
+          target_name: string
+          target_participant_id: string
+          total: number
+          weapon_effect_conditions: Json
+          weapon_effect_triggered: boolean
+        }
+        Insert: {
+          applied_mode?: string
+          attacker_name: string
+          attacker_participant_id: string
+          combat_id: string
+          created_at?: string
+          critical: boolean
+          damage?: number
+          fumble: boolean
+          hit: boolean
+          id?: string
+          inspiration_used?: boolean
+          natural_roll: number
+          rolls?: number[] | null
+          target_ac: number
+          target_hp_after: number
+          target_hp_before: number
+          target_name: string
+          target_participant_id: string
+          total: number
+          weapon_effect_conditions?: Json
+          weapon_effect_triggered?: boolean
+        }
+        Update: {
+          applied_mode?: string
+          attacker_name?: string
+          attacker_participant_id?: string
+          combat_id?: string
+          created_at?: string
+          critical?: boolean
+          damage?: number
+          fumble?: boolean
+          hit?: boolean
+          id?: string
+          inspiration_used?: boolean
+          natural_roll?: number
+          rolls?: number[] | null
+          target_ac?: number
+          target_hp_after?: number
+          target_hp_before?: number
+          target_name?: string
+          target_participant_id?: string
+          total?: number
+          weapon_effect_conditions?: Json
+          weapon_effect_triggered?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_attacks_attacker_participant_id_fkey"
+            columns: ["attacker_participant_id"]
+            isOneToOne: false
+            referencedRelation: "combat_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_attacks_combat_id_fkey"
+            columns: ["combat_id"]
+            isOneToOne: false
+            referencedRelation: "combats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_attacks_target_participant_id_fkey"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "combat_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       combat_participants: {
         Row: {
           combat_id: string
@@ -750,6 +844,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_attack: {
+        Args: {
+          p_applied_mode?: string
+          p_attacker_participant_id: string
+          p_conditions?: Json
+          p_critical: boolean
+          p_damage: number
+          p_fumble: boolean
+          p_hit: boolean
+          p_inspiration_used?: boolean
+          p_natural_roll: number
+          p_rolls?: number[]
+          p_target_ac: number
+          p_target_participant_id: string
+          p_total: number
+          p_weapon_effect_triggered?: boolean
+        }
+        Returns: string
+      }
       can_manage_character: {
         Args: { check_character_id: string }
         Returns: boolean

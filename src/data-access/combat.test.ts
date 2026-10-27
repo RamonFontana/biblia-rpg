@@ -19,6 +19,7 @@ vi.mock('@/lib/supabase', async () => {
 
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
+  applyAttack,
   createCombat,
   finishCombat,
   findSessionCombat,
@@ -27,6 +28,7 @@ import {
   getCharactersForCombatEnd,
   getCombat,
   insertCombatParticipants,
+  listCombatAttacks,
   listCombatParticipants,
   setParticipantConditions,
   softDeleteCharacters,
@@ -208,5 +210,87 @@ describe('gravações do combate', () => {
     expect(console.error).toHaveBeenCalledWith('Failed to update conditions', failure);
     expect(console.error).toHaveBeenCalledWith('Failed to update turn', failure);
     expect(console.error).toHaveBeenCalledWith('Failed to end combat', failure);
+  });
+});
+
+describe('applyAttack', () => {
+  const attack = {
+    attackerParticipantId: 'p1',
+    targetParticipantId: 'p2',
+    naturalRoll: 14,
+    total: 19,
+    targetAc: 15,
+    hit: true,
+    critical: false,
+    fumble: false,
+    damage: 7,
+    appliedMode: 'vantagem' as const,
+    rolls: [14, 6],
+    inspirationUsed: true,
+    weaponEffectTriggered: true,
+    weaponConditions: [{ conditionId: 'sangrando', duration: 3 }],
+  };
+
+  it('chama a função de ataque com o resultado do motor e devolve o id do ataque', async () => {
+    state.respond = () => ({ data: 'atk-1' });
+    await expect(applyAttack(attack)).resolves.toBe('atk-1');
+    const [call] = callsOf(state.calls, 'apply_attack', 'rpc');
+    expect(call.payload).toEqual({
+      p_attacker_participant_id: 'p1',
+      p_target_participant_id: 'p2',
+      p_natural_roll: 14,
+      p_total: 19,
+      p_target_ac: 15,
+      p_hit: true,
+      p_critical: false,
+      p_fumble: false,
+      p_damage: 7,
+      p_applied_mode: 'vantagem',
+      p_rolls: [14, 6],
+      p_inspiration_used: true,
+      p_weapon_effect_triggered: true,
+      p_conditions: [{ conditionId: 'sangrando', duration: 3 }],
+    });
+  });
+
+  it('sem os dois d20, não manda a lista', async () => {
+    state.respond = () => ({ data: 'atk-1' });
+    await applyAttack({
+      ...attack,
+      rolls: null,
+      appliedMode: 'normal',
+      inspirationUsed: false,
+      weaponEffectTriggered: false,
+      weaponConditions: [],
+    });
+    const [call] = callsOf(state.calls, 'apply_attack', 'rpc');
+    expect(call.payload).toMatchObject({
+      p_applied_mode: 'normal',
+      p_rolls: undefined,
+      p_inspiration_used: false,
+      p_weapon_effect_triggered: false,
+      p_conditions: [],
+    });
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(applyAttack(attack)).rejects.toBe(failure);
+  });
+});
+
+describe('listCombatAttacks', () => {
+  it('lê os últimos ataques do combate, do mais novo para o mais antigo', async () => {
+    state.respond = () => ({ data: [{ id: 'a1' }] });
+    await expect(listCombatAttacks('c1', 10)).resolves.toEqual([{ id: 'a1' }]);
+    const [call] = callsOf(state.calls, 'combat_attacks', 'select');
+    expect(filterOf(call, 'eq', 'combat_id')).toBe('c1');
+    expect(call.filters).toContainEqual(['order', 'created_at', { ascending: false }]);
+    expect(call.filters).toContainEqual(['limit', 10]);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(listCombatAttacks('c1', 10)).rejects.toBe(failure);
   });
 });

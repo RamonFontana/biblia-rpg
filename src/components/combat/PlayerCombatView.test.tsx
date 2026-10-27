@@ -29,6 +29,9 @@ vi.mock('./EnemyCombatList', async () => ({
 vi.mock('./DeathSavesModal', async () => ({
   DeathSavesModal: (await import('@/test/stubs')).makeStub('DeathSavesModal'),
 }));
+vi.mock('./AttackPanel', async () => ({
+  AttackPanel: (await import('@/test/stubs')).makeStub('AttackPanel'),
+}));
 vi.mock('./AbilityCard', async () => ({
   AbilityCard: (await import('@/test/stubs')).makeStub('AbilityCard', (props) =>
     String((props.ability as { id: string }).id),
@@ -117,7 +120,12 @@ afterEach(() => {
   clearStubs();
   vi.restoreAllMocks();
   vi.clearAllMocks();
-  useCombatStore.setState({ activeCombat: null, participants: [], currentTurnParticipant: null });
+  useCombatStore.setState({
+    activeCombat: null,
+    participants: [],
+    currentTurnParticipant: null,
+    hasUsedAction: false,
+  });
 });
 
 describe('PlayerCombatView: cabeçalho', () => {
@@ -341,5 +349,195 @@ describe('PlayerCombatView: o combate', () => {
     });
     expect(screen.queryByText('É O SEU TURNO!')).toBeNull();
     expect(screen.queryByText('Checklist de Ações (Sua Referência)')).toBeNull();
+  });
+});
+
+describe('PlayerCombatView: o ataque', () => {
+  const entities = [
+    { id: 'c1', name: 'Eliab', totalAc: 14 },
+    { id: 'c2', name: 'Rute', totalAc: 12 },
+    { id: 'e1', name: 'Filisteu', totalAc: 15 },
+  ];
+  const parts = [
+    participant({ id: 'part-1', entity_id: 'c1', initiative: 20 }),
+    participant({ id: 'part-2', entity_id: 'c2', initiative: 15 }),
+    participant({ id: 'part-3', entity_id: 'e1', entity_type: 'enemy', initiative: 10 }),
+  ];
+  const attackView = () =>
+    render(
+      <PlayerCombatView character={sheet()} enemies={[]} isLoading={false} entities={entities} />,
+    );
+
+  it('no turno do jogador mostra o painel de ataque com os alvos (aliado e inimigo, sem ele)', () => {
+    startCombat(parts, 0);
+    attackView();
+    expect(stubProps('AttackPanel')).toMatchObject({
+      attackerParticipantId: 'part-1',
+      characterId: 'c1',
+      attackerConditionIds: [],
+      targets: [
+        {
+          participantId: 'part-2',
+          entityId: 'c2',
+          entityType: 'player',
+          name: 'Rute',
+          ac: 12,
+          conditionIds: [],
+        },
+        {
+          participantId: 'part-3',
+          entityId: 'e1',
+          entityType: 'enemy',
+          name: 'Filisteu',
+          ac: 15,
+          conditionIds: [],
+        },
+      ],
+      actionUsed: false,
+    });
+  });
+
+  it('entrega as Condições do atacante e dos alvos ao painel', () => {
+    startCombat(
+      [
+        participant({
+          id: 'part-1',
+          entity_id: 'c1',
+          initiative: 20,
+          conditions: [{ conditionId: 'envenenado', duration: 2 }] as never,
+        }),
+        participant({
+          id: 'part-2',
+          entity_id: 'c2',
+          initiative: 15,
+          conditions: [{ conditionId: 'caido', duration: null }] as never,
+        }),
+      ],
+      0,
+    );
+    attackView();
+    const props = stubProps('AttackPanel')!;
+    expect(props.attackerConditionIds).toEqual(['envenenado']);
+    expect((props.targets as { conditionIds: string[] }[])[0].conditionIds).toEqual(['caido']);
+  });
+
+  it('a Inspiração chega ao painel só para o Inabalável que não a usou hoje', () => {
+    startCombat(parts, 0);
+    const withInspiration = (char: Character, day = 3) =>
+      render(
+        <PlayerCombatView
+          character={char}
+          enemies={[]}
+          isLoading={false}
+          entities={entities}
+          inspirationContext={{ sessionId: 's1', day }}
+        />,
+      );
+    withInspiration(sheet({ stats: { pv: 12, ca: 11, faith: 80, current_faith: 80 } }));
+    expect(stubProps('AttackPanel')!.inspiration).toEqual({
+      available: true,
+      sessionId: 's1',
+      day: 3,
+    });
+    cleanup();
+    clearStubs();
+    withInspiration(
+      sheet({
+        stats: { pv: 12, ca: 11, faith: 80, current_faith: 80 },
+        inspiration_used_day: 3,
+        inspiration_session_id: 's1',
+      }),
+    );
+    expect(stubProps('AttackPanel')!.inspiration).toMatchObject({ available: false });
+    cleanup();
+    clearStubs();
+    withInspiration(sheet());
+    expect(stubProps('AttackPanel')!.inspiration).toMatchObject({ available: false });
+  });
+
+  it('fora do turno, não há painel de ataque', () => {
+    startCombat(parts, 1);
+    attackView();
+    expect(stubProps('AttackPanel')).toBeUndefined();
+  });
+
+  it('sem combate, não há painel de ataque', () => {
+    attackView();
+    expect(stubProps('AttackPanel')).toBeUndefined();
+  });
+
+  it('a 0 PV (Morrendo) não ataca', () => {
+    startCombat([{ ...parts[0], hp_current: 0 }, parts[1], parts[2]], 0);
+    attackView();
+    expect(stubProps('AttackPanel')).toBeUndefined();
+  });
+
+  it('registrar o ataque marca a Ação principal como usada, uma vez só', () => {
+    startCombat(parts, 0);
+    attackView();
+    expect(useCombatStore.getState().hasUsedAction).toBe(false);
+    act(() => (stubProps('AttackPanel')!.onActionUsed as () => void)());
+    expect(useCombatStore.getState().hasUsedAction).toBe(true);
+    act(() => (stubProps('AttackPanel')!.onActionUsed as () => void)());
+    expect(useCombatStore.getState().hasUsedAction).toBe(true);
+    expect(stubProps('AttackPanel')).toMatchObject({ actionUsed: true });
+  });
+});
+
+describe('PlayerCombatView: o aviso de quem foi atingido', () => {
+  const parts = [
+    participant({ id: 'part-1', entity_id: 'c1', initiative: 20 }),
+    participant({ id: 'part-2', entity_id: 'c2', initiative: 15 }),
+  ];
+  const hit = (over: Record<string, unknown> = {}) =>
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('combat-attack', {
+          detail: {
+            id: 'a1',
+            target_participant_id: 'part-1',
+            attacker_name: 'Rute',
+            hit: true,
+            critical: false,
+            damage: 5,
+            ...over,
+          },
+        }),
+      );
+    });
+
+  beforeEach(() => {
+    startCombat(parts, 1);
+    view();
+  });
+
+  it('avisa quem foi atingido, com o nome do atacante e o dano', () => {
+    hit();
+    expect(screen.getByText('Você foi atingido por Rute: 5 de dano.')).toBeInTheDocument();
+  });
+
+  it('marca o crítico', () => {
+    hit({ critical: true, damage: 11 });
+    expect(
+      screen.getByText('Você foi atingido por Rute (crítico): 11 de dano.'),
+    ).toBeInTheDocument();
+  });
+
+  it('não avisa quem não foi o alvo, nem erro, nem dano zero', () => {
+    hit({ target_participant_id: 'part-2' });
+    hit({ hit: false, damage: 0 });
+    hit({ damage: 0 });
+    expect(screen.queryByText(/Você foi atingido/)).toBeNull();
+  });
+
+  it('o aviso some depois de alguns segundos', () => {
+    vi.useFakeTimers();
+    hit();
+    expect(screen.getByText(/Você foi atingido/)).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(7000);
+    });
+    expect(screen.queryByText(/Você foi atingido/)).toBeNull();
+    vi.useRealTimers();
   });
 });

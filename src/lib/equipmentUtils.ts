@@ -2,6 +2,7 @@ import type { CharacterEquipment, ItemEffects } from '../types/combat';
 import type { CombatInventoryItem } from '../types/inventory';
 import type { Character } from '@/features/character-management/types';
 import { calculateArmorClass, UNARMORED_AC, type EquippedItemRef } from '@/domain/armorClass';
+import { isWeaponProficient } from '@/domain/attack';
 import { calculateModifier } from '@/domain/attributes';
 import { EMPTY_EQUIPMENT } from '@/domain/equipment';
 import {
@@ -127,15 +128,10 @@ export function checkWeaponProficiency(
   const weaponCategory = weapon.effects?.weaponCategory?.toLowerCase() || '';
   const weaponType = weapon.type?.toLowerCase() || '';
 
-  const isMartial = weaponCategory.includes('marcial') || weaponType.includes('marcial');
-
-  if (isMartial) {
-    const v = vocation?.toLowerCase() || '';
-    if (['sacerdote', 'sábio', 'sabio', 'levita'].includes(v)) {
-      return false;
-    }
-  }
-  return true;
+  // A regra (o Sacerdote não usa arma marcial) é do motor; aqui só se acha a categoria.
+  const category =
+    weaponCategory.includes('marcial') || weaponType.includes('marcial') ? 'Marcial' : undefined;
+  return isWeaponProficient(vocation, category);
 }
 
 /** Modificador de DES da ficha. Atributo ausente ou inválido vale 10 (modificador 0). */

@@ -4,24 +4,47 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 // import { Button } from '../ui/button';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateCharacter } from '@/data-access/characters';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
+import { AttackPanel } from './AttackPanel';
 import { abilitySkills, getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
+import { buildAttackTargets, conditionIdsOf } from '@/lib/attackSetup';
+import { getInspirationStatus } from '@/domain/inspiration';
+import { describeHitOnTarget } from '@/domain/attack';
+import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
+import type { CombatInventoryItem } from '@/types/inventory';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { getMaxPv } from '@/domain/vitals';
 
 interface PlayerCombatViewProps {
-  character: Character | null | undefined; // The current player character data
+  // A ficha do jogador; com os itens aninhados (`character_items`), a arma do ataque sai deles.
+  character: (Character & { character_items?: CombatInventoryItem[] }) | null | undefined;
   enemies: Character[];
   isLoading: boolean;
+  /** Quem está na sessão, com nome e CA: os alvos possíveis do ataque. */
+  entities?: { id: string; name: string; totalAc: number }[];
+  /** A sessão e o dia de agora: a Inspiração gasta no ataque é do dia. */
+  inspirationContext?: { sessionId: string; day: number };
+  /** Avisa a tela do dia gravado quando o ataque gastou a Inspiração. */
+  onInspirationUsed?: (patch: {
+    inspiration_used_day: number;
+    inspiration_session_id: string;
+  }) => void;
 }
 
-export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombatViewProps) {
+export function PlayerCombatView({
+  character,
+  enemies,
+  isLoading,
+  entities = [],
+  inspirationContext,
+  onInspirationUsed,
+}: PlayerCombatViewProps) {
   const playerId = character?.id;
   const [isUpdating, setIsUpdating] = useState(false);
   const {
@@ -75,6 +98,25 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
     return getAbilitiesForCharacter(character.tribe, character.vocation, level, pathChoices);
   }, [character]);
 
+  // O aviso de quem foi atingido: só ataques ao vivo, e some sozinho.
+  const [hitNotice, setHitNotice] = useState<string | null>(null);
+  const hitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const myParticipantId = participants.find((p) => p.entity_id === playerId)?.id;
+  useCombatAttackEvents((attack) => {
+    if (!myParticipantId || attack.target_participant_id !== myParticipantId) return;
+    if (!attack.hit || attack.damage <= 0) return;
+    clearTimeout(hitTimer.current);
+    setHitNotice(
+      describeHitOnTarget({
+        attackerName: attack.attacker_name,
+        damage: attack.damage,
+        critical: attack.critical,
+      }),
+    );
+    hitTimer.current = setTimeout(() => setHitNotice(null), 6000);
+  });
+  useEffect(() => () => clearTimeout(hitTimer.current), []);
+
   const isMyTurn = activeCombat && currentTurnParticipant?.entity_id === playerId;
   const participant = participants.find((p) => p.entity_id === playerId);
   const isDying = activeCombat && participant && participant.hp_current <= 0;
@@ -109,6 +151,15 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
         </div>
       )}
 
+      {hitNotice && (
+        <div
+          role="status"
+          className="rounded-md border border-red-700/50 bg-red-900/30 p-3 text-sm font-medium text-red-400"
+        >
+          {hitNotice}
+        </div>
+      )}
+
       {activeCombat && (
         <>
           {/* Render the Enemy List */}
@@ -125,6 +176,33 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
                 <p className="text-muted-foreground mt-2">Escolha suas ações com sabedoria.</p>
               </div>
             </div>
+          )}
+
+          {isMyTurn && !isDying && character && participant && (
+            <AttackPanel
+              character={character}
+              characterId={character.id}
+              attackerParticipantId={participant.id}
+              attackerConditionIds={conditionIdsOf(participant.conditions)}
+              inspiration={
+                inspirationContext && {
+                  available:
+                    getInspirationStatus({
+                      stats: character.stats,
+                      usedDay: character.inspiration_used_day,
+                      usedSessionId: character.inspiration_session_id,
+                      ...inspirationContext,
+                    }) === 'disponivel',
+                  ...inspirationContext,
+                }
+              }
+              onInspirationUsed={onInspirationUsed}
+              targets={buildAttackTargets(participants, participant.id, entities)}
+              actionUsed={hasUsedAction}
+              onActionUsed={() => {
+                if (!hasUsedAction) toggleAction();
+              }}
+            />
           )}
 
           {!isDying && (
@@ -221,8 +299,6 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
           </div>
         )}
       </div>
-
-      {/* <PhysicalRollForm playerId={playerId} character={character} /> */}
     </div>
   );
 }

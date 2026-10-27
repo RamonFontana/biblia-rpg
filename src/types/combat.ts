@@ -28,19 +28,6 @@ export const HealthModificationSchema = z.object({
 
 export type HealthModificationFormValues = z.infer<typeof HealthModificationSchema>;
 
-// 3. Resolução Híbrida de Rolagem (Jogador)
-export const PhysicalRollSchema = z.object({
-  attackRoll: z
-    .number()
-    .int()
-    .min(1, 'O dado deve ser no mínimo 1')
-    .max(30, 'Valor irreal para um d20 + mod'),
-  damageRoll: z.number().int().min(0, 'O dano não pode ser negativo').optional(),
-  naturalRoll: z.number().int().min(1).max(20).optional(),
-});
-
-export type PhysicalRollFormValues = z.infer<typeof PhysicalRollSchema>;
-
 // 4. Equipamentos e Inventário
 export interface CharacterEquipment {
   head: string | null; // character_item_id
