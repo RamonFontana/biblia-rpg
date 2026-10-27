@@ -3,14 +3,12 @@
 // leitura; o `ca` devolvido aqui é só o valor sem armadura exibido no resumo da criação.
 // Termos: CONTEXT.md (PV, Fé Inicial).
 import { calculateModifier } from '@/domain/attributes';
+import { getHitDie } from '@/domain/hitDice';
 
 interface AttributeScores {
   con?: number;
   des?: number;
 }
-
-/** Vocações cujo dado de vida é d10; as demais usam d8. O PV inicial usa o valor máximo do dado. */
-const D10_VOCATIONS = ['Guerreiro', 'Caçador'];
 
 export function calculateInitialStats(
   vocation: string | undefined,
@@ -20,7 +18,8 @@ export function calculateInitialStats(
   const conMod = calculateModifier(attributes?.con || 10);
   const desMod = calculateModifier(attributes?.des || 10);
 
-  const baseHp = D10_VOCATIONS.includes(vocation || '') ? 10 : 8;
+  // O PV inicial é o valor máximo do Dado de Vida da Vocação.
+  const baseHp = getHitDie(vocation);
 
   return {
     baseHp,

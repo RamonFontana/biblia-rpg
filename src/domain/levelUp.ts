@@ -2,17 +2,7 @@
 // Decisões: ROADMAP.md, Onda 2 (XP dá lugar ao Marco; aumento de atributo nos níveis 4/8/12/16/19;
 // o passo de PV mostra o ganho final, depois da escolha de atributo).
 import { calculateModifier } from '@/domain/attributes';
-
-/** Média do dado de vida por Vocação (o doc também permite rolar; o app só usa a média). */
-const VOCATION_HP_AVERAGE: Record<string, number> = {
-  guerreiro: 6,
-  batedor: 5,
-  caçador: 6,
-  cacador: 6,
-  sacerdote: 5,
-  sábio: 5,
-  sabio: 5,
-};
+import { getHitDie, getHitDieAverage } from '@/domain/hitDice';
 
 /** Nível máximo do jogo. A trava hoje existe só na tela de encerramento da sessão. */
 export const MAX_LEVEL = 20;
@@ -31,12 +21,9 @@ export function canGrantLevelUp(character: { level?: number | null; stats?: unkn
 /** Níveis em que o personagem ganha 2 pontos de atributo. */
 export const ASI_LEVELS = [4, 8, 12, 16, 19];
 
-function normalizeVocation(vocation: string) {
-  return vocation.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-
+/** A média do Dado de Vida da Vocação (o doc também permite rolar; o app só usa a média). */
 export function getHpAverage(vocation: string | null | undefined): number {
-  return VOCATION_HP_AVERAGE[normalizeVocation(vocation || '')] || 5;
+  return getHitDieAverage(getHitDie(vocation));
 }
 
 export type LevelUpStep = 'hp' | 'tribe' | 'vocation' | 'asi' | 'summary';
