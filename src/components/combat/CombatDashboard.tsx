@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AbilityPendingPanel } from './AbilityPendingPanel';
 import { AttackLog } from './AttackLog';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
@@ -273,6 +274,8 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
           </Button>
         </div>
       ))}
+
+      <AbilityPendingPanel uses={abilityUses} participants={participants} />
 
       <AttackLog attacks={attacks} abilityUses={abilityUses} />
 

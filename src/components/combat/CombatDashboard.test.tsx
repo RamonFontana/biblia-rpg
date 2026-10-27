@@ -24,6 +24,9 @@ vi.mock('../conditions/ConditionSelector', async () => ({
 vi.mock('./HealthModificationModal', async () => ({
   HealthModificationModal: (await import('@/test/stubs')).makeStub('HealthModificationModal'),
 }));
+vi.mock('./AbilityPendingPanel', async () => ({
+  AbilityPendingPanel: (await import('@/test/stubs')).makeStub('AbilityPendingPanel'),
+}));
 vi.mock('./MasterDeathControls', async () => ({
   MasterDeathControls: (await import('@/test/stubs')).makeStub('MasterDeathControls'),
 }));
@@ -77,7 +80,12 @@ afterEach(() => {
   cleanup();
   clearStubs();
   vi.clearAllMocks();
-  useCombatStore.setState({ activeCombat: null, participants: [], currentTurnParticipant: null });
+  useCombatStore.setState({
+    activeCombat: null,
+    participants: [],
+    currentTurnParticipant: null,
+    abilityUses: [],
+  });
 });
 
 const call = (fn: unknown, ...args: unknown[]) =>
@@ -497,5 +505,19 @@ describe('CombatDashboard: golpe em quem já estava Morrendo', () => {
     strike({ target_hp_before: 3 });
     strike({ hit: false });
     expect(screen.queryByText(/já estava Morrendo/)).toBeNull();
+  });
+});
+
+describe('CombatDashboard: TRs de Habilidades pendentes', () => {
+  it('passa ao painel os usos do combate e os participantes', () => {
+    const uses = [{ id: 'u1', status: 'pending' }];
+    const parts = [participant('p1'), participant('p2', { entity_type: 'enemy' })];
+    startCombat(parts);
+    useCombatStore.setState({ abilityUses: uses as never });
+    render(<CombatDashboard />);
+    expect(stubProps('AbilityPendingPanel')!.uses).toEqual(uses);
+    expect(stubProps('AbilityPendingPanel')!.participants).toEqual(
+      useCombatStore.getState().participants,
+    );
   });
 });

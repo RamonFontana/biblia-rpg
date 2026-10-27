@@ -378,17 +378,30 @@ describe('resolveAbilityUseRolls', () => {
     expect(callsOf(state.calls, 'resolve_ability_use', 'rpc')).toEqual([]);
   });
 
-  it('o d20 fora de 1 a 20 é recusado', async () => {
+  it.each([[21], [0], [-1], [12.5]])('o d20 %s fora de 1 a 20 é recusado', async (natural) => {
     await expect(
       resolveAbilityUseRolls({
         use: pendingUse,
         participants,
         rolls: [
-          { participantId: 'p2', natural: 21, mark: null },
+          { participantId: 'p2', natural, mark: null },
           { participantId: 'p3', natural: 12, mark: null },
         ],
       }),
     ).rejects.toThrow('entre 1 e 20');
+  });
+
+  it.each([[1], [20]])('o d20 %s, nos extremos, vale', async (natural) => {
+    await expect(
+      resolveAbilityUseRolls({
+        use: pendingUse,
+        participants,
+        rolls: [
+          { participantId: 'p2', natural, mark: null },
+          { participantId: 'p3', natural: 12, mark: null },
+        ],
+      }),
+    ).resolves.toMatchObject({ status: 'resolved' });
   });
 
   it('uma Habilidade sem TR não tem o que resolver', async () => {

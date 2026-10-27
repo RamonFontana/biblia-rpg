@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { CONDITIONS } from '@/content/conditions';
 import type { AbilityDefinition } from '@/content/schemas';
-import { isSingleTarget } from '@/domain/abilityEffect';
+import type { CombatAbilityUse } from '@/data-access/combat';
+import { abilityUseTargets, isSingleTarget } from '@/domain/abilityEffect';
+import { saveAttributeLabel } from '@/domain/abilitySave';
 import { getErrorMessage } from '@/lib/errorMessage';
 import type { AttackTarget } from '@/lib/attackSetup';
 import type { AbilityUseOutcome } from '@/services/abilityService';
@@ -15,8 +17,12 @@ interface AbilityUsePanelProps {
   targets: AttackTarget[];
   /** Por que não pode usar agora (turno, espaço, Fé, usos), ou `null`. */
   blockedReason: string | null;
+  /** A CD da Habilidade do personagem, quando ela impõe um TR. */
+  cd?: number;
   onUse: (selected: AttackTarget[]) => Promise<AbilityUseOutcome>;
   onClose: () => void;
+  /** O uso gravado, ao vivo: quando o Mestre lança o TR, o resultado chega por aqui. */
+  liveUse?: CombatAbilityUse;
 }
 
 function conditionText(conditionId: string, rounds?: number): string {
@@ -30,8 +36,10 @@ export function AbilityUsePanel({
   ability,
   targets,
   blockedReason,
+  cd,
   onUse,
   onClose,
+  liveUse,
 }: AbilityUsePanelProps) {
   const effect = ability.combatEffect;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -73,9 +81,17 @@ export function AbilityUsePanel({
         <p className="text-sm text-stone-300">
           O app aplica: {effect.apply.map((a) => conditionText(a.conditionId, a.rounds)).join(', ')}
         </p>
+        {effect.save && (
+          <p className="text-sm text-stone-300">
+            TR de {saveAttributeLabel(effect.save.attribute)} dos alvos
+            {cd !== undefined && ` (CD ${cd})`}: a Condição só entra em quem falhar.
+          </p>
+        )}
         <p className="text-xs text-stone-400">{ability.effect}</p>
 
-        {outcome ? (
+        {outcome?.pending ? (
+          <PendingResult outcome={outcome} liveUse={liveUse} />
+        ) : outcome ? (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-stone-200">Resultado</h4>
             <ul className="space-y-1 text-sm text-stone-300">
@@ -146,5 +162,49 @@ export function AbilityUsePanel({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** O uso com TR: espera o Mestre lançar os testes e depois mostra o resultado de cada alvo. */
+function PendingResult({
+  outcome,
+  liveUse,
+}: {
+  outcome: AbilityUseOutcome;
+  liveUse: CombatAbilityUse | undefined;
+}) {
+  const live = liveUse?.id === outcome.id ? liveUse : undefined;
+  if (live?.status === 'expired') {
+    return (
+      <p className="text-sm text-stone-300">O uso não teve efeito: o combate acabou antes do TR.</p>
+    );
+  }
+  if (live?.status === 'resolved') {
+    return (
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold text-stone-200">Resultado</h4>
+        <ul className="space-y-1 text-sm text-stone-300">
+          {abilityUseTargets(live.targets).map((t) => {
+            const result =
+              t.conditionIds.length > 0
+                ? t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')
+                : t.failed
+                  ? 'falhou no TR, mas resistiu à Condição'
+                  : 'passou no TR';
+            return (
+              <li key={t.participantId}>
+                {t.name}: {result} (d20 {t.natural}, total {t.total})
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+  return (
+    <p className="text-sm text-stone-300">
+      Aguardando o Mestre lançar o TR de {saveAttributeLabel(outcome.pending!.attribute)} (CD{' '}
+      {outcome.pending!.cd}).
+    </p>
   );
 }

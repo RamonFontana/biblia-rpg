@@ -687,6 +687,78 @@ describe('PlayerCombatView: Habilidade com efeito de combate', () => {
     expect(useCombatStore.getState().hasUsedAction).toBe(false);
   });
 
+  describe('com TR', () => {
+    const withSave = () =>
+      withEffect({
+        combatEffect: {
+          targets: 'enemies',
+          save: { attribute: 'sab' },
+          apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+        },
+      });
+    const saveView = () =>
+      render(
+        <PlayerCombatView
+          character={sheet({ attributes: { for: 16 } } as Partial<Character>)}
+          enemies={[]}
+          isLoading={false}
+          entities={entities}
+        />,
+      );
+
+    it('o painel recebe a CD da Habilidade do personagem (Guerreiro nível 3, FOR 16)', async () => {
+      h.getAbilitiesForCharacter.mockReturnValue([withSave()]);
+      startCombat(parts, 0);
+      saveView();
+      await useAbility('a1');
+      expect(stubProps('AbilityUsePanel')!.cd).toBe(13);
+    });
+
+    it('sem TR o painel não recebe CD', async () => {
+      startCombat(parts, 0);
+      effectView();
+      await useAbility('a1');
+      expect(stubProps('AbilityUsePanel')!.cd).toBeUndefined();
+    });
+
+    it('o serviço recebe a Vocação, o nível e os atributos para calcular a CD', async () => {
+      h.getAbilitiesForCharacter.mockReturnValue([withSave()]);
+      startCombat(parts, 0);
+      saveView();
+      await useAbility('a1');
+      await act(async () => {
+        await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)([]);
+      });
+      expect(h.submitAbilityUse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          character: expect.objectContaining({
+            vocation: 'Guerreiro',
+            level: 3,
+            attributes: { for: 16 },
+          }),
+        }),
+      );
+    });
+
+    it('o painel recebe o uso gravado ao vivo, para mostrar o resultado do TR', async () => {
+      h.getAbilitiesForCharacter.mockReturnValue([withSave()]);
+      h.submitAbilityUse.mockResolvedValue({ id: 'use-1', results: [] });
+      startCombat(parts, 0);
+      saveView();
+      await useAbility('a1');
+      await act(async () => {
+        await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)([]);
+      });
+      expect(stubProps('AbilityUsePanel')!.liveUse).toBeUndefined();
+      await act(async () => {
+        useCombatStore.setState({
+          abilityUses: [{ id: 'use-1', status: 'resolved' } as never],
+        });
+      });
+      expect(stubProps('AbilityUsePanel')!.liveUse).toMatchObject({ id: 'use-1' });
+    });
+  });
+
   it('fechar o painel o tira da tela', async () => {
     startCombat(parts, 0);
     effectView();

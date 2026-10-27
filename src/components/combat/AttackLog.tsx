@@ -1,5 +1,6 @@
 import { CONDITIONS } from '@/content/conditions';
 import { abilityUseTargets } from '@/domain/abilityEffect';
+import { saveAttributeLabel, type SaveAttribute } from '@/domain/abilitySave';
 import { describeWeaponEffect } from '@/domain/attack';
 import type { CombatAbilityUse, CombatAttack } from '@/data-access/combat';
 import type { ConditionEntry } from '@/types/combat';
@@ -24,17 +25,28 @@ function weaponEffectText(attack: CombatAttack): string | null {
   );
 }
 
-/** O que chegou a cada alvo de um uso de Habilidade: as Condições, ou "resistiu". */
+/** O que chegou a cada alvo de um uso de Habilidade: as Condições, o TR ou "resistiu". */
 function abilityTargetsText(use: CombatAbilityUse): string {
-  return abilityUseTargets(use.targets)
-    .map(
-      (t) =>
-        `${t.name}: ${
-          t.conditionIds.length === 0
-            ? 'resistiu'
-            : t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')
-        }`,
-    )
+  const targets = abilityUseTargets(use.targets);
+  const attribute = use.save_attribute as SaveAttribute | null;
+  if (use.status === 'pending' && use.cd !== null && attribute) {
+    return `aguardando o TR de ${saveAttributeLabel(attribute)} (CD ${use.cd}) · ${targets.map((t) => t.name).join(', ')}`;
+  }
+  if (use.status === 'expired') return 'expirou sem efeito (o combate acabou antes do TR)';
+  return targets
+    .map((t) => {
+      const outcome =
+        t.conditionIds.length > 0
+          ? t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')
+          : t.failed === false
+            ? 'passou'
+            : 'resistiu';
+      const roll =
+        t.failed !== undefined && use.cd !== null
+          ? `d20 ${t.natural} (${t.total} contra CD ${use.cd}) · `
+          : '';
+      return `${t.name}: ${roll}${outcome}`;
+    })
     .join(' · ');
 }
 

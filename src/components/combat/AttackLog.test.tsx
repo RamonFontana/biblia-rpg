@@ -171,6 +171,66 @@ describe('AttackLog: usos de Habilidade', () => {
     expect(screen.getByRole('listitem')).toHaveTextContent('Filisteu: resistiu');
   });
 
+  it('um uso com TR pendente diz o TR e a CD que o Mestre vai lançar', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            status: 'pending',
+            cd: 13,
+            save_attribute: 'sab',
+            targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }],
+          }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'aguardando o TR de Sabedoria (CD 13) · Filisteu',
+    );
+  });
+
+  it('um uso com TR resolvido mostra o dado, o total e o resultado de cada alvo', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            status: 'resolved',
+            cd: 13,
+            save_attribute: 'sab',
+            targets: [
+              {
+                participantId: 'p2',
+                name: 'Filisteu',
+                conditions: [{ conditionId: 'amedrontado', duration: 10 }],
+                natural: 4,
+                total: 9,
+                failed: true,
+              },
+              {
+                participantId: 'p3',
+                name: 'Bandido',
+                conditions: [],
+                natural: 15,
+                total: 19,
+                failed: false,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent('Filisteu: d20 4 (9 contra CD 13) · Amedrontado');
+    expect(row).toHaveTextContent('Bandido: d20 15 (19 contra CD 13) · passou');
+  });
+
+  it('um uso que expirou sem o TR diz que não teve efeito', () => {
+    render(<AttackLog attacks={[]} abilityUses={[use({ status: 'expired', cd: 13 })]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent('expirou sem efeito');
+  });
+
   it('ataques e usos ficam juntos, do mais novo para o mais antigo', () => {
     render(
       <AttackLog

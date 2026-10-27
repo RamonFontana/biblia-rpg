@@ -21,6 +21,7 @@ import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import type { CombatInventoryItem } from '@/types/inventory';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { effectTargetPool, getAbilityEffectBlock } from '@/domain/abilityEffect';
+import { abilityCd } from '@/domain/abilitySave';
 import { submitAbilityUse } from '@/services/abilityService';
 import { getMaxPv } from '@/domain/vitals';
 
@@ -54,6 +55,7 @@ export function PlayerCombatView({
     activeCombat,
     currentTurnParticipant,
     participants,
+    abilityUses,
     hasUsedMovement,
     hasUsedAction,
     hasUsedBonusAction,
@@ -65,6 +67,8 @@ export function PlayerCombatView({
   } = useCombatStore();
 
   const [usingAbilityId, setUsingAbilityId] = useState<string | null>(null);
+  // O uso que acabou de ser gravado: o resultado do TR chega pelo armazém quando o Mestre lança.
+  const [lastUseId, setLastUseId] = useState<string | null>(null);
 
   const handleUseAbility = async (ability: AbilityDefinition) => {
     if (!character || isUpdating) return;
@@ -306,13 +310,31 @@ export function PlayerCombatView({
               buildAttackTargets(participants, participant.id, entities),
             )}
             blockedReason={abilityBlock(usingAbility)}
+            cd={
+              usingAbility.combatEffect.save
+                ? abilityCd({
+                    vocation: character.vocation,
+                    level: Number(character.level) || 1,
+                    attributes: character.attributes,
+                  })
+                : undefined
+            }
+            liveUse={abilityUses.find((use) => use.id === lastUseId)}
             onUse={async (selected) => {
               const outcome = await submitAbilityUse({
                 ability: usingAbility,
                 userParticipantId: participant.id,
                 targets: selected,
-                character: { id: character.id, skills: character.skills, stats: character.stats },
+                character: {
+                  id: character.id,
+                  skills: character.skills,
+                  stats: character.stats,
+                  vocation: character.vocation,
+                  level: character.level,
+                  attributes: character.attributes,
+                },
               });
+              setLastUseId(outcome.id);
               markTurnSlot(usingAbility.actionType);
               return outcome;
             }}

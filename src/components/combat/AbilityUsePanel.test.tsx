@@ -152,3 +152,117 @@ describe('AbilityUsePanel', () => {
     expect(onClose).toHaveBeenCalled();
   });
 });
+
+describe('AbilityUsePanel: Habilidade com TR', () => {
+  const tactic: AbilityDefinition = {
+    id: 'tribe-manasses-12-tatica-do-canta',
+    name: 'Tática do Cântaro Quebrado',
+    sourceType: 'tribe',
+    sourceId: 'manasses',
+    minLevel: 12,
+    actionType: 'bonus_action',
+    usageType: 'long_rest',
+    maxUses: 1,
+    effect: 'Inimigos 9m Teste SAB; falha = Amedrontado (1 min).',
+    combatEffect: {
+      targets: 'enemies',
+      save: { attribute: 'sab' },
+      apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+    },
+  };
+  const pendingOutcome = {
+    id: 'use-1',
+    results: [
+      { participantId: 'p2', name: 'Filisteu', conditions: [], messages: [] },
+      { participantId: 'p3', name: 'Bandido', conditions: [], messages: [] },
+    ],
+    pending: { cd: 17, attribute: 'sab' as const },
+  };
+
+  it('antes de usar, diz o TR dos alvos e a CD, e que os inimigos só ficam se falharem', () => {
+    setup({ ability: tactic, cd: 17 });
+    expect(screen.getByText(/TR de Sabedoria dos alvos \(CD 17\)/)).toBeVisible();
+    expect(screen.getByText(/quem falhar/i)).toBeVisible();
+  });
+
+  it('depois de usar, espera o Mestre lançar o TR e não mostra "resistiu"', async () => {
+    const { onUse } = setup({ ability: tactic, cd: 17 });
+    onUse.mockResolvedValue(pendingOutcome);
+    fireEvent.click(screen.getByLabelText('Filisteu'));
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    await waitFor(() =>
+      expect(
+        screen.getByText('Aguardando o Mestre lançar o TR de Sabedoria (CD 17).'),
+      ).toBeVisible(),
+    );
+    expect(screen.queryByText(/resistiu/)).toBeNull();
+  });
+
+  const renderTactic = (liveUse?: unknown) => {
+    const onUse = vi.fn().mockResolvedValue(pendingOutcome);
+    const element = (live?: unknown) => (
+      <AbilityUsePanel
+        ability={tactic}
+        targets={pool}
+        blockedReason={null}
+        cd={17}
+        onUse={onUse}
+        onClose={vi.fn()}
+        liveUse={live as never}
+      />
+    );
+    const view = render(element(liveUse));
+    return { rerender: (live: unknown) => view.rerender(element(live)) };
+  };
+  const useThePanel = async () => {
+    fireEvent.click(screen.getByLabelText('Filisteu'));
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    await waitFor(() => expect(screen.getByText(/Aguardando o Mestre/)).toBeVisible());
+  };
+
+  it('quando o Mestre resolve, mostra o resultado de cada alvo', async () => {
+    const view = renderTactic();
+    await useThePanel();
+    view.rerender({
+      id: 'use-1',
+      status: 'resolved',
+      cd: 17,
+      save_attribute: 'sab',
+      targets: [
+        {
+          participantId: 'p2',
+          name: 'Filisteu',
+          conditions: [{ conditionId: 'amedrontado', duration: 10 }],
+          natural: 4,
+          total: 9,
+          failed: true,
+        },
+        {
+          participantId: 'p3',
+          name: 'Bandido',
+          conditions: [],
+          natural: 15,
+          total: 19,
+          failed: false,
+        },
+      ],
+    });
+    expect(screen.getByText('Filisteu: Amedrontado (d20 4, total 9)')).toBeVisible();
+    expect(screen.getByText('Bandido: passou no TR (d20 15, total 19)')).toBeVisible();
+    expect(screen.queryByText(/Aguardando o Mestre/)).toBeNull();
+  });
+
+  it('o resultado de outro uso não aparece neste painel', async () => {
+    const view = renderTactic();
+    await useThePanel();
+    view.rerender({ id: 'outro', status: 'resolved', cd: 17, targets: [] });
+    expect(screen.getByText(/Aguardando o Mestre/)).toBeVisible();
+  });
+
+  it('um uso que expirou diz que não teve efeito', async () => {
+    const view = renderTactic();
+    await useThePanel();
+    view.rerender({ id: 'use-1', status: 'expired', cd: 17, targets: [] });
+    expect(screen.getByText(/combate acabou antes do TR/)).toBeVisible();
+  });
+});
