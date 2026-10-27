@@ -175,6 +175,63 @@ export type Database = {
           },
         ]
       }
+      combat_ability_uses: {
+        Row: {
+          ability_id: string
+          ability_name: string
+          action_type: string
+          cd: number | null
+          combat_id: string
+          created_at: string
+          id: string
+          status: string
+          targets: Json
+          user_name: string
+          user_participant_id: string
+        }
+        Insert: {
+          ability_id: string
+          ability_name: string
+          action_type: string
+          cd?: number | null
+          combat_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          targets?: Json
+          user_name: string
+          user_participant_id: string
+        }
+        Update: {
+          ability_id?: string
+          ability_name?: string
+          action_type?: string
+          cd?: number | null
+          combat_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          targets?: Json
+          user_name?: string
+          user_participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_ability_uses_combat_id_fkey"
+            columns: ["combat_id"]
+            isOneToOne: false
+            referencedRelation: "combats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_ability_uses_user_participant_id_fkey"
+            columns: ["user_participant_id"]
+            isOneToOne: false
+            referencedRelation: "combat_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       combat_attacks: {
         Row: {
           applied_mode: string
@@ -924,6 +981,16 @@ export type Database = {
       owns_short_rest_player: {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
+      }
+      record_ability_use: {
+        Args: {
+          p_ability_id: string
+          p_ability_name: string
+          p_action_type: string
+          p_targets: Json
+          p_user_participant_id: string
+        }
+        Returns: string
       }
       refuse_short_rest_requests: { Args: { p_session_id: string }; Returns: undefined }
       request_short_rest: {
