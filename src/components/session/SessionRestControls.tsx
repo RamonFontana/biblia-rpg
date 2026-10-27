@@ -12,6 +12,7 @@ import {
   canTakeLongRest,
   hasPriestInGroup,
 } from '@/domain/rest';
+import { hitDiceSpentAfterLongRest } from '@/domain/hitDiceRecovery';
 import { CLOSED_SHORT_REST } from '@/domain/shortRest';
 import { LongRestDialog } from './LongRestDialog';
 
@@ -89,6 +90,7 @@ export function SessionRestControls({
         return updateCharacterRest(char.id, {
           stats: applyLongRestToStats(currentStats, faithRecovered),
           skills: newSkills,
+          hit_dice_spent: hitDiceSpentAfterLongRest(char.hit_dice_spent),
         });
       });
 
@@ -96,7 +98,7 @@ export function SessionRestControls({
       if (onRestCompleted) onRestCompleted();
 
       alert(
-        `Descanso Longo concluído! Todos os personagens recuperaram toda a vida, habilidades e fé. O grupo recuperou ${faithRecovered} de Fé.`,
+        `Descanso Longo concluído! Todos os personagens recuperaram toda a vida, habilidades e fé, e metade dos Dados de Vida gastos. O grupo recuperou ${faithRecovered} de Fé.`,
       );
     } catch (error) {
       console.error('Erro ao acionar descanso longo:', error);

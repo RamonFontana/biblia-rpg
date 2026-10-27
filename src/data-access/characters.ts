@@ -135,11 +135,19 @@ export async function updateCharacterStats(id: string, stats: CharacterStats): P
 /** Grava `stats` e `skills` juntos (descanso longo). */
 export async function updateCharacterRest(
   id: string,
-  patch: { stats: Partial<CharacterStats>; skills: CharacterSkills | EnemySkill[] },
+  patch: {
+    stats: Partial<CharacterStats>;
+    skills: CharacterSkills | EnemySkill[];
+    hit_dice_spent?: number;
+  },
 ): Promise<void> {
   const { error } = await supabase
     .from('characters')
-    .update({ stats: toJson(patch.stats), skills: toJson(patch.skills) })
+    .update({
+      stats: toJson(patch.stats),
+      skills: toJson(patch.skills),
+      ...(patch.hit_dice_spent !== undefined && { hit_dice_spent: patch.hit_dice_spent }),
+    })
     .eq('id', id);
   if (error) throw error;
 }

@@ -125,6 +125,27 @@ describe('Descanso Longo: o 1d4 de Fé', () => {
     });
   });
 
+  it('devolve metade dos Dados de Vida gastos, arredondada para cima', async () => {
+    const spent = { character: { ...hero.character, hit_dice_spent: 3 } as Character };
+    render(
+      <SessionRestControls sessionId="s1" sessionData={session()} playerCharacters={[spent]} />,
+    );
+    openLongRest();
+    typeDie('2');
+    confirm();
+    await waitFor(() => expect(heroWrites()).toHaveLength(1));
+    expect(heroWrites()[0].payload).toMatchObject({ hit_dice_spent: 1 });
+  });
+
+  it('ficha sem gastos grava 0 gastos', async () => {
+    renderControls();
+    openLongRest();
+    typeDie('2');
+    confirm();
+    await waitFor(() => expect(heroWrites()).toHaveLength(1));
+    expect(heroWrites()[0].payload).toMatchObject({ hit_dice_spent: 0 });
+  });
+
   it('com Sacerdote no grupo, soma 2 ao d4', async () => {
     const priest = {
       character: { ...hero.character, id: 'priest', vocation: 'Sacerdote' } as Character,
