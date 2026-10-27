@@ -237,9 +237,17 @@ export function describeAbilityUse(use: {
     /** Só nos usos que tiram Condição: as que saíram e o aviso de quem não tinha o que tirar. */
     removedIds?: string[];
     messages?: string[];
+    /** Só nas Habilidades de inimigo que tiram Fé: quanto este alvo perdeu (0 se passou). */
+    faithLost?: number;
   }[];
 }): string {
   const parts = use.targets.map((t) => {
+    if (t.faithLost !== undefined && t.failed) {
+      const lost = `perdeu ${t.faithLost} de Fé`;
+      return t.conditionIds.length > 0
+        ? `${t.name} ficou ${t.conditionIds.map(conditionName).join(' e ')} e ${lost}`
+        : `${t.name} falhou no TR e ${lost}`;
+    }
     if (t.removedIds !== undefined) {
       if (t.removedIds.length > 0) {
         return `${t.name} deixou de estar ${t.removedIds.map(conditionName).join(' e ')}`;
@@ -275,6 +283,8 @@ export interface AbilityUseTarget {
   natural?: number;
   total?: number;
   failed?: boolean;
+  /** Só nas Habilidades de inimigo que tiram Fé: a Fé que o alvo perdeu. */
+  faithLost?: number;
 }
 
 /** Os alvos de um uso gravado (`targets` é `jsonb`): o nome, as Condições que chegaram e o TR. */
@@ -289,12 +299,14 @@ export function abilityUseTargets(targets: unknown): AbilityUseTarget[] {
       natural?: number;
       total?: number;
       failed?: boolean;
+      faithLost?: number;
     }) => ({
       participantId: t.participantId,
       name: t.name,
       conditionIds: (t.conditions ?? []).map((c) => c.conditionId),
       ...(t.removed && { removedIds: t.removed }),
       ...(t.failed !== undefined && { natural: t.natural, total: t.total, failed: t.failed }),
+      ...(t.faithLost !== undefined && { faithLost: t.faithLost }),
     }),
   );
 }

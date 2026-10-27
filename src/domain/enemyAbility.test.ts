@@ -1,8 +1,17 @@
 // A Habilidade de inimigo contra personagens (Onda 5, feature 4; ADR 0007).
 import { describe, expect, it } from 'vitest';
 import type { EnemyAbilityEffect } from '@/content/schemas';
+import { createSeededRng } from './rng';
 import {
+  abilityStateKey,
+  checkFaithDie,
   describeEnemyEffect,
+  enemyAbilityStatus,
+  faithLostBy,
+  rechargeSucceeds,
+  rollEnemyFaithDie,
+  rollRecharge,
+  stateAfterUse,
   enemyAbilityOf,
   enemyEffectAsAbilityEffect,
   resolveEnemyAbilityResults,
@@ -182,5 +191,146 @@ describe('resolveEnemyAbilityResults: quem falhou no TR', () => {
     };
     const [out] = resolveEnemyAbilityResults(faithOnly, [submitted({})]);
     expect(out).toMatchObject({ failed: true, conditions: [] });
+  });
+});
+
+const LIBRARY = enemyAbilityOf({
+  name: 'Grito Atormentador',
+  description: '',
+  libraryId: 'enemy-grito-atormentador',
+})!;
+
+describe('abilityStateKey: a chave do estado de uso no participante', () => {
+  it('a Habilidade da biblioteca usa o id dela', () => {
+    expect(abilityStateKey(LIBRARY)).toBe('enemy-grito-atormentador');
+  });
+
+  it('a personalizada usa o nome, para duas não colidirem', () => {
+    const effect: EnemyAbilityEffect = { apply: [{ conditionId: 'caido' }], usage: 'per_combat' };
+    const a = enemyAbilityOf({ name: 'Rugido', effect })!;
+    const b = enemyAbilityOf({ name: 'Pisão', effect })!;
+    expect(abilityStateKey(a)).toBe('enemy-custom:Rugido');
+    expect(abilityStateKey(a)).not.toBe(abilityStateKey(b));
+  });
+});
+
+describe('stateAfterUse: o que o uso deixa no participante', () => {
+  it('sem limite não deixa nada', () => {
+    expect(stateAfterUse('unlimited')).toBeNull();
+  });
+
+  it('1 por combate fica usada', () => {
+    expect(stateAfterUse('per_combat')).toBe('used');
+  });
+
+  it('Recarga fica em recarga', () => {
+    expect(stateAfterUse('recharge')).toBe('recharging');
+  });
+});
+
+describe('enemyAbilityStatus: se a Habilidade pode ser usada agora', () => {
+  const key = 'enemy-grito-atormentador';
+
+  it('sem estado gravado está pronta', () => {
+    expect(enemyAbilityStatus(key, {})).toEqual({ ready: true, reason: '' });
+    expect(enemyAbilityStatus(key, null)).toEqual({ ready: true, reason: '' });
+  });
+
+  it('usada neste combate está bloqueada', () => {
+    expect(enemyAbilityStatus(key, { [key]: 'used' })).toEqual({
+      ready: false,
+      reason: 'Já usada neste combate',
+    });
+  });
+
+  it('em recarga está bloqueada até o d6 voltar', () => {
+    expect(enemyAbilityStatus(key, { [key]: 'recharging' })).toEqual({
+      ready: false,
+      reason: 'Em Recarga (5-6)',
+    });
+  });
+
+  it('o estado de outra Habilidade não conta', () => {
+    expect(enemyAbilityStatus(key, { outra: 'used' }).ready).toBe(true);
+  });
+});
+
+describe('Recarga: o d6 no início do turno do inimigo', () => {
+  it('4 não recarrega; 5 e 6 recarregam', () => {
+    expect(rechargeSucceeds(4)).toBe(false);
+    expect(rechargeSucceeds(5)).toBe(true);
+    expect(rechargeSucceeds(6)).toBe(true);
+  });
+
+  it('rollRecharge é um d6 da Rng injetada', () => {
+    const rolls = Array.from({ length: 200 }, (_, i) => rollRecharge(createSeededRng(i)));
+    expect(Math.min(...rolls)).toBe(1);
+    expect(Math.max(...rolls)).toBe(6);
+  });
+
+  it('com a mesma semente a rolagem se repete', () => {
+    expect(rollRecharge(createSeededRng(7))).toBe(rollRecharge(createSeededRng(7)));
+  });
+});
+
+describe('Fé perdida pela Habilidade de inimigo', () => {
+  it('rollEnemyFaithDie respeita as faces do efeito', () => {
+    const d4 = Array.from({ length: 200 }, (_, i) => rollEnemyFaithDie(4, createSeededRng(i)));
+    const d6 = Array.from({ length: 200 }, (_, i) => rollEnemyFaithDie(6, createSeededRng(i)));
+    expect(Math.max(...d4)).toBe(4);
+    expect(Math.min(...d4)).toBe(1);
+    expect(Math.max(...d6)).toBe(6);
+  });
+
+  it('o dado digitado vale de 1 até as faces; fora disso é erro', () => {
+    expect(checkFaithDie(0, 4)).toBe('range');
+    expect(checkFaithDie(1, 4)).toBeNull();
+    expect(checkFaithDie(4, 4)).toBeNull();
+    expect(checkFaithDie(5, 4)).toBe('range');
+    expect(checkFaithDie(6, 6)).toBeNull();
+    expect(checkFaithDie(7, 6)).toBe('range');
+    expect(checkFaithDie(2.5, 4)).toBe('range');
+    expect(checkFaithDie('', 4)).toBe('empty');
+  });
+
+  it('a Fé perdida não passa do que o personagem tem', () => {
+    expect(faithLostBy({ current_faith: 10 }, 3)).toBe(3);
+    expect(faithLostBy({ current_faith: 2 }, 5)).toBe(2);
+    expect(faithLostBy({ current_faith: 0 }, 4)).toBe(0);
+  });
+
+  it('sem current_faith, perde da Fé Inicial', () => {
+    expect(faithLostBy({ faith: 50 }, 4)).toBe(4);
+  });
+});
+
+describe('resolveEnemyAbilityResults: a Fé de quem falhou', () => {
+  const effect: EnemyAbilityEffect = {
+    save: { attribute: 'sab', cd: 12 },
+    faithLoss: { sides: 4 },
+    usage: 'recharge',
+  };
+  const result = (over: Partial<EnemySaveResult>): EnemySaveResult => ({
+    participantId: 'p1',
+    name: 'Eliabe',
+    status: 'submitted',
+    isApproved: false,
+    rollValue: 5,
+    resultValue: 6,
+    appliedMode: 'normal',
+    protection: NO_PROTECTION,
+    ...over,
+  });
+
+  it('só quem respondeu e falhou perde Fé: a Habilidade sem Condição devolve só o falhou', () => {
+    const [failed, passed, silent] = resolveEnemyAbilityResults(effect, [
+      result({}),
+      result({ participantId: 'p2', isApproved: true }),
+      result({ participantId: 'p3', status: 'pending', isApproved: null }),
+    ]);
+    expect(failed.failed).toBe(true);
+    expect(passed.failed).toBe(false);
+    expect(silent.failed).toBe(false);
+    expect(silent.answered).toBe(false);
   });
 });

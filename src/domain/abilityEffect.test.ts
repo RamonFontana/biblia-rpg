@@ -448,3 +448,68 @@ describe('frase do uso com remoção', () => {
     ).toEqual([{ participantId: 'p1', name: 'Bob', conditionIds: [], removedIds: ['cego'] }]);
   });
 });
+
+describe('uso com perda de Fé (Habilidade de inimigo)', () => {
+  it('quem falhou e perdeu Fé sem Condição: falhou no TR e perdeu a Fé', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Endemoniado',
+        abilityName: 'Grito Atormentador',
+        targets: [
+          { name: 'Eliabe', conditionIds: [], failed: true, faithLost: 3 },
+          { name: 'Rute', conditionIds: [], failed: false, faithLost: 0 },
+        ],
+      }),
+    ).toBe(
+      'Endemoniado usou Grito Atormentador: Eliabe falhou no TR e perdeu 3 de Fé; Rute passou no TR.',
+    );
+  });
+
+  it('com Condição e Fé, diz as duas coisas', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'X',
+        abilityName: 'Y',
+        targets: [{ name: 'A', conditionIds: ['amedrontado'], failed: true, faithLost: 2 }],
+      }),
+    ).toBe('X usou Y: A ficou Amedrontado e perdeu 2 de Fé.');
+  });
+
+  it('quem falhou mas já estava sem Fé perdeu 0', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'X',
+        abilityName: 'Y',
+        targets: [{ name: 'A', conditionIds: [], failed: true, faithLost: 0 }],
+      }),
+    ).toBe('X usou Y: A falhou no TR e perdeu 0 de Fé.');
+  });
+
+  it('lê a Fé perdida de cada alvo do uso gravado', () => {
+    expect(
+      abilityUseTargets([
+        { participantId: 'p1', name: 'A', failed: true, natural: 4, total: 6, faithLost: 3 },
+        { participantId: 'p2', name: 'B', failed: false, natural: 15, total: 17, faithLost: 0 },
+      ]),
+    ).toEqual([
+      {
+        participantId: 'p1',
+        name: 'A',
+        conditionIds: [],
+        failed: true,
+        natural: 4,
+        total: 6,
+        faithLost: 3,
+      },
+      {
+        participantId: 'p2',
+        name: 'B',
+        conditionIds: [],
+        failed: false,
+        natural: 15,
+        total: 17,
+        faithLost: 0,
+      },
+    ]);
+  });
+});

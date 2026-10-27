@@ -8,6 +8,9 @@ import type { AbilityEffect, EnemyAbilityEffect } from '@/content/schemas';
 import type { ConditionEntry } from '@/types/combat';
 import { resolveAbilityEffect, type TargetProtection } from './abilityEffect';
 import { saveAttributeLabel } from './abilitySave';
+import { rollDie } from './dice';
+import { getCurrentFaith, type FaithStats } from './faith';
+import type { Rng } from './rng';
 
 /** A Habilidade na ficha do inimigo: nome e texto, e o efeito (da biblioteca ou personalizado). */
 export interface EnemySkillLike {
@@ -142,4 +145,61 @@ export function resolveEnemyAbilityResults(
       messages: applied.messages,
     };
   });
+}
+
+/** O estado de uso de uma Habilidade de inimigo, gravado no participante do combate. */
+export type EnemyAbilityUseState = 'used' | 'recharging';
+
+/** O estado de uso de todas as Habilidades de um inimigo, por chave. */
+export type EnemyAbilityStateMap = Record<string, EnemyAbilityUseState>;
+
+/** A chave do estado de uso: o id da biblioteca, ou o nome na personalizada (duas não colidem). */
+export function abilityStateKey(ability: Pick<EnemyAbility, 'id' | 'name'>): string {
+  return ability.id === CUSTOM_ENEMY_ABILITY_ID ? `${ability.id}:${ability.name}` : ability.id;
+}
+
+/** O que o uso deixa no participante: 1 por combate fica usada, Recarga fica em recarga. */
+export function stateAfterUse(usage: EnemyAbilityEffect['usage']): EnemyAbilityUseState | null {
+  if (usage === 'per_combat') return 'used';
+  if (usage === 'recharge') return 'recharging';
+  return null;
+}
+
+/** Se a Habilidade pode ser usada agora e, se não, por quê. */
+export function enemyAbilityStatus(
+  key: string,
+  state: EnemyAbilityStateMap | null | undefined,
+): { ready: boolean; reason: string } {
+  const current = state?.[key];
+  if (current === 'used') return { ready: false, reason: 'Já usada neste combate' };
+  if (current === 'recharging') return { ready: false, reason: 'Em Recarga (5-6)' };
+  return { ready: true, reason: '' };
+}
+
+/** A Recarga volta com 5 ou 6 no d6 (CONTEXT.md, Recarga). */
+export const RECHARGE_MIN = 5;
+
+export function rechargeSucceeds(d6: number): boolean {
+  return d6 >= RECHARGE_MIN;
+}
+
+/** O d6 da Recarga pela Rolagem Virtual; o dado físico é digitado pelo Mestre. */
+export function rollRecharge(rng: Rng): number {
+  return rollDie(6, rng);
+}
+
+/** O dado de Fé (1d4 ou 1d6) pela Rolagem Virtual. */
+export function rollEnemyFaithDie(sides: 4 | 6, rng: Rng): number {
+  return rollDie(sides, rng);
+}
+
+/** Valida o dado de Fé digitado: vazio, ou fora de 1 até as faces. */
+export function checkFaithDie(value: number | '', sides: 4 | 6): 'empty' | 'range' | null {
+  if (value === '') return 'empty';
+  return Number.isInteger(value) && value >= 1 && value <= sides ? null : 'range';
+}
+
+/** A Fé que o personagem de fato perde: o dado, limitado ao que ele tem (o piso é 0). */
+export function faithLostBy(stats: FaithStats | null | undefined, roll: number): number {
+  return Math.min(roll, getCurrentFaith(stats));
 }
