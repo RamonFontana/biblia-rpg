@@ -7,8 +7,12 @@
 -- Condição, imunidades) fica no motor do cliente (ADR 0004): a função valida o combate ativo, o
 -- Mestre, o inimigo como autor e os alvos como personagens do mesmo combate.
 
+-- `enemy_effect` guarda o efeito da Habilidade (da biblioteca ou personalizada) como o cliente o
+-- aplicou: a Habilidade personalizada não está em nenhum catálogo, e a resolução do TR e a perda
+-- de Fé precisam dele depois.
 alter table public.combat_ability_uses
-  add column test_id uuid references public.session_tests (id) on delete set null;
+  add column test_id uuid references public.session_tests (id) on delete set null,
+  add column enemy_effect jsonb;
 
 create function public.record_enemy_ability_use(
   p_enemy_participant_id uuid,
@@ -16,7 +20,8 @@ create function public.record_enemy_ability_use(
   p_ability_name text,
   p_targets jsonb,
   p_save jsonb default null,
-  p_test_id uuid default null
+  p_test_id uuid default null,
+  p_effect jsonb default null
 )
 returns uuid
 language plpgsql
@@ -38,6 +43,10 @@ declare
 begin
   if p_targets is null or jsonb_typeof(p_targets) <> 'array' or jsonb_array_length(p_targets) = 0 then
     raise exception 'Escolha ao menos um alvo' using errcode = '22023';
+  end if;
+
+  if p_effect is not null and jsonb_typeof(p_effect) <> 'object' then
+    raise exception 'Efeito inválido' using errcode = '22023';
   end if;
 
   if v_pending then
@@ -124,12 +133,12 @@ begin
 
   insert into public.combat_ability_uses (
     combat_id, user_participant_id, user_name, ability_id, ability_name, action_type, targets,
-    status, cd, save_attribute, test_id
+    status, cd, save_attribute, test_id, enemy_effect
   ) values (
     v_combat.id, v_enemy.id,
     coalesce((select name from public.characters where id = v_enemy.entity_id), 'Desconhecido'),
     p_ability_id, p_ability_name, 'action', v_results,
-    case when v_pending then 'pending' else 'applied' end, v_cd, v_attribute, p_test_id
+    case when v_pending then 'pending' else 'applied' end, v_cd, v_attribute, p_test_id, p_effect
   )
   returning id into v_use_id;
 
@@ -137,4 +146,4 @@ begin
 end;
 $$;
 
-revoke execute on function public.record_enemy_ability_use(uuid, text, text, jsonb, jsonb, uuid) from public, anon;
+revoke execute on function public.record_enemy_ability_use(uuid, text, text, jsonb, jsonb, uuid, jsonb) from public, anon;

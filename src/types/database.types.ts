@@ -183,6 +183,7 @@ export type Database = {
           cd: number | null
           combat_id: string
           created_at: string
+          enemy_effect: Json | null
           id: string
           save_attribute: string | null
           status: string
@@ -198,6 +199,7 @@ export type Database = {
           cd?: number | null
           combat_id: string
           created_at?: string
+          enemy_effect?: Json | null
           id?: string
           save_attribute?: string | null
           status?: string
@@ -213,6 +215,7 @@ export type Database = {
           cd?: number | null
           combat_id?: string
           created_at?: string
+          enemy_effect?: Json | null
           id?: string
           save_attribute?: string | null
           status?: string
@@ -1010,6 +1013,7 @@ export type Database = {
         Args: {
           p_ability_id: string
           p_ability_name: string
+          p_effect?: Json
           p_enemy_participant_id: string
           p_save?: Json
           p_targets: Json

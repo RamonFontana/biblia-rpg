@@ -27,6 +27,7 @@ const usageRow = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
   cd: 13,
   save_attribute: 'sab',
   test_id: null,
+  enemy_effect: null,
   targets: [
     { participantId: 'p2', name: 'Filisteu', conditions: [] },
     { participantId: 'p3', name: 'Bandido', conditions: [] },
