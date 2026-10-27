@@ -122,6 +122,9 @@ function collectViolations(): string[] {
     for (const { conditionId } of ability.combatEffect?.apply ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
+    // Passiva não se usa: um efeito de combate nela nunca seria aplicado.
+    if (ability.combatEffect && ability.actionType === 'passive')
+      violations.push(`${p}:combat-effect-on-passive`);
 
     const limited = LIMITED_USAGE.includes(ability.usageType);
     if (limited && ability.maxUses === undefined) violations.push(`${p}:limited-without-max-uses`);

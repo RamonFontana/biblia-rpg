@@ -56,3 +56,47 @@ describe('efeito de Habilidade: as três primeiras', () => {
     expect(byId('tribe-levi-16-palavra-de-auto')?.effect).toMatch(/Paralisa/);
   });
 });
+
+describe('efeito de Habilidade: TR', () => {
+  const base = ABILITIES[0];
+
+  it('o esquema aceita o TR com o atributo e recusa atributo desconhecido', () => {
+    const parse = (save: unknown) =>
+      abilitySchema.safeParse({
+        ...base,
+        combatEffect: { targets: 'enemies', save, apply: [{ conditionId: 'cego' }] },
+      });
+    expect(parse({ attribute: 'sab' }).success).toBe(true);
+    expect(parse({ attribute: 'sorte' }).success).toBe(false);
+    expect(parse({}).success).toBe(false);
+  });
+
+  it('Tática do Cântaro Quebrado: TR SAB dos inimigos, Amedrontado por 10 rodadas', () => {
+    expect(byId('tribe-manasses-12-tatica-do-canta')?.combatEffect).toEqual({
+      targets: 'enemies',
+      save: { attribute: 'sab' },
+      apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+    });
+  });
+
+  it('Grito de Guerra: TR SAB dos inimigos, Amedrontado por 10 rodadas; a cura fica no texto', () => {
+    const ability = byId('vocation-guerreiro-18-grito-de-guerra');
+    expect(ability?.combatEffect).toEqual({
+      targets: 'enemies',
+      save: { attribute: 'sab' },
+      apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+    });
+    expect(ability?.effect).toMatch(/2d6 PV/);
+  });
+
+  it('Golpe Incapacitante: TR CON de um inimigo, Atordoado por 1 rodada, e aparece no combate', () => {
+    const ability = byId('vocation-batedor-14-golpe-incapacit');
+    expect(ability?.combatEffect).toEqual({
+      targets: 'enemy',
+      save: { attribute: 'con' },
+      apply: [{ conditionId: 'atordoado', rounds: 1 }],
+    });
+    // Passiva não se usa; é um adendo ao Ataque Furtivo, sem espaço de turno (Ação Livre).
+    expect(ability?.actionType).toBe('free_action');
+  });
+});

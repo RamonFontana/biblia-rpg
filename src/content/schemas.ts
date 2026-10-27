@@ -58,6 +58,10 @@ export type ContentItem = z.infer<typeof itemSchema>;
  */
 export const abilityEffectSchema = z.strictObject({
   targets: z.enum(['enemy', 'enemies', 'ally', 'allies', 'aggressor']),
+  /** O TR do alvo (atributo): a Condição só entra em quem falha. Sem TR, entra em todos. */
+  save: z
+    .strictObject({ attribute: z.enum(['for', 'des', 'con', 'int', 'sab', 'car']) })
+    .optional(),
   apply: z
     .array(
       z.strictObject({
