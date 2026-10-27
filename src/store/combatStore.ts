@@ -12,25 +12,31 @@ import {
   getCharactersForCombatEnd,
   getCombat,
   insertCombatParticipants,
+  listCombatAbilityUses,
   listCombatAttacks,
   listCombatParticipants,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
   type Combat,
+  type CombatAbilityUse,
   type CombatAttack,
   type CombatParticipant,
 } from '@/data-access/combat';
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import { uniqueChannelName } from '@/lib/channelName';
+import { abilityUseTargets, describeAbilityUse } from '@/domain/abilityEffect';
 import { describeAttack, describeWeaponEffect } from '@/domain/attack';
 import type { ConditionEntry } from '../types/combat';
 
-export type { Combat, CombatAttack, CombatParticipant };
+export type { Combat, CombatAbilityUse, CombatAttack, CombatParticipant };
 
 /** Quantos ataques o armazém guarda para o painel do Mestre. */
 const RECENT_ATTACKS = 10;
+
+/** Quantos usos de Habilidade o armazém guarda para o histórico do combate. */
+const RECENT_ABILITY_USES = 10;
 
 interface PlayerCombatState {
   hasUsedMovement: boolean;
@@ -51,6 +57,8 @@ interface CombatStore extends PlayerCombatState {
   participants: CombatParticipant[];
   /** Os últimos ataques do combate, do mais novo para o mais antigo. */
   attacks: CombatAttack[];
+  /** Os últimos usos de Habilidade do combate, do mais novo para o mais antigo. */
+  abilityUses: CombatAbilityUse[];
 
   // Computed
   currentTurnParticipant: CombatParticipant | null;
@@ -88,6 +96,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   activeCombat: null,
   participants: [],
   attacks: [],
+  abilityUses: [],
   currentTurnParticipant: null,
   combatUnsubscribe: null,
 
@@ -198,6 +207,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             return [];
           });
           set({ attacks });
+          const abilityUses = await listCombatAbilityUses(combat.id, RECENT_ABILITY_USES).catch(
+            (error) => {
+              console.error('Failed to load the combat ability uses', error);
+              return [];
+            },
+          );
+          set({ abilityUses });
         }
       })().catch((error) => console.error('Failed to load the combat', error));
     loadCombat();
@@ -264,6 +280,29 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           },
         },
         {
+          table: 'combat_ability_uses',
+          event: 'INSERT',
+          onChange: (payload) => {
+            const { activeCombat, abilityUses } = get();
+            const use = payload.new as CombatAbilityUse;
+            if (!activeCombat || use.combat_id !== activeCombat.id) return;
+            set({ abilityUses: [use, ...abilityUses].slice(0, RECENT_ABILITY_USES) });
+            // Quem está olhando decide o que fazer com o uso ao vivo (o resultado do jogador).
+            window.dispatchEvent(new CustomEvent('combat-ability', { detail: use }));
+            window.dispatchEvent(
+              new CustomEvent('combat-toast', {
+                detail: {
+                  message: describeAbilityUse({
+                    userName: use.user_name,
+                    abilityName: use.ability_name,
+                    targets: abilityUseTargets(use.targets),
+                  }),
+                },
+              }),
+            );
+          },
+        },
+        {
           table: 'combat_participants',
           onChange: (payload) => {
             const { activeCombat, participants } = get();
@@ -298,6 +337,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       activeCombat: null,
       participants: [],
       attacks: [],
+      abilityUses: [],
       currentTurnParticipant: null,
       combatUnsubscribe: null,
     });

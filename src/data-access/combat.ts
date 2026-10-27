@@ -10,6 +10,7 @@ import { toJson } from './json';
 export type Combat = Tables<'combats'>;
 export type CombatParticipant = Tables<'combat_participants'>;
 export type CombatAttack = Tables<'combat_attacks'>;
+export type CombatAbilityUse = Tables<'combat_ability_uses'>;
 
 export async function createCombat(sessionId: string): Promise<Combat> {
   const { data, error } = await supabase
@@ -211,6 +212,47 @@ export async function applyAttack(attack: AttackRecord): Promise<string> {
 export async function listCombatAttacks(combatId: string, limit: number): Promise<CombatAttack[]> {
   const { data, error } = await supabase
     .from('combat_attacks')
+    .select('*')
+    .eq('combat_id', combatId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
+export interface AbilityUseRecord {
+  userParticipantId: string;
+  abilityId: string;
+  abilityName: string;
+  actionType: string;
+  /** Por alvo: as Condições que chegam depois da Resistência a Condição e das imunidades. */
+  targets: { participantId: string; conditions: ConditionEntry[] }[];
+}
+
+/**
+ * Registra o uso de uma Habilidade pela função do banco (ADR 0007): ela confere que o chamador é o
+ * dono do usuário, o combate ativo e o turno (Ação e Ação Bônus), aplica as Condições nos alvos e
+ * grava o uso. Devolve o id do registro.
+ */
+export async function recordAbilityUse(use: AbilityUseRecord): Promise<string> {
+  const { data, error } = await supabase.rpc('record_ability_use', {
+    p_user_participant_id: use.userParticipantId,
+    p_ability_id: use.abilityId,
+    p_ability_name: use.abilityName,
+    p_action_type: use.actionType,
+    p_targets: toJson(use.targets),
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Os últimos usos de Habilidade do combate, do mais novo para o mais antigo. */
+export async function listCombatAbilityUses(
+  combatId: string,
+  limit: number,
+): Promise<CombatAbilityUse[]> {
+  const { data, error } = await supabase
+    .from('combat_ability_uses')
     .select('*')
     .eq('combat_id', combatId)
     .order('created_at', { ascending: false })

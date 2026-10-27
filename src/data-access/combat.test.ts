@@ -28,8 +28,10 @@ import {
   getCharactersForCombatEnd,
   getCombat,
   insertCombatParticipants,
+  listCombatAbilityUses,
   listCombatAttacks,
   listCombatParticipants,
+  recordAbilityUse,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
@@ -292,5 +294,52 @@ describe('listCombatAttacks', () => {
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(listCombatAttacks('c1', 10)).rejects.toBe(failure);
+  });
+});
+
+describe('recordAbilityUse', () => {
+  const use = {
+    userParticipantId: 'p1',
+    abilityId: 'tribe-levi-16-palavra-de-auto',
+    abilityName: 'Palavra de Autoridade',
+    actionType: 'action',
+    targets: [
+      { participantId: 'p2', conditions: [{ conditionId: 'paralisado', duration: 1 }] },
+      { participantId: 'p3', conditions: [] },
+    ],
+  };
+
+  it('chama a função do banco com os alvos e as Condições que chegaram, e devolve o id', async () => {
+    state.respond = () => ({ data: 'use-1' });
+    await expect(recordAbilityUse(use)).resolves.toBe('use-1');
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).toEqual({
+      p_user_participant_id: 'p1',
+      p_ability_id: 'tribe-levi-16-palavra-de-auto',
+      p_ability_name: 'Palavra de Autoridade',
+      p_action_type: 'action',
+      p_targets: use.targets,
+    });
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(recordAbilityUse(use)).rejects.toBe(failure);
+  });
+});
+
+describe('listCombatAbilityUses', () => {
+  it('lê os últimos usos do combate, do mais novo para o mais antigo', async () => {
+    state.respond = () => ({ data: [{ id: 'u1' }] });
+    await expect(listCombatAbilityUses('c1', 10)).resolves.toEqual([{ id: 'u1' }]);
+    const [call] = callsOf(state.calls, 'combat_ability_uses', 'select');
+    expect(filterOf(call, 'eq', 'combat_id')).toBe('c1');
+    expect(call.filters).toContainEqual(['order', 'created_at', { ascending: false }]);
+    expect(call.filters).toContainEqual(['limit', 10]);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(listCombatAbilityUses('c1', 10)).rejects.toBe(failure);
   });
 });

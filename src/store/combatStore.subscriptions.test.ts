@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   findSessionCombat: vi.fn(),
   listCombatParticipants: vi.fn(),
   listCombatAttacks: vi.fn(),
+  listCombatAbilityUses: vi.fn(),
   subscribeToTables: vi.fn(),
   unsubscribe: vi.fn(),
 }));
@@ -16,6 +17,7 @@ vi.mock('@/data-access/combat', () => ({
   findSessionCombat: h.findSessionCombat,
   listCombatParticipants: h.listCombatParticipants,
   listCombatAttacks: h.listCombatAttacks,
+  listCombatAbilityUses: h.listCombatAbilityUses,
 }));
 vi.mock('@/data-access/realtime', () => ({ subscribeToTables: h.subscribeToTables }));
 
@@ -55,6 +57,7 @@ beforeEach(() => {
   h.subscribeToTables.mockReturnValue(h.unsubscribe);
   h.listCombatParticipants.mockResolvedValue([part()]);
   h.listCombatAttacks.mockResolvedValue([]);
+  h.listCombatAbilityUses.mockResolvedValue([]);
   vi.spyOn(console, 'error').mockImplementation(() => {});
   useCombatStore.setState({
     activeCombat: null,
@@ -62,6 +65,7 @@ beforeEach(() => {
     currentTurnParticipant: null,
     combatUnsubscribe: null,
     attacks: [],
+    abilityUses: [],
   });
 });
 
@@ -266,5 +270,88 @@ describe('ataques do combate', () => {
       part({ id: 'd', initiative: 15, created_at: '2026-01-01T00:00:09Z' }),
     ]);
     expect(store().participants.map((p) => p.id)).toEqual(['d', 'c', 'a', 'b']);
+  });
+});
+
+describe('usos de Habilidade do combate', () => {
+  const useRow = (over: Record<string, unknown> = {}) => ({
+    id: 'u1',
+    combat_id: 'combat-1',
+    user_name: 'Eliabe',
+    ability_name: 'Palavra de Autoridade',
+    targets: [
+      { participantId: 'p2', name: 'Filisteu', conditions: [{ conditionId: 'paralisado' }] },
+    ],
+    ...over,
+  });
+  const useHandler = () =>
+    h.subscribeToTables.mock.calls[0][1].find(
+      (s: { table: string }) => s.table === 'combat_ability_uses',
+    ).onChange as (payload: unknown) => void;
+  const toasts: string[] = [];
+  const onToast = (e: Event) => toasts.push((e as CustomEvent).detail.message);
+
+  beforeEach(() => {
+    toasts.length = 0;
+    window.addEventListener('combat-toast', onToast);
+    return () => window.removeEventListener('combat-toast', onToast);
+  });
+
+  it('ao abrir a mesa, carrega os últimos usos do combate', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockResolvedValue([useRow()]);
+    store().initSubscriptions('session-1');
+    await settle();
+    expect(h.listCombatAbilityUses).toHaveBeenCalledWith('combat-1', 10);
+    expect(store().abilityUses).toHaveLength(1);
+  });
+
+  it('ler mal os usos não impede de abrir o combate', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockRejectedValue(new Error('sem rede'));
+    store().initSubscriptions('session-1');
+    await settle();
+    expect(store().activeCombat?.id).toBe('combat-1');
+    expect(store().abilityUses).toEqual([]);
+  });
+
+  it('um uso novo entra no começo da lista e avisa a mesa', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockResolvedValue([useRow({ id: 'u0' })]);
+    store().initSubscriptions('session-1');
+    await settle();
+    useHandler()({ eventType: 'INSERT', new: useRow({ id: 'u1' }) });
+    expect(store().abilityUses.map((u) => u.id)).toEqual(['u1', 'u0']);
+    expect(toasts).toEqual(['Eliabe usou Palavra de Autoridade: Filisteu ficou Paralisado.']);
+  });
+
+  it('um uso de outro combate é ignorado', async () => {
+    database({ active: combat() });
+    store().initSubscriptions('session-1');
+    await settle();
+    useHandler()({ eventType: 'INSERT', new: useRow({ combat_id: 'outro' }) });
+    expect(store().abilityUses).toEqual([]);
+    expect(toasts).toEqual([]);
+  });
+
+  it('um uso ao vivo chega à tela como evento do uso inteiro', async () => {
+    database({ active: combat() });
+    store().initSubscriptions('session-1');
+    await settle();
+    const seen: { id: string }[] = [];
+    const listener = (e: Event) => seen.push((e as CustomEvent).detail);
+    window.addEventListener('combat-ability', listener);
+    useHandler()({ eventType: 'INSERT', new: useRow({ id: 'u7' }) });
+    window.removeEventListener('combat-ability', listener);
+    expect(seen.map((u) => u.id)).toEqual(['u7']);
+  });
+
+  it('limpar a assinatura esvazia os usos', async () => {
+    database({ active: combat() });
+    h.listCombatAbilityUses.mockResolvedValue([useRow()]);
+    store().initSubscriptions('session-1');
+    await settle();
+    store().cleanupSubscriptions();
+    expect(store().abilityUses).toEqual([]);
   });
 });

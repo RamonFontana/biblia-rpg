@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   abilityImmunities,
+  abilityUseTargets,
+  describeAbilityUse,
   getAbilityEffectBlock,
   isSingleTarget,
   resolveAbilityEffect,
@@ -182,5 +184,59 @@ describe('Condições que chegam ao alvo', () => {
       immuneConditionIds: ['paralisado'],
     });
     expect(out.conditions).toEqual([{ conditionId: 'cego', duration: null }]);
+  });
+});
+
+describe('descrição do uso', () => {
+  it('diz quem usou, a Habilidade e a Condição que chegou a cada alvo', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'Palavra de Autoridade',
+        targets: [{ name: 'Filisteu', conditionIds: ['paralisado'] }],
+      }),
+    ).toBe('Eliabe usou Palavra de Autoridade: Filisteu ficou Paralisado.');
+  });
+
+  it('junta vários alvos e várias Condições', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'X',
+        targets: [
+          { name: 'A', conditionIds: ['cego', 'caido'] },
+          { name: 'B', conditionIds: ['cego'] },
+        ],
+      }),
+    ).toBe('Eliabe usou X: A ficou Cego e Caído; B ficou Cego.');
+  });
+
+  it('o alvo que ficou sem Condição resistiu', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'X',
+        targets: [{ name: 'A', conditionIds: [] }],
+      }),
+    ).toBe('Eliabe usou X: A resistiu.');
+  });
+});
+
+describe('alvos de um uso gravado', () => {
+  it('lê o nome e os ids das Condições que chegaram a cada alvo', () => {
+    expect(
+      abilityUseTargets([
+        { participantId: 'p2', name: 'Filisteu', conditions: [{ conditionId: 'paralisado' }] },
+        { participantId: 'p3', name: 'Bandido', conditions: [] },
+      ]),
+    ).toEqual([
+      { participantId: 'p2', name: 'Filisteu', conditionIds: ['paralisado'] },
+      { participantId: 'p3', name: 'Bandido', conditionIds: [] },
+    ]);
+  });
+
+  it('um valor que não é lista não tem alvos', () => {
+    expect(abilityUseTargets(null)).toEqual([]);
+    expect(abilityUseTargets({})).toEqual([]);
   });
 });

@@ -41,6 +41,7 @@ import {
   getActiveSessionCharacterIds,
   getCharacterById,
   getCharacterDeathState,
+  getCharacterProtectionSource,
   getCharacterResistanceSource,
   getCharacterStats,
   getCharacterTestContext,
@@ -496,6 +497,32 @@ describe('getCharacterResistanceSource', () => {
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(getCharacterResistanceSource('c1')).rejects.toBe(failure);
+  });
+});
+
+describe('getCharacterProtectionSource', () => {
+  it('lê o equipamento, os itens e o que decide as Habilidades desbloqueadas', async () => {
+    const row = {
+      equipment: {},
+      tribe: 'Aser',
+      vocation: 'Guerreiro',
+      level: 4,
+      skills: null,
+      character_items: [],
+    };
+    state.respond = () => ({ data: row });
+    await expect(getCharacterProtectionSource('c1')).resolves.toEqual(row);
+    const [call] = callsOf(state.calls, 'characters', 'select');
+    expect(call.columns).toBe(
+      'equipment, tribe, vocation, level, skills, character_items(*, items(slug))',
+    );
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+    expect(call.single).toBe(true);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(getCharacterProtectionSource('c1')).rejects.toBe(failure);
   });
 });
 

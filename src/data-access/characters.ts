@@ -463,6 +463,17 @@ export async function getCharacterResistanceSource(characterId: string) {
   return data;
 }
 
+/** O que protege um alvo de uma Condição: os itens equipados e as Habilidades desbloqueadas. */
+export async function getCharacterProtectionSource(characterId: string) {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('equipment, tribe, vocation, level, skills, character_items(*, items(slug))')
+    .eq('id', characterId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export type DeathState = Pick<
   CharacterRow,
   'id' | 'death_saves_successes' | 'death_saves_failures' | 'is_stable' | 'is_dead'

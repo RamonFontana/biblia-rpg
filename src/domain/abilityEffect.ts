@@ -113,3 +113,31 @@ export function resolveAbilityEffect(
   }
   return { conditions, messages };
 }
+
+/** A frase do uso para o histórico e o aviso: quem usou, a Habilidade e o que chegou a cada alvo. */
+export function describeAbilityUse(use: {
+  userName: string;
+  abilityName: string;
+  targets: { name: string; conditionIds: string[] }[];
+}): string {
+  const parts = use.targets.map((t) =>
+    t.conditionIds.length === 0
+      ? `${t.name} resistiu`
+      : `${t.name} ficou ${t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')}`,
+  );
+  return `${use.userName} usou ${use.abilityName}: ${parts.join('; ')}.`;
+}
+
+/** Os alvos de um uso gravado (`targets` é `jsonb`): o nome e os ids das Condições que chegaram. */
+export function abilityUseTargets(
+  targets: unknown,
+): { participantId: string; name: string; conditionIds: string[] }[] {
+  if (!Array.isArray(targets)) return [];
+  return targets.map(
+    (t: { participantId: string; name: string; conditions?: ConditionEntry[] }) => ({
+      participantId: t.participantId,
+      name: t.name,
+      conditionIds: (t.conditions ?? []).map((c) => c.conditionId),
+    }),
+  );
+}
