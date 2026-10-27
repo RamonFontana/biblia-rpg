@@ -73,6 +73,7 @@ export type Database = {
           equipment: Json | null
           fortress: string | null
           has_participated_in_session: boolean | null
+          hit_dice_spent: number
           id: string
           inspiration_session_id: string | null
           inspiration_used_day: number | null
@@ -82,6 +83,7 @@ export type Database = {
           is_npc: boolean | null
           is_stable: boolean
           is_visible: boolean
+          last_short_rest_recharge: string | null
           level: number
           name: string
           narrative: Json | null
@@ -105,6 +107,7 @@ export type Database = {
           equipment?: Json | null
           fortress?: string | null
           has_participated_in_session?: boolean | null
+          hit_dice_spent?: number
           id?: string
           inspiration_session_id?: string | null
           inspiration_used_day?: number | null
@@ -114,6 +117,7 @@ export type Database = {
           is_npc?: boolean | null
           is_stable?: boolean
           is_visible?: boolean
+          last_short_rest_recharge?: string | null
           level?: number
           name: string
           narrative?: Json | null
@@ -137,6 +141,7 @@ export type Database = {
           equipment?: Json | null
           fortress?: string | null
           has_participated_in_session?: boolean | null
+          hit_dice_spent?: number
           id?: string
           inspiration_session_id?: string | null
           inspiration_used_day?: number | null
@@ -146,6 +151,7 @@ export type Database = {
           is_npc?: boolean | null
           is_stable?: boolean
           is_visible?: boolean
+          last_short_rest_recharge?: string | null
           level?: number
           name?: string
           narrative?: Json | null
