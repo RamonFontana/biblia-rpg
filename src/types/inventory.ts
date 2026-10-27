@@ -37,6 +37,8 @@ export interface CombatInventoryItem {
   item_id?: string;
   quantity?: number | null;
   level?: number | null;
+  /** Efeitos de arma configurados pelo Mestre nesta instância (natural 18 ou mais). */
+  weapon_effects?: WeaponEffect[] | null;
   custom_condition_resistances?: string[] | null;
   items?: InventoryCatalogItem | InventoryCatalogItem[] | null;
 }

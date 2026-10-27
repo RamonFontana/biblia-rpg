@@ -50,7 +50,7 @@ beforeEach(() => {
 
 describe('submitAttack', () => {
   it('manda o resultado do motor à função do banco', async () => {
-    await expect(submitAttack(base)).resolves.toBe('atk-1');
+    await expect(submitAttack(base)).resolves.toMatchObject({ id: 'atk-1' });
     expect(sent()).toEqual({
       p_attacker_participant_id: 'p1',
       p_target_participant_id: 'p2',
@@ -64,6 +64,8 @@ describe('submitAttack', () => {
       p_applied_mode: 'normal',
       p_rolls: undefined,
       p_inspiration_used: false,
+      p_weapon_effect_triggered: false,
+      p_conditions: [],
     });
     expect(callsOf(state.calls, 'characters', 'update')).toEqual([]);
   });
@@ -111,7 +113,7 @@ describe('submitAttack: modalidade e Inspiração', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     state.respond = (call) =>
       call.table === 'characters' ? { error: new Error('falhou') } : { data: 'atk-1' };
-    await expect(submitAttack(withInspiration)).resolves.toBe('atk-1');
+    await expect(submitAttack(withInspiration)).resolves.toMatchObject({ id: 'atk-1' });
     expect(console.error).toHaveBeenCalled();
   });
 });
@@ -155,7 +157,118 @@ describe('submitAttack: munição', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     state.respond = stock(0);
-    await expect(submitAttack(withAmmo)).resolves.toBe('atk-1');
+    await expect(submitAttack(withAmmo)).resolves.toMatchObject({ id: 'atk-1' });
     expect(ammoWrites()).toEqual([]);
+  });
+});
+
+describe('submitAttack: efeito de arma', () => {
+  const effects = [{ conditionId: 'sangrando', trigger: 'natural_18_plus' as const }];
+  const hit = { ...base, naturalRoll: 18, result: { ...result, hit: true } };
+  const withEffect = (target: { entityId: string; entityType: string }) => ({
+    ...hit,
+    weaponEffect: { effects, target },
+  });
+  const toasts: string[] = [];
+  const onToast = (e: Event) => toasts.push((e as CustomEvent).detail.message);
+
+  /** A ficha do alvo com o item de resistência vestido (o escudo dá Nv2 contra Impedido). */
+  const target =
+    (items: { id: string; slug: string; level?: number }[], equipment = {}) =>
+    (call: FakeCall): FakeResult | undefined => {
+      if (call.table === 'characters' && call.op === 'select') {
+        return {
+          data: {
+            equipment,
+            character_items: items.map((i) => ({
+              id: i.id,
+              level: i.level ?? 1,
+              items: { slug: i.slug },
+            })),
+          },
+        };
+      }
+      return { data: 'atk-1' };
+    };
+
+  beforeEach(() => {
+    toasts.length = 0;
+    window.addEventListener('combat-toast', onToast);
+    return () => window.removeEventListener('combat-toast', onToast);
+  });
+
+  it('com 18 natural no acerto, manda as Condições do efeito de arma', async () => {
+    state.respond = target([]);
+    const outcome = await submitAttack(withEffect({ entityId: 'c9', entityType: 'player' }));
+    expect(sent()).toMatchObject({
+      p_weapon_effect_triggered: true,
+      p_conditions: [{ conditionId: 'sangrando', duration: 3 }],
+    });
+    expect(outcome).toMatchObject({ weaponEffectTriggered: true });
+  });
+
+  it('abaixo de 18, ou no erro, não dispara', async () => {
+    state.respond = target([]);
+    await submitAttack({
+      ...withEffect({ entityId: 'c9', entityType: 'player' }),
+      naturalRoll: 17,
+    });
+    expect(sent()).toMatchObject({ p_weapon_effect_triggered: false, p_conditions: [] });
+    state.calls.length = 0;
+    await submitAttack({
+      ...withEffect({ entityId: 'c9', entityType: 'player' }),
+      result: { ...result, hit: false },
+    });
+    expect(sent()).toMatchObject({ p_weapon_effect_triggered: false, p_conditions: [] });
+  });
+
+  it('arma sem efeito configurado não dispara', async () => {
+    state.respond = target([]);
+    await submitAttack({
+      ...hit,
+      weaponEffect: { effects: [], target: { entityId: 'c9', entityType: 'player' } },
+    });
+    expect(sent()).toMatchObject({ p_weapon_effect_triggered: false });
+  });
+
+  it('a Resistência a Condição do alvo anula o efeito (Nv4) e avisa', async () => {
+    // Escudo de Qualidade 3 dá Nv4 contra Impedido; a arma aqui causa Impedido.
+    state.respond = target([{ id: 'ci-1', slug: 'escudo', level: 3 }], { offHand: 'ci-1' });
+    const outcome = await submitAttack({
+      ...hit,
+      weaponEffect: {
+        effects: [{ conditionId: 'impedido', trigger: 'natural_18_plus' }],
+        target: { entityId: 'c9', entityType: 'player' },
+      },
+    });
+    expect(sent()).toMatchObject({ p_weapon_effect_triggered: true, p_conditions: [] });
+    expect(outcome.messages).toEqual(['Resistência Nv4: imune a Impedido']);
+    expect(toasts).toEqual(['Resistência Nv4: imune a Impedido']);
+  });
+
+  it('o nível reduz a duração', async () => {
+    state.respond = target([{ id: 'ci-1', slug: 'escudo' }], { offHand: 'ci-1' }); // Nv2
+    await submitAttack({
+      ...hit,
+      weaponEffect: {
+        effects: [{ conditionId: 'impedido', trigger: 'natural_18_plus' }],
+        target: { entityId: 'c9', entityType: 'player' },
+      },
+    });
+    expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'impedido', duration: 2 }] });
+  });
+
+  it('inimigo não tem ficha: aplica sem consultar o banco', async () => {
+    state.respond = target([]);
+    await submitAttack(withEffect({ entityId: 'e1', entityType: 'enemy' }));
+    expect(callsOf(state.calls, 'characters')).toEqual([]);
+    expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'sangrando', duration: 3 }] });
+  });
+
+  it('se a leitura da ficha do alvo falha, aplica sem resistência', async () => {
+    state.respond = (call) =>
+      call.table === 'characters' ? { error: new Error('falhou') } : { data: 'atk-1' };
+    await submitAttack(withEffect({ entityId: 'c9', entityType: 'player' }));
+    expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'sangrando', duration: 3 }] });
   });
 });

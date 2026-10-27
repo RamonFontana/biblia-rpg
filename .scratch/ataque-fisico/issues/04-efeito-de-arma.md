@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: gatilho do efeito (17 não, 18 sim, só no acerto)
-- [ ] Serviço: Condições resolvidas pela Resistência a Condição do alvo antes da chamada
-- [ ] A função de ataque mescla as Condições no participante alvo; `rls.sql` cobre a mescla
-- [ ] Aviso do Mestre com o efeito disparado
-- [ ] Testes do motor, do serviço e um E2E (18 natural aplica a Condição no alvo), com mutação conferida
+- [x] Motor: gatilho do efeito (17 não, 18 sim, só no acerto)
+- [x] Serviço: Condições resolvidas pela Resistência a Condição do alvo antes da chamada
+- [x] A função de ataque mescla as Condições no participante alvo; `rls.sql` cobre a mescla
+- [x] Aviso do Mestre com o efeito disparado
+- [x] Testes do motor, do serviço e um E2E (18 natural aplica a Condição no alvo), com mutação conferida
 - [ ] Migration aplicada na produção, com o autor (se a função mudar)

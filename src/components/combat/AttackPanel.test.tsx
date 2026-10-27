@@ -15,9 +15,30 @@ vi.mock('@/lib/systemRng', () => ({ systemRng: () => h.random.shift() ?? 0.5 }))
 import { AttackPanel } from './AttackPanel';
 
 const targets = [
-  { participantId: 'p-rute', name: 'Rute', ac: 12, conditionIds: [] as string[] },
-  { participantId: 'p-fil', name: 'Filisteu', ac: 15, conditionIds: [] as string[] },
-  { participantId: 'p-stun', name: 'Atordoado', ac: 15, conditionIds: ['atordoado'] },
+  {
+    participantId: 'p-rute',
+    entityId: 'e-p-rute',
+    entityType: 'player',
+    name: 'Rute',
+    ac: 12,
+    conditionIds: [] as string[],
+  },
+  {
+    participantId: 'p-fil',
+    entityId: 'e-p-fil',
+    entityType: 'player',
+    name: 'Filisteu',
+    ac: 15,
+    conditionIds: [] as string[],
+  },
+  {
+    participantId: 'p-stun',
+    entityId: 'e-p-stun',
+    entityType: 'player',
+    name: 'Atordoado',
+    ac: 15,
+    conditionIds: ['atordoado'],
+  },
 ];
 const equipped = (slug: string | null) => ({
   attributes: { for: 16, des: 12 }, // FOR +3, DES +1
@@ -458,7 +479,16 @@ describe('AttackPanel: Versátil, arremesso e munição', () => {
     it('contra alvo Caído: Vantagem de perto e Desvantagem arremessando', () => {
       show({
         character: armed('adaga'),
-        targets: [{ participantId: 'p-down', name: 'Caído', ac: 10, conditionIds: ['caido'] }],
+        targets: [
+          {
+            participantId: 'p-down',
+            entityId: 'e-p-down',
+            entityType: 'player',
+            name: 'Caído',
+            ac: 10,
+            conditionIds: ['caido'],
+          },
+        ],
       });
       fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p-down' } });
       expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
@@ -507,7 +537,16 @@ describe('AttackPanel: Versátil, arremesso e munição', () => {
     it('à distância, o alvo Caído dá Desvantagem', () => {
       show({
         character: armed('arco_curto', { ammo: { slug: 'flechas', quantity: 5 } }),
-        targets: [{ participantId: 'p-down', name: 'Caído', ac: 10, conditionIds: ['caido'] }],
+        targets: [
+          {
+            participantId: 'p-down',
+            entityId: 'e-p-down',
+            entityType: 'player',
+            name: 'Caído',
+            ac: 10,
+            conditionIds: ['caido'],
+          },
+        ],
       });
       fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p-down' } });
       expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
@@ -517,5 +556,60 @@ describe('AttackPanel: Versátil, arremesso e munição', () => {
       show({ character: armed('espada_curta') });
       expect(screen.queryByText(/Munição/)).toBeNull();
     });
+  });
+});
+
+describe('AttackPanel: efeito de arma', () => {
+  const withEffects = () => ({
+    ...equipped('espada_curta'),
+    character_items: [
+      {
+        id: 'ci-1',
+        items: { slug: 'espada_curta', name: 'espada_curta' },
+        weapon_effects: [{ conditionId: 'sangrando', trigger: 'natural_18_plus' }],
+      },
+    ],
+  });
+
+  it('manda os efeitos da arma e o alvo ao serviço', async () => {
+    show({ character: withEffects() as never });
+    pick('Filisteu');
+    roll('3');
+    attack();
+    await screen.findByText('Errou');
+    expect(h.submitAttack.mock.calls[0][0].weaponEffect).toEqual({
+      effects: [{ conditionId: 'sangrando', trigger: 'natural_18_plus' }],
+      target: { entityId: 'e-p-fil', entityType: 'player' },
+    });
+  });
+
+  it('arma sem efeito não manda nada', async () => {
+    show();
+    pick('Filisteu');
+    roll('3');
+    attack();
+    await screen.findByText('Errou');
+    expect(h.submitAttack.mock.calls[0][0].weaponEffect).toBeUndefined();
+  });
+
+  it('avisa quando o efeito de arma disparou', async () => {
+    h.submitAttack.mockResolvedValue({ id: 'a1', weaponEffectTriggered: true, messages: [] });
+    show({ character: withEffects() as never });
+    pick('Filisteu');
+    roll('18');
+    attack();
+    await screen.findByText('Acertou!');
+    fireEvent.change(screen.getByLabelText('Dano rolado'), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar dano' }));
+    expect(await screen.findByText('Efeito de arma ativado!')).toBeInTheDocument();
+  });
+
+  it('sem disparo, não fala em efeito de arma', async () => {
+    show({ character: withEffects() as never });
+    pick('Filisteu');
+    roll('3');
+    attack();
+    await screen.findByText('Errou');
+    expect(screen.queryByText(/Efeito de arma/)).toBeNull();
   });
 });

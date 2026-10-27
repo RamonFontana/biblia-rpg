@@ -1,4 +1,6 @@
+import { CONDITIONS } from '@/content/conditions';
 import type { CombatAttack } from '@/data-access/combat';
+import type { ConditionEntry } from '@/types/combat';
 
 const MODE_LABEL: Record<string, string> = {
   vantagem: 'com Vantagem',
@@ -9,6 +11,15 @@ function outcomeOf(attack: CombatAttack): string {
   if (attack.critical) return 'Acerto Crítico';
   if (attack.fumble) return 'Falha Crítica';
   return attack.hit ? 'Acertou' : 'Errou';
+}
+
+/** O efeito de arma de um ataque: as Condições que chegaram ao alvo, ou "resistido". */
+function weaponEffectText(attack: CombatAttack): string | null {
+  if (!attack.weapon_effect_triggered) return null;
+  const applied = (attack.weapon_effect_conditions as unknown as ConditionEntry[]) ?? [];
+  if (applied.length === 0) return 'Efeito de arma resistido';
+  const names = applied.map((c) => CONDITIONS[c.conditionId]?.name ?? c.conditionId);
+  return `Efeito de arma: ${names.join(', ')}`;
 }
 
 /** Os últimos ataques do combate com os números que o jogador não vê (d20, total e CA). */
@@ -36,6 +47,7 @@ export function AttackLog({ attacks }: { attacks: CombatAttack[] }) {
             </span>
             {MODE_LABEL[attack.applied_mode] && ` · ${MODE_LABEL[attack.applied_mode]}`}
             {attack.inspiration_used && ' · Inspiração'}
+            {weaponEffectText(attack) && ` · ${weaponEffectText(attack)}`}
             {attack.hit && (
               <>
                 {' · '}

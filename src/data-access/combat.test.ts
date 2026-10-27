@@ -227,6 +227,8 @@ describe('applyAttack', () => {
     appliedMode: 'vantagem' as const,
     rolls: [14, 6],
     inspirationUsed: true,
+    weaponEffectTriggered: true,
+    weaponConditions: [{ conditionId: 'sangrando', duration: 3 }],
   };
 
   it('chama a função de ataque com o resultado do motor e devolve o id do ataque', async () => {
@@ -246,17 +248,28 @@ describe('applyAttack', () => {
       p_applied_mode: 'vantagem',
       p_rolls: [14, 6],
       p_inspiration_used: true,
+      p_weapon_effect_triggered: true,
+      p_conditions: [{ conditionId: 'sangrando', duration: 3 }],
     });
   });
 
   it('sem os dois d20, não manda a lista', async () => {
     state.respond = () => ({ data: 'atk-1' });
-    await applyAttack({ ...attack, rolls: null, appliedMode: 'normal', inspirationUsed: false });
+    await applyAttack({
+      ...attack,
+      rolls: null,
+      appliedMode: 'normal',
+      inspirationUsed: false,
+      weaponEffectTriggered: false,
+      weaponConditions: [],
+    });
     const [call] = callsOf(state.calls, 'apply_attack', 'rpc');
     expect(call.payload).toMatchObject({
       p_applied_mode: 'normal',
       p_rolls: undefined,
       p_inspiration_used: false,
+      p_weapon_effect_triggered: false,
+      p_conditions: [],
     });
   });
 

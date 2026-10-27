@@ -190,6 +190,8 @@ export type Database = {
           target_name: string
           target_participant_id: string
           total: number
+          weapon_effect_conditions: Json
+          weapon_effect_triggered: boolean
         }
         Insert: {
           applied_mode?: string
@@ -211,6 +213,8 @@ export type Database = {
           target_name: string
           target_participant_id: string
           total: number
+          weapon_effect_conditions?: Json
+          weapon_effect_triggered?: boolean
         }
         Update: {
           applied_mode?: string
@@ -232,6 +236,8 @@ export type Database = {
           target_name?: string
           target_participant_id?: string
           total?: number
+          weapon_effect_conditions?: Json
+          weapon_effect_triggered?: boolean
         }
         Relationships: [
           {
@@ -842,6 +848,7 @@ export type Database = {
         Args: {
           p_applied_mode?: string
           p_attacker_participant_id: string
+          p_conditions?: Json
           p_critical: boolean
           p_damage: number
           p_fumble: boolean
@@ -852,6 +859,7 @@ export type Database = {
           p_target_ac: number
           p_target_participant_id: string
           p_total: number
+          p_weapon_effect_triggered?: boolean
         }
         Returns: string
       }

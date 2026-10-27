@@ -4,7 +4,9 @@
 import { calculateModifier, calculateProficiency } from './attributes';
 import { rollDice } from './dice';
 import type { Rng } from './rng';
+import { applyConditionResistance } from './armorResistance';
 import { combineModes, type ResolvedTestMode } from './testMode';
+import type { ConditionEntry, WeaponEffect } from '@/types/combat';
 import { canonicalVocation } from './vocation';
 
 export type AttackAbility = 'for' | 'des';
@@ -217,4 +219,40 @@ export function rollDamage(weapon: AttackWeapon | null, critical: boolean, rng: 
     (sum, die) => sum + die,
     0,
   );
+}
+
+/** Quantas rodadas dura a Condição de um efeito de arma, sem cura nem resistência. */
+const WEAPON_EFFECT_DURATION = 3;
+
+/** O efeito de arma dispara no acerto com 18 natural ou mais (docs/itens/armas.md). */
+export function weaponEffectTriggers(
+  naturalRoll: number,
+  hit: boolean,
+  effects: WeaponEffect[] | null | undefined,
+): boolean {
+  return hit && naturalRoll >= 18 && !!effects && effects.length > 0;
+}
+
+/**
+ * As Condições do efeito de arma depois da Resistência a Condição do alvo (nível por Condição), e
+ * as frases de resistência para o Mestre.
+ */
+export function resolveWeaponEffect(
+  effects: WeaponEffect[],
+  resistanceLevels: Record<string, number>,
+): { conditions: ConditionEntry[]; messages: string[] } {
+  const conditions: ConditionEntry[] = [];
+  const messages: string[] = [];
+  for (const effect of effects) {
+    const outcome = applyConditionResistance(
+      effect.conditionId,
+      WEAPON_EFFECT_DURATION,
+      resistanceLevels[effect.conditionId] ?? 0,
+    );
+    if (outcome.message) messages.push(outcome.message);
+    if (!outcome.immune) {
+      conditions.push({ conditionId: effect.conditionId, duration: outcome.duration });
+    }
+  }
+  return { conditions, messages };
 }

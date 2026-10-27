@@ -1,6 +1,6 @@
 import { ITEMS_DB } from '@/content/items';
 import { ammunitionSlug, type AttackWeapon } from '@/domain/attack';
-import type { ConditionEntry } from '@/types/combat';
+import type { ConditionEntry, WeaponEffect } from '@/types/combat';
 import type { CombatInventoryItem } from '@/types/inventory';
 import { getEquippedSlots } from './equipmentUtils';
 
@@ -11,7 +11,7 @@ import { getEquippedSlots } from './equipmentUtils';
 export function resolveMainHandWeapon(character: {
   equipment?: unknown;
   character_items?: CombatInventoryItem[];
-}): { name: string; weapon: AttackWeapon } | null {
+}): { name: string; weapon: AttackWeapon; effects: WeaponEffect[] } | null {
   const mainHand = getEquippedSlots(character.equipment as never).mainHand;
   if (!mainHand) return null;
 
@@ -29,6 +29,7 @@ export function resolveMainHandWeapon(character: {
       properties: content.properties,
       description: content.description,
     },
+    effects: owned?.weapon_effects ?? [],
   };
 }
 
@@ -61,6 +62,9 @@ export function resolveAmmunition(
 
 export interface AttackTarget {
   participantId: string;
+  /** A ficha (ou NPC) do alvo e o tipo: o enemy não tem Resistência a Condição. */
+  entityId: string;
+  entityType: string;
   name: string;
   ac: number;
   /** Os ids das Condições do alvo (Caído, Atordoado…), que mudam a modalidade do ataque. */
@@ -76,7 +80,7 @@ export function conditionIdsOf(conditions: unknown): string[] {
 
 /** Os alvos possíveis: todo participante do combate (aliado, NPC ou inimigo) menos o atacante. */
 export function buildAttackTargets(
-  participants: { id: string; entity_id: string; conditions?: unknown }[],
+  participants: { id: string; entity_id: string; entity_type: string; conditions?: unknown }[],
   attackerParticipantId: string,
   entities: { id: string; name: string; totalAc: number }[],
 ): AttackTarget[] {
@@ -87,6 +91,8 @@ export function buildAttackTargets(
       : [
           {
             participantId: p.id,
+            entityId: p.entity_id,
+            entityType: p.entity_type,
             name: entity.name,
             ac: entity.totalAc,
             conditionIds: conditionIdsOf(p.conditions),

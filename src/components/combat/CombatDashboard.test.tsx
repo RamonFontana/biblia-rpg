@@ -434,6 +434,8 @@ describe('CombatDashboard: ataques', () => {
           applied_mode: 'normal',
           rolls: null,
           inspiration_used: false,
+          weapon_effect_triggered: false,
+          weapon_effect_conditions: [],
           created_at: '',
         },
       ],

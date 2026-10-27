@@ -176,6 +176,10 @@ export interface AttackRecord {
   /** Os dois d20 da Rolagem Virtual com Vantagem ou Desvantagem; nulo nos demais casos. */
   rolls: number[] | null;
   inspirationUsed: boolean;
+  /** O efeito de arma disparou (natural 18 ou mais no acerto). */
+  weaponEffectTriggered: boolean;
+  /** As Condições que chegam ao alvo depois da Resistência a Condição (vazio se anulado). */
+  weaponConditions: ConditionEntry[];
 }
 
 /**
@@ -196,6 +200,8 @@ export async function applyAttack(attack: AttackRecord): Promise<string> {
     p_applied_mode: attack.appliedMode,
     p_rolls: attack.rolls ?? undefined,
     p_inspiration_used: attack.inspirationUsed,
+    p_weapon_effect_triggered: attack.weaponEffectTriggered,
+    p_conditions: toJson(attack.weaponConditions),
   });
   if (error) throw error;
   return data;

@@ -26,6 +26,8 @@ const attack = (over: Partial<CombatAttack> = {}): CombatAttack => ({
   applied_mode: 'normal',
   rolls: null,
   inspiration_used: false,
+  weapon_effect_triggered: false,
+  weapon_effect_conditions: [],
   created_at: '2026-10-27T10:00:00Z',
   ...over,
 });
@@ -98,5 +100,31 @@ describe('AttackLog: modalidade', () => {
   it('o ataque normal não leva etiqueta', () => {
     render(<AttackLog attacks={[attack()]} />);
     expect(screen.getByRole('listitem')).not.toHaveTextContent(/com (Vantagem|Desvantagem)/);
+  });
+});
+
+describe('AttackLog: efeito de arma', () => {
+  it('mostra as Condições que chegaram ao alvo', () => {
+    render(
+      <AttackLog
+        attacks={[
+          attack({
+            weapon_effect_triggered: true,
+            weapon_effect_conditions: [{ conditionId: 'sangrando', duration: 3 }],
+          }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent('Efeito de arma: Sangrando');
+  });
+
+  it('mostra o efeito resistido quando nada chegou ao alvo', () => {
+    render(<AttackLog attacks={[attack({ weapon_effect_triggered: true })]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent('Efeito de arma resistido');
+  });
+
+  it('sem disparo, não fala em efeito de arma', () => {
+    render(<AttackLog attacks={[attack()]} />);
+    expect(screen.getByRole('listitem')).not.toHaveTextContent('Efeito de arma');
   });
 });

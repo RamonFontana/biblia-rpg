@@ -28,6 +28,10 @@ create table public.combat_attacks (
   applied_mode text not null default 'normal' check (applied_mode in ('normal', 'vantagem', 'desvantagem')),
   rolls integer[],
   inspiration_used boolean not null default false,
+  -- O efeito de arma (natural 18 ou mais): se disparou e as Condições que chegaram ao alvo depois da
+  -- Resistência a Condição (vazio se foi anulado).
+  weapon_effect_triggered boolean not null default false,
+  weapon_effect_conditions jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -59,7 +63,9 @@ create or replace function public.apply_attack(
   p_damage integer,
   p_applied_mode text default 'normal',
   p_rolls integer[] default null,
-  p_inspiration_used boolean default false
+  p_inspiration_used boolean default false,
+  p_weapon_effect_triggered boolean default false,
+  p_conditions jsonb default '[]'::jsonb
 )
 returns uuid
 language plpgsql
@@ -75,6 +81,7 @@ declare
   v_before integer;
   v_after integer;
   v_damage integer;
+  v_conditions jsonb;
   v_attack_id uuid;
 begin
   select * into v_attacker from public.combat_participants where id = p_attacker_participant_id;
@@ -118,14 +125,29 @@ begin
   v_before := v_target.hp_current;
   v_damage := case when p_hit then greatest(0, p_damage) else 0 end;
   v_after := greatest(0, v_before - v_damage);
-  if v_damage > 0 then
-    update public.combat_participants set hp_current = v_after where id = v_target.id;
+  -- As Condições do efeito de arma entram só no acerto; uma Condição que o alvo já tem é trocada
+  -- (a duração reinicia) e vai para o fim, como `mergeCondition` no cliente.
+  v_conditions := case when p_hit and p_weapon_effect_triggered then p_conditions else '[]'::jsonb end;
+  if v_damage > 0 or jsonb_array_length(v_conditions) > 0 then
+    update public.combat_participants
+    set hp_current = v_after,
+        conditions = coalesce(
+          (
+            select jsonb_agg(c)
+            from jsonb_array_elements(conditions) c
+            where c ->> 'conditionId' not in (
+              select n ->> 'conditionId' from jsonb_array_elements(v_conditions) n
+            )
+          ),
+          '[]'::jsonb
+        ) || v_conditions
+    where id = v_target.id;
   end if;
 
   insert into public.combat_attacks (
     combat_id, attacker_participant_id, target_participant_id, attacker_name, target_name,
     natural_roll, total, target_ac, hit, critical, fumble, damage, target_hp_before, target_hp_after,
-    applied_mode, rolls, inspiration_used
+    applied_mode, rolls, inspiration_used, weapon_effect_triggered, weapon_effect_conditions
   ) values (
     v_combat.id, v_attacker.id, v_target.id,
     coalesce(
@@ -139,7 +161,7 @@ begin
       'Desconhecido'
     ),
     p_natural_roll, p_total, p_target_ac, p_hit, p_critical, p_fumble, v_damage, v_before, v_after,
-    p_applied_mode, p_rolls, p_inspiration_used
+    p_applied_mode, p_rolls, p_inspiration_used, p_hit and p_weapon_effect_triggered, v_conditions
   )
   returning id into v_attack_id;
 
@@ -147,7 +169,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.apply_attack(uuid, uuid, integer, integer, integer, boolean, boolean, boolean, integer, text, integer[], boolean) from public, anon;
+revoke execute on function public.apply_attack(uuid, uuid, integer, integer, integer, boolean, boolean, boolean, integer, text, integer[], boolean, boolean, jsonb) from public, anon;
 
 -- Realtime: a mesa recebe cada ataque na hora (aviso do Mestre, lista de ataques). O bloco é
 -- idempotente.

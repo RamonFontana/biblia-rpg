@@ -28,7 +28,8 @@ async function openFight(
     faith = 50,
     weapon = 'espada_curta',
     ammo,
-  }: { faith?: number; weapon?: string; ammo?: [string, number] } = {},
+    effect,
+  }: { faith?: number; weapon?: string; ammo?: [string, number]; effect?: string } = {},
 ) {
   const eliabe = await seed.createCharacter('player1', {
     name: 'Eliabe',
@@ -40,6 +41,13 @@ async function openFight(
   });
   const filisteu = await seed.createEnemy(FILISTEU, { pv: 20, ca: 12 });
   await equipWeapon(seed, eliabe, weapon);
+  if (effect) {
+    const marked = await adminClient()
+      .from('character_items')
+      .update({ weapon_effects: [{ conditionId: effect, trigger: 'natural_18_plus' }] })
+      .eq('character_id', eliabe);
+    if (marked.error) throw marked.error;
+  }
   if (ammo) await seed.giveItem(eliabe, ammo[0], ammo[1]);
   const sessionId = await seed.createSession({ characters: [eliabe, rute, filisteu] });
 
@@ -243,5 +251,42 @@ test.describe('ataque físico', () => {
     await player.getByLabel('d20 natural').fill('10');
     await player.getByRole('button', { name: 'Atacar' }).click();
     await expect(player.getByText('Role 1d10.')).toBeVisible();
+  });
+
+  test('18 natural dispara o efeito de arma: a Condição entra no alvo', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await openFight(seed, signIn, { effect: 'sangrando' });
+
+    await player.getByLabel('Alvo').selectOption({ label: FILISTEU });
+    await player.getByLabel('d20 natural').fill('18');
+    await player.getByRole('button', { name: 'Atacar' }).click();
+    await player.getByLabel('Dano rolado').fill('2');
+    await player.getByRole('button', { name: 'Aplicar dano' }).click();
+
+    await expect(player.getByText('Efeito de arma ativado!')).toBeVisible();
+    await expect(participantCard(master, FILISTEU)).toContainText('Sangrando');
+    await expect(master.getByText(/Efeito de arma: Sangrando/)).toBeVisible();
+    const { data } = await adminClient()
+      .from('combat_participants')
+      .select('conditions')
+      .eq('entity_type', 'enemy')
+      .single();
+    expect(data?.conditions).toEqual([{ conditionId: 'sangrando', duration: 3 }]);
+  });
+
+  test('17 natural não dispara o efeito de arma', async ({ seed, signIn }) => {
+    const { master, player } = await openFight(seed, signIn, { effect: 'sangrando' });
+
+    await player.getByLabel('Alvo').selectOption({ label: FILISTEU });
+    await player.getByLabel('d20 natural').fill('17');
+    await player.getByRole('button', { name: 'Atacar' }).click();
+    await player.getByLabel('Dano rolado').fill('2');
+    await player.getByRole('button', { name: 'Aplicar dano' }).click();
+
+    await expect(player.getByText('4 de dano.')).toBeVisible();
+    await expect(player.getByText('Efeito de arma ativado!')).toHaveCount(0);
+    await expect(participantCard(master, FILISTEU)).not.toContainText('Sangrando');
   });
 });

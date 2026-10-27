@@ -376,8 +376,22 @@ describe('PlayerCombatView: o ataque', () => {
       characterId: 'c1',
       attackerConditionIds: [],
       targets: [
-        { participantId: 'part-2', name: 'Rute', ac: 12, conditionIds: [] },
-        { participantId: 'part-3', name: 'Filisteu', ac: 15, conditionIds: [] },
+        {
+          participantId: 'part-2',
+          entityId: 'c2',
+          entityType: 'player',
+          name: 'Rute',
+          ac: 12,
+          conditionIds: [],
+        },
+        {
+          participantId: 'part-3',
+          entityId: 'e1',
+          entityType: 'enemy',
+          name: 'Filisteu',
+          ac: 15,
+          conditionIds: [],
+        },
       ],
       actionUsed: false,
     });

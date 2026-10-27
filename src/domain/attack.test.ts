@@ -15,7 +15,9 @@ import {
   isWeaponProficient,
   resolveAttack,
   resolveAttackMode,
+  resolveWeaponEffect,
   rollDamage,
+  weaponEffectTriggers,
   weaponIsRanged,
   type AttackInput,
   type AttackWeapon,
@@ -421,5 +423,62 @@ describe('rollDamage: a Rolagem Virtual do dano', () => {
 
   it('desarmado não rola', () => {
     expect(rollDamage(null, false, createSeededRng(1))).toBe(0);
+  });
+});
+
+describe('weaponEffectTriggers: o gatilho do efeito de arma', () => {
+  const effects = [{ conditionId: 'sangrando', trigger: 'natural_18_plus' as const }];
+
+  it('dispara no acerto com 18 natural ou mais', () => {
+    expect(weaponEffectTriggers(18, true, effects)).toBe(true);
+    expect(weaponEffectTriggers(19, true, effects)).toBe(true);
+    expect(weaponEffectTriggers(20, true, effects)).toBe(true);
+  });
+
+  it('abaixo de 18 não dispara', () => {
+    expect(weaponEffectTriggers(17, true, effects)).toBe(false);
+  });
+
+  it('só no acerto', () => {
+    expect(weaponEffectTriggers(18, false, effects)).toBe(false);
+  });
+
+  it('sem efeito configurado na arma, nunca dispara', () => {
+    expect(weaponEffectTriggers(20, true, [])).toBe(false);
+    expect(weaponEffectTriggers(20, true, undefined)).toBe(false);
+  });
+});
+
+describe('resolveWeaponEffect: a Condição que chega ao alvo', () => {
+  const effects = [
+    { conditionId: 'sangrando', trigger: 'natural_18_plus' as const },
+    { conditionId: 'atordoado', trigger: 'natural_18_plus' as const },
+  ];
+
+  it('sem resistência, aplica todas as Condições da arma por 3 rodadas', () => {
+    expect(resolveWeaponEffect(effects, {})).toEqual({
+      conditions: [
+        { conditionId: 'sangrando', duration: 3 },
+        { conditionId: 'atordoado', duration: 3 },
+      ],
+      messages: [],
+    });
+  });
+
+  it('a Resistência Nv4 anula a Condição e avisa', () => {
+    const result = resolveWeaponEffect(effects, { sangrando: 4 });
+    expect(result.conditions).toEqual([{ conditionId: 'atordoado', duration: 3 }]);
+    expect(result.messages).toEqual(['Resistência Nv4: imune a Sangrando']);
+  });
+
+  it('a Resistência Nv2 reduz a duração pela metade, para cima', () => {
+    expect(resolveWeaponEffect(effects, { atordoado: 2 }).conditions).toEqual([
+      { conditionId: 'sangrando', duration: 3 },
+      { conditionId: 'atordoado', duration: 2 },
+    ]);
+  });
+
+  it('o nível de uma Condição não afeta as outras', () => {
+    expect(resolveWeaponEffect(effects, { outra: 4 }).conditions).toHaveLength(2);
   });
 });

@@ -71,6 +71,21 @@ describe('resolveMainHandWeapon', () => {
 });
 
 describe('resolveMainHandWeapon: a descrição vem junto (o dado Versátil sai dela)', () => {
+  it('traz os efeitos de arma configurados pelo Mestre (vazio se não há)', () => {
+    const effects = [{ conditionId: 'sangrando', trigger: 'natural_18_plus' as const }];
+    const equipment = { head: null, body: null, mainHand: 'ci-1', offHand: null };
+    expect(
+      resolveMainHandWeapon({
+        equipment,
+        character_items: [{ ...item('ci-1', 'espada_curta'), weapon_effects: effects }],
+      })?.effects,
+    ).toEqual(effects);
+    expect(
+      resolveMainHandWeapon({ equipment, character_items: [item('ci-1', 'espada_curta')] })
+        ?.effects,
+    ).toEqual([]);
+  });
+
   it('traz o texto do item', () => {
     const found = resolveMainHandWeapon({
       equipment: { head: null, body: null, mainHand: 'ci-1', offHand: null },
@@ -141,22 +156,47 @@ describe('buildAttackTargets', () => {
     { id: 'e1', name: 'Filisteu', totalAc: 15 },
   ];
   const participants = [
-    { id: 'p1', entity_id: 'c1', conditions: [] },
-    { id: 'p2', entity_id: 'c2', conditions: [{ conditionId: 'caido', duration: null }] },
-    { id: 'p3', entity_id: 'e1', conditions: [{ conditionId: 'cego', duration: 2 }] },
-    { id: 'p4', entity_id: 'sem-ficha', conditions: [] },
+    { id: 'p1', entity_id: 'c1', entity_type: 'player', conditions: [] },
+    {
+      id: 'p2',
+      entity_id: 'c2',
+      entity_type: 'player',
+      conditions: [{ conditionId: 'caido', duration: null }],
+    },
+    {
+      id: 'p3',
+      entity_id: 'e1',
+      entity_type: 'enemy',
+      conditions: [{ conditionId: 'cego', duration: 2 }],
+    },
+    { id: 'p4', entity_id: 'sem-ficha', entity_type: 'npc', conditions: [] },
   ];
 
   it('lista todos os participantes menos o próprio atacante, com nome e CA', () => {
     expect(buildAttackTargets(participants, 'p1', entities)).toEqual([
-      { participantId: 'p2', name: 'Rute', ac: 12, conditionIds: ['caido'] },
-      { participantId: 'p3', name: 'Filisteu', ac: 15, conditionIds: ['cego'] },
+      {
+        participantId: 'p2',
+        entityId: 'c2',
+        entityType: 'player',
+        name: 'Rute',
+        ac: 12,
+        conditionIds: ['caido'],
+      },
+      {
+        participantId: 'p3',
+        entityId: 'e1',
+        entityType: 'enemy',
+        name: 'Filisteu',
+        ac: 15,
+        conditionIds: ['cego'],
+      },
     ]);
   });
 
   it('sem Condições gravadas, a lista é vazia', () => {
     expect(
-      buildAttackTargets([{ id: 'p5', entity_id: 'c2' }], 'p1', entities)[0].conditionIds,
+      buildAttackTargets([{ id: 'p5', entity_id: 'c2', entity_type: 'player' }], 'p1', entities)[0]
+        .conditionIds,
     ).toEqual([]);
   });
 

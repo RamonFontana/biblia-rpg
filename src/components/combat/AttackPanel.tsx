@@ -68,7 +68,7 @@ type Stage =
       natural: number;
       result: AttackResult;
     } & Rolled)
-  | { name: 'done'; result: AttackResult; damage: number };
+  | { name: 'done'; result: AttackResult; damage: number; weaponEffectTriggered: boolean };
 
 /**
  * O ataque do jogador no próprio turno: escolhe o alvo, digita o d20 do dado físico e vê só
@@ -130,7 +130,7 @@ export function AttackPanel({
     setIsSubmitting(true);
     setError(null);
     try {
-      await submitAttack({
+      const outcome = await submitAttack({
         attackerParticipantId,
         targetParticipantId: target.participantId,
         targetAc: target.ac,
@@ -139,6 +139,14 @@ export function AttackPanel({
         damage,
         appliedMode: rolled.mode,
         rolls: rolled.rolls,
+        ...(equipped && equipped.effects.length > 0
+          ? {
+              weaponEffect: {
+                effects: equipped.effects,
+                target: { entityId: target.entityId, entityType: target.entityType },
+              },
+            }
+          : {}),
         ...(ammunition?.characterItemId
           ? { ammunition: { characterItemId: ammunition.characterItemId } }
           : {}),
@@ -153,7 +161,12 @@ export function AttackPanel({
           inspiration_session_id: inspiration.sessionId,
         });
       }
-      setStage({ name: 'done', result, damage });
+      setStage({
+        name: 'done',
+        result,
+        damage,
+        weaponEffectTriggered: !!outcome?.weaponEffectTriggered,
+      });
     } catch (err) {
       setError(getErrorMessage(err, 'Não foi possível registrar o ataque.'));
     } finally {
@@ -433,6 +446,9 @@ export function AttackPanel({
               {stage.result.fumble ? 'Falha Crítica' : outcome(stage.result)}
             </p>
             {stage.result.hit && <p className="text-sm text-stone-300">{stage.damage} de dano.</p>}
+            {stage.weaponEffectTriggered && (
+              <p className="text-sm font-medium text-amber-400">Efeito de arma ativado!</p>
+            )}
             <Button type="button" variant="outline" onClick={reset} className="w-full">
               Novo ataque
             </Button>
