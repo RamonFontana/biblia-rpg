@@ -71,3 +71,56 @@ export function shouldRechargeForShortRest(
 ): boolean {
   return !!openRestId && openRestId !== lastRechargeId;
 }
+
+/** O jogador (o personagem dele) como o Pedido de Descanso o enxerga. */
+export interface RestPlayer {
+  id: string;
+  name: string;
+  is_dead?: boolean | null;
+}
+
+export interface RestRoster {
+  /** Quantos jogadores contam no "todos": os personagens que não estão Mortos. */
+  total: number;
+  requested: RestPlayer[];
+  finished: RestPlayer[];
+  allRequested: boolean;
+  allFinished: boolean;
+}
+
+/**
+ * Quem conta no "todos" do Pedido de Descanso e do "Terminei": os jogadores com personagem na
+ * sessão que não está Morto. Quem está Morrendo conta (quem pede é o jogador); NPC e inimigo não
+ * entram, pois `players` já vem sem eles. O banco (`request_short_rest`) usa a mesma definição.
+ */
+export function getRestRoster(
+  players: RestPlayer[],
+  requestedIds: string[],
+  finishedIds: string[],
+): RestRoster {
+  const counting = players.filter((p) => !p.is_dead);
+  const requested = counting.filter((p) => requestedIds.includes(p.id));
+  const finished = counting.filter((p) => finishedIds.includes(p.id));
+  return {
+    total: counting.length,
+    requested,
+    finished,
+    allRequested: counting.length > 0 && requested.length === counting.length,
+    allFinished: counting.length > 0 && finished.length === counting.length,
+  };
+}
+
+function withNames(count: number, total: number, verb: string, people: RestPlayer[]): string {
+  const base = `${count} de ${total} ${verb}`;
+  return people.length > 0 ? `${base} (${people.map((p) => p.name).join(', ')})` : base;
+}
+
+/** "2 de 4 pediram (Eliabe, Rute)". */
+export function requestSummaryText(roster: RestRoster): string {
+  return withNames(roster.requested.length, roster.total, 'pediram', roster.requested);
+}
+
+/** "1 de 4 terminaram (Eliabe)". */
+export function finishedSummaryText(roster: RestRoster): string {
+  return withNames(roster.finished.length, roster.total, 'terminaram', roster.finished);
+}

@@ -4,7 +4,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   CLOSED_SHORT_REST,
+  finishedSummaryText,
+  getRestRoster,
   getShortRestState,
+  requestSummaryText,
   shortRestBlockMessage,
   shouldRechargeForShortRest,
 } from '@/domain/shortRest';
@@ -104,5 +107,76 @@ describe('CLOSED_SHORT_REST', () => {
       short_rest_requested: [],
       short_rest_finished: [],
     });
+  });
+});
+
+describe('getRestRoster: quem conta no "todos" do Pedido de Descanso', () => {
+  const eliabe = { id: 'p1', name: 'Eliabe' };
+  const rute = { id: 'p2', name: 'Rute' };
+  const noe = { id: 'p3', name: 'Noé' };
+  const morto = { id: 'p4', name: 'Caleb', is_dead: true };
+
+  it('o personagem Morto não conta', () => {
+    expect(getRestRoster([eliabe, rute, morto], [], []).total).toBe(2);
+  });
+
+  it('o personagem Morrendo (com PV 0, mas vivo) conta', () => {
+    expect(getRestRoster([eliabe, { id: 'p5', name: 'Zilpa', is_dead: false }], [], []).total).toBe(
+      2,
+    );
+  });
+
+  it('lista quem pediu na ordem da mesa, ignorando ids que não são da mesa', () => {
+    const roster = getRestRoster([eliabe, rute, noe], ['p3', 'p1', 'fantasma'], []);
+    expect(roster.requested.map((p) => p.name)).toStrictEqual(['Eliabe', 'Noé']);
+  });
+
+  it('o pedido de quem morreu depois não conta', () => {
+    expect(getRestRoster([eliabe, morto], ['p1', 'p4'], []).requested).toHaveLength(1);
+  });
+
+  it('todos pediram só quando cada um dos que contam pediu', () => {
+    expect(getRestRoster([eliabe, rute], ['p1'], []).allRequested).toBe(false);
+    expect(getRestRoster([eliabe, rute], ['p1', 'p2'], []).allRequested).toBe(true);
+    expect(getRestRoster([eliabe, rute, morto], ['p1', 'p2'], []).allRequested).toBe(true);
+  });
+
+  it('sem nenhum jogador vivo, ninguém "pediu" e ninguém "terminou"', () => {
+    const roster = getRestRoster([morto], ['p4'], ['p4']);
+    expect(roster.allRequested).toBe(false);
+    expect(roster.allFinished).toBe(false);
+  });
+
+  it('todos terminaram só quando cada um dos que contam terminou', () => {
+    expect(getRestRoster([eliabe, rute], [], ['p2']).allFinished).toBe(false);
+    expect(getRestRoster([eliabe, rute], [], ['p1', 'p2']).allFinished).toBe(true);
+  });
+
+  it('lista quem terminou', () => {
+    expect(getRestRoster([eliabe, rute], [], ['p2']).finished.map((p) => p.name)).toStrictEqual([
+      'Rute',
+    ]);
+  });
+});
+
+describe('textos do cartão', () => {
+  const eliabe = { id: 'p1', name: 'Eliabe' };
+  const rute = { id: 'p2', name: 'Rute' };
+
+  it('o pedido mostra a contagem e os nomes', () => {
+    expect(requestSummaryText(getRestRoster([eliabe, rute], ['p1'], []))).toBe(
+      '1 de 2 pediram (Eliabe)',
+    );
+  });
+
+  it('sem pedidos, só a contagem', () => {
+    expect(requestSummaryText(getRestRoster([eliabe, rute], [], []))).toBe('0 de 2 pediram');
+  });
+
+  it('quem terminou mostra a contagem e os nomes', () => {
+    expect(finishedSummaryText(getRestRoster([eliabe, rute], [], ['p1', 'p2']))).toBe(
+      '2 de 2 terminaram (Eliabe, Rute)',
+    );
+    expect(finishedSummaryText(getRestRoster([eliabe, rute], [], []))).toBe('0 de 2 terminaram');
   });
 });
