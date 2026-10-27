@@ -8,20 +8,31 @@ import { useMemo, useState } from 'react';
 import { updateCharacter } from '@/data-access/characters';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
+import { AttackPanel } from './AttackPanel';
 import { abilitySkills, getAbilitiesForCharacter } from '../../utils/abilityUtils';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
+import { buildAttackTargets } from '@/lib/attackSetup';
+import type { CombatInventoryItem } from '@/types/inventory';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { getMaxPv } from '@/domain/vitals';
 
 interface PlayerCombatViewProps {
-  character: Character | null | undefined; // The current player character data
+  // A ficha do jogador; com os itens aninhados (`character_items`), a arma do ataque sai deles.
+  character: (Character & { character_items?: CombatInventoryItem[] }) | null | undefined;
   enemies: Character[];
   isLoading: boolean;
+  /** Quem está na sessão, com nome e CA: os alvos possíveis do ataque. */
+  entities?: { id: string; name: string; totalAc: number }[];
 }
 
-export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombatViewProps) {
+export function PlayerCombatView({
+  character,
+  enemies,
+  isLoading,
+  entities = [],
+}: PlayerCombatViewProps) {
   const playerId = character?.id;
   const [isUpdating, setIsUpdating] = useState(false);
   const {
@@ -127,6 +138,18 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
             </div>
           )}
 
+          {isMyTurn && !isDying && character && participant && (
+            <AttackPanel
+              character={character}
+              attackerParticipantId={participant.id}
+              targets={buildAttackTargets(participants, participant.id, entities)}
+              actionUsed={hasUsedAction}
+              onActionUsed={() => {
+                if (!hasUsedAction) toggleAction();
+              }}
+            />
+          )}
+
           {!isDying && (
             <Card className={isMyTurn ? 'border-primary ring-1 ring-primary' : ''}>
               <CardHeader>
@@ -221,8 +244,6 @@ export function PlayerCombatView({ character, enemies, isLoading }: PlayerCombat
           </div>
         )}
       </div>
-
-      {/* <PhysicalRollForm playerId={playerId} character={character} /> */}
     </div>
   );
 }

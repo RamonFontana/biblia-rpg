@@ -409,3 +409,41 @@ describe('CombatDashboard: Condições', () => {
     expect(updateConditions).toHaveBeenCalledWith('p1', [{ conditionId: 'cego', duration: 2 }]);
   });
 });
+
+describe('CombatDashboard: ataques', () => {
+  it('lista os últimos ataques do combate', () => {
+    startCombat([participant('p1')]);
+    useCombatStore.setState({
+      attacks: [
+        {
+          id: 'a1',
+          combat_id: 'combat-1',
+          attacker_participant_id: 'p1',
+          target_participant_id: 'p1',
+          attacker_name: 'Eliabe',
+          target_name: 'Filisteu',
+          natural_roll: 14,
+          total: 19,
+          target_ac: 15,
+          hit: true,
+          critical: false,
+          fumble: false,
+          damage: 7,
+          target_hp_before: 12,
+          target_hp_after: 5,
+          created_at: '',
+        },
+      ],
+    });
+    render(<CombatDashboard />);
+    expect(screen.getByText('Últimos ataques')).toBeInTheDocument();
+    expect(screen.getByText(/Eliabe → Filisteu/)).toBeInTheDocument();
+  });
+
+  it('sem ataques, a lista não aparece', () => {
+    startCombat([participant('p1')]);
+    useCombatStore.setState({ attacks: [] });
+    render(<CombatDashboard />);
+    expect(screen.queryByText('Últimos ataques')).toBeNull();
+  });
+});

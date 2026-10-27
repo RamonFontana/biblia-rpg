@@ -47,6 +47,23 @@ begin
   end;
 end $$;
 
+-- Executa os `stmts` como o usuário (em ordem) e devolve o primeiro valor de `probe` (texto) lido
+-- logo depois, ainda como o usuário; desfaz tudo. Um erro em qualquer passo vira 'error=SQLSTATE'.
+create or replace function pg_temp.after_as(uid uuid, stmts text[], probe text) returns text language plpgsql as $$
+declare v text; s text;
+begin
+  perform pg_temp.claims(uid);
+  begin
+    execute format('set local role %s', case when uid is null then 'anon' else 'authenticated' end);
+    foreach s in array stmts loop execute s; end loop;
+    execute probe into v;
+    raise exception 'rolled_back';
+  exception when others then
+    if sqlerrm = 'rolled_back' then return coalesce(v, 'NULL'); end if;
+    return 'error=' || sqlstate;
+  end;
+end $$;
+
 -- Dados de apoio (como superusuário).
 insert into auth.users (id, instance_id, aud, role, email) values
   ('11111111-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'gm@test'),
@@ -100,6 +117,23 @@ insert into public.trades (id, session_id, type, status, initiator_user_id, init
   ('88888888-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000001', 'player_trade', 'active', (select alice from who), '33333333-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000002', true, true);
 insert into public.trade_items (trade_id, side, item_id, quantity) values
   ('88888888-0000-0000-0000-000000000001', 'initiator', '44444444-0000-0000-0000-000000000001', 1);
+
+-- Combates de apoio para o ataque (apply_attack): C1 ativo, turno 0 (Alice); C2 ativo, turno 1
+-- (Bob); C3 encerrado; C4 de outra sessão.
+insert into public.combats (id, session_id, status, current_turn_index) values
+  ('99999999-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000001', 'active', 0),
+  ('99999999-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000001', 'active', 1),
+  ('99999999-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000001', 'finished', 0),
+  ('99999999-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000002', 'active', 0);
+insert into public.combat_participants (id, combat_id, entity_id, entity_type, initiative, hp_current) values
+  ('aaaaaaaa-0000-0000-0000-000000000001', '99999999-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000001', 'player', 20, 15),
+  ('aaaaaaaa-0000-0000-0000-000000000002', '99999999-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000002', 'player', 15, 20),
+  ('aaaaaaaa-0000-0000-0000-000000000003', '99999999-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000004', 'npc', 10, 12),
+  ('aaaaaaaa-0000-0000-0000-000000000004', '99999999-0000-0000-0000-000000000002', '33333333-0000-0000-0000-000000000001', 'player', 20, 15),
+  ('aaaaaaaa-0000-0000-0000-000000000005', '99999999-0000-0000-0000-000000000002', '33333333-0000-0000-0000-000000000002', 'player', 15, 20),
+  ('aaaaaaaa-0000-0000-0000-000000000006', '99999999-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000001', 'player', 20, 15),
+  ('aaaaaaaa-0000-0000-0000-000000000007', '99999999-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000002', 'player', 15, 20),
+  ('aaaaaaaa-0000-0000-0000-000000000008', '99999999-0000-0000-0000-000000000004', '33333333-0000-0000-0000-000000000003', 'player', 20, 10);
 
 create temp table results (name text, actual text, expected text);
 
@@ -260,6 +294,27 @@ select pg_temp.t('use_consumable_item: estranho não usa', pg_temp.val_as((selec
 select pg_temp.t('use_consumable_item: outro jogador não usa', pg_temp.val_as((select alice from who), $q$select public.use_consumable_item('55555555-0000-0000-0000-000000000002')::text$q$), 'error=42501');
 select pg_temp.t('use_consumable_item: o dono usa',       pg_temp.val_as((select bob from who), $q$select public.use_consumable_item('55555555-0000-0000-0000-000000000002')::text$q$), 'true');
 select pg_temp.t('use_consumable_item: o Mestre da sessão usa', pg_temp.val_as((select gm from who), $q$select public.use_consumable_item('55555555-0000-0000-0000-000000000002')::text$q$), 'true');
+
+
+-- ======================= combat_attacks / apply_attack =======================
+select pg_temp.t('apply_attack: o atacante no próprio turno tira PV de um aliado', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), '15');
+select pg_temp.t('apply_attack: tira PV de um NPC do combate', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003',14,17,15,true,false,false,7)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000003'$q$), '5');
+select pg_temp.t('apply_attack: dois ataques seguidos somam', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,4)$q$, $q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,6)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), '10');
+select pg_temp.t('apply_attack: errar não tira PV', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,false,false,false,9)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), '20');
+select pg_temp.t('apply_attack: o PV nunca fica abaixo de 0', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,99)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), '0');
+select pg_temp.t('apply_attack: grava o ataque com os nomes e o PV antes e depois', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,5)$q$], $q$select attacker_name || '>' || target_name || ':' || target_hp_before || '>' || target_hp_after from public.combat_attacks$q$), 'Alice>Bob:20>15');
+select pg_temp.t('apply_attack: quem atacou lê o próprio ataque registrado', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,5)$q$], $q$select count(*)::text from public.combat_attacks$q$), '1');
+select pg_temp.t('apply_attack: fora do turno é recusado', pg_temp.after_as((select bob from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000001'$q$), 'error=42501');
+select pg_temp.t('apply_attack: Bob ataca no turno dele no outro combate', pg_temp.after_as((select bob from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000005','aaaaaaaa-0000-0000-0000-000000000004',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000004'$q$), '10');
+select pg_temp.t('apply_attack: Alice não ataca no turno do Bob', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000004','aaaaaaaa-0000-0000-0000-000000000005',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000005'$q$), 'error=42501');
+select pg_temp.t('apply_attack: ninguém ataca em nome de outro jogador', pg_temp.after_as((select bob from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000003'$q$), 'error=42501');
+select pg_temp.t('apply_attack: estranho é recusado', pg_temp.after_as((select carol from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), 'error=42501');
+select pg_temp.t('apply_attack: o Mestre não ataca por um jogador', pg_temp.after_as((select gm from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), 'error=42501');
+select pg_temp.t('apply_attack: anon é recusado', pg_temp.after_as(null, array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), 'error=42501');
+select pg_temp.t('apply_attack: o alvo precisa estar no mesmo combate', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000008',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000008'$q$), 'error=42501');
+select pg_temp.t('apply_attack: combate encerrado é recusado', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000006','aaaaaaaa-0000-0000-0000-000000000007',14,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000007'$q$), 'error=42501');
+select pg_temp.t('apply_attack: ninguém grava em combat_attacks direto', pg_temp.after_as((select alice from who), array[$q$insert into public.combat_attacks (combat_id, attacker_participant_id, target_participant_id, attacker_name, target_name, natural_roll, total, target_ac, hit, critical, fumble, damage, target_hp_before, target_hp_after) values ('99999999-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002','a','b',10,10,10,true,false,false,1,5,4)$q$], $q$select '1'$q$), 'error=42501');
+select pg_temp.t('apply_attack: o ataque inválido (d20 fora de 1 a 20) é recusado', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002',21,17,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000002'$q$), 'error=23514');
 
 -- ============================ resultado ============================
 do $$

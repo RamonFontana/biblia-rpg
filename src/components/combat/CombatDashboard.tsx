@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AttackLog } from './AttackLog';
 import { useCombatStore } from '../../store/combatStore';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -26,7 +27,7 @@ interface CombatDashboardProps {
 }
 
 export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps) {
-  const { activeCombat, participants, currentTurnParticipant, nextTurn, endCombat } =
+  const { activeCombat, participants, attacks, currentTurnParticipant, nextTurn, endCombat } =
     useCombatStore();
 
   const [selectedParticipant, setSelectedParticipant] = useState<{
@@ -229,6 +230,8 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
           );
         })}
       </div>
+
+      <AttackLog attacks={attacks} />
 
       {selectedParticipant && (
         <HealthModificationModal

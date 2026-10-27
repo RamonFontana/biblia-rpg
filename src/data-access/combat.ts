@@ -8,6 +8,7 @@ import { toJson } from './json';
 
 export type Combat = Tables<'combats'>;
 export type CombatParticipant = Tables<'combat_participants'>;
+export type CombatAttack = Tables<'combat_attacks'>;
 
 export async function createCombat(sessionId: string): Promise<Combat> {
   const { data, error } = await supabase
@@ -156,4 +157,49 @@ export async function softDeleteCharacters(characterIds: string[]): Promise<void
     .update({ is_deleted: true })
     .in('id', characterIds);
   if (error) throw error;
+}
+
+/** O resultado de um ataque, já calculado pelo motor, que a função do banco confere e grava. */
+export interface AttackRecord {
+  attackerParticipantId: string;
+  targetParticipantId: string;
+  naturalRoll: number;
+  total: number;
+  targetAc: number;
+  hit: boolean;
+  critical: boolean;
+  fumble: boolean;
+  damage: number;
+}
+
+/**
+ * Aplica o ataque pela função do banco (ADR 0005): ela confere que o chamador é o dono do atacante
+ * e que é o turno dele, tira o dano do PV do alvo e registra o ataque. Devolve o id do registro.
+ */
+export async function applyAttack(attack: AttackRecord): Promise<string> {
+  const { data, error } = await supabase.rpc('apply_attack', {
+    p_attacker_participant_id: attack.attackerParticipantId,
+    p_target_participant_id: attack.targetParticipantId,
+    p_natural_roll: attack.naturalRoll,
+    p_total: attack.total,
+    p_target_ac: attack.targetAc,
+    p_hit: attack.hit,
+    p_critical: attack.critical,
+    p_fumble: attack.fumble,
+    p_damage: attack.damage,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Os últimos ataques do combate, do mais novo para o mais antigo. */
+export async function listCombatAttacks(combatId: string, limit: number): Promise<CombatAttack[]> {
+  const { data, error } = await supabase
+    .from('combat_attacks')
+    .select('*')
+    .eq('combat_id', combatId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
 }

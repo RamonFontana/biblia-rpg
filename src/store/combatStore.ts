@@ -12,19 +12,25 @@ import {
   getCharactersForCombatEnd,
   getCombat,
   insertCombatParticipants,
+  listCombatAttacks,
   listCombatParticipants,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
   type Combat,
+  type CombatAttack,
   type CombatParticipant,
 } from '@/data-access/combat';
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import { uniqueChannelName } from '@/lib/channelName';
+import { describeAttack } from '@/domain/attack';
 import type { ConditionEntry } from '../types/combat';
 
-export type { Combat, CombatParticipant };
+export type { Combat, CombatAttack, CombatParticipant };
+
+/** Quantos ataques o armazém guarda para o painel do Mestre. */
+const RECENT_ATTACKS = 10;
 
 interface PlayerCombatState {
   hasUsedMovement: boolean;
@@ -43,6 +49,8 @@ interface PlayerCombatState {
 interface CombatStore extends PlayerCombatState {
   activeCombat: Combat | null;
   participants: CombatParticipant[];
+  /** Os últimos ataques do combate, do mais novo para o mais antigo. */
+  attacks: CombatAttack[];
 
   // Computed
   currentTurnParticipant: CombatParticipant | null;
@@ -79,6 +87,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   // State
   activeCombat: null,
   participants: [],
+  attacks: [],
   currentTurnParticipant: null,
   combatUnsubscribe: null,
 
@@ -102,8 +111,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   // Core action
   setCombatState: (combat, participants) => {
-    // Sort by initiative descending
-    const sortedParticipants = [...participants].sort((a, b) => b.initiative - a.initiative);
+    // Iniciativa decrescente; o empate se desfaz por criação e id, a mesma ordem da função de
+    // ataque no banco (que confere de quem é o turno).
+    const sortedParticipants = [...participants].sort(
+      (a, b) =>
+        b.initiative - a.initiative ||
+        a.created_at.localeCompare(b.created_at) ||
+        a.id.localeCompare(b.id),
+    );
     const currentTurnParticipant =
       combat && sortedParticipants.length > 0
         ? sortedParticipants[combat.current_turn_index % sortedParticipants.length]
@@ -177,6 +192,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           (await findSessionCombat(sessionId, 'setup'));
         if (combat) {
           get().setCombatState(combat, await listCombatParticipants(combat.id));
+          // Os ataques são só o histórico do painel: ler mal não impede de abrir o combate.
+          const attacks = await listCombatAttacks(combat.id, RECENT_ATTACKS).catch((error) => {
+            console.error('Failed to load the combat attacks', error);
+            return [];
+          });
+          set({ attacks });
         }
       })().catch((error) => console.error('Failed to load the combat', error));
     loadCombat();
@@ -207,6 +228,30 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             } else if (payload.eventType === 'DELETE') {
               get().setCombatState(null, []);
             }
+          },
+        },
+        {
+          table: 'combat_attacks',
+          event: 'INSERT',
+          onChange: (payload) => {
+            const { activeCombat, attacks } = get();
+            const attack = payload.new as CombatAttack;
+            if (!activeCombat || attack.combat_id !== activeCombat.id) return;
+            set({ attacks: [attack, ...attacks].slice(0, RECENT_ATTACKS) });
+            window.dispatchEvent(
+              new CustomEvent('combat-toast', {
+                detail: {
+                  message: describeAttack({
+                    attackerName: attack.attacker_name,
+                    targetName: attack.target_name,
+                    hit: attack.hit,
+                    critical: attack.critical,
+                    fumble: attack.fumble,
+                    damage: attack.damage,
+                  }),
+                },
+              }),
+            );
           },
         },
         {
@@ -243,6 +288,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     set({
       activeCombat: null,
       participants: [],
+      attacks: [],
       currentTurnParticipant: null,
       combatUnsubscribe: null,
     });

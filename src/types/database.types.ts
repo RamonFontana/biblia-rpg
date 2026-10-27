@@ -169,6 +169,85 @@ export type Database = {
           },
         ]
       }
+      combat_attacks: {
+        Row: {
+          attacker_name: string
+          attacker_participant_id: string
+          combat_id: string
+          created_at: string
+          critical: boolean
+          damage: number
+          fumble: boolean
+          hit: boolean
+          id: string
+          natural_roll: number
+          target_ac: number
+          target_hp_after: number
+          target_hp_before: number
+          target_name: string
+          target_participant_id: string
+          total: number
+        }
+        Insert: {
+          attacker_name: string
+          attacker_participant_id: string
+          combat_id: string
+          created_at?: string
+          critical: boolean
+          damage?: number
+          fumble: boolean
+          hit: boolean
+          id?: string
+          natural_roll: number
+          target_ac: number
+          target_hp_after: number
+          target_hp_before: number
+          target_name: string
+          target_participant_id: string
+          total: number
+        }
+        Update: {
+          attacker_name?: string
+          attacker_participant_id?: string
+          combat_id?: string
+          created_at?: string
+          critical?: boolean
+          damage?: number
+          fumble?: boolean
+          hit?: boolean
+          id?: string
+          natural_roll?: number
+          target_ac?: number
+          target_hp_after?: number
+          target_hp_before?: number
+          target_name?: string
+          target_participant_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_attacks_attacker_participant_id_fkey"
+            columns: ["attacker_participant_id"]
+            isOneToOne: false
+            referencedRelation: "combat_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_attacks_combat_id_fkey"
+            columns: ["combat_id"]
+            isOneToOne: false
+            referencedRelation: "combats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_attacks_target_participant_id_fkey"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "combat_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       combat_participants: {
         Row: {
           combat_id: string
@@ -750,6 +829,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_attack: {
+        Args: {
+          p_attacker_participant_id: string
+          p_critical: boolean
+          p_damage: number
+          p_fumble: boolean
+          p_hit: boolean
+          p_natural_roll: number
+          p_target_ac: number
+          p_target_participant_id: string
+          p_total: number
+        }
+        Returns: string
+      }
       can_manage_character: {
         Args: { check_character_id: string }
         Returns: boolean
