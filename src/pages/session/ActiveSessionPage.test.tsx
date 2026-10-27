@@ -385,6 +385,7 @@ describe('avançar o tempo', () => {
     short_rest_opened_by: null,
     short_rest_requested: [],
     short_rest_finished: [],
+    short_rest_refused_at: null,
   };
   const advance = async () => {
     fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
