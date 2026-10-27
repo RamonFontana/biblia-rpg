@@ -1,5 +1,5 @@
 // Os avisos de Descanso para o jogador: o Curto está disponível enquanto o dia teve menos de 2;
-// o Longo, quando passaram 2 dias desde o último. Cada aviso tem texto e ícone próprios (a cor
+// o Longo, a partir do dia seguinte ao último (1 por dia, a mesma regra do botão do Mestre). Cada aviso tem texto e ícone próprios (a cor
 // é só reforço). Decisões: ROADMAP.md, Onda 4, passo 6c-3.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
@@ -37,20 +37,20 @@ describe('PlayerRestIndicator', () => {
   it('depois de 2 Descansos Curtos no dia, o Curto some', () => {
     render(
       <PlayerRestIndicator
-        sessionData={session({ short_rests_today: 2, current_day: 3, last_long_rest_day: 1 })}
+        sessionData={session({ short_rests_today: 2, current_day: 2, last_long_rest_day: 1 })}
       />,
     );
     expect(screen.queryByText(SHORT)).toBeNull();
     expect(screen.getByText(LONG)).toBeTruthy();
   });
 
-  it('o Longo aparece 2 dias depois do último, não antes', () => {
+  it('o Longo aparece no dia seguinte ao último, não no mesmo dia', () => {
     const { rerender } = render(
-      <PlayerRestIndicator sessionData={session({ current_day: 2, last_long_rest_day: 1 })} />,
+      <PlayerRestIndicator sessionData={session({ current_day: 1, last_long_rest_day: 1 })} />,
     );
     expect(screen.queryByText(LONG)).toBeNull();
     rerender(
-      <PlayerRestIndicator sessionData={session({ current_day: 3, last_long_rest_day: 1 })} />,
+      <PlayerRestIndicator sessionData={session({ current_day: 2, last_long_rest_day: 1 })} />,
     );
     expect(screen.getByText(LONG)).toBeTruthy();
   });

@@ -1,5 +1,6 @@
 import { Coffee, Moon } from 'lucide-react';
 import type { GameSession } from '@/data-access/sessions';
+import { canTakeLongRest, canTakeShortRest } from '@/domain/rest';
 
 interface PlayerRestIndicatorProps {
   sessionData: Pick<GameSession, 'short_rests_today' | 'current_day' | 'last_long_rest_day'> | null;
@@ -12,8 +13,8 @@ export function PlayerRestIndicator({ sessionData }: PlayerRestIndicatorProps) {
   const currentDay = sessionData.current_day || 1;
   const lastLongRestDay = sessionData.last_long_rest_day || 1;
 
-  const canShortRest = shortRestsTaken < 2;
-  const canLongRest = currentDay - lastLongRestDay >= 2;
+  const canShortRest = canTakeShortRest(shortRestsTaken);
+  const canLongRest = canTakeLongRest(currentDay, lastLongRestDay);
 
   if (!canShortRest && !canLongRest) return null;
 
