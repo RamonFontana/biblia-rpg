@@ -904,6 +904,10 @@ export type Database = {
         Returns: string
       }
       execute_trade: { Args: { p_trade_id: string }; Returns: Json }
+      finish_short_rest: {
+        Args: { p_character_id: string; p_session_id: string }
+        Returns: boolean
+      }
       is_session_gm: { Args: { check_session_id: string }; Returns: boolean }
       is_session_participant: {
         Args: { check_session_id: string }
@@ -914,9 +918,23 @@ export type Database = {
         Returns: boolean
       }
       open_short_rest: { Args: { p_session_id: string }; Returns: string }
+      owns_short_rest_player: {
+        Args: { p_character_id: string; p_session_id: string }
+        Returns: boolean
+      }
+      refuse_short_rest_requests: { Args: { p_session_id: string }; Returns: undefined }
+      request_short_rest: {
+        Args: { p_character_id: string; p_session_id: string }
+        Returns: boolean
+      }
+      short_rest_player_ids: { Args: { p_session_id: string }; Returns: string[] }
       use_consumable_item: {
         Args: { p_character_item_id: string; p_target_character_id?: string }
         Returns: boolean
+      }
+      withdraw_short_rest_request: {
+        Args: { p_character_id: string; p_session_id: string }
+        Returns: undefined
       }
     }
     Enums: {
