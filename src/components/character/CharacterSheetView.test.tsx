@@ -162,6 +162,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('Dados de Vida', () => {
+  it('a ficha mostra a reserva: restantes, total (o nível) e o dado da Vocação', async () => {
+    h.getCharacterById.mockResolvedValue(character({ level: 4, hit_dice_spent: 1 }));
+    await show();
+    expect(screen.getByText('Dados de Vida 3/4 (d10)')).toBeInTheDocument();
+  });
+});
+
 describe('buscar a ficha', () => {
   it('com characterId, busca essa ficha e o inventário', async () => {
     await show();

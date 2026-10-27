@@ -14,6 +14,7 @@ import { applyConditionToCharacter, removeConditionFromCharacter } from '@/data-
 import type { ConditionEntry } from '@/types/combat';
 import { getCurrentFaith } from '@/domain/faith';
 import { FaithStateBadge } from '../faith/FaithStateBadge';
+import { HitDiceLabel } from '../character/HitDiceLabel';
 
 interface PlayerCardProps {
   user: PresenceState;
@@ -239,6 +240,15 @@ export function PlayerCard({
           >
             <Shield className="h-3.5 w-3.5 text-stone-400" />
             <span className="font-mono tabular-nums">CA {getCombatStats(character).totalAc}</span>
+          </div>
+          <div
+            className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}
+          >
+            <HitDiceLabel
+              level={getCharacterLevel(character)}
+              spent={character.hit_dice_spent}
+              vocation={character.vocation}
+            />
           </div>
           <div
             className={`flex h-7 items-center gap-1.5 ${viewerIsGM ? 'rounded bg-stone-800 px-2' : ''}`}

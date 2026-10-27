@@ -5,6 +5,7 @@ import {
   grantPendingLevelUp,
   insertCharacter,
   markCharactersParticipated,
+  restCharactersForNewSession,
 } from '@/data-access/characters';
 import {
   createGameSessionRecord,
@@ -78,6 +79,14 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
     } catch (error) {
       console.error('Error updating characters participated in session:', error);
     }
+  }
+
+  // O personagem do jogador entra Descansado (PV máximo, Habilidades e Dados de Vida); NPC
+  // jogável e inimigo acabam de ser criados e já nascem cheios.
+  try {
+    await restCharactersForNewSession(payload.participant_character_ids);
+  } catch (error) {
+    console.error('Error resting the characters for the new session:', error);
   }
 
   return sessionId;

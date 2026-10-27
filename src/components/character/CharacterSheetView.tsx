@@ -7,6 +7,7 @@ import { CharacterSkillsList } from './CharacterSkillsList';
 import { CharacterSavingThrows } from './CharacterSavingThrows';
 import { SheetHeader } from './sheet/SheetHeader';
 import { VitalsGrid } from './sheet/VitalsGrid';
+import { HitDiceLabel } from './HitDiceLabel';
 import { AttributesGrid } from './sheet/AttributesGrid';
 import { AbilitiesSection } from './sheet/AbilitiesSection';
 import { NarrativeSection } from './sheet/NarrativeSection';
@@ -90,6 +91,13 @@ export function CharacterSheetView({
           bonusAc={bonusAc}
           resistances={resistances}
           conditionResistanceLevels={conditionResistanceLevels}
+        />
+
+        <HitDiceLabel
+          level={level}
+          spent={character.hit_dice_spent}
+          vocation={vocation}
+          className="text-sm text-stone-300"
         />
 
         <AttributesGrid attributes={attributes} />

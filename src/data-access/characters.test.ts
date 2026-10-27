@@ -57,6 +57,9 @@ import {
   subscribeToCharacterUpdates,
   updateCharacter,
   updateCharacterDeathState,
+  markShortRestRecharge,
+  spendHitDie,
+  restCharactersForNewSession,
   updateCharacterEquipment,
   updateCharacterRest,
   updateCharacterSkills,
@@ -119,6 +122,50 @@ describe('updateCharacterRest', () => {
   it('lança o erro ao gravar', async () => {
     state.respond = () => ({ error: failure });
     await expect(updateCharacterRest('c1', { stats, skills: {} })).rejects.toBe(failure);
+  });
+});
+
+describe('markShortRestRecharge', () => {
+  it('grava as Habilidades recarregadas e a identidade do descanso na ficha', async () => {
+    const skills = { ability_uses: { golpe: 0 } };
+    await markShortRestRecharge('c1', skills, 'rest-1');
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({ skills, last_short_rest_recharge: 'rest-1' });
+    expect(filterOf(call, 'eq', 'id')).toBe('c1');
+  });
+
+  it('lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(markShortRestRecharge('c1', {}, 'rest-1')).rejects.toBe(failure);
+  });
+});
+
+describe('spendHitDie', () => {
+  it('grava o PV novo e os Dados de Vida gastos numa só atualização', async () => {
+    await spendHitDie('c1', { stats, hitDiceSpent: 3, wakeUp: false });
+    const calls = callsOf(state.calls, 'characters', 'update');
+    expect(calls).toHaveLength(1);
+    expect(calls[0].payload).toEqual({ stats, hit_dice_spent: 3 });
+    expect(filterOf(calls[0], 'eq', 'id')).toBe('c1');
+  });
+
+  it('acordar o Estável zera o estado dos Testes de Morte na mesma atualização', async () => {
+    await spendHitDie('c1', { stats, hitDiceSpent: 1, wakeUp: true });
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({
+      stats,
+      hit_dice_spent: 1,
+      is_stable: false,
+      death_saves_successes: 0,
+      death_saves_failures: 0,
+    });
+  });
+
+  it('lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(spendHitDie('c1', { stats, hitDiceSpent: 1, wakeUp: false })).rejects.toBe(
+      failure,
+    );
   });
 });
 
@@ -553,6 +600,19 @@ describe('fichas de uma sessão (criar, marcar, apagar)', () => {
     const [call] = callsOf(state.calls, 'characters', 'update');
     expect(call.payload).toEqual({ has_participated_in_session: true });
     expect(filterOf(call, 'in', 'id')).toEqual(['a', 'b']);
+  });
+
+  it('restCharactersForNewSession sem ids não consulta o banco', async () => {
+    await restCharactersForNewSession([]);
+    expect(state.calls).toEqual([]);
+  });
+
+  it('restCharactersForNewSession lança o erro de uma atualização que falhou', async () => {
+    state.respond = (call) =>
+      call.op === 'select'
+        ? { data: [{ id: 'a', is_dead: false, stats: { pv: 9 }, skills: null }] }
+        : { error: new Error('falhou') };
+    await expect(restCharactersForNewSession(['a'])).rejects.toThrow('falhou');
   });
 
   it('filterNpcAndEnemyIds devolve só os ids que são NPC ou inimigo', async () => {

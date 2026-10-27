@@ -11,7 +11,7 @@
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
-| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa) concluída; feature 2 (ataque físico) implementada, tickets em `.scratch/ataque-fisico/` (falta aplicar a migration na produção); ver o andamento na seção da Onda 5 |
+| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa) concluída; feature 2 (ataque físico) implementada, tickets em `.scratch/ataque-fisico/` (migration aplicada); feature 3 (Dados de Vida) implementada, tickets em `.scratch/dados-de-vida/` (falta aplicar 3 migrations na produção); ver o andamento na seção da Onda 5 |
 
 
 ## Contexto
@@ -329,7 +329,7 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 1. Tipos de Teste de Fé no app: Clamor (atalhos + Pedido Egoísta), Tentação e Testemunho.
 2. Sustento no Descanso Longo: tela de confirmação do Mestre (inclui NPCs aliados, desmarcável), aviso no celular de cada jogador e Exausto automático.
 3. Efeitos do Estado de Fé: Inspiração (Inabalável), desvantagem (Abalado), Ruptura.
-4. Dados de Vida nos descansos.
+4. ~~Dados de Vida nos descansos.~~ FEITO (feature 3 da Onda 5).
 
 **Sincronizar o código com os docs já corrigidos** (feito no passo 4(b) da Onda 3)
 - ~~`abilities.ts`: efeito de Zebulom nível 8 (sem Encantado; vantagem em Testes de Fé de Tentação), de Aser níveis 1 e 12 (refeição sem ração; Exausto no lugar de "exaustão") e de Sacerdote nível 18 (sem Encantado).~~ FEITO.
@@ -342,7 +342,7 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 - **"TR de Fé"** aparece nas habilidades (ex.: Aser "Vigor do Azeite", Juda "Coração de Leão"). Decidir se é Teste de Fé ou um teste de resistência de Sabedoria.
 - Efeito exato de Vulnerável além do Testemunho frequente.
 - Definição de Ruptura em termos de app (hoje só texto de doc).
-- Dados de Vida: o doc os cita nos descansos, o código não os implementa (feature C4).
+- ~~Dados de Vida: o doc os cita nos descansos, o código não os implementa.~~ FEITO (feature 3 da Onda 5).
 - **Testes de Morte**: o 1 natural contar duas falhas e o 20 natural voltar com 1 PV já estavam no código e passaram para o `regras-base.md` e o glossário sem pergunta explícita. Confirmar que valem.
 
 ### Onda 3: motor e dados
@@ -569,6 +569,17 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 **Feature 2 (ataque físico): os 5 tickets estão feitos.** Falta aplicar a migration `20261027120000_combat_attacks` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
 - **Divergência registrada (doc × código), decisão do autor pendente:** `docs/vocacoes/batedor.md` diz que o Batedor usa armas simples mais Espada Curta, Arco Curto e Faca de Bronze; o código só nega armas marciais ao Sacerdote, então o Batedor usa qualquer arma marcial. Mantive o comportamento atual (o aviso "Não proficiente" não aparece para o Batedor com Espada Longa). Se valer o doc, a regra passa a ser uma lista de armas por Vocação.
 - **Efeito de bordo:** o desempate da iniciativa passou a ser por criação e id, igual na tela e na função do banco (antes dependia da ordem física das linhas).
+
+**Andamento da feature 3 (Dados de Vida e o Descanso Curto do grupo).** Spec e tickets em `.scratch/dados-de-vida/`; ADR 0006.
+- **Ticket 01, Dados de Vida na ficha:** feito. `src/domain/hitDice.ts` é a fonte única do dado da Vocação; o PV inicial e a média do level-up leem dele (nenhum valor mudou; "Cacador" sem acento passa a valer d10 também na criação). Migration `20261028120000_hit_dice` (`characters.hit_dice_spent` e `last_short_rest_recharge`). A ficha e o cartão do jogador do Mestre mostram "Dados de Vida 5/5 (d10)". E2E em `e2e/hit-dice.spec.ts`.
+- **Ticket 02, correções do Descanso Longo:** feito, em dois `fix:`. O 1d4 de Fé é digitado pelo Mestre ou vem da Rolagem Virtual (`LongRestDialog`, que mostra o +2 do Sacerdote ou Sábio); antes o app rolava sozinho, contra a decisão da Onda 2 (ADR 0001). O `PlayerRestIndicator` usa `canTakeLongRest` (1 por dia) em vez da regra antiga de 2 dias.
+- **Ticket 03, o Mestre abre e encerra o Descanso Curto:** feito. Migration `20261028130000_short_rest` (estado do descanso em `game_sessions`; `open_short_rest` e `close_short_rest`: Mestre, sem combate ativo, 2 por dia, um aberto por vez). Cartão `ShortRestCard` nas duas telas; as Habilidades recarregam uma vez por descanso em cada cliente (`useShortRestRecharge`, ADR 0006). O Descanso Longo e o avanço de período fecham o Curto. **Mudança de comportamento:** sai o aviso do navegador com o PV digitado para o grupo todo; o PV do Descanso Curto vem dos Dados de Vida, e o NPC simples segue com o ±PV do Mestre.
+- **Ticket 04, gastar Dados de Vida:** feito. Com o descanso aberto, um dado por vez (digitado ou Rolagem Virtual) no `ShortRestCard`: rolado + CON, no mínimo 1, até o PV máximo, +1 com Sangue Resiliente (caminho B do nível 4 de Manassés). Morrendo não gasta; o Estável gasta e acorda. O Mestre gasta pelos NPCs jogáveis. `spendHitDie` grava o PV e o gasto numa só atualização.
+- **Ticket 05, Pedido de Descanso e "Terminei":** feito. Migration `20261028140000_short_rest_requests` (`request_short_rest`, `withdraw_short_rest_request`, `finish_short_rest`, `refuse_short_rest_requests`). O último pedido abre o descanso "a pedido do grupo" (conta 1 dos 2 do dia); o último "Terminei" o fecha. "Todos" são os personagens de jogador da sessão que não estão Mortos (NPC e inimigo não contam; Morrendo conta); motor (`getRestRoster`) e SQL têm a mesma definição, fixada em `rls.sql`. O Mestre recusa os pedidos pelo cartão; os pedidos zeram a cada avanço de período. A recusa grava `short_rest_refused_at` (migration `20261028130000`) e o jogador vê "O Mestre recusou o pedido de descanso." até um novo pedido, a abertura ou o fechamento do descanso.
+- **Ticket 06, Descanso Longo e sessão nova:** feito. O Longo devolve metade dos Dados de Vida gastos, arredondada para cima (`hitDiceSpentAfterLongRest`; o D&D 5e devolveria metade do total, a regra do autor é a dos gastos). **`fix:` Início de Partida (`regras-base.md` 6.3):** a sessão nova deixa os personagens dos jogadores Descansados (PV máximo, usos de Habilidade e Dados de Vida; Morto não volta; a Fé e o estado de morte não mudam). Antes, criar a sessão não mexia nas fichas.
+- **Pendente:** um NPC simples (`session_npcs`) não tem Dados de Vida e o Longo continua sem efeito sobre ele (comportamento anterior).
+
+**Feature 3 (Dados de Vida): os 6 tickets estão feitos.** Falta aplicar as migrations `20261028120000`, `20261028130000` e `20261028140000` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
 
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 

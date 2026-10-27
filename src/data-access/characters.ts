@@ -15,6 +15,7 @@ import { toJson } from './json';
 import { subscribeToTables } from './realtime';
 import { uniqueChannelName } from '@/lib/channelName';
 import { syncInventoryItems } from './inventory';
+import { restedForNewSession } from '@/domain/rest';
 
 export type CharacterRow = Tables<'characters'>;
 
@@ -51,6 +52,41 @@ export async function markCharactersParticipated(ids: string[]): Promise<void> {
     .update({ has_participated_in_session: true })
     .in('id', ids);
   if (error) throw error;
+}
+
+/**
+ * Início de Partida (regras-base 6.3): os personagens entram Descansados, com PV máximo, usos de
+ * Habilidade restaurados e Dados de Vida devolvidos. Quem está Morto não volta.
+ */
+export async function restCharactersForNewSession(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { data, error } = await supabase
+    .from('characters')
+    .select('id, stats, skills, is_dead')
+    .in('id', ids);
+  if (error) throw error;
+
+  const results = await Promise.all(
+    (data ?? [])
+      .filter((row) => !row.is_dead)
+      .map(async (row) => {
+        const rested = restedForNewSession({
+          stats: (row.stats as CharacterStats | null) ?? {},
+          skills: row.skills as CharacterSkills | null,
+        });
+        const { error: updateError } = await supabase
+          .from('characters')
+          .update({
+            stats: toJson(rested.stats),
+            skills: toJson(rested.skills),
+            hit_dice_spent: rested.hit_dice_spent,
+          })
+          .eq('id', row.id);
+        return updateError;
+      }),
+  );
+  const failed = results.find(Boolean);
+  if (failed) throw failed;
 }
 
 /** Marca que a Inspiração foi usada hoje: o dia da sessão e a sessão. O dia novo a devolve. */
@@ -135,11 +171,55 @@ export async function updateCharacterStats(id: string, stats: CharacterStats): P
 /** Grava `stats` e `skills` juntos (descanso longo). */
 export async function updateCharacterRest(
   id: string,
-  patch: { stats: Partial<CharacterStats>; skills: CharacterSkills | EnemySkill[] },
+  patch: {
+    stats: Partial<CharacterStats>;
+    skills: CharacterSkills | EnemySkill[];
+    hit_dice_spent?: number;
+  },
 ): Promise<void> {
   const { error } = await supabase
     .from('characters')
-    .update({ stats: toJson(patch.stats), skills: toJson(patch.skills) })
+    .update({
+      stats: toJson(patch.stats),
+      skills: toJson(patch.skills),
+      ...(patch.hit_dice_spent !== undefined && { hit_dice_spent: patch.hit_dice_spent }),
+    })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/** Grava as Habilidades recarregadas no Descanso Curto e a identidade do descanso (ADR 0006). */
+export async function markShortRestRecharge(
+  id: string,
+  skills: CharacterSkills | EnemySkill[],
+  restId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ skills: toJson(skills), last_short_rest_recharge: restId })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/**
+ * Grava um Dado de Vida gasto: o PV novo e a contagem de gastos juntos. Quem estava Estável
+ * acorda (`wakeUp`): sai do Estável e os Testes de Morte recomeçam do zero.
+ */
+export async function spendHitDie(
+  id: string,
+  patch: { stats: Partial<CharacterStats>; hitDiceSpent: number; wakeUp: boolean },
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({
+      stats: toJson(patch.stats),
+      hit_dice_spent: patch.hitDiceSpent,
+      ...(patch.wakeUp && {
+        is_stable: false,
+        death_saves_successes: 0,
+        death_saves_failures: 0,
+      }),
+    })
     .eq('id', id);
   if (error) throw error;
 }

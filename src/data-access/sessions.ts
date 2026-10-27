@@ -26,6 +26,61 @@ export async function updateGameSession(
   if (error) throw error;
 }
 
+/**
+ * O Mestre abre o Descanso Curto (ADR 0006). A função confere que é o Mestre, que não há combate
+ * ativo, que sobra Descanso Curto no dia e que não há outro aberto; soma 1 ao dia. Devolve a
+ * identidade do descanso.
+ */
+export async function openShortRest(sessionId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('open_short_rest', { p_session_id: sessionId });
+  if (error) throw error;
+  return data;
+}
+
+/** O Mestre encerra o Descanso Curto aberto; zera os pedidos e quem terminou. */
+export async function closeShortRest(sessionId: string): Promise<void> {
+  const { error } = await supabase.rpc('close_short_rest', { p_session_id: sessionId });
+  if (error) throw error;
+}
+
+/** O jogador pede o Descanso Curto; devolve `true` se o pedido foi o último e abriu o descanso. */
+export async function requestShortRest(sessionId: string, characterId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('request_short_rest', {
+    p_session_id: sessionId,
+    p_character_id: characterId,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** O jogador retira o próprio Pedido de Descanso. */
+export async function withdrawShortRestRequest(
+  sessionId: string,
+  characterId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('withdraw_short_rest_request', {
+    p_session_id: sessionId,
+    p_character_id: characterId,
+  });
+  if (error) throw error;
+}
+
+/** O jogador marca "Terminei"; devolve `true` se foi o último e o descanso fechou. */
+export async function finishShortRest(sessionId: string, characterId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('finish_short_rest', {
+    p_session_id: sessionId,
+    p_character_id: characterId,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** O Mestre recusa os Pedidos de Descanso: zera a lista de quem pediu. */
+export async function refuseShortRestRequests(sessionId: string): Promise<void> {
+  const { error } = await supabase.rpc('refuse_short_rest_requests', { p_session_id: sessionId });
+  if (error) throw error;
+}
+
 /** Cria a sessão, o Mestre e os participantes numa só chamada (RPC `create_game_session`). */
 export async function createGameSessionRecord(input: {
   name: string;

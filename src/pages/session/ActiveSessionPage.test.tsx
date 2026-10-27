@@ -108,6 +108,10 @@ vi.mock('@/components/session/NewDayDialog', async () => ({
 vi.mock('@/components/session/EndSessionDialog', async () => ({
   EndSessionDialog: (await import('@/test/stubs')).makeStub('EndSessionDialog'),
 }));
+vi.mock('@/components/session/ShortRestCard', async () => ({
+  ShortRestCard: (await import('@/test/stubs')).makeStub('ShortRestCard'),
+}));
+vi.mock('@/hooks/useShortRestRecharge', () => ({ useShortRestRecharge: vi.fn() }));
 vi.mock('@/components/session/SessionRestControls', async () => ({
   SessionRestControls: (await import('@/test/stubs')).makeStub('SessionRestControls'),
 }));
@@ -375,6 +379,14 @@ describe('os botões abrem os diálogos', () => {
 
 describe('avançar o tempo', () => {
   beforeEach(asGm);
+  // Avançar o período fecha um Descanso Curto aberto (ADR 0006).
+  const closedRest = {
+    short_rest_id: null,
+    short_rest_opened_by: null,
+    short_rest_requested: [],
+    short_rest_finished: [],
+    short_rest_refused_at: null,
+  };
   const advance = async () => {
     fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
     await act(async () => {});
@@ -389,7 +401,7 @@ describe('avançar o tempo', () => {
     h.session = { ...baseSession, current_period: period };
     await renderPage();
     await advance();
-    expect(h.updateGameSession).toHaveBeenCalledWith('s1', expected);
+    expect(h.updateGameSession).toHaveBeenCalledWith('s1', { ...expected, ...closedRest });
   });
 
   it('sem dia gravado, conta a partir do dia 1', async () => {
@@ -400,6 +412,7 @@ describe('avançar o tempo', () => {
       current_period: 'Manhã',
       current_day: 2,
       short_rests_today: 0,
+      ...closedRest,
     });
   });
 
@@ -448,6 +461,11 @@ describe('visão do Mestre', () => {
       sessionData: h.session,
       playerCharacters: h.roster.playerCharacters,
       npcs: h.roster.npcs,
+    });
+    expect(props('ShortRestCard')).toMatchObject({
+      role: 'master',
+      sessionId: 's1',
+      session: h.session,
     });
     expect(props('SessionParticipantList')).toMatchObject({
       isGM: true,
@@ -525,6 +543,7 @@ describe('visão do jogador e do espectador', () => {
     await renderPage();
     expect(screen.getByText('Visão do Jogador')).toBeInTheDocument();
     expect(prop('PlayerRestIndicator', 'sessionData')).toBeTruthy();
+    expect(props('ShortRestCard')).toMatchObject({ role: 'player', sessionId: 's1' });
     expect(props('CharacterSheetView')).toMatchObject({ userId: 'u1', sessionId: 's1' });
     expect(prop('SessionParticipantList', 'isGM')).toBe(false);
     expect(pluck(prop('SessionParticipantList', 'npcs'), 'id')).toEqual(['n1']);

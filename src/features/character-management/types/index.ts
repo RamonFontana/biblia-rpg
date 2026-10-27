@@ -22,6 +22,10 @@ export interface Character extends Omit<DraftCharacter, 'equipment'> {
   /** O dia da sessão (e a sessão) em que a Inspiração foi usada; `null` = nunca. */
   inspiration_used_day?: number | null;
   inspiration_session_id?: string | null;
+  /** Quantos Dados de Vida já foram gastos; o total é o nível (`domain/hitDice`). */
+  hit_dice_spent?: number;
+  /** A identidade do último Descanso Curto em que as Habilidades foram recarregadas. */
+  last_short_rest_recharge?: string | null;
   death_saves_successes?: number;
   death_saves_failures?: number;
   created_at: string;

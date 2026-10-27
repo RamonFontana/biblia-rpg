@@ -152,3 +152,33 @@ describe('PlayerCard: Inspiração', () => {
     expect(screen.queryByText(/Inspiração/)).toBeNull();
   });
 });
+
+describe('PlayerCard: Dados de Vida', () => {
+  const withHitDice = (over: Record<string, unknown>) =>
+    render(
+      <PlayerCard
+        user={user}
+        viewerIsGM
+        character={
+          {
+            id: 'c1',
+            name: 'Eli',
+            vocation: 'Guerreiro',
+            level: 5,
+            stats: { pv: 30, current_pv: 30, ca: 10, faith: 50, current_faith: 50 },
+            ...over,
+          } as never
+        }
+      />,
+    );
+
+  it('mostra os Dados de Vida restantes, o total e o dado da Vocação', () => {
+    withHitDice({ hit_dice_spent: 2 });
+    expect(screen.getByText('Dados de Vida 3/5 (d10)')).toBeTruthy();
+  });
+
+  it('ficha sem gastos mostra a reserva cheia', () => {
+    withHitDice({ vocation: 'Batedor', level: 2 });
+    expect(screen.getByText('Dados de Vida 2/2 (d8)')).toBeTruthy();
+  });
+});

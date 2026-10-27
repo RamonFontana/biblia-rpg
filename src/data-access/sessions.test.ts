@@ -29,18 +29,24 @@ vi.mock('./realtime', () => ({
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
   addSessionParticipant,
+  closeShortRest,
   createGameSessionRecord,
   fetchSessionRoster,
+  finishShortRest,
   findGmActiveSessionId,
   findParticipantCharacterId,
   getGameSession,
   groupSessionRoster,
   listSessionParticipantCharacterIds,
   listPlayerActiveSessions,
+  openShortRest,
+  refuseShortRestRequests,
+  requestShortRest,
   setSimpleNpcVisible,
   subscribeToGameSession,
   toActivePlayerSessions,
   updateGameSession,
+  withdrawShortRestRequest,
   type SessionRoster,
 } from './sessions';
 
@@ -351,5 +357,80 @@ describe('criação e fim de uma sessão', () => {
   it('listSessionParticipantCharacterIds lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(listSessionParticipantCharacterIds('s1')).rejects.toBe(failure);
+  });
+});
+
+describe('openShortRest', () => {
+  it('abre o Descanso Curto pela função do banco e devolve a identidade dele', async () => {
+    state.respond = () => ({ data: 'rest-1' });
+    await expect(openShortRest('s1')).resolves.toBe('rest-1');
+    const [call] = callsOf(state.calls, 'open_short_rest', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1' });
+  });
+
+  it('lança o erro do banco (combate ativo, sem restante, não é o Mestre)', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(openShortRest('s1')).rejects.toBe(failure);
+  });
+});
+
+describe('closeShortRest', () => {
+  it('encerra o Descanso Curto pela função do banco', async () => {
+    await closeShortRest('s1');
+    const [call] = callsOf(state.calls, 'close_short_rest', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1' });
+  });
+
+  it('lança o erro do banco', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(closeShortRest('s1')).rejects.toBe(failure);
+  });
+});
+
+describe('Pedido de Descanso', () => {
+  it('pede o descanso pelo personagem e diz se o pedido abriu o descanso', async () => {
+    state.respond = () => ({ data: true });
+    await expect(requestShortRest('s1', 'c1')).resolves.toBe(true);
+    const [call] = callsOf(state.calls, 'request_short_rest', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1', p_character_id: 'c1' });
+  });
+
+  it('lança o erro do banco ao pedir', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(requestShortRest('s1', 'c1')).rejects.toBe(failure);
+  });
+
+  it('retira o pedido pelo personagem', async () => {
+    await withdrawShortRestRequest('s1', 'c1');
+    const [call] = callsOf(state.calls, 'withdraw_short_rest_request', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1', p_character_id: 'c1' });
+  });
+
+  it('lança o erro do banco ao retirar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(withdrawShortRestRequest('s1', 'c1')).rejects.toBe(failure);
+  });
+
+  it('termina o descanso pelo personagem e diz se foi o último', async () => {
+    state.respond = () => ({ data: false });
+    await expect(finishShortRest('s1', 'c1')).resolves.toBe(false);
+    const [call] = callsOf(state.calls, 'finish_short_rest', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1', p_character_id: 'c1' });
+  });
+
+  it('lança o erro do banco ao terminar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(finishShortRest('s1', 'c1')).rejects.toBe(failure);
+  });
+
+  it('o Mestre recusa os pedidos', async () => {
+    await refuseShortRestRequests('s1');
+    const [call] = callsOf(state.calls, 'refuse_short_rest_requests', 'rpc');
+    expect(call.payload).toEqual({ p_session_id: 's1' });
+  });
+
+  it('lança o erro do banco ao recusar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(refuseShortRestRequests('s1')).rejects.toBe(failure);
   });
 });
