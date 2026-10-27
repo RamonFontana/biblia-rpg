@@ -24,6 +24,10 @@ create table public.combat_attacks (
   damage integer not null default 0 check (damage >= 0),
   target_hp_before integer not null,
   target_hp_after integer not null,
+  -- A modalidade que valeu (Condições e Inspiração) e os dois d20 da Rolagem Virtual, se houve.
+  applied_mode text not null default 'normal' check (applied_mode in ('normal', 'vantagem', 'desvantagem')),
+  rolls integer[],
+  inspiration_used boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -52,7 +56,10 @@ create or replace function public.apply_attack(
   p_hit boolean,
   p_critical boolean,
   p_fumble boolean,
-  p_damage integer
+  p_damage integer,
+  p_applied_mode text default 'normal',
+  p_rolls integer[] default null,
+  p_inspiration_used boolean default false
 )
 returns uuid
 language plpgsql
@@ -117,7 +124,8 @@ begin
 
   insert into public.combat_attacks (
     combat_id, attacker_participant_id, target_participant_id, attacker_name, target_name,
-    natural_roll, total, target_ac, hit, critical, fumble, damage, target_hp_before, target_hp_after
+    natural_roll, total, target_ac, hit, critical, fumble, damage, target_hp_before, target_hp_after,
+    applied_mode, rolls, inspiration_used
   ) values (
     v_combat.id, v_attacker.id, v_target.id,
     coalesce(
@@ -130,7 +138,8 @@ begin
       (select name from public.session_npcs where id = v_target.entity_id),
       'Desconhecido'
     ),
-    p_natural_roll, p_total, p_target_ac, p_hit, p_critical, p_fumble, v_damage, v_before, v_after
+    p_natural_roll, p_total, p_target_ac, p_hit, p_critical, p_fumble, v_damage, v_before, v_after,
+    p_applied_mode, p_rolls, p_inspiration_used
   )
   returning id into v_attack_id;
 
@@ -138,7 +147,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.apply_attack(uuid, uuid, integer, integer, integer, boolean, boolean, boolean, integer) from public, anon;
+revoke execute on function public.apply_attack(uuid, uuid, integer, integer, integer, boolean, boolean, boolean, integer, text, integer[], boolean) from public, anon;
 
 -- Realtime: a mesa recebe cada ataque na hora (aviso do Mestre, lista de ataques). O bloco é
 -- idempotente.

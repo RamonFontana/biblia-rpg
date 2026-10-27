@@ -373,12 +373,72 @@ describe('PlayerCombatView: o ataque', () => {
     attackView();
     expect(stubProps('AttackPanel')).toMatchObject({
       attackerParticipantId: 'part-1',
+      characterId: 'c1',
+      attackerConditionIds: [],
       targets: [
-        { participantId: 'part-2', name: 'Rute', ac: 12 },
-        { participantId: 'part-3', name: 'Filisteu', ac: 15 },
+        { participantId: 'part-2', name: 'Rute', ac: 12, conditionIds: [] },
+        { participantId: 'part-3', name: 'Filisteu', ac: 15, conditionIds: [] },
       ],
       actionUsed: false,
     });
+  });
+
+  it('entrega as Condições do atacante e dos alvos ao painel', () => {
+    startCombat(
+      [
+        participant({
+          id: 'part-1',
+          entity_id: 'c1',
+          initiative: 20,
+          conditions: [{ conditionId: 'envenenado', duration: 2 }] as never,
+        }),
+        participant({
+          id: 'part-2',
+          entity_id: 'c2',
+          initiative: 15,
+          conditions: [{ conditionId: 'caido', duration: null }] as never,
+        }),
+      ],
+      0,
+    );
+    attackView();
+    const props = stubProps('AttackPanel')!;
+    expect(props.attackerConditionIds).toEqual(['envenenado']);
+    expect((props.targets as { conditionIds: string[] }[])[0].conditionIds).toEqual(['caido']);
+  });
+
+  it('a Inspiração chega ao painel só para o Inabalável que não a usou hoje', () => {
+    startCombat(parts, 0);
+    const withInspiration = (char: Character, day = 3) =>
+      render(
+        <PlayerCombatView
+          character={char}
+          enemies={[]}
+          isLoading={false}
+          entities={entities}
+          inspirationContext={{ sessionId: 's1', day }}
+        />,
+      );
+    withInspiration(sheet({ stats: { pv: 12, ca: 11, faith: 80, current_faith: 80 } }));
+    expect(stubProps('AttackPanel')!.inspiration).toEqual({
+      available: true,
+      sessionId: 's1',
+      day: 3,
+    });
+    cleanup();
+    clearStubs();
+    withInspiration(
+      sheet({
+        stats: { pv: 12, ca: 11, faith: 80, current_faith: 80 },
+        inspiration_used_day: 3,
+        inspiration_session_id: 's1',
+      }),
+    );
+    expect(stubProps('AttackPanel')!.inspiration).toMatchObject({ available: false });
+    cleanup();
+    clearStubs();
+    withInspiration(sheet());
+    expect(stubProps('AttackPanel')!.inspiration).toMatchObject({ available: false });
   });
 
   it('fora do turno, não há painel de ataque', () => {

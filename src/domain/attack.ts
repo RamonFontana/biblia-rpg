@@ -2,6 +2,9 @@
 // dano. O d20 e o dano chegam digitados (dados físicos, ADR 0001); o motor só aplica a regra.
 // Termos: CONTEXT.md (Ataque, Acerto Crítico, Falha Crítica, CA). Regras: docs/regras-base.md, 6.2.
 import { calculateModifier, calculateProficiency } from './attributes';
+import { rollDice } from './dice';
+import type { Rng } from './rng';
+import { combineModes, type ResolvedTestMode } from './testMode';
 import { canonicalVocation } from './vocation';
 
 export type AttackAbility = 'for' | 'des';
@@ -118,4 +121,62 @@ export function describeAttack(attack: {
     return `${attackerName} acertou ${targetName}${kind}: ${attack.damage} de dano.`;
   }
   return `${attackerName} errou ${targetName}${attack.fumble ? ' (falha crítica)' : ''}.`;
+}
+
+/** Se o ataque é à distância: a arma de munição (funda, arco). */
+export function weaponIsRanged(weapon: AttackWeapon | null): boolean {
+  return !!weapon?.properties?.includes('ammunition');
+}
+
+export interface AttackModeInput {
+  /** Os ids das Condições do atacante e do alvo. */
+  attackerConditions: string[];
+  targetConditions: string[];
+  ranged: boolean;
+  inspirationUsed: boolean;
+}
+
+const HINDERED_ATTACKER: Record<string, string> = {
+  envenenado: 'Você está Envenenado',
+  cego: 'Você está Cego',
+  impedido: 'Você está Impedido',
+};
+const EXPOSED_TARGET: Record<string, string> = {
+  atordoado: 'Alvo Atordoado',
+  paralisado: 'Alvo Paralisado',
+  cego: 'Alvo Cego',
+};
+
+/**
+ * A modalidade do ataque: Desvantagem de quem ataca Envenenado, Cego ou Impedido; Vantagem contra
+ * alvo Atordoado, Paralisado ou Cego; alvo Caído dá Vantagem no corpo a corpo e Desvantagem à
+ * distância; a Inspiração dá Vantagem. Lados opostos se anulam, como nos Testes.
+ */
+export function resolveAttackMode(input: AttackModeInput): ResolvedTestMode {
+  const advantages: string[] = [];
+  const disadvantages: string[] = [];
+
+  for (const id of input.attackerConditions) {
+    if (HINDERED_ATTACKER[id]) disadvantages.push(HINDERED_ATTACKER[id]);
+  }
+  for (const id of input.targetConditions) {
+    if (EXPOSED_TARGET[id]) advantages.push(EXPOSED_TARGET[id]);
+    if (id === 'caido') {
+      if (input.ranged) disadvantages.push('Alvo Caído (à distância)');
+      else advantages.push('Alvo Caído (corpo a corpo)');
+    }
+  }
+  if (input.inspirationUsed) advantages.push('Inspiração');
+
+  return { mode: combineModes(advantages, disadvantages), advantages, disadvantages };
+}
+
+/** Rolagem Virtual do dano: os dados da arma (dobrados no crítico) somados; 0 se desarmado. */
+export function rollDamage(weapon: AttackWeapon | null, critical: boolean, rng: Rng): number {
+  const dice = weapon ? parseDamageDice(weapon) : null;
+  if (!dice) return 0;
+  return rollDice(critical ? dice.count * 2 : dice.count, dice.sides, rng).reduce(
+    (sum, die) => sum + die,
+    0,
+  );
 }

@@ -171,6 +171,7 @@ export type Database = {
       }
       combat_attacks: {
         Row: {
+          applied_mode: string
           attacker_name: string
           attacker_participant_id: string
           combat_id: string
@@ -180,7 +181,9 @@ export type Database = {
           fumble: boolean
           hit: boolean
           id: string
+          inspiration_used: boolean
           natural_roll: number
+          rolls: number[] | null
           target_ac: number
           target_hp_after: number
           target_hp_before: number
@@ -189,6 +192,7 @@ export type Database = {
           total: number
         }
         Insert: {
+          applied_mode?: string
           attacker_name: string
           attacker_participant_id: string
           combat_id: string
@@ -198,7 +202,9 @@ export type Database = {
           fumble: boolean
           hit: boolean
           id?: string
+          inspiration_used?: boolean
           natural_roll: number
+          rolls?: number[] | null
           target_ac: number
           target_hp_after: number
           target_hp_before: number
@@ -207,6 +213,7 @@ export type Database = {
           total: number
         }
         Update: {
+          applied_mode?: string
           attacker_name?: string
           attacker_participant_id?: string
           combat_id?: string
@@ -216,7 +223,9 @@ export type Database = {
           fumble?: boolean
           hit?: boolean
           id?: string
+          inspiration_used?: boolean
           natural_roll?: number
+          rolls?: number[] | null
           target_ac?: number
           target_hp_after?: number
           target_hp_before?: number
@@ -831,12 +840,15 @@ export type Database = {
     Functions: {
       apply_attack: {
         Args: {
+          p_applied_mode?: string
           p_attacker_participant_id: string
           p_critical: boolean
           p_damage: number
           p_fumble: boolean
           p_hit: boolean
+          p_inspiration_used?: boolean
           p_natural_roll: number
+          p_rolls?: number[]
           p_target_ac: number
           p_target_participant_id: string
           p_total: number

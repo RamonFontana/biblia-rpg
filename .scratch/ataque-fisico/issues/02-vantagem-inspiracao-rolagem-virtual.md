@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] O motor de ataque reaproveita o motor de Vantagem e Desvantagem dos Testes, com as fontes das Condições e da Inspiração
-- [ ] Painel do jogador: modalidade, motivo, lembrete, "Usar Inspiração" e Rolagem Virtual do d20 e do dano
-- [ ] Inspiração marcada na ficha só depois do envio do ataque
-- [ ] Testes do motor (cada Condição do atacante e do alvo, Caído nos dois modos, Inspiração, anulação), do serviço, dos componentes e um E2E (ataque com Desvantagem por Condição pela Rolagem Virtual), com mutação conferida
+- [x] O motor de ataque reaproveita o motor de Vantagem e Desvantagem dos Testes, com as fontes das Condições e da Inspiração
+- [x] Painel do jogador: modalidade, motivo, lembrete, "Usar Inspiração" e Rolagem Virtual do d20 e do dano
+- [x] Inspiração marcada na ficha só depois do envio do ataque
+- [x] Testes do motor (cada Condição do atacante e do alvo, Caído nos dois modos, Inspiração, anulação), do serviço, dos componentes e um E2E (ataque com Desvantagem por Condição pela Rolagem Virtual), com mutação conferida

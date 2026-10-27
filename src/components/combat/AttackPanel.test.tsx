@@ -4,14 +4,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const h = vi.hoisted(() => ({ submitAttack: vi.fn() }));
+const h = vi.hoisted(() => ({
+  submitAttack: vi.fn(),
+  // A sequência de números que a Rolagem Virtual sorteia (a cada chamada); depois dela, 0,5.
+  random: [] as number[],
+}));
 vi.mock('@/services/attackService', () => ({ submitAttack: h.submitAttack }));
+vi.mock('@/lib/systemRng', () => ({ systemRng: () => h.random.shift() ?? 0.5 }));
 
 import { AttackPanel } from './AttackPanel';
 
 const targets = [
-  { participantId: 'p-rute', name: 'Rute', ac: 12 },
-  { participantId: 'p-fil', name: 'Filisteu', ac: 15 },
+  { participantId: 'p-rute', name: 'Rute', ac: 12, conditionIds: [] as string[] },
+  { participantId: 'p-fil', name: 'Filisteu', ac: 15, conditionIds: [] as string[] },
+  { participantId: 'p-stun', name: 'Atordoado', ac: 15, conditionIds: ['atordoado'] },
 ];
 const equipped = (slug: string | null) => ({
   attributes: { for: 16, des: 12 }, // FOR +3, DES +1
@@ -26,7 +32,9 @@ const show = (over: Partial<React.ComponentProps<typeof AttackPanel>> = {}) =>
   render(
     <AttackPanel
       character={equipped('espada_longa')}
+      characterId="c1"
       attackerParticipantId="p-me"
+      attackerConditionIds={[]}
       targets={targets}
       actionUsed={false}
       onActionUsed={onActionUsed}
@@ -43,6 +51,9 @@ const attack = () => fireEvent.click(screen.getByRole('button', { name: 'Atacar'
 
 beforeEach(() => {
   h.submitAttack.mockResolvedValue('atk-1');
+});
+beforeEach(() => {
+  h.random.length = 0;
 });
 afterEach(() => {
   cleanup();
@@ -205,5 +216,174 @@ describe('AttackPanel: falhas e novo ataque', () => {
     await waitFor(() => expect(onActionUsed).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'Novo ataque' }));
     expect(screen.getByLabelText('d20 natural')).toHaveValue(null);
+  });
+});
+
+describe('AttackPanel: Vantagem e Desvantagem', () => {
+  it('o atacante Envenenado ataca com Desvantagem, com o motivo e o lembrete', () => {
+    show({ attackerConditionIds: ['envenenado'] });
+    expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    expect(screen.getByText('Motivo: Você está Envenenado')).toBeInTheDocument();
+    expect(screen.getByText('Role dois d20 e use o menor.')).toBeInTheDocument();
+  });
+
+  it('a Condição do alvo escolhido dá Vantagem', () => {
+    show();
+    expect(screen.queryByText('✨ Vantagem')).toBeNull();
+    pick('Atordoado');
+    expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
+    expect(screen.getByText('Motivo: Alvo Atordoado')).toBeInTheDocument();
+  });
+
+  it('o ataque normal não mostra aviso de modalidade', () => {
+    show();
+    expect(screen.queryByText(/Vantagem|Desvantagem/)).toBeNull();
+  });
+
+  it('manda a modalidade que valeu no ataque', async () => {
+    show();
+    pick('Atordoado');
+    roll('12');
+    attack();
+    await screen.findByText('Acertou!');
+    fireEvent.change(screen.getByLabelText('Dano rolado'), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar dano' }));
+    await waitFor(() => expect(h.submitAttack).toHaveBeenCalled());
+    expect(h.submitAttack.mock.calls[0][0]).toMatchObject({ appliedMode: 'vantagem', rolls: null });
+  });
+});
+
+describe('AttackPanel: Inspiração', () => {
+  const inspiration = { available: true, sessionId: 's1', day: 3 };
+
+  it('só oferece a Inspiração quando está disponível', () => {
+    show();
+    expect(screen.queryByRole('checkbox', { name: /Usar Inspiração/ })).toBeNull();
+    cleanup();
+    show({ inspiration: { ...inspiration, available: false } });
+    expect(screen.queryByRole('checkbox', { name: /Usar Inspiração/ })).toBeNull();
+    cleanup();
+    show({ inspiration });
+    expect(screen.getByRole('checkbox', { name: /Usar Inspiração/ })).not.toBeChecked();
+  });
+
+  it('marcar dá Vantagem pela Inspiração', () => {
+    show({ inspiration });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Usar Inspiração/ }));
+    expect(screen.getByText('Motivo: Inspiração')).toBeInTheDocument();
+  });
+
+  it('gasta a Inspiração no envio e avisa a tela do dia gravado', async () => {
+    const onInspirationUsed = vi.fn();
+    show({ inspiration, onInspirationUsed });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Usar Inspiração/ }));
+    pick('Filisteu');
+    roll('2');
+    attack();
+    await screen.findByText('Errou');
+    expect(h.submitAttack.mock.calls[0][0]).toMatchObject({
+      appliedMode: 'vantagem',
+      inspiration: { characterId: 'c1', sessionId: 's1', day: 3 },
+    });
+    await waitFor(() =>
+      expect(onInspirationUsed).toHaveBeenCalledWith({
+        inspiration_used_day: 3,
+        inspiration_session_id: 's1',
+      }),
+    );
+  });
+
+  it('sem marcar, a Inspiração não é gasta', async () => {
+    const onInspirationUsed = vi.fn();
+    show({ inspiration, onInspirationUsed });
+    pick('Filisteu');
+    roll('2');
+    attack();
+    await screen.findByText('Errou');
+    expect(h.submitAttack.mock.calls[0][0].inspiration).toBeUndefined();
+    expect(onInspirationUsed).not.toHaveBeenCalled();
+  });
+
+  it('um ataque recusado não gasta a Inspiração na tela', async () => {
+    h.submitAttack.mockRejectedValue(new Error('Não é o turno do atacante'));
+    const onInspirationUsed = vi.fn();
+    show({ inspiration, onInspirationUsed });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Usar Inspiração/ }));
+    pick('Filisteu');
+    roll('2');
+    attack();
+    await screen.findByText(/Não é o turno do atacante/);
+    expect(onInspirationUsed).not.toHaveBeenCalled();
+  });
+});
+
+describe('AttackPanel: Rolagem Virtual', () => {
+  it('o d20 normal rola um dado só e preenche o campo', () => {
+    h.random.push(0.5); // 1 + floor(0,5 × 20) = 11
+    show();
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar d20' }));
+    expect(screen.getByLabelText('d20 natural')).toHaveValue(11);
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+  });
+
+  it('com Vantagem rola dois d20, mostra os dois e usa o maior', async () => {
+    h.random.push(0.7, 0.2); // 15 e 5
+    show();
+    pick('Atordoado');
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar d20' }));
+    expect(screen.getByLabelText('d20 natural')).toHaveValue(15);
+    expect(screen.getByLabelText('Dados rolados')).toHaveTextContent('15 e 5');
+    attack();
+    await screen.findByText('Acertou!');
+    fireEvent.change(screen.getByLabelText('Dano rolado'), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar dano' }));
+    await waitFor(() => expect(h.submitAttack).toHaveBeenCalled());
+    expect(h.submitAttack.mock.calls[0][0]).toMatchObject({
+      naturalRoll: 15,
+      appliedMode: 'vantagem',
+      rolls: [15, 5],
+    });
+  });
+
+  it('com Desvantagem usa o menor', () => {
+    h.random.push(0.7, 0.2);
+    show({ attackerConditionIds: ['cego'] });
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar d20' }));
+    expect(screen.getByLabelText('d20 natural')).toHaveValue(5);
+  });
+
+  it('digitar depois da Rolagem Virtual apaga os dois dados', async () => {
+    h.random.push(0.7, 0.2);
+    show();
+    pick('Atordoado');
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar d20' }));
+    roll('12');
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+    attack();
+    await screen.findByText('Acertou!');
+    fireEvent.change(screen.getByLabelText('Dano rolado'), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar dano' }));
+    await waitFor(() => expect(h.submitAttack).toHaveBeenCalled());
+    expect(h.submitAttack.mock.calls[0][0]).toMatchObject({ rolls: null });
+  });
+
+  it('o dano rola o dado da arma, dobrado no crítico, e preenche o campo', async () => {
+    show();
+    pick('Filisteu');
+    roll('20');
+    attack();
+    await screen.findByText('Acerto Crítico!');
+    h.random.push(0.9, 0.5); // 2d8: 8 e 5
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar dano' }));
+    expect(screen.getByLabelText('Dano rolado')).toHaveValue(13);
+  });
+
+  it('desarmado não tem Rolagem Virtual de dano', async () => {
+    show({ character: equipped(null) });
+    pick('Rute');
+    roll('15');
+    attack();
+    await screen.findByText('Acertou!');
+    expect(screen.queryByRole('button', { name: 'Rolar dano' })).toBeNull();
   });
 });

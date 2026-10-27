@@ -1,5 +1,6 @@
 import { ITEMS_DB } from '@/content/items';
 import type { AttackWeapon } from '@/domain/attack';
+import type { ConditionEntry } from '@/types/combat';
 import type { CombatInventoryItem } from '@/types/inventory';
 import { getEquippedSlots } from './equipmentUtils';
 
@@ -34,11 +35,20 @@ export interface AttackTarget {
   participantId: string;
   name: string;
   ac: number;
+  /** Os ids das Condições do alvo (Caído, Atordoado…), que mudam a modalidade do ataque. */
+  conditionIds: string[];
+}
+
+/** Os ids das Condições gravadas num participante (`conditions` é `jsonb`). */
+export function conditionIdsOf(conditions: unknown): string[] {
+  return Array.isArray(conditions)
+    ? (conditions as ConditionEntry[]).map((c) => c.conditionId)
+    : [];
 }
 
 /** Os alvos possíveis: todo participante do combate (aliado, NPC ou inimigo) menos o atacante. */
 export function buildAttackTargets(
-  participants: { id: string; entity_id: string }[],
+  participants: { id: string; entity_id: string; conditions?: unknown }[],
   attackerParticipantId: string,
   entities: { id: string; name: string; totalAc: number }[],
 ): AttackTarget[] {
@@ -46,6 +56,13 @@ export function buildAttackTargets(
     const entity = entities.find((e) => e.id === p.entity_id);
     return p.id === attackerParticipantId || !entity
       ? []
-      : [{ participantId: p.id, name: entity.name, ac: entity.totalAc }];
+      : [
+          {
+            participantId: p.id,
+            name: entity.name,
+            ac: entity.totalAc,
+            conditionIds: conditionIdsOf(p.conditions),
+          },
+        ];
   });
 }

@@ -49,11 +49,14 @@ export function resolveTestMode(input: TestModeInput): ResolvedTestMode {
     disadvantages.push('Abalado (Fé)');
   }
 
+  return { mode: combineModes(advantages, disadvantages), advantages, disadvantages };
+}
+
+/** Vantagem e Desvantagem se anulam; fontes do mesmo lado não empilham. */
+export function combineModes(advantages: string[], disadvantages: string[]): TestMode {
   const hasAdvantage = advantages.length > 0;
   const hasDisadvantage = disadvantages.length > 0;
-  const mode: TestMode =
-    hasAdvantage === hasDisadvantage ? 'normal' : hasAdvantage ? 'vantagem' : 'desvantagem';
-  return { mode, advantages, disadvantages };
+  return hasAdvantage === hasDisadvantage ? 'normal' : hasAdvantage ? 'vantagem' : 'desvantagem';
 }
 
 /**

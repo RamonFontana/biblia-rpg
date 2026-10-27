@@ -6,8 +6,14 @@ import {
   damageReminder,
   isWeaponProficient,
   resolveAttack,
+  resolveAttackMode,
+  rollDamage,
+  weaponIsRanged,
   type AttackResult,
 } from '@/domain/attack';
+import { pickCountingDie, rollTestDice, type TestMode } from '@/domain/testMode';
+import { systemRng } from '@/lib/systemRng';
+import { ModeBanner } from '../session/player-test/ModeBanner';
 import { getErrorMessage } from '@/lib/errorMessage';
 import { resolveMainHandWeapon, type AttackTarget } from '@/lib/attackSetup';
 import { submitAttack } from '@/services/attackService';
@@ -21,17 +27,39 @@ interface AttackPanelProps {
     equipment?: unknown;
     character_items?: CombatInventoryItem[];
   };
+  /** A ficha do atacante (a Inspiração é gravada nela). */
+  characterId: string;
   attackerParticipantId: string;
+  /** Os ids das Condições do atacante (Envenenado, Cego, Impedido dão Desvantagem). */
+  attackerConditionIds: string[];
   targets: AttackTarget[];
+  /** A Inspiração de hoje: se está disponível, e a sessão e o dia que ela gasta. */
+  inspiration?: { available: boolean; sessionId: string; day: number };
+  /** Avisa a tela do dia gravado quando a Inspiração foi gasta neste ataque. */
+  onInspirationUsed?: (patch: {
+    inspiration_used_day: number;
+    inspiration_session_id: string;
+  }) => void;
   /** A Ação principal do turno já foi usada. */
   actionUsed: boolean;
   /** Marca a Ação principal como usada depois que o ataque é registrado. */
   onActionUsed: () => void;
 }
 
+interface Rolled {
+  mode: TestMode;
+  rolls: number[] | null;
+  useInspiration: boolean;
+}
+
 type Stage =
   | { name: 'form' }
-  | { name: 'damage'; target: AttackTarget; natural: number; result: AttackResult }
+  | ({
+      name: 'damage';
+      target: AttackTarget;
+      natural: number;
+      result: AttackResult;
+    } & Rolled)
   | { name: 'done'; result: AttackResult; damage: number };
 
 /**
@@ -41,14 +69,20 @@ type Stage =
  */
 export function AttackPanel({
   character,
+  characterId,
   attackerParticipantId,
+  attackerConditionIds,
   targets,
+  inspiration,
+  onInspirationUsed,
   actionUsed,
   onActionUsed,
 }: AttackPanelProps) {
   const [targetId, setTargetId] = useState('');
   const [natural, setNatural] = useState<number | ''>('');
   const [rolledDamage, setRolledDamage] = useState<number | ''>('');
+  const [rolledDice, setRolledDice] = useState<number[] | null>(null);
+  const [useInspiration, setUseInspiration] = useState(false);
   const [stage, setStage] = useState<Stage>({ name: 'form' });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,12 +92,22 @@ export function AttackPanel({
   const attributes = character.attributes ?? {};
   const vocation = character.vocation ?? '';
 
+  const target = targets.find((t) => t.participantId === targetId);
+  const inspirationOn = !!inspiration?.available && useInspiration;
+  const resolved = resolveAttackMode({
+    attackerConditions: attackerConditionIds,
+    targetConditions: target?.conditionIds ?? [],
+    ranged: weaponIsRanged(weapon),
+    inspirationUsed: inspirationOn,
+  });
+
   // Grava o ataque no banco; só depois disso a Ação é marcada como usada.
   const record = async (
     target: AttackTarget,
     naturalRoll: number,
     result: AttackResult,
     damage: number,
+    rolled: Rolled,
   ) => {
     setIsSubmitting(true);
     setError(null);
@@ -75,8 +119,19 @@ export function AttackPanel({
         naturalRoll,
         result,
         damage,
+        appliedMode: rolled.mode,
+        rolls: rolled.rolls,
+        ...(rolled.useInspiration && inspiration
+          ? { inspiration: { characterId, sessionId: inspiration.sessionId, day: inspiration.day } }
+          : {}),
       });
       onActionUsed();
+      if (rolled.useInspiration && inspiration) {
+        onInspirationUsed?.({
+          inspiration_used_day: inspiration.day,
+          inspiration_session_id: inspiration.sessionId,
+        });
+      }
       setStage({ name: 'done', result, damage });
     } catch (err) {
       setError(getErrorMessage(err, 'Não foi possível registrar o ataque.'));
@@ -85,8 +140,14 @@ export function AttackPanel({
     }
   };
 
+  const handleRollD20 = () => {
+    const dice = rollTestDice('Ataque', resolved.mode, systemRng);
+    setNatural(pickCountingDie(resolved.mode, 'Ataque', dice));
+    setRolledDice(dice.length > 1 ? dice : null);
+    setError(null);
+  };
+
   const handleAttack = () => {
-    const target = targets.find((t) => t.participantId === targetId);
     if (!target) {
       setError('Escolha o alvo.');
       return;
@@ -104,10 +165,15 @@ export function AttackPanel({
       targetAc: target.ac,
     });
     setError(null);
+    const rolled: Rolled = {
+      mode: resolved.mode,
+      rolls: rolledDice,
+      useInspiration: inspirationOn,
+    };
     if (result.hit) {
-      setStage({ name: 'damage', target, natural, result });
+      setStage({ name: 'damage', target, natural, result, ...rolled });
     } else {
-      void record(target, natural, result, 0);
+      void record(target, natural, result, 0, rolled);
     }
   };
 
@@ -122,13 +188,25 @@ export function AttackPanel({
       modifier: stage.result.modifier,
       rolled: Number(rolledDamage) || 0,
     });
-    void record(stage.target, stage.natural, stage.result, damage);
+    void record(stage.target, stage.natural, stage.result, damage, {
+      mode: stage.mode,
+      rolls: stage.rolls,
+      useInspiration: stage.useInspiration,
+    });
+  };
+
+  const handleRollDamage = () => {
+    if (stage.name !== 'damage') return;
+    setRolledDamage(rollDamage(weapon, stage.result.critical, systemRng));
+    setError(null);
   };
 
   const reset = () => {
     setStage({ name: 'form' });
     setNatural('');
     setRolledDamage('');
+    setRolledDice(null);
+    setUseInspiration(false);
     setError(null);
   };
 
@@ -165,6 +243,18 @@ export function AttackPanel({
                 Ação principal já usada neste turno. Desmarque-a no checklist para atacar de novo.
               </p>
             )}
+            {inspiration?.available && (
+              <label className="flex items-center gap-2 text-sm text-green-400">
+                <input
+                  type="checkbox"
+                  checked={useInspiration}
+                  onChange={(e) => setUseInspiration(e.target.checked)}
+                  className="accent-green-500"
+                />
+                Usar Inspiração (Vantagem)
+              </label>
+            )}
+            <ModeBanner testType="Ataque" resolved={resolved} />
             {targets.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum alvo no combate.</p>
             ) : (
@@ -191,22 +281,42 @@ export function AttackPanel({
                     min={1}
                     max={20}
                     value={natural}
-                    onChange={(e) =>
-                      setNatural(e.target.value === '' ? '' : Number(e.target.value))
-                    }
+                    onChange={(e) => {
+                      setNatural(e.target.value === '' ? '' : Number(e.target.value));
+                      setRolledDice(null);
+                    }}
                     className="mt-1 w-full rounded border border-stone-700 bg-stone-800 px-3 py-2 text-center font-mono text-lg text-stone-200"
                   />
                 </label>
               </div>
             )}
-            <Button
-              type="button"
-              onClick={handleAttack}
-              disabled={actionUsed || isSubmitting || targets.length === 0}
-              className="min-h-[44px] w-full"
-            >
-              Atacar
-            </Button>
+            {rolledDice && (
+              <p aria-label="Dados rolados" className="text-center text-sm text-stone-300">
+                Dados: {rolledDice.join(' e ')}.{' '}
+                <strong className="text-amber-400">
+                  {pickCountingDie(resolved.mode, 'Ataque', rolledDice)} vale
+                </strong>
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleRollD20}
+                disabled={actionUsed || isSubmitting || targets.length === 0}
+                className="min-h-[44px]"
+              >
+                Rolar d20
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAttack}
+                disabled={actionUsed || isSubmitting || targets.length === 0}
+                className="min-h-[44px]"
+              >
+                Atacar
+              </Button>
+            </div>
           </>
         )}
 
@@ -215,9 +325,14 @@ export function AttackPanel({
             <p className="text-2xl font-bold text-green-400">{outcome(stage.result)}</p>
             {weapon ? (
               <>
-                <p className="text-sm text-stone-300">
-                  {damageReminder(weapon, stage.result.critical)}
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-stone-300">
+                    {damageReminder(weapon, stage.result.critical)}
+                  </p>
+                  <Button type="button" variant="outline" size="sm" onClick={handleRollDamage}>
+                    Rolar dano
+                  </Button>
+                </div>
                 <label className="block text-sm text-stone-300">
                   Dano rolado
                   <input

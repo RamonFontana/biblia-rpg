@@ -13,7 +13,8 @@ import { abilitySkills, getAbilitiesForCharacter } from '../../utils/abilityUtil
 import { AbilityCard } from './AbilityCard';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
-import { buildAttackTargets } from '@/lib/attackSetup';
+import { buildAttackTargets, conditionIdsOf } from '@/lib/attackSetup';
+import { getInspirationStatus } from '@/domain/inspiration';
 import type { CombatInventoryItem } from '@/types/inventory';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { getMaxPv } from '@/domain/vitals';
@@ -25,6 +26,13 @@ interface PlayerCombatViewProps {
   isLoading: boolean;
   /** Quem está na sessão, com nome e CA: os alvos possíveis do ataque. */
   entities?: { id: string; name: string; totalAc: number }[];
+  /** A sessão e o dia de agora: a Inspiração gasta no ataque é do dia. */
+  inspirationContext?: { sessionId: string; day: number };
+  /** Avisa a tela do dia gravado quando o ataque gastou a Inspiração. */
+  onInspirationUsed?: (patch: {
+    inspiration_used_day: number;
+    inspiration_session_id: string;
+  }) => void;
 }
 
 export function PlayerCombatView({
@@ -32,6 +40,8 @@ export function PlayerCombatView({
   enemies,
   isLoading,
   entities = [],
+  inspirationContext,
+  onInspirationUsed,
 }: PlayerCombatViewProps) {
   const playerId = character?.id;
   const [isUpdating, setIsUpdating] = useState(false);
@@ -141,7 +151,22 @@ export function PlayerCombatView({
           {isMyTurn && !isDying && character && participant && (
             <AttackPanel
               character={character}
+              characterId={character.id}
               attackerParticipantId={participant.id}
+              attackerConditionIds={conditionIdsOf(participant.conditions)}
+              inspiration={
+                inspirationContext && {
+                  available:
+                    getInspirationStatus({
+                      stats: character.stats,
+                      usedDay: character.inspiration_used_day,
+                      usedSessionId: character.inspiration_session_id,
+                      ...inspirationContext,
+                    }) === 'disponivel',
+                  ...inspirationContext,
+                }
+              }
+              onInspirationUsed={onInspirationUsed}
               targets={buildAttackTargets(participants, participant.id, entities)}
               actionUsed={hasUsedAction}
               onActionUsed={() => {

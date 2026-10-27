@@ -2,6 +2,7 @@
 // dano. O d20 e o dano são os dados físicos digitados (ADR 0001). Termos: CONTEXT.md (Ataque,
 // Acerto Crítico, Falha Crítica, CA). Regras: docs/regras-base.md, 6.2; docs/itens/armas.md.
 import { describe, expect, it } from 'vitest';
+import { createSeededRng } from '@/domain/rng';
 import {
   attackAbility,
   computeDamage,
@@ -9,6 +10,9 @@ import {
   describeAttack,
   isWeaponProficient,
   resolveAttack,
+  resolveAttackMode,
+  rollDamage,
+  weaponIsRanged,
   type AttackInput,
   type AttackWeapon,
 } from '@/domain/attack';
@@ -234,5 +238,101 @@ describe('describeAttack: o aviso do ataque', () => {
     expect(describeAttack({ ...who, hit: false, critical: false, fumble: true, damage: 0 })).toBe(
       'Eliabe errou Filisteu (falha crítica).',
     );
+  });
+});
+
+describe('resolveAttackMode: Vantagem e Desvantagem do ataque', () => {
+  const mode = (over: Partial<Parameters<typeof resolveAttackMode>[0]>) =>
+    resolveAttackMode({
+      attackerConditions: [],
+      targetConditions: [],
+      ranged: false,
+      inspirationUsed: false,
+      ...over,
+    });
+
+  it('sem Condições, o ataque é normal', () => {
+    expect(mode({})).toEqual({ mode: 'normal', advantages: [], disadvantages: [] });
+  });
+
+  it('atacante Envenenado, Cego ou Impedido ataca com Desvantagem', () => {
+    for (const condition of ['envenenado', 'cego', 'impedido']) {
+      expect(mode({ attackerConditions: [condition] }).mode).toBe('desvantagem');
+    }
+  });
+
+  it('alvo Atordoado, Paralisado ou Cego recebe o ataque com Vantagem', () => {
+    for (const condition of ['atordoado', 'paralisado', 'cego']) {
+      expect(mode({ targetConditions: [condition] }).mode).toBe('vantagem');
+    }
+  });
+
+  it('alvo Caído: Vantagem no corpo a corpo e Desvantagem à distância', () => {
+    expect(mode({ targetConditions: ['caido'] }).mode).toBe('vantagem');
+    expect(mode({ targetConditions: ['caido'], ranged: true }).mode).toBe('desvantagem');
+  });
+
+  it('as Condições sem efeito no ataque não mudam nada', () => {
+    expect(
+      mode({
+        attackerConditions: ['sangrando', 'caido', 'amedrontado', 'exausto'],
+        targetConditions: ['sangrando', 'envenenado', 'agarrado', 'impedido'],
+      }).mode,
+    ).toBe('normal');
+  });
+
+  it('a Inspiração dá Vantagem', () => {
+    expect(mode({ inspirationUsed: true })).toMatchObject({
+      mode: 'vantagem',
+      advantages: ['Inspiração'],
+    });
+  });
+
+  it('Vantagem e Desvantagem se anulam, e a Inspiração anula uma Desvantagem', () => {
+    expect(mode({ attackerConditions: ['cego'], targetConditions: ['atordoado'] }).mode).toBe(
+      'normal',
+    );
+    expect(mode({ attackerConditions: ['envenenado'], inspirationUsed: true }).mode).toBe('normal');
+  });
+
+  it('explica de onde vem cada lado', () => {
+    const result = mode({ attackerConditions: ['envenenado'], targetConditions: ['paralisado'] });
+    expect(result.disadvantages).toEqual(['Você está Envenenado']);
+    expect(result.advantages).toEqual(['Alvo Paralisado']);
+  });
+
+  it('o Cego atacando um alvo Cego: Vantagem e Desvantagem juntas, normal', () => {
+    expect(mode({ attackerConditions: ['cego'], targetConditions: ['cego'] }).mode).toBe('normal');
+  });
+});
+
+describe('weaponIsRanged', () => {
+  it('arma de munição é à distância; as demais, não', () => {
+    expect(weaponIsRanged(sling)).toBe(true);
+    expect(weaponIsRanged(sword)).toBe(false);
+    expect(weaponIsRanged(null)).toBe(false);
+  });
+});
+
+describe('rollDamage: a Rolagem Virtual do dano', () => {
+  it('rola o dado da arma, dobrado no crítico, pela Rng injetada', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const normal = rollDamage(sword, false, createSeededRng(seed));
+      expect(normal).toBeGreaterThanOrEqual(1);
+      expect(normal).toBeLessThanOrEqual(8);
+      const critical = rollDamage(sword, true, createSeededRng(seed));
+      expect(critical).toBeGreaterThanOrEqual(2);
+      expect(critical).toBeLessThanOrEqual(16);
+    }
+  });
+
+  it('é repetível com a mesma semente', () => {
+    expect(rollDamage(sword, true, createSeededRng(9))).toBe(
+      rollDamage(sword, true, createSeededRng(9)),
+    );
+  });
+
+  it('desarmado não rola', () => {
+    expect(rollDamage(null, false, createSeededRng(1))).toBe(0);
   });
 });

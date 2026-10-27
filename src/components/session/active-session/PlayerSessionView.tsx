@@ -101,6 +101,10 @@ export function PlayerSessionView({
             enemies={enemies}
             isLoading={isCharactersLoading}
             entities={buildCombatEntities({ playerCharacters, npcs, enemies })}
+            inspirationContext={{ sessionId, day: sessionData.current_day || 1 }}
+            onInspirationUsed={
+              myCharacter ? (patch) => updateLocal('player', myCharacter.id, patch) : undefined
+            }
           />
         </div>
       )}

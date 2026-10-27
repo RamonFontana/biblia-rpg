@@ -2,6 +2,7 @@
 // combate pedem às fichas. As funções lançam o erro do Supabase; quem chama decide o que fazer.
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert } from '@/types/database.types';
+import type { TestMode } from '@/domain/testMode';
 import type { ConditionEntry } from '@/types/combat';
 import type { CharacterSkills } from '@/features/character-creation/types';
 import { toJson } from './json';
@@ -170,6 +171,11 @@ export interface AttackRecord {
   critical: boolean;
   fumble: boolean;
   damage: number;
+  /** A modalidade que valeu (Condições e Inspiração). */
+  appliedMode: TestMode;
+  /** Os dois d20 da Rolagem Virtual com Vantagem ou Desvantagem; nulo nos demais casos. */
+  rolls: number[] | null;
+  inspirationUsed: boolean;
 }
 
 /**
@@ -187,6 +193,9 @@ export async function applyAttack(attack: AttackRecord): Promise<string> {
     p_critical: attack.critical,
     p_fumble: attack.fumble,
     p_damage: attack.damage,
+    p_applied_mode: attack.appliedMode,
+    p_rolls: attack.rolls ?? undefined,
+    p_inspiration_used: attack.inspirationUsed,
   });
   if (error) throw error;
   return data;

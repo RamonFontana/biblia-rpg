@@ -23,6 +23,9 @@ const attack = (over: Partial<CombatAttack> = {}): CombatAttack => ({
   damage: 7,
   target_hp_before: 12,
   target_hp_after: 5,
+  applied_mode: 'normal',
+  rolls: null,
+  inspiration_used: false,
   created_at: '2026-10-27T10:00:00Z',
   ...over,
 });
@@ -72,5 +75,28 @@ describe('AttackLog', () => {
     const rows = screen.getAllByRole('listitem');
     expect(rows[0]).toHaveTextContent('Rute');
     expect(rows[1]).toHaveTextContent('Eliabe');
+  });
+});
+
+describe('AttackLog: modalidade', () => {
+  it('mostra a Vantagem, a Desvantagem e a Inspiração', () => {
+    render(
+      <AttackLog
+        attacks={[
+          attack({ id: 'a1', applied_mode: 'vantagem', inspiration_used: true, rolls: [14, 6] }),
+          attack({ id: 'a2', applied_mode: 'desvantagem' }),
+        ]}
+      />,
+    );
+    const rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('com Vantagem');
+    expect(rows[0]).toHaveTextContent('Inspiração');
+    expect(rows[0]).toHaveTextContent('d20 14 e 6');
+    expect(rows[1]).toHaveTextContent('com Desvantagem');
+  });
+
+  it('o ataque normal não leva etiqueta', () => {
+    render(<AttackLog attacks={[attack()]} />);
+    expect(screen.getByRole('listitem')).not.toHaveTextContent(/com (Vantagem|Desvantagem)/);
   });
 });

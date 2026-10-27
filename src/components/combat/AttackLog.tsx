@@ -1,5 +1,16 @@
 import type { CombatAttack } from '@/data-access/combat';
 
+const MODE_LABEL: Record<string, string> = {
+  vantagem: 'com Vantagem',
+  desvantagem: 'com Desvantagem',
+};
+
+function outcomeOf(attack: CombatAttack): string {
+  if (attack.critical) return 'Acerto Crítico';
+  if (attack.fumble) return 'Falha Crítica';
+  return attack.hit ? 'Acertou' : 'Errou';
+}
+
 /** Os últimos ataques do combate com os números que o jogador não vê (d20, total e CA). */
 export function AttackLog({ attacks }: { attacks: CombatAttack[] }) {
   if (attacks.length === 0) return null;
@@ -18,16 +29,13 @@ export function AttackLog({ attacks }: { attacks: CombatAttack[] }) {
             <span className="font-medium text-stone-100">
               {attack.attacker_name} → {attack.target_name}
             </span>
-            {': '}d20 {attack.natural_roll} ({attack.total} contra CA {attack.target_ac}) ·{' '}
+            {': '}d20 {attack.rolls ? attack.rolls.join(' e ') : attack.natural_roll} (
+            {attack.total} contra CA {attack.target_ac}) ·{' '}
             <span className={attack.hit ? 'text-green-400' : 'text-red-400'}>
-              {attack.critical
-                ? 'Acerto Crítico'
-                : attack.fumble
-                  ? 'Falha Crítica'
-                  : attack.hit
-                    ? 'Acertou'
-                    : 'Errou'}
+              {outcomeOf(attack)}
             </span>
+            {MODE_LABEL[attack.applied_mode] && ` · ${MODE_LABEL[attack.applied_mode]}`}
+            {attack.inspiration_used && ' · Inspiração'}
             {attack.hit && (
               <>
                 {' · '}

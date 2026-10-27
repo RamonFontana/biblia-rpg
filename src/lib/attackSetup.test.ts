@@ -72,17 +72,23 @@ describe('buildAttackTargets', () => {
     { id: 'e1', name: 'Filisteu', totalAc: 15 },
   ];
   const participants = [
-    { id: 'p1', entity_id: 'c1' },
-    { id: 'p2', entity_id: 'c2' },
-    { id: 'p3', entity_id: 'e1' },
-    { id: 'p4', entity_id: 'sem-ficha' },
+    { id: 'p1', entity_id: 'c1', conditions: [] },
+    { id: 'p2', entity_id: 'c2', conditions: [{ conditionId: 'caido', duration: null }] },
+    { id: 'p3', entity_id: 'e1', conditions: [{ conditionId: 'cego', duration: 2 }] },
+    { id: 'p4', entity_id: 'sem-ficha', conditions: [] },
   ];
 
   it('lista todos os participantes menos o próprio atacante, com nome e CA', () => {
     expect(buildAttackTargets(participants, 'p1', entities)).toEqual([
-      { participantId: 'p2', name: 'Rute', ac: 12 },
-      { participantId: 'p3', name: 'Filisteu', ac: 15 },
+      { participantId: 'p2', name: 'Rute', ac: 12, conditionIds: ['caido'] },
+      { participantId: 'p3', name: 'Filisteu', ac: 15, conditionIds: ['cego'] },
     ]);
+  });
+
+  it('sem Condições gravadas, a lista é vazia', () => {
+    expect(
+      buildAttackTargets([{ id: 'p5', entity_id: 'c2' }], 'p1', entities)[0].conditionIds,
+    ).toEqual([]);
   });
 
   it('o participante que não está no elenco da sessão fica de fora', () => {
