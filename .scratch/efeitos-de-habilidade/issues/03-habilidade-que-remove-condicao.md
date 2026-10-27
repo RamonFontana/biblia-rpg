@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: remoção fixa, escolhida de uma lista e uma por alvo
-- [ ] Função do banco aceita remover Condição de aliado, com teste por papel
-- [ ] Painel de uso oferece a escolha da Condição a remover
-- [ ] As quatro Habilidades ganham o efeito
-- [ ] E2E: a Purificação remove a Condição escolhida do aliado
+- [x] Motor: remoção fixa, escolhida de uma lista e uma por alvo
+- [x] Função do banco aceita remover Condição de aliado, com teste por papel
+- [x] Painel de uso oferece a escolha da Condição a remover
+- [x] As quatro Habilidades ganham o efeito
+- [x] E2E: a Purificação remove a Condição escolhida do aliado

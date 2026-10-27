@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: CD da Habilidade por Vocação, TR por alvo com a modalidade dos Testes
-- [ ] `regras-base.md` registra a CD da Habilidade
-- [ ] Função do banco para resolver o pendente (só o Mestre), com teste por papel
-- [ ] Painel de pendentes do Mestre e resultado por alvo para o jogador
-- [ ] As três Habilidades ganham o efeito com TR
-- [ ] E2E: Tática do Cântaro, o Mestre lança os TRs e o Amedrontado entra só em quem falhou
+- [x] Motor: CD da Habilidade por Vocação, TR por alvo com a modalidade dos Testes
+- [x] `regras-base.md` registra a CD da Habilidade
+- [x] Função do banco para resolver o pendente (só o Mestre), com teste por papel
+- [x] Painel de pendentes do Mestre e resultado por alvo para o jogador
+- [x] As três Habilidades ganham o efeito com TR
+- [x] E2E: Tática do Cântaro, o Mestre lança os TRs e o Amedrontado entra só em quem falhou

@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Biblioteca no conteúdo, validada pelo gate de dados; Habilidades antigas só com texto seguem funcionando
-- [ ] Formulário do inimigo com a biblioteca e a Habilidade personalizada
-- [ ] Mestre dispara a Habilidade contra personagens; pedido de TR pelo Teste de sessão
-- [ ] Função do banco para o uso de Habilidade de inimigo (só o Mestre), com teste por papel
-- [ ] Condição aplicada em quem falhou; cancelar o TR de quem não respondeu; NPC jogável rolado pelo Mestre
-- [ ] E2E: Presença Aterradora chega ao celular e quem falha fica Amedrontado
+- [x] Biblioteca no conteúdo, validada pelo gate de dados; Habilidades antigas só com texto seguem funcionando
+- [x] Formulário do inimigo com a biblioteca e a Habilidade personalizada
+- [x] Mestre dispara a Habilidade contra personagens; pedido de TR pelo Teste de sessão
+- [x] Função do banco para o uso de Habilidade de inimigo (só o Mestre), com teste por papel
+- [x] Condição aplicada em quem falhou; cancelar o TR de quem não respondeu; NPC jogável rolado pelo Mestre
+- [x] E2E: Presença Aterradora chega ao celular e quem falha fica Amedrontado

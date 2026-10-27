@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Perda de Fé por personagem que falhou, com o piso em 0
-- [ ] Lembrete de Desvantagem do Grito Atormentador no resultado
-- [ ] Uso por combate e estado de uso gravado no participante do combate
-- [ ] Recarga: lembrete no início do turno do inimigo e d6 digitado ou virtual
-- [ ] Motor testado com seed fixa (Recarga com 4, 5 e 6)
-- [ ] E2E: o Grito Atormentador tira Fé de quem falha e a Recarga volta com 5 ou 6
+- [x] Perda de Fé por personagem que falhou, com o piso em 0
+- [x] Lembrete de Desvantagem do Grito Atormentador no resultado
+- [x] Uso por combate e estado de uso gravado no participante do combate
+- [x] Recarga: lembrete no início do turno do inimigo e d6 digitado ou virtual
+- [x] Motor testado com seed fixa (Recarga com 4, 5 e 6)
+- [x] E2E: o Grito Atormentador tira Fé de quem falha e a Recarga volta com 5 ou 6
