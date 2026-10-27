@@ -277,7 +277,10 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('Efeito de arma ativado!')).toBeVisible();
     await expect(participantCard(master, FILISTEU)).toContainText('Sangrando', { timeout: 15_000 });
-    await expect(master.getByText(/Efeito de arma: Sangrando/)).toBeVisible();
+    await expect(
+      master.getByRole('listitem').filter({ hasText: /Efeito de arma: Sangrando/ }),
+    ).toBeVisible();
+    await expect(master.getByText(/dano\. Efeito de arma: Sangrando\./)).toBeVisible();
     const { data } = await adminClient()
       .from('combat_participants')
       .select('conditions')

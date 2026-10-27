@@ -613,3 +613,39 @@ describe('AttackPanel: efeito de arma', () => {
     expect(screen.queryByText(/Efeito de arma/)).toBeNull();
   });
 });
+
+describe('AttackPanel: a conta e a arma na tela', () => {
+  it('mostra o atributo e a Proficiência que entram na soma, sem a CA', () => {
+    show();
+    expect(screen.getByText('d20 + FOR +3 + Proficiência +2')).toBeInTheDocument();
+  });
+
+  it('sem proficiência com a arma, a Proficiência não entra na conta mostrada', () => {
+    show({ character: { ...equipped('espada_longa'), vocation: 'Sacerdote' } });
+    expect(screen.getByText('d20 + FOR +3')).toBeInTheDocument();
+  });
+
+  it('mostra as propriedades da arma', () => {
+    show({ character: equipped('adaga') });
+    expect(screen.getByText(/Acuidade, Arremesso/)).toBeInTheDocument();
+  });
+
+  it('mudar a Inspiração depois de rolar o d20 apaga os dados rolados (a modalidade mudou)', () => {
+    h.random.push(0.7, 0.2);
+    show({ inspiration: { available: true, sessionId: 's1', day: 3 } });
+    pick('Atordoado');
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar d20' }));
+    expect(screen.getByLabelText('Dados rolados')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Usar Inspiração/ }));
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+  });
+
+  it('trocar o alvo depois de rolar o d20 apaga os dados rolados', () => {
+    h.random.push(0.7, 0.2);
+    show();
+    pick('Atordoado');
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar d20' }));
+    pick('Rute');
+    expect(screen.queryByLabelText('Dados rolados')).toBeNull();
+  });
+});

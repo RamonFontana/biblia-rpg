@@ -124,7 +124,8 @@ insert into public.combats (id, session_id, status, current_turn_index) values
   ('99999999-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000001', 'active', 0),
   ('99999999-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000001', 'active', 1),
   ('99999999-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000001', 'finished', 0),
-  ('99999999-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000002', 'active', 0);
+  ('99999999-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000002', 'active', 0),
+  ('99999999-0000-0000-0000-000000000005', '22222222-0000-0000-0000-000000000001', 'active', 0);
 insert into public.combat_participants (id, combat_id, entity_id, entity_type, initiative, hp_current) values
   ('aaaaaaaa-0000-0000-0000-000000000001', '99999999-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000001', 'player', 20, 15),
   ('aaaaaaaa-0000-0000-0000-000000000002', '99999999-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000002', 'player', 15, 20),
@@ -133,7 +134,9 @@ insert into public.combat_participants (id, combat_id, entity_id, entity_type, i
   ('aaaaaaaa-0000-0000-0000-000000000005', '99999999-0000-0000-0000-000000000002', '33333333-0000-0000-0000-000000000002', 'player', 15, 20),
   ('aaaaaaaa-0000-0000-0000-000000000006', '99999999-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000001', 'player', 20, 15),
   ('aaaaaaaa-0000-0000-0000-000000000007', '99999999-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000002', 'player', 15, 20),
-  ('aaaaaaaa-0000-0000-0000-000000000008', '99999999-0000-0000-0000-000000000004', '33333333-0000-0000-0000-000000000003', 'player', 20, 10);
+  ('aaaaaaaa-0000-0000-0000-000000000008', '99999999-0000-0000-0000-000000000004', '33333333-0000-0000-0000-000000000003', 'player', 20, 10),
+  ('aaaaaaaa-0000-0000-0000-000000000009', '99999999-0000-0000-0000-000000000005', '33333333-0000-0000-0000-000000000001', 'player', 20, 0),
+  ('aaaaaaaa-0000-0000-0000-00000000000a', '99999999-0000-0000-0000-000000000005', '33333333-0000-0000-0000-000000000002', 'player', 15, 20);
 
 create temp table results (name text, actual text, expected text);
 
@@ -328,6 +331,9 @@ select pg_temp.t('apply_attack: Condições sem o gatilho do efeito de arma não
 select pg_temp.t('apply_attack: o efeito de arma sem dano também aplica a Condição', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003',19,24,15,true,false,false,0,'normal',null,false,true,'[{"conditionId":"sangrando","duration":3}]'::jsonb)$q$], $q$select hp_current::text || '/' || jsonb_array_length(conditions) from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000003'$q$), '12/1');
 select pg_temp.t('apply_attack: registra o gatilho e as Condições aplicadas', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003',19,24,15,true,false,false,5,'normal',null,false,true,'[{"conditionId":"sangrando","duration":3}]'::jsonb)$q$], $q$select weapon_effect_triggered || '/' || weapon_effect_conditions::text from public.combat_attacks$q$), 'true/[{"duration": 3, "conditionId": "sangrando"}]');
 select pg_temp.t('apply_attack: efeito resistido registra o gatilho sem Condições', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003',19,24,15,true,false,false,5,'normal',null,false,true,'[]'::jsonb)$q$], $q$select weapon_effect_triggered || '/' || weapon_effect_conditions::text from public.combat_attacks$q$), 'true/[]');
+
+select pg_temp.t('apply_attack: ninguém ataca a si mesmo', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001',14,19,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000001'$q$), 'error=42501');
+select pg_temp.t('apply_attack: quem está a 0 PV não ataca', pg_temp.after_as((select alice from who), array[$q$select public.apply_attack('aaaaaaaa-0000-0000-0000-000000000009','aaaaaaaa-0000-0000-0000-00000000000a',14,19,15,true,false,false,5)$q$], $q$select hp_current::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-00000000000a'$q$), 'error=42501');
 
 -- ============================ resultado ============================
 do $$

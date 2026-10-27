@@ -6,6 +6,8 @@ import {
   canUseTwoHands,
   computeDamage,
   damageReminder,
+  describeAttackBonus,
+  describeWeaponProperties,
   effectiveWeapon,
   isWeaponProficient,
   resolveAttack,
@@ -265,10 +267,19 @@ export function AttackPanel({
             <>
               Arma: <span className="font-bold text-amber-500">{equipped.name}</span>
               {weapon?.damage && ` (${weapon.damage})`}
+              {describeWeaponProperties(baseWeapon) && ` · ${describeWeaponProperties(baseWeapon)}`}
             </>
           ) : (
             'Desarmado (1 + FOR)'
           )}
+        </p>
+        <p className="text-xs text-stone-400">
+          {describeAttackBonus({
+            attributes,
+            level: Number(character.level) || 1,
+            vocation,
+            weapon,
+          })}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -326,7 +337,10 @@ export function AttackPanel({
                 <input
                   type="checkbox"
                   checked={useInspiration}
-                  onChange={(e) => setUseInspiration(e.target.checked)}
+                  onChange={(e) => {
+                    setUseInspiration(e.target.checked);
+                    setRolledDice(null);
+                  }}
                   className="accent-green-500"
                 />
                 Usar Inspiração (Vantagem)
@@ -341,7 +355,10 @@ export function AttackPanel({
                   Alvo
                   <select
                     value={targetId}
-                    onChange={(e) => setTargetId(e.target.value)}
+                    onChange={(e) => {
+                      setTargetId(e.target.value);
+                      setRolledDice(null);
+                    }}
                     className="mt-1 w-full rounded border border-stone-700 bg-stone-800 px-3 py-2 text-stone-200"
                   >
                     <option value="">Escolha...</option>

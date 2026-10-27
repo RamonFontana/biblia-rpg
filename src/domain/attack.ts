@@ -4,6 +4,7 @@
 import { calculateModifier, calculateProficiency } from './attributes';
 import { rollDice } from './dice';
 import type { Rng } from './rng';
+import { CONDITIONS } from '@/content/conditions';
 import { applyConditionResistance } from './armorResistance';
 import { combineModes, type ResolvedTestMode } from './testMode';
 import type { ConditionEntry, WeaponEffect } from '@/types/combat';
@@ -118,11 +119,14 @@ export function describeAttack(attack: {
   critical: boolean;
   fumble: boolean;
   damage: number;
+  /** O efeito de arma, já em texto (`describeWeaponEffect`). */
+  weaponEffect?: string | null;
 }): string {
   const { attackerName, targetName } = attack;
   if (attack.hit) {
     const kind = attack.critical ? ' (crítico)' : '';
-    return `${attackerName} acertou ${targetName}${kind}: ${attack.damage} de dano.`;
+    const effect = attack.weaponEffect ? ` ${attack.weaponEffect}.` : '';
+    return `${attackerName} acertou ${targetName}${kind}: ${attack.damage} de dano.${effect}`;
   }
   return `${attackerName} errou ${targetName}${attack.fumble ? ' (falha crítica)' : ''}.`;
 }
@@ -269,4 +273,51 @@ export function describeHitOnTarget(hit: {
 /** O aviso do Mestre: o golpe atingiu quem já estava Morrendo; a falha no Teste de Morte é dele. */
 export function describeStrikeOnDying(strike: { targetName: string; critical: boolean }): string {
   return `${strike.targetName} já estava Morrendo e foi atingido${strike.critical ? ' (crítico)' : ''}: marque a falha no Teste de Morte.`;
+}
+
+const PROPERTY_LABELS: Record<string, string> = {
+  finesse: 'Acuidade',
+  thrown: 'Arremesso',
+  versatile: 'Versátil',
+  ammunition: 'Munição',
+  'two-handed': 'Duas mãos',
+  heavy: 'Pesada',
+};
+
+/** As propriedades da arma em português, na ordem do conteúdo. */
+export function describeWeaponProperties(weapon: AttackWeapon | null): string {
+  return (weapon?.properties ?? [])
+    .map((property) => PROPERTY_LABELS[property])
+    .filter(Boolean)
+    .join(', ');
+}
+
+const signed = (value: number) => (value >= 0 ? `+${value}` : `${value}`);
+
+/**
+ * O que entra na soma do ataque (o atributo e a Proficiência), para o jogador entender o total sem
+ * ver a CA do alvo.
+ */
+export function describeAttackBonus(
+  input: Pick<AttackInput, 'attributes' | 'level' | 'vocation' | 'weapon'>,
+): string {
+  const ability = attackAbility(input.weapon, input.attributes);
+  const modifier = calculateModifier(input.attributes[ability]);
+  const proficient = input.weapon
+    ? isWeaponProficient(input.vocation, input.weapon.category)
+    : true;
+  const parts = [`d20`, `${ability.toUpperCase()} ${signed(modifier)}`];
+  if (proficient) parts.push(`Proficiência ${signed(calculateProficiency(input.level))}`);
+  return parts.join(' + ');
+}
+
+/** O efeito de arma de um ataque: as Condições que chegaram ao alvo, ou "resistido"; nulo sem disparo. */
+export function describeWeaponEffect(
+  triggered: boolean,
+  appliedConditionIds: string[],
+): string | null {
+  if (!triggered) return null;
+  if (appliedConditionIds.length === 0) return 'Efeito de arma resistido';
+  const names = appliedConditionIds.map((id) => CONDITIONS[id]?.name ?? id);
+  return `Efeito de arma: ${names.join(', ')}`;
 }

@@ -24,7 +24,7 @@ import {
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import { uniqueChannelName } from '@/lib/channelName';
-import { describeAttack } from '@/domain/attack';
+import { describeAttack, describeWeaponEffect } from '@/domain/attack';
 import type { ConditionEntry } from '../types/combat';
 
 export type { Combat, CombatAttack, CombatParticipant };
@@ -251,6 +251,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
                     critical: attack.critical,
                     fumble: attack.fumble,
                     damage: attack.damage,
+                    weaponEffect: describeWeaponEffect(
+                      attack.weapon_effect_triggered,
+                      ((attack.weapon_effect_conditions as unknown as ConditionEntry[]) ?? []).map(
+                        (c) => c.conditionId,
+                      ),
+                    ),
                   }),
                 },
               }),

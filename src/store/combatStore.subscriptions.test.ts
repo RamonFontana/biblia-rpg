@@ -215,6 +215,20 @@ describe('ataques do combate', () => {
     expect(seen).toEqual([]);
   });
 
+  it('o aviso do ataque leva o efeito de arma', async () => {
+    database({ active: combat() });
+    store().initSubscriptions('session-1');
+    await settle();
+    attackHandler()({
+      eventType: 'INSERT',
+      new: attackRow({
+        weapon_effect_triggered: true,
+        weapon_effect_conditions: [{ conditionId: 'sangrando', duration: 3 }],
+      }),
+    });
+    expect(toasts).toEqual(['Eliabe acertou Filisteu: 7 de dano. Efeito de arma: Sangrando.']);
+  });
+
   it('guarda só os 10 últimos', async () => {
     database({ active: combat() });
     store().initSubscriptions('session-1');

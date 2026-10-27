@@ -103,6 +103,14 @@ begin
     raise exception 'Apenas o dono do personagem ataca por ele' using errcode = '42501';
   end if;
 
+  -- Quem está a 0 PV (Morrendo) não ataca, e ninguém ataca a si mesmo.
+  if v_attacker.hp_current <= 0 then
+    raise exception 'Quem está a 0 PV não ataca' using errcode = '42501';
+  end if;
+  if p_target_participant_id = v_attacker.id then
+    raise exception 'O atacante não pode ser o próprio alvo' using errcode = '42501';
+  end if;
+
   -- Só no próprio turno: a ordem é a da iniciativa (maior primeiro), como a tela a monta.
   select count(*) into v_count from public.combat_participants where combat_id = v_combat.id;
   select id into v_current_id

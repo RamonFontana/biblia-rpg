@@ -12,6 +12,9 @@ import {
   computeDamage,
   damageReminder,
   describeAttack,
+  describeAttackBonus,
+  describeWeaponEffect,
+  describeWeaponProperties,
   describeHitOnTarget,
   describeStrikeOnDying,
   isWeaponProficient,
@@ -502,5 +505,51 @@ describe('avisos do ataque', () => {
     expect(describeStrikeOnDying({ targetName: 'Rute', critical: true })).toBe(
       'Rute já estava Morrendo e foi atingido (crítico): marque a falha no Teste de Morte.',
     );
+  });
+});
+
+describe('descrições para a tela', () => {
+  it('describeAttackBonus: o atributo e a Proficiência que entram na soma, sem a CA', () => {
+    expect(describeAttackBonus({ ...base, weapon: sword })).toBe('d20 + FOR +3 + Proficiência +2');
+    expect(describeAttackBonus({ ...base, weapon: sling })).toBe('d20 + DES +1 + Proficiência +2');
+    expect(describeAttackBonus({ ...base, vocation: 'Sacerdote' })).toBe('d20 + FOR +3');
+    expect(describeAttackBonus({ ...base, attributes: { for: 8, des: 8 } })).toBe(
+      'd20 + FOR -1 + Proficiência +2',
+    );
+  });
+
+  it('describeWeaponProperties: as propriedades da arma em português', () => {
+    expect(describeWeaponProperties(dagger)).toBe('Acuidade, Arremesso');
+    expect(describeWeaponProperties({ ...spear, properties: ['thrown', 'versatile'] })).toBe(
+      'Arremesso, Versátil',
+    );
+    expect(describeWeaponProperties(sling)).toBe('Munição');
+    expect(describeWeaponProperties({ properties: ['two-handed', 'heavy'] })).toBe(
+      'Duas mãos, Pesada',
+    );
+    expect(describeWeaponProperties({})).toBe('');
+    expect(describeWeaponProperties(null)).toBe('');
+  });
+
+  it('describeWeaponEffect: as Condições que chegaram ao alvo, ou o efeito resistido', () => {
+    expect(describeWeaponEffect(false, [])).toBeNull();
+    expect(describeWeaponEffect(true, ['sangrando', 'atordoado'])).toBe(
+      'Efeito de arma: Sangrando, Atordoado',
+    );
+    expect(describeWeaponEffect(true, [])).toBe('Efeito de arma resistido');
+  });
+
+  it('describeAttack leva o efeito de arma ao aviso', () => {
+    expect(
+      describeAttack({
+        attackerName: 'Eliabe',
+        targetName: 'Filisteu',
+        hit: true,
+        critical: false,
+        fumble: false,
+        damage: 6,
+        weaponEffect: 'Efeito de arma: Sangrando',
+      }),
+    ).toBe('Eliabe acertou Filisteu: 6 de dano. Efeito de arma: Sangrando.');
   });
 });
