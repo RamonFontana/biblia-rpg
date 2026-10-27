@@ -482,6 +482,27 @@ export async function getCharactersAttributes(ids: string[]): Promise<Record<str
   return Object.fromEntries(data.map((row) => [row.id, row.attributes]));
 }
 
+/** Os donos (usuários) de várias fichas, por id da ficha: quem recebe o pedido de TR de cada uma. */
+export async function getCharacterOwners(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const { data, error } = await supabase.from('characters').select('id, user_id').in('id', ids);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.id, row.user_id]));
+}
+
+/** O nome e as Habilidades de várias fichas (os inimigos guardam aí a lista de Habilidades), por id. */
+export async function getCharactersSkills(
+  ids: string[],
+): Promise<Record<string, { name: string; skills: unknown }>> {
+  if (ids.length === 0) return {};
+  const { data, error } = await supabase
+    .from('characters')
+    .select('id, name, skills')
+    .in('id', ids);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.id, { name: row.name, skills: row.skills }]));
+}
+
 export type DeathState = Pick<
   CharacterRow,
   'id' | 'death_saves_successes' | 'death_saves_failures' | 'is_stable' | 'is_dead'

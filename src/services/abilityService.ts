@@ -89,7 +89,10 @@ const NO_PROTECTION: TargetProtection = { resistanceLevels: {}, immuneConditionI
  * das Habilidades passivas desbloqueadas. O inimigo não tem ficha; falhar ao ler a ficha deixa o
  * alvo sem proteção (o uso não pode travar por isso).
  */
-async function protectionOf(entityId: string, entityType: string): Promise<TargetProtection> {
+export async function protectionOf(
+  entityId: string,
+  entityType: string,
+): Promise<TargetProtection> {
   if (entityType === 'enemy') return NO_PROTECTION;
   const source = await getCharacterProtectionSource(entityId).catch(() => null);
   if (!source) return NO_PROTECTION;

@@ -2,6 +2,7 @@
 // combate pedem às fichas. As funções lançam o erro do Supabase; quem chama decide o que fazer.
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert } from '@/types/database.types';
+import type { EnemyAbilityEffect } from '@/content/schemas';
 import type { TestMode } from '@/domain/testMode';
 import type { ConditionEntry } from '@/types/combat';
 import type { CharacterSkills } from '@/features/character-creation/types';
@@ -254,11 +255,45 @@ export async function recordAbilityUse(use: AbilityUseRecord): Promise<string> {
   return data;
 }
 
+export interface EnemyAbilityUseRecord {
+  enemyParticipantId: string;
+  /** O id da biblioteca ou `enemy-custom`. */
+  abilityId: string;
+  abilityName: string;
+  /** Por alvo (personagens): as Condições que chegam já, sem TR. Com TR a lista vai vazia. */
+  targets: { participantId: string; conditions: ConditionEntry[] }[];
+  /** O TR dos alvos: o uso fica pendente até o Mestre aplicar os resultados. */
+  save?: { attribute: string; cd: number };
+  /** O Teste de sessão que leva o TR aos celulares dos jogadores. */
+  testId?: string;
+  /** O efeito como foi aplicado (a resolução e a perda de Fé leem daqui). */
+  effect: EnemyAbilityEffect;
+}
+
+/**
+ * O Mestre usa a Habilidade de um inimigo contra personagens pela função do banco (ADR 0007): ela
+ * confere o Mestre, o combate ativo e os alvos, aplica as Condições (sem TR) e grava o uso.
+ */
+export async function recordEnemyAbilityUse(use: EnemyAbilityUseRecord): Promise<string> {
+  const { data, error } = await supabase.rpc('record_enemy_ability_use', {
+    p_enemy_participant_id: use.enemyParticipantId,
+    p_ability_id: use.abilityId,
+    p_ability_name: use.abilityName,
+    p_targets: toJson(use.targets),
+    p_effect: toJson(use.effect),
+    ...(use.save && { p_save: toJson(use.save) }),
+    ...(use.testId && { p_test_id: use.testId }),
+  });
+  if (error) throw error;
+  return data;
+}
+
 /** O resultado do TR de um alvo, já calculado pelo motor (`failed` decide se as Condições entram). */
 export interface AbilitySaveOutcome {
   participantId: string;
-  natural: number;
-  total: number;
+  /** Nulo quando o alvo não respondeu o TR (Habilidade de inimigo): ele fica sem efeito. */
+  natural: number | null;
+  total: number | null;
   failed: boolean;
   mode: string;
   conditions: ConditionEntry[];
