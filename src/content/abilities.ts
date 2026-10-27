@@ -80,6 +80,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'long_rest',
     maxUses: 1,
     effect: 'Cura 3d8 PV e remove envenenamento/doença do alvo.',
+    combatEffect: { targets: 'ally', remove: { mode: 'fixed', conditionIds: ['envenenado'] } },
   },
   {
     id: 'tribe-aser-12-banquete-do-aca',
@@ -1169,6 +1170,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'combat',
     maxUses: 1,
     effect: 'Aliados 18m perdem condição negativa e resistem dano mundano.',
+    combatEffect: { targets: 'allies', remove: { mode: 'per_target' } },
   },
   {
     id: 'tribe-naftali-1-passos-de-gazel',
@@ -1465,6 +1467,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'unlimited',
     effect: 'Cura e estanca sangramento.',
+    combatEffect: { targets: 'ally', remove: { mode: 'fixed', conditionIds: ['sangrando'] } },
   },
   {
     id: 'tribe-simeao-8-veneno-lentific',
@@ -2065,6 +2068,10 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     effect: 'Encerra Amedrontado, Atordoado, Envenenado ou Possessão.',
+    combatEffect: {
+      targets: 'ally',
+      remove: { mode: 'choice', conditionIds: ['amedrontado', 'atordoado', 'envenenado'] },
+    },
   },
   {
     id: 'vocation-sacerdote-6-jejum-protetivo',

@@ -122,6 +122,15 @@ function collectViolations(): string[] {
     for (const { conditionId } of ability.combatEffect?.apply ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
+    const remove = ability.combatEffect?.remove;
+    for (const conditionId of remove && 'conditionIds' in remove ? remove.conditionIds : []) {
+      if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
+    }
+    // Tirar Condição é para quem ajuda: o alvo é um aliado, nunca um inimigo.
+    if (remove && !['ally', 'allies'].includes(ability.combatEffect?.targets ?? ''))
+      violations.push(`${p}:remove-from-non-ally`);
+    // A remoção não tem TR: o aliado não resiste a ser curado.
+    if (remove && ability.combatEffect?.save) violations.push(`${p}:remove-with-save`);
     // Passiva não se usa: um efeito de combate nela nunca seria aplicado.
     if (ability.combatEffect && ability.actionType === 'passive')
       violations.push(`${p}:combat-effect-on-passive`);

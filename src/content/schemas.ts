@@ -56,21 +56,44 @@ export type ContentItem = z.infer<typeof itemSchema>;
  * com a duração em rodadas (sem duração, a Condição fica até ser removida). O texto livre
  * (`effect`) continua: cura, dano e bônus seguem como texto, aplicados pelo Mestre.
  */
-export const abilityEffectSchema = z.strictObject({
-  targets: z.enum(['enemy', 'enemies', 'ally', 'allies', 'aggressor']),
-  /** O TR do alvo (atributo): a Condição só entra em quem falha. Sem TR, entra em todos. */
-  save: z
-    .strictObject({ attribute: z.enum(['for', 'des', 'con', 'int', 'sab', 'car']) })
-    .optional(),
-  apply: z
-    .array(
-      z.strictObject({
-        conditionId: z.string().min(1),
-        rounds: z.number().int().min(1).max(100).optional(),
-      }),
-    )
-    .min(1),
-});
+export const abilityEffectSchema = z
+  .strictObject({
+    targets: z.enum(['enemy', 'enemies', 'ally', 'allies', 'aggressor']),
+    /** O TR do alvo (atributo): a Condição só entra em quem falha. Sem TR, entra em todos. */
+    save: z
+      .strictObject({ attribute: z.enum(['for', 'des', 'con', 'int', 'sab', 'car']) })
+      .optional(),
+    apply: z
+      .array(
+        z.strictObject({
+          conditionId: z.string().min(1),
+          rounds: z.number().int().min(1).max(100).optional(),
+        }),
+      )
+      .min(1)
+      .optional(),
+    /**
+     * A Condição que a Habilidade tira dos alvos (aliados, sem TR): `fixed` tira a Condição citada,
+     * `choice` deixa o jogador escolher uma da lista e `per_target` deixa escolher uma de cada alvo,
+     * entre as que ele tem.
+     */
+    remove: z
+      .discriminatedUnion('mode', [
+        z.strictObject({
+          mode: z.literal('fixed'),
+          conditionIds: z.array(z.string().min(1)).length(1),
+        }),
+        z.strictObject({
+          mode: z.literal('choice'),
+          conditionIds: z.array(z.string().min(1)).min(2),
+        }),
+        z.strictObject({ mode: z.literal('per_target') }),
+      ])
+      .optional(),
+  })
+  .refine((effect) => effect.apply !== undefined || effect.remove !== undefined, {
+    message: 'O efeito precisa aplicar ou remover uma Condição',
+  });
 
 export const abilitySchema = z.strictObject({
   id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
