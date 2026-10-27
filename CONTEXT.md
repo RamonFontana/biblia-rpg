@@ -189,10 +189,18 @@ _Avoid_: XP, experiência
 ## Descanso
 
 **Descanso Curto**:
-Pausa de 1 hora no jogo; até 2 por dia.
+Pausa de 1 hora no jogo; até 2 por dia. Abre quando o Mestre o abre ou quando todos os jogadores fazem o Pedido de Descanso; fecha quando o Mestre o encerra ou quando todos os jogadores terminam. Enquanto está aberto, o personagem pode gastar Dados de Vida.
+
+**Pedido de Descanso**:
+O pedido de um jogador por um Descanso Curto. Conta o jogador de cada personagem da sessão que não está Morto; o Mestre pode recusar, o que zera os pedidos.
+_Avoid_: voto, solicitação
 
 **Descanso Longo**:
-Pausa de 8 horas no jogo; 1 por dia. Recupera todos os PV e, com ensino ou oração, Fé ao grupo. Exige Sustento.
+Pausa de 8 horas no jogo; 1 por dia. Recupera todos os PV, metade dos Dados de Vida gastos (arredondada para cima) e, com ensino ou oração, Fé ao grupo. Exige Sustento.
+
+**Dado de Vida**:
+O dado da Vocação (d10 para Guerreiro e Caçador, d8 para Batedor e Sacerdote/Sábio). O personagem tem tantos quanto o seu nível; cada um gasto no Descanso Curto cura o valor rolado mais o modificador de CON, no mínimo 1 PV. Uma sessão nova devolve todos.
+_Avoid_: hit die, dado de PV
 
 **Sustento**:
 1 Ração e 1 Odre consumidos por personagem num Descanso Longo. Quem descansa sem Sustento acorda Exausto.
