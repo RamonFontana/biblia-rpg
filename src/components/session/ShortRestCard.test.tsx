@@ -7,6 +7,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 const data = vi.hoisted(() => ({
   openShortRest: vi.fn(),
   closeShortRest: vi.fn(),
+  requestShortRest: vi.fn(),
+  withdrawShortRestRequest: vi.fn(),
+  finishShortRest: vi.fn(),
+  refuseShortRestRequests: vi.fn(),
 }));
 vi.mock('@/data-access/sessions', () => data);
 
@@ -15,7 +19,7 @@ vi.mock('@/data-access/characters', () => ({ spendHitDie: vi.fn() }));
 import { ShortRestCard } from './ShortRestCard';
 import type { SpenderCharacter } from './HitDiceSpender';
 
-import type { ShortRestSession } from '@/domain/shortRest';
+import type { RestPlayer, ShortRestSession } from '@/domain/shortRest';
 
 const closed: ShortRestSession = {
   short_rests_today: 0,
@@ -41,6 +45,10 @@ const renderCard = (role: 'master' | 'player', session = closed, hasActiveCombat
 beforeEach(() => {
   data.openShortRest.mockReset().mockResolvedValue('r1');
   data.closeShortRest.mockReset().mockResolvedValue(undefined);
+  data.requestShortRest.mockReset().mockResolvedValue(false);
+  data.withdrawShortRestRequest.mockReset().mockResolvedValue(undefined);
+  data.finishShortRest.mockReset().mockResolvedValue(false);
+  data.refuseShortRestRequests.mockReset().mockResolvedValue(undefined);
 });
 afterEach(cleanup);
 
@@ -176,5 +184,133 @@ describe('ShortRestCard: Dados de Vida', () => {
   it('sem personagens na lista não mostra nada de Dados de Vida', () => {
     renderWith(open('master'), []);
     expect(screen.queryByLabelText(/Resultado do d/)).not.toBeInTheDocument();
+  });
+});
+
+describe('ShortRestCard: Pedido de Descanso e "Terminei"', () => {
+  const players: RestPlayer[] = [
+    { id: 'p1', name: 'Eliabe' },
+    { id: 'p2', name: 'Rute' },
+    { id: 'p3', name: 'Noé' },
+    { id: 'p4', name: 'Caleb', is_dead: true },
+  ];
+
+  const renderRest = (
+    role: 'master' | 'player',
+    session: Partial<ShortRestSession> = {},
+    myCharacterId?: string,
+    hasActiveCombat = false,
+  ) =>
+    render(
+      <ShortRestCard
+        role={role}
+        sessionId="s1"
+        session={{ ...closed, ...session }}
+        hasActiveCombat={hasActiveCombat}
+        players={players}
+        myCharacterId={myCharacterId}
+      />,
+    );
+
+  it('fechado: mostra quantos pediram e quem (o Morto não conta no total)', () => {
+    renderRest('master', { short_rest_requested: ['p1', 'p3'] });
+    expect(screen.getByText('2 de 3 pediram (Eliabe, Noé)')).toBeInTheDocument();
+  });
+
+  it('o jogador pede o descanso pelo próprio personagem', async () => {
+    renderRest('player', {}, 'p2');
+    fireEvent.click(screen.getByRole('button', { name: 'Pedir Descanso Curto' }));
+    await waitFor(() => expect(data.requestShortRest).toHaveBeenCalledWith('s1', 'p2'));
+  });
+
+  it('depois de pedir, o botão vira "Retirar pedido" e retira', async () => {
+    renderRest('player', { short_rest_requested: ['p2'] }, 'p2');
+    expect(screen.queryByRole('button', { name: 'Pedir Descanso Curto' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Retirar pedido' }));
+    await waitFor(() => expect(data.withdrawShortRestRequest).toHaveBeenCalledWith('s1', 'p2'));
+  });
+
+  it('o jogador com combate em andamento não pede e vê o motivo', () => {
+    renderRest('player', {}, 'p2', true);
+    expect(screen.queryByRole('button', { name: 'Pedir Descanso Curto' })).toBeNull();
+    expect(screen.getByText('Indisponível: combate em andamento.')).toBeInTheDocument();
+  });
+
+  it('o jogador sem Descanso Curto restante não pede e vê o motivo', () => {
+    renderRest('player', { short_rests_today: 2 }, 'p2');
+    expect(screen.queryByRole('button', { name: 'Pedir Descanso Curto' })).toBeNull();
+    expect(screen.getByText('Indisponível: sem Descanso Curto restante hoje.')).toBeInTheDocument();
+  });
+
+  it('o jogador com personagem Morto não vê o botão de pedir', () => {
+    renderRest('player', {}, 'p4');
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('mostra o erro do banco quando o pedido falha', async () => {
+    data.requestShortRest.mockRejectedValue(new Error('falhou'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderRest('player', {}, 'p2');
+    fireEvent.click(screen.getByRole('button', { name: 'Pedir Descanso Curto' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível pedir');
+  });
+
+  it('o Mestre recusa o pedido quando há pedidos', async () => {
+    renderRest('master', { short_rest_requested: ['p1'] });
+    fireEvent.click(screen.getByRole('button', { name: 'Recusar pedido' }));
+    await waitFor(() => expect(data.refuseShortRestRequests).toHaveBeenCalledWith('s1'));
+  });
+
+  it('o Mestre não vê "Recusar pedido" sem nenhum pedido', () => {
+    renderRest('master');
+    expect(screen.queryByRole('button', { name: 'Recusar pedido' })).toBeNull();
+  });
+
+  it('o Mestre continua abrindo mesmo com pedidos pendentes', async () => {
+    renderRest('master', { short_rest_requested: ['p1'] });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Descanso Curto' }));
+    await waitFor(() => expect(data.openShortRest).toHaveBeenCalledWith('s1'));
+  });
+
+  it('aberto: mostra quem abriu e quem já terminou', () => {
+    renderRest('master', { ...open('group'), short_rest_finished: ['p2'] });
+    expect(screen.getByText('Aberto a pedido do grupo')).toBeInTheDocument();
+    expect(screen.getByText('1 de 3 terminaram (Rute)')).toBeInTheDocument();
+  });
+
+  it('aberto: o jogador marca "Terminei" pelo próprio personagem', async () => {
+    renderRest('player', open('master'), 'p1');
+    fireEvent.click(screen.getByRole('button', { name: 'Terminei' }));
+    await waitFor(() => expect(data.finishShortRest).toHaveBeenCalledWith('s1', 'p1'));
+  });
+
+  it('aberto: quem já terminou vê que terminou e não marca de novo', () => {
+    renderRest('player', { ...open('master'), short_rest_finished: ['p1'] }, 'p1');
+    expect(screen.queryByRole('button', { name: 'Terminei' })).toBeNull();
+    expect(screen.getByText('Você terminou.')).toBeInTheDocument();
+  });
+
+  it('aberto: o Mestre não vê "Terminei", e sim "Encerrar descanso"', () => {
+    renderRest('master', open('master'));
+    expect(screen.queryByRole('button', { name: 'Terminei' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Encerrar descanso' })).toBeInTheDocument();
+  });
+
+  it('aberto: o resumo de pedidos não aparece', () => {
+    renderRest('master', open('master'));
+    expect(screen.queryByText(/pediram/)).toBeNull();
+  });
+
+  it('bloqueado sem pedidos: só o motivo, sem o resumo de pedidos', () => {
+    renderRest('master', {}, undefined, true);
+    expect(screen.queryByText(/pediram/)).toBeNull();
+  });
+
+  it('bloqueado com pedidos antigos: o Mestre vê o resumo e ainda pode recusar', async () => {
+    renderRest('master', { short_rest_requested: ['p1'] }, undefined, true);
+    expect(screen.getByText('Indisponível: combate em andamento.')).toBeInTheDocument();
+    expect(screen.getByText('1 de 3 pediram (Eliabe)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Recusar pedido' }));
+    await waitFor(() => expect(data.refuseShortRestRequests).toHaveBeenCalledWith('s1'));
   });
 });

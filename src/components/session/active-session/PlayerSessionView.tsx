@@ -72,6 +72,17 @@ export function PlayerSessionView({
     updateLocal('player', id, patch),
   );
 
+  // Quem conta no "todos" do Pedido de Descanso: o personagem de cada jogador (ADR 0006).
+  const restPlayers = useMemo(
+    () =>
+      playerCharacters.map((pc) => ({
+        id: pc.character.id,
+        name: pc.character.name ?? 'Jogador',
+        is_dead: pc.character.is_dead,
+      })),
+    [playerCharacters],
+  );
+
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="p-3 md:p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
@@ -88,6 +99,8 @@ export function PlayerSessionView({
         sessionId={sessionId}
         session={sessionData}
         hasActiveCombat={hasActiveCombat}
+        players={restPlayers}
+        myCharacterId={myCharacter?.id}
         spenders={rechargeTargets}
         onSpent={(id, patch) => updateLocal('player', id, patch)}
       />

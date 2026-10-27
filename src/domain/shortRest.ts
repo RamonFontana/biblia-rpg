@@ -13,6 +13,9 @@ export interface ShortRestSession {
   short_rests_today: number | null;
   short_rest_id: string | null;
   short_rest_opened_by: string | null;
+  /** Os personagens que pediram o descanso e os que já terminaram (ausentes valem nenhum). */
+  short_rest_requested?: string[] | null;
+  short_rest_finished?: string[] | null;
 }
 
 export interface ShortRestState {

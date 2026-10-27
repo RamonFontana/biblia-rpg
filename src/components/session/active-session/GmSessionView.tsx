@@ -68,6 +68,17 @@ export function GmSessionView({
     updateLocal('npc', id, patch),
   );
 
+  // Quem conta no "todos" do Pedido de Descanso: o personagem de cada jogador (ADR 0006).
+  const restPlayers = useMemo(
+    () =>
+      playerCharacters.map((pc) => ({
+        id: pc.character.id,
+        name: pc.character.name ?? 'Jogador',
+        is_dead: pc.character.is_dead,
+      })),
+    [playerCharacters],
+  );
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="p-3 md:p-4 bg-amber-900/20 border border-amber-700/50 rounded-md mb-4 md:mb-6">
@@ -86,6 +97,7 @@ export function GmSessionView({
         sessionId={sessionId}
         session={sessionData}
         hasActiveCombat={hasActiveCombat}
+        players={restPlayers}
         spenders={playableNpcs}
         onSpent={(id, patch) => updateLocal('npc', id, patch)}
       />
