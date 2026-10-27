@@ -244,4 +244,80 @@ test.describe('efeito de Habilidade', () => {
       abilityCard(player, 'Purificação').getByRole('button', { name: 'Usar' }),
     ).toBeDisabled();
   });
+
+  test('Presença Aterradora: o TR chega ao celular dos jogadores e a Condição entra só em quem falhou', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      stats: { pv: 40, current_pv: 40, ca: 11, faith: 80, current_faith: 80 },
+    });
+    const rute = await seed.createCharacter('player2', {
+      name: 'Rute',
+      stats: { pv: 11, current_pv: 11, ca: 11, faith: 50 },
+    });
+    // O Anakim traz a Habilidade da biblioteca do bestiário: TR de Sabedoria CD 13, Amedrontado.
+    const anakim = await seed.createCharacter('master', {
+      name: 'Anakim',
+      is_enemy: true,
+      tribe: 'Inimigo',
+      has_participated_in_session: true,
+      stats: { pv: 60, current_pv: 60, ca: 15, faith: 0, current_faith: 0 },
+      skills: [
+        {
+          name: 'Presença Aterradora',
+          description: 'Assusta quem o vê.',
+          libraryId: 'enemy-presenca-aterradora',
+        },
+        { name: 'Comando', description: 'Só texto' },
+      ],
+    });
+    const sessionId = await seed.createSession({ characters: [eliabe, rute, anakim] });
+
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    const ally = await signIn('player2');
+    await ally.goto(`/session/${sessionId}`);
+    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    await startCombat(master, { Anakim: 20, Eliabe: 10, Rute: 5 });
+    await expect(player.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
+    await expect(ally.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
+
+    // Só a Habilidade com efeito aparece para o Mestre usar; o efeito vem do bestiário.
+    const panel = master.getByRole('region', { name: 'Habilidades dos inimigos' });
+    await expect(panel.getByText('TR de Sabedoria CD 13 · Amedrontado (10 rodadas)')).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(panel.getByText('Comando')).toHaveCount(0);
+    await panel.getByRole('button', { name: 'Usar Presença Aterradora (Anakim)' }).click();
+    await panel.getByLabel('Eliabe').check();
+    await panel.getByLabel('Rute').check();
+    await panel.getByRole('button', { name: 'Usar a Habilidade' }).click();
+    await expect(panel.getByRole('status')).toContainText('o TR foi para os jogadores');
+
+    // O TR chega como um Teste de sessão: Eliabe tira 2 e falha, Rute tira 20 e passa.
+    await expect(player.getByText('Resistência (Sabedoria)')).toBeVisible({ timeout: 15_000 });
+    await player.getByRole('spinbutton').fill('2');
+    await player.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(player.getByText('Resultado Enviado!')).toBeVisible();
+    await expect(ally.getByText('Resistência (Sabedoria)')).toBeVisible({ timeout: 15_000 });
+    await ally.getByRole('spinbutton').fill('20');
+    await ally.getByRole('button', { name: 'Enviar Valor' }).click();
+    await expect(ally.getByText('Resultado Enviado!')).toBeVisible();
+
+    // Nada entrou até o Mestre aplicar os resultados.
+    const pending = master.getByRole('region', { name: 'TRs de Habilidades pendentes' });
+    await expect(pending.getByText(/Eliabe: falhou/)).toBeVisible({ timeout: 15_000 });
+    await expect(pending.getByText(/Rute: passou/)).toBeVisible();
+    expect(await conditionsOf(eliabe)).toEqual([]);
+    await pending.getByRole('button', { name: 'Aplicar resultados' }).click();
+
+    await expect(pending).toBeHidden({ timeout: 15_000 });
+    expect(await conditionsOf(eliabe)).toEqual(['amedrontado']);
+    expect(await conditionsOf(rute)).toEqual([]);
+    await expect(master.getByText(/Anakim usou Presença Aterradora/).first()).toBeVisible();
+  });
 });
