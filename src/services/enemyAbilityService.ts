@@ -2,12 +2,17 @@
 // chega ao celular de cada jogador pelo Teste de sessão e, quando os resultados chegam, o Mestre os
 // aplica. O NPC jogável tem o TR rolado pelo Mestre (ele não tem celular). Os dados são físicos
 // (ADR 0001): o jogador digita o d20 ou usa a Rolagem Virtual.
-import { findEnemyAbility } from '@/content/enemyAbilities';
-import { enemyAbilityEffectSchema, type EnemyAbilityEffect } from '@/content/schemas';
-import { getCharacterOwners, getCharactersAttributes } from '@/data-access/characters';
+import type { EnemyAbilityEffect } from '@/content/schemas';
+import {
+  getCharacterOwners,
+  getCharacterStats,
+  getCharactersAttributes,
+  updateCharacterStats,
+} from '@/data-access/characters';
 import {
   recordEnemyAbilityUse,
   resolveAbilityUse,
+  setEnemyAbilityState,
   type CombatAbilityUse,
   type CombatParticipant,
 } from '@/data-access/combat';
@@ -20,11 +25,20 @@ import {
 import { abilityUseTargets, resolveAbilityEffect } from '@/domain/abilityEffect';
 import { resolveAbilitySave, saveModifierOf, saveTestType } from '@/domain/abilitySave';
 import {
+  abilityStateKey,
+  checkFaithDie,
+  enemyAbilityStatus,
+  enemyEffectOfUse,
   enemyEffectAsAbilityEffect,
+  faithLostBy,
+  rechargeSucceeds,
   resolveEnemyAbilityResults,
+  stateAfterUse,
   type EnemyAbility,
+  type EnemyAbilityStateMap,
   type EnemySaveResult,
 } from '@/domain/enemyAbility';
+import { addFaith } from '@/domain/faith';
 import type { MasterMark } from '@/domain/testMode';
 import { protectionOf, type AbilityResolution, type AbilitySaveRoll } from './abilityService';
 
@@ -60,10 +74,15 @@ export async function fireEnemyAbility(input: {
   enemyParticipantId: string;
   ability: EnemyAbility;
   targets: EnemyAbilityTarget[];
+  /** O estado de uso das Habilidades deste inimigo (`ability_state` do participante). */
+  abilityState: EnemyAbilityStateMap;
 }): Promise<EnemyAbilityFiring> {
-  const { sessionId, enemyParticipantId, ability, targets } = input;
+  const { sessionId, enemyParticipantId, ability, targets, abilityState } = input;
   const { effect } = ability;
   if (targets.length === 0) throw new Error('Escolha ao menos um alvo');
+  const key = abilityStateKey(ability);
+  const status = enemyAbilityStatus(key, abilityState);
+  if (!status.ready) throw new Error(status.reason);
 
   let testId: string | null = null;
   if (effect.save) {
@@ -118,17 +137,33 @@ export async function fireEnemyAbility(input: {
     ...(testId && { testId }),
   });
 
+  // Só depois do uso gravado: a Habilidade de 1 por combate ou de Recarga fica marcada.
+  const next = stateAfterUse(effect.usage);
+  if (next) await setEnemyAbilityState(enemyParticipantId, { ...abilityState, [key]: next });
+
   for (const { name, messages } of applied) {
     for (const message of messages) toast(`${name}: ${message}`);
   }
   return { id, testId, applied };
 }
 
-/** O efeito gravado no uso, ou o da biblioteca (usos antigos); `null` se nenhum vale. */
-function effectOfUse(use: Pick<CombatAbilityUse, 'ability_id' | 'enemy_effect'>) {
-  const stored = enemyAbilityEffectSchema.safeParse(use.enemy_effect);
-  if (stored.success) return stored.data;
-  return findEnemyAbility(use.ability_id)?.effect ?? null;
+/**
+ * A Recarga no início do turno do inimigo: o Mestre lança o d6 (digitado ou Rolagem Virtual) e, com
+ * 5 ou 6, o estado de recarga sai e a Habilidade volta. Devolve se ela voltou.
+ */
+export async function rechargeEnemyAbility(input: {
+  participantId: string;
+  abilityKey: string;
+  abilityState: EnemyAbilityStateMap;
+  d6: number;
+}): Promise<boolean> {
+  const { participantId, abilityKey, abilityState, d6 } = input;
+  if (!Number.isInteger(d6) || d6 < 1 || d6 > 6) throw new Error('O d6 precisa estar entre 1 e 6');
+  if (!rechargeSucceeds(d6)) return false;
+  const rest = { ...abilityState };
+  delete rest[abilityKey];
+  await setEnemyAbilityState(participantId, rest);
+  return true;
 }
 
 /**
@@ -143,9 +178,11 @@ export async function resolveEnemyAbilityUse(input: {
   >;
   participants: Pick<CombatParticipant, 'id' | 'entity_id' | 'entity_type'>[];
   npcRolls: AbilitySaveRoll[];
-}): Promise<AbilityResolution> {
-  const { use, participants, npcRolls } = input;
-  const effect: EnemyAbilityEffect | null = effectOfUse(use);
+  /** O dado de Fé (1d4 ou 1d6) de cada alvo que falhou, quando a Habilidade tira Fé. */
+  faithRolls?: { participantId: string; value: number }[];
+}): Promise<AbilityResolution & { reminder?: string; faithLost: Record<string, number> }> {
+  const { use, participants, npcRolls, faithRolls = [] } = input;
+  const effect: EnemyAbilityEffect | null = enemyEffectOfUse(use);
   if (!effect) throw new Error('A Habilidade não tem efeito');
 
   const targets = abilityUseTargets(use.targets);
@@ -213,6 +250,28 @@ export async function resolveEnemyAbilityUse(input: {
   }
 
   const outcomes = resolveEnemyAbilityResults(effect, results);
+
+  // Perda de Fé: quem falhou perde o dado que o Mestre rolou, limitado ao que tem (piso 0). Tudo é
+  // conferido antes de gravar, para uma falta não deixar o uso pela metade.
+  const faithLost: Record<string, number> = {};
+  const faithStats: Record<string, Awaited<ReturnType<typeof getCharacterStats>>> = {};
+  if (effect.faithLoss) {
+    const { sides } = effect.faithLoss;
+    for (const outcome of outcomes) {
+      faithLost[outcome.participantId] = 0;
+      if (!outcome.failed) continue;
+      const roll = faithRolls.find((r) => r.participantId === outcome.participantId);
+      if (!roll) throw new Error(`Falta o dado de Fé de ${outcome.name}`);
+      if (checkFaithDie(roll.value, sides) !== null) {
+        throw new Error(`O dado de Fé de ${outcome.name} precisa estar entre 1 e ${sides}`);
+      }
+      const entityId = entityOf(outcome.participantId)?.entity_id;
+      if (!entityId) throw new Error(`O alvo ${outcome.name} saiu do combate`);
+      faithStats[outcome.participantId] = await getCharacterStats(entityId);
+      faithLost[outcome.participantId] = faithLostBy(faithStats[outcome.participantId], roll.value);
+    }
+  }
+
   const status = await resolveAbilityUse(
     use.id,
     outcomes.map(({ participantId, natural, total, failed, mode, conditions }) => ({
@@ -222,13 +281,31 @@ export async function resolveEnemyAbilityUse(input: {
       failed,
       mode,
       conditions,
+      ...(effect.faithLoss && { faithLost: faithLost[participantId] }),
     })),
   );
+  if (status === 'resolved') {
+    for (const [participantId, lost] of Object.entries(faithLost)) {
+      const stats = faithStats[participantId];
+      const entityId = entityOf(participantId)?.entity_id;
+      if (lost > 0 && stats && entityId) {
+        await updateCharacterStats(entityId, {
+          ...stats,
+          current_faith: addFaith(stats, -lost),
+        });
+      }
+    }
+  }
   if (use.test_id) await completeSessionTest(use.test_id).catch(() => undefined);
   if (status === 'resolved') {
     for (const { name, messages } of outcomes) {
       for (const message of messages) toast(`${name}: ${message}`);
     }
+    // O lembrete é do Mestre (o app não aplica a Desvantagem): o aviso é local, só na tela dele.
+    const failedNames = outcomes.filter((o) => o.failed).map((o) => o.name);
+    if (effect.reminder && failedNames.length > 0) {
+      toast(`Lembrete (${failedNames.join(', ')}): ${effect.reminder}`);
+    }
   }
-  return { status, results: outcomes };
+  return { status, results: outcomes, faithLost, reminder: effect.reminder };
 }

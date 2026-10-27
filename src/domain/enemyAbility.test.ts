@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { EnemyAbilityEffect } from '@/content/schemas';
 import { createSeededRng } from './rng';
 import {
+  abilityStateOf,
+  enemyEffectOfUse,
   abilityStateKey,
   checkFaithDie,
   describeEnemyEffect,
@@ -332,5 +334,40 @@ describe('resolveEnemyAbilityResults: a Fé de quem falhou', () => {
     expect(passed.failed).toBe(false);
     expect(silent.failed).toBe(false);
     expect(silent.answered).toBe(false);
+  });
+});
+
+describe('abilityStateOf: o estado de uso lido do participante', () => {
+  it('lê só os estados conhecidos', () => {
+    expect(abilityStateOf({ a: 'used', b: 'recharging', c: 'outro', d: 3, e: null })).toEqual({
+      a: 'used',
+      b: 'recharging',
+    });
+  });
+
+  it('o que não é objeto não tem estado', () => {
+    expect(abilityStateOf(null)).toEqual({});
+    expect(abilityStateOf([1])).toEqual({});
+    expect(abilityStateOf('used')).toEqual({});
+  });
+});
+
+describe('enemyEffectOfUse: o efeito de um uso gravado', () => {
+  it('prefere o efeito gravado no uso (Habilidade personalizada)', () => {
+    const stored: EnemyAbilityEffect = { apply: [{ conditionId: 'cego' }], usage: 'per_combat' };
+    expect(enemyEffectOfUse({ ability_id: 'enemy-custom', enemy_effect: stored })).toEqual(stored);
+  });
+
+  it('sem efeito gravado, usa o da biblioteca', () => {
+    expect(
+      enemyEffectOfUse({ ability_id: 'enemy-salto-e-bote', enemy_effect: null })?.save,
+    ).toEqual({ attribute: 'for', cd: 13 });
+  });
+
+  it('um efeito gravado inválido cai na biblioteca; sem nenhum dos dois, é nulo', () => {
+    expect(
+      enemyEffectOfUse({ ability_id: 'enemy-salto-e-bote', enemy_effect: { lixo: 1 } })?.usage,
+    ).toBe('unlimited');
+    expect(enemyEffectOfUse({ ability_id: 'enemy-custom', enemy_effect: null })).toBeNull();
   });
 });

@@ -22,7 +22,11 @@ vi.mock('../lib/supabase', async () => {
 
 import { callsOf } from '../test/fakeSupabase';
 import { enemyAbilityOf } from '@/domain/enemyAbility';
-import { fireEnemyAbility, resolveEnemyAbilityUse } from './enemyAbilityService';
+import {
+  fireEnemyAbility,
+  rechargeEnemyAbility,
+  resolveEnemyAbilityUse,
+} from './enemyAbilityService';
 
 const presenca = enemyAbilityOf({
   name: 'Presença Aterradora',
@@ -50,7 +54,12 @@ const npc = {
   name: 'Jonas',
   mark: null,
 };
-const base = { sessionId: 's1', enemyParticipantId: 'p-anakim', ability: presenca };
+const base = {
+  sessionId: 's1',
+  enemyParticipantId: 'p-anakim',
+  ability: presenca,
+  abilityState: {},
+};
 
 const owners = [
   { id: 'c-eliabe', user_id: 'u-eliabe' },
@@ -379,5 +388,294 @@ describe('resolveEnemyAbilityUse', () => {
         npcRolls: [],
       }),
     ).rejects.toThrow(/não tem efeito/);
+  });
+});
+
+const grito = enemyAbilityOf({
+  name: 'Grito Atormentador',
+  libraryId: 'enemy-grito-atormentador',
+})!;
+const maldicao = enemyAbilityOf({
+  name: 'Maldição de Baal',
+  libraryId: 'enemy-maldicao-de-baal',
+})!;
+const stateWrites = () => callsOf(state.calls, 'combat_participants', 'update');
+
+describe('fireEnemyAbility: estado de uso', () => {
+  it('a Habilidade de Recarga fica em recarga depois do uso', async () => {
+    await fireEnemyAbility({ ...base, ability: grito, abilityState: {}, targets: [player] });
+    const [write] = stateWrites();
+    expect(write.payload).toEqual({ ability_state: { 'enemy-grito-atormentador': 'recharging' } });
+    expect(write.filters).toContainEqual(['eq', 'id', 'p-anakim']);
+  });
+
+  it('a de 1 por combate fica usada e o estado das outras é mantido', async () => {
+    const once = enemyAbilityOf({
+      name: 'Laço',
+      effect: { apply: [{ conditionId: 'agarrado' }], usage: 'per_combat' },
+    })!;
+    await fireEnemyAbility({
+      ...base,
+      ability: once,
+      abilityState: { 'enemy-grito-atormentador': 'recharging' },
+      targets: [player],
+    });
+    expect(stateWrites()[0].payload).toEqual({
+      ability_state: { 'enemy-grito-atormentador': 'recharging', 'enemy-custom:Laço': 'used' },
+    });
+  });
+
+  it('a sem limite não grava estado', async () => {
+    await fireEnemyAbility({ ...base, abilityState: {}, targets: [player] });
+    expect(stateWrites()).toHaveLength(0);
+  });
+
+  it('recusa uma Habilidade usada ou em recarga, sem gravar nada', async () => {
+    await expect(
+      fireEnemyAbility({
+        ...base,
+        ability: grito,
+        abilityState: { 'enemy-grito-atormentador': 'recharging' },
+        targets: [player],
+      }),
+    ).rejects.toThrow('Em Recarga (5-6)');
+    expect(callsOf(state.calls, 'record_enemy_ability_use', 'rpc')).toHaveLength(0);
+    expect(stateWrites()).toHaveLength(0);
+  });
+});
+
+describe('rechargeEnemyAbility: o d6 da Recarga', () => {
+  const key = 'enemy-grito-atormentador';
+
+  it('com 5 ou 6 a Habilidade volta e o estado dela sai', async () => {
+    const back = await rechargeEnemyAbility({
+      participantId: 'p-anakim',
+      abilityKey: key,
+      abilityState: { [key]: 'recharging', outra: 'used' },
+      d6: 5,
+    });
+    expect(back).toBe(true);
+    expect(stateWrites()[0].payload).toEqual({ ability_state: { outra: 'used' } });
+  });
+
+  it('com 4 ou menos continua em recarga e nada é gravado', async () => {
+    const back = await rechargeEnemyAbility({
+      participantId: 'p-anakim',
+      abilityKey: key,
+      abilityState: { [key]: 'recharging' },
+      d6: 4,
+    });
+    expect(back).toBe(false);
+    expect(stateWrites()).toHaveLength(0);
+  });
+
+  it('recusa um d6 fora de 1 a 6', async () => {
+    for (const d6 of [0, 7, 2.5]) {
+      await expect(
+        rechargeEnemyAbility({
+          participantId: 'p-anakim',
+          abilityKey: key,
+          abilityState: { [key]: 'recharging' },
+          d6,
+        }),
+      ).rejects.toThrow('O d6 precisa estar entre 1 e 6');
+    }
+  });
+});
+
+describe('resolveEnemyAbilityUse: Fé perdida', () => {
+  const participants = [
+    { id: 'p-eliabe', entity_id: 'c-eliabe', entity_type: 'player' as const },
+    { id: 'p-rute', entity_id: 'c-rute', entity_type: 'player' as const },
+  ];
+  const use = (ability = grito) => ({
+    id: 'use-1',
+    combat_id: 'cb1',
+    ability_id: ability.id,
+    enemy_effect: ability.effect,
+    cd: ability.effect.save?.cd ?? 12,
+    test_id: 'test-1',
+    targets: [
+      { participantId: 'p-eliabe', name: 'Eliabe', conditions: [] },
+      { participantId: 'p-rute', name: 'Rute', conditions: [] },
+    ],
+  });
+  const row = (over: Record<string, unknown>) => ({
+    character_id: 'c-eliabe',
+    status: 'submitted',
+    is_approved: false,
+    roll_value: 5,
+    result_value: 8,
+    applied_mode: 'normal',
+    ...over,
+  });
+  const sent = () =>
+    (
+      callsOf(state.calls, 'resolve_ability_use', 'rpc')[0].payload as {
+        p_results: Record<string, unknown>[];
+      }
+    ).p_results;
+  const faithWrites = () => callsOf(state.calls, 'characters', 'update');
+
+  beforeEach(() => {
+    state.respond = (call) => {
+      if (call.table === 'session_test_results') {
+        return { data: [row({}), row({ character_id: 'c-rute', is_approved: true })] };
+      }
+      if (call.table === 'characters' && call.op === 'select') {
+        return { data: { stats: { pv: 10, faith: 50, current_faith: 10 } } };
+      }
+      if (call.table === 'resolve_ability_use') return { data: 'resolved' };
+      return { data: null };
+    };
+  });
+
+  it('quem falhou perde o dado e a Fé cai; quem passou não perde nada', async () => {
+    const result = await resolveEnemyAbilityUse({
+      use: use(),
+      participants,
+      npcRolls: [],
+      faithRolls: [{ participantId: 'p-eliabe', value: 3 }],
+    });
+    expect(sent().map((r) => r.faithLost)).toEqual([3, 0]);
+    expect(faithWrites()).toHaveLength(1);
+    expect(faithWrites()[0].payload).toEqual({
+      stats: { pv: 10, faith: 50, current_faith: 7 },
+    });
+    expect(faithWrites()[0].filters).toContainEqual(['eq', 'id', 'c-eliabe']);
+    expect(result.faithLost).toEqual({ 'p-eliabe': 3, 'p-rute': 0 });
+  });
+
+  it('a Fé não passa do piso: perde só o que tem', async () => {
+    state.respond = (call) => {
+      if (call.table === 'session_test_results') return { data: [row({})] };
+      if (call.table === 'characters' && call.op === 'select') {
+        return { data: { stats: { pv: 10, faith: 50, current_faith: 2 } } };
+      }
+      return { data: 'resolved' };
+    };
+    await resolveEnemyAbilityUse({
+      use: { ...use(), targets: [use().targets[0]] },
+      participants,
+      npcRolls: [],
+      faithRolls: [{ participantId: 'p-eliabe', value: 4 }],
+    });
+    expect(sent()[0].faithLost).toBe(2);
+    expect(faithWrites()[0].payload).toEqual({ stats: { pv: 10, faith: 50, current_faith: 0 } });
+  });
+
+  it('o dado de 1d6 vale até 6 e o de 1d4 só até 4', async () => {
+    await expect(
+      resolveEnemyAbilityUse({
+        use: use(),
+        participants,
+        npcRolls: [],
+        faithRolls: [{ participantId: 'p-eliabe', value: 5 }],
+      }),
+    ).rejects.toThrow('O dado de Fé de Eliabe precisa estar entre 1 e 4');
+    expect(callsOf(state.calls, 'resolve_ability_use', 'rpc')).toHaveLength(0);
+    await resolveEnemyAbilityUse({
+      use: use(maldicao),
+      participants,
+      npcRolls: [],
+      faithRolls: [{ participantId: 'p-eliabe', value: 5 }],
+    });
+    expect(sent()[0].faithLost).toBe(5);
+  });
+
+  it('sem o dado de Fé de quem falhou, recusa antes de gravar qualquer coisa', async () => {
+    await expect(
+      resolveEnemyAbilityUse({ use: use(), participants, npcRolls: [], faithRolls: [] }),
+    ).rejects.toThrow('Falta o dado de Fé de Eliabe');
+    expect(callsOf(state.calls, 'resolve_ability_use', 'rpc')).toHaveLength(0);
+    expect(faithWrites()).toHaveLength(0);
+  });
+
+  it('quem não respondeu o TR não perde Fé e não pede dado', async () => {
+    state.respond = (call) => {
+      if (call.table === 'session_test_results') {
+        return { data: [row({ status: 'pending', is_approved: null })] };
+      }
+      return { data: 'resolved' };
+    };
+    await resolveEnemyAbilityUse({
+      use: { ...use(), targets: [use().targets[0]] },
+      participants,
+      npcRolls: [],
+      faithRolls: [],
+    });
+    expect(sent()[0]).toMatchObject({ failed: false, faithLost: 0 });
+    expect(faithWrites()).toHaveLength(0);
+  });
+
+  it('o combate que acabou expira o uso e a Fé não muda', async () => {
+    state.respond = (call) => {
+      if (call.table === 'session_test_results') return { data: [row({})] };
+      if (call.table === 'characters' && call.op === 'select') {
+        return { data: { stats: { pv: 10, faith: 50, current_faith: 10 } } };
+      }
+      return { data: 'expired' };
+    };
+    const result = await resolveEnemyAbilityUse({
+      use: { ...use(), targets: [use().targets[0]] },
+      participants,
+      npcRolls: [],
+      faithRolls: [{ participantId: 'p-eliabe', value: 3 }],
+    });
+    expect(result.status).toBe('expired');
+    expect(faithWrites()).toHaveLength(0);
+  });
+
+  it('devolve o lembrete do efeito para o Mestre', async () => {
+    const result = await resolveEnemyAbilityUse({
+      use: use(),
+      participants,
+      npcRolls: [],
+      faithRolls: [{ participantId: 'p-eliabe', value: 1 }],
+    });
+    expect(result.reminder).toBe('Desvantagem na próxima jogada de ataque de quem falhou.');
+  });
+
+  it('avisa o Mestre do lembrete só quando alguém falhou', async () => {
+    const toasts: string[] = [];
+    const listener = (e: Event) =>
+      toasts.push((e as CustomEvent<{ message: string }>).detail.message);
+    window.addEventListener('combat-toast', listener);
+    await resolveEnemyAbilityUse({
+      use: use(),
+      participants,
+      npcRolls: [],
+      faithRolls: [{ participantId: 'p-eliabe', value: 1 }],
+    });
+    expect(toasts).toContain(
+      'Lembrete (Eliabe): Desvantagem na próxima jogada de ataque de quem falhou.',
+    );
+    toasts.length = 0;
+    state.respond = (call) => {
+      if (call.table === 'session_test_results') {
+        return {
+          data: [row({ is_approved: true }), row({ character_id: 'c-rute', is_approved: true })],
+        };
+      }
+      return { data: 'resolved' };
+    };
+    await resolveEnemyAbilityUse({ use: use(), participants, npcRolls: [], faithRolls: [] });
+    expect(toasts.some((t) => t.startsWith('Lembrete'))).toBe(false);
+    window.removeEventListener('combat-toast', listener);
+  });
+
+  it('uma Habilidade sem perda de Fé não pede dado nem mexe na Fé', async () => {
+    state.respond = (call) =>
+      call.table === 'session_test_results' ? { data: [row({})] } : { data: 'resolved' };
+    await resolveEnemyAbilityUse({
+      use: {
+        ...use(presenca),
+        targets: [use().targets[0]],
+      },
+      participants,
+      npcRolls: [],
+    });
+    expect(sent()[0]).not.toHaveProperty('faithLost');
+    expect(faithWrites()).toHaveLength(0);
   });
 });

@@ -4,7 +4,11 @@
 // Termos: CONTEXT.md (Habilidade de inimigo, Recarga, TR, Resistência a Condição).
 import { CONDITIONS } from '@/content/conditions';
 import { findEnemyAbility } from '@/content/enemyAbilities';
-import type { AbilityEffect, EnemyAbilityEffect } from '@/content/schemas';
+import {
+  enemyAbilityEffectSchema,
+  type AbilityEffect,
+  type EnemyAbilityEffect,
+} from '@/content/schemas';
 import type { ConditionEntry } from '@/types/combat';
 import { resolveAbilityEffect, type TargetProtection } from './abilityEffect';
 import { saveAttributeLabel } from './abilitySave';
@@ -202,4 +206,24 @@ export function checkFaithDie(value: number | '', sides: 4 | 6): 'empty' | 'rang
 /** A Fé que o personagem de fato perde: o dado, limitado ao que ele tem (o piso é 0). */
 export function faithLostBy(stats: FaithStats | null | undefined, roll: number): number {
   return Math.min(roll, getCurrentFaith(stats));
+}
+
+/** Lê o `ability_state` do participante (jsonb): só os estados conhecidos, o resto é ignorado. */
+export function abilityStateOf(raw: unknown): EnemyAbilityStateMap {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const state: EnemyAbilityStateMap = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (value === 'used' || value === 'recharging') state[key] = value;
+  }
+  return state;
+}
+
+/** O efeito gravado no uso, ou o da biblioteca (usos antigos); `null` se nenhum vale. */
+export function enemyEffectOfUse(use: {
+  ability_id: string;
+  enemy_effect: unknown;
+}): EnemyAbilityEffect | null {
+  const stored = enemyAbilityEffectSchema.safeParse(use.enemy_effect);
+  if (stored.success) return stored.data;
+  return findEnemyAbility(use.ability_id)?.effect ?? null;
 }

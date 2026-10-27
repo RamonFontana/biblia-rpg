@@ -33,6 +33,7 @@ import {
   listCombatParticipants,
   recordAbilityUse,
   resolveAbilityUse,
+  setEnemyAbilityState,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
@@ -181,6 +182,18 @@ describe('gravações do combate', () => {
     const [call] = callsOf(state.calls, 'combat_participants', 'update');
     expect(call.payload).toEqual({ conditions });
     expect(filterOf(call, 'eq', 'id')).toBe('p1');
+  });
+
+  it('setEnemyAbilityState grava o estado de uso das Habilidades do inimigo', async () => {
+    await setEnemyAbilityState('p1', { 'enemy-grito-atormentador': 'recharging' });
+    const [call] = callsOf(state.calls, 'combat_participants', 'update');
+    expect(call.payload).toEqual({ ability_state: { 'enemy-grito-atormentador': 'recharging' } });
+    expect(filterOf(call, 'eq', 'id')).toBe('p1');
+  });
+
+  it('setEnemyAbilityState lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(setEnemyAbilityState('p1', {})).rejects.toBe(failure);
   });
 
   it('updateCombatTurn grava turno e rodada', async () => {

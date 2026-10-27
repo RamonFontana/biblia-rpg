@@ -67,6 +67,7 @@ describe('CombatDashboard', () => {
       initiative: 5,
       is_surprised: false,
       conditions: [],
+      ability_state: {},
       created_at: '',
       updated_at: '',
     } as CombatParticipant;

@@ -37,6 +37,7 @@ const combat = (over: Partial<Combat> = {}): Combat => ({
 });
 
 const part = (over: Partial<CombatParticipant> = {}): CombatParticipant => ({
+  ability_state: {},
   combat_id: 'combat-1',
   conditions: [],
   created_at: '',

@@ -116,6 +116,18 @@ export async function setParticipantConditions(
   }
 }
 
+/** O Mestre grava o estado de uso das Habilidades de um inimigo (usada, em recarga). */
+export async function setEnemyAbilityState(
+  participantId: string,
+  abilityState: Record<string, 'used' | 'recharging'>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('combat_participants')
+    .update({ ability_state: toJson(abilityState) })
+    .eq('id', participantId);
+  if (error) throw error;
+}
+
 export async function updateCombatTurn(
   combatId: string,
   turnIndex: number,
@@ -297,6 +309,8 @@ export interface AbilitySaveOutcome {
   failed: boolean;
   mode: string;
   conditions: ConditionEntry[];
+  /** Só nas Habilidades de inimigo que tiram Fé: a Fé que este alvo perdeu (0 se passou). */
+  faithLost?: number;
 }
 
 /**
