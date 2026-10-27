@@ -187,6 +187,7 @@ export type Database = {
           save_attribute: string | null
           status: string
           targets: Json
+          test_id: string | null
           user_name: string
           user_participant_id: string
         }
@@ -201,6 +202,7 @@ export type Database = {
           save_attribute?: string | null
           status?: string
           targets?: Json
+          test_id?: string | null
           user_name: string
           user_participant_id: string
         }
@@ -215,6 +217,7 @@ export type Database = {
           save_attribute?: string | null
           status?: string
           targets?: Json
+          test_id?: string | null
           user_name?: string
           user_participant_id?: string
         }
@@ -224,6 +227,13 @@ export type Database = {
             columns: ["combat_id"]
             isOneToOne: false
             referencedRelation: "combats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_ability_uses_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "session_tests"
             referencedColumns: ["id"]
           },
           {
@@ -993,6 +1003,17 @@ export type Database = {
           p_save?: Json
           p_targets: Json
           p_user_participant_id: string
+        }
+        Returns: string
+      }
+      record_enemy_ability_use: {
+        Args: {
+          p_ability_id: string
+          p_ability_name: string
+          p_enemy_participant_id: string
+          p_save?: Json
+          p_targets: Json
+          p_test_id?: string
         }
         Returns: string
       }

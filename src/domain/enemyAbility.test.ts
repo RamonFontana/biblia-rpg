@@ -1,5 +1,6 @@
 // A Habilidade de inimigo contra personagens (Onda 5, feature 4; ADR 0007).
 import { describe, expect, it } from 'vitest';
+import type { EnemyAbilityEffect } from '@/content/schemas';
 import {
   describeEnemyEffect,
   enemyAbilityOf,
@@ -35,11 +36,11 @@ describe('enemyAbilityOf: a Habilidade que o app aplica', () => {
   });
 
   it('o efeito personalizado vale e usa o id enemy-custom', () => {
-    const effect = {
+    const effect: EnemyAbilityEffect = {
       save: { attribute: 'des', cd: 11 },
       apply: [{ conditionId: 'agarrado' }],
       usage: 'per_combat',
-    } as const;
+    };
     expect(enemyAbilityOf({ name: 'Laço', description: 'd', effect })).toMatchObject({
       id: 'enemy-custom',
       name: 'Laço',
@@ -94,11 +95,11 @@ describe('describeEnemyEffect', () => {
 });
 
 describe('resolveEnemyAbilityResults: quem falhou no TR', () => {
-  const effect = {
+  const effect: EnemyAbilityEffect = {
     save: { attribute: 'sab', cd: 13 },
     apply: [{ conditionId: 'amedrontado', rounds: 10 }],
     usage: 'unlimited',
-  } as const;
+  };
   const submitted = (over: Partial<EnemySaveResult>): EnemySaveResult => ({
     participantId: 'p1',
     name: 'Eliabe',
@@ -166,7 +167,7 @@ describe('resolveEnemyAbilityResults: quem falhou no TR', () => {
   });
 
   it('sem TR na Habilidade, a Condição entra em todos', () => {
-    const noSave = { apply: [{ conditionId: 'caido' }], usage: 'unlimited' } as const;
+    const noSave: EnemyAbilityEffect = { apply: [{ conditionId: 'caido' }], usage: 'unlimited' };
     const [out] = resolveEnemyAbilityResults(noSave, [
       submitted({ status: 'pending', isApproved: null }),
     ]);
@@ -174,11 +175,11 @@ describe('resolveEnemyAbilityResults: quem falhou no TR', () => {
   });
 
   it('um efeito só de perda de Fé não aplica Condição', () => {
-    const faithOnly = {
+    const faithOnly: EnemyAbilityEffect = {
       save: { attribute: 'sab', cd: 12 },
       faithLoss: { sides: 4 },
       usage: 'recharge',
-    } as const;
+    };
     const [out] = resolveEnemyAbilityResults(faithOnly, [submitted({})]);
     expect(out).toMatchObject({ failed: true, conditions: [] });
   });
