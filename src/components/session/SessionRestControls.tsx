@@ -1,5 +1,3 @@
-import { rollDie } from '@/domain/dice';
-import { systemRng } from '@/lib/systemRng';
 import { useState } from 'react';
 import { updateCharacterRest } from '@/data-access/characters';
 import { updateGameSession, type GameSession, type SessionNpc } from '@/data-access/sessions';
@@ -16,6 +14,7 @@ import {
   hasPriestInGroup,
 } from '@/domain/rest';
 import { characterVitalsService } from '@/data-access/vitals';
+import { LongRestDialog } from './LongRestDialog';
 
 interface SessionRestControlsProps {
   sessionId: string;
@@ -46,6 +45,7 @@ export function SessionRestControls({
   onRestCompleted,
 }: SessionRestControlsProps) {
   const [isResting, setIsResting] = useState(false);
+  const [longRestOpen, setLongRestOpen] = useState(false);
 
   if (!sessionData) return null;
 
@@ -109,7 +109,7 @@ export function SessionRestControls({
     }
   };
 
-  const handleLongRest = async () => {
+  const handleLongRest = async (baseFaithRoll: number) => {
     if (!canLongRest || isResting) return;
     setIsResting(true);
 
@@ -123,7 +123,6 @@ export function SessionRestControls({
       // 2. Check if there's a Priest for the Faith bonus
       const hasPriest = hasPriestInGroup(playerCharacters.map((pc) => pc.character?.vocation));
 
-      const baseFaithRoll = rollDie(4, systemRng); // 1d4
       const faithRecovered = calculateFaithRecovery(baseFaithRoll, hasPriest);
 
       // 3. Update all characters (players and npcs)
@@ -157,6 +156,7 @@ export function SessionRestControls({
     } catch (error) {
       console.error('Erro ao acionar descanso longo:', error);
       alert('Erro ao realizar descanso longo.');
+      throw error;
     } finally {
       setIsResting(false);
     }
@@ -183,7 +183,7 @@ export function SessionRestControls({
         </Button>
 
         <Button
-          onClick={handleLongRest}
+          onClick={() => setLongRestOpen(true)}
           disabled={!canLongRest || isResting}
           variant="outline"
           className="bg-amber-900/20 text-amber-400 border-amber-800 hover:bg-amber-900/40 hover:text-amber-300"
@@ -197,6 +197,12 @@ export function SessionRestControls({
           Descanso Longo {canLongRest ? '(Disponível)' : '(Indisponível)'}
         </Button>
       </div>
+      <LongRestDialog
+        isOpen={longRestOpen}
+        hasPriest={hasPriestInGroup(playerCharacters.map((pc) => pc.character?.vocation))}
+        onConfirm={handleLongRest}
+        onClose={() => setLongRestOpen(false)}
+      />
       {!canLongRest && (
         <p className="text-xs text-stone-500 mt-2">
           Descanso longo estará disponível a partir do dia {lastLongRestDay + 1}.

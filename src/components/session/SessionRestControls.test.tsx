@@ -1,7 +1,7 @@
 // CARACTERIZAÇÃO: fixa o comportamento dos botões de Descanso Curto e Longo do Mestre, com um
 // Supabase falso que só grava as chamadas.
 // Decisões: ROADMAP.md, Onda 2 (bloco B): o Descanso Curto recarrega habilidades mesmo sem cura;
-// Longo 1 por dia; o 1d4 de Fé do Longo é digitado pelo Mestre (ADR 0001, ainda não implementado).
+// Longo 1 por dia; o 1d4 de Fé do Longo é digitado pelo Mestre ou vem da Rolagem Virtual (ADR 0001).
 // Termos: CONTEXT.md (Descanso Curto, Descanso Longo).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -21,6 +21,8 @@ vi.mock('../../lib/supabase', async () => {
     }),
   };
 });
+
+vi.mock('@/lib/systemRng', () => ({ systemRng: () => 0.99 }));
 
 import { callsOf, filterOf } from '../../test/fakeSupabase';
 import { ABILITIES } from '@/content/abilities';
@@ -221,5 +223,80 @@ describe('Descanso Longo: disponibilidade', () => {
     renderControls(session({ current_day: 3, last_long_rest_day: 3 }));
     expect(longButton()).toBeDisabled();
     expect(screen.getByText(/a partir do dia 4/)).toBeInTheDocument();
+  });
+});
+
+describe('Descanso Longo: o 1d4 de Fé', () => {
+  const openLongRest = () =>
+    fireEvent.click(screen.getByRole('button', { name: /Descanso Longo/ }));
+  const typeDie = (value: string) =>
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value } });
+  const confirm = () => fireEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
+
+  it('o botão abre o diálogo e não grava nada antes de confirmar', () => {
+    renderControls();
+    openLongRest();
+    expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+    expect(state.calls).toEqual([]);
+  });
+
+  it('usa o d4 digitado pelo Mestre: PV cheios e a Fé recuperada pelo grupo', async () => {
+    renderControls();
+    openLongRest();
+    typeDie('3');
+    confirm();
+    await waitFor(() => expect(heroWrites()).toHaveLength(1));
+    expect(heroWrites()[0].payload).toMatchObject({
+      stats: { pv: 10, current_pv: 10, current_faith: 43 },
+      skills: { ability_uses: {} },
+    });
+    expect(callsOf(state.calls, 'game_sessions', 'update')[0].payload).toMatchObject({
+      last_long_rest_day: 2,
+    });
+  });
+
+  it('com Sacerdote no grupo, soma 2 ao d4', async () => {
+    const priest = {
+      character: { ...hero.character, id: 'priest', vocation: 'Sacerdote' } as Character,
+    };
+    render(
+      <SessionRestControls
+        sessionId="s1"
+        sessionData={session()}
+        playerCharacters={[hero, priest]}
+      />,
+    );
+    openLongRest();
+    typeDie('3');
+    confirm();
+    await waitFor(() => expect(heroWrites()).toHaveLength(1));
+    expect(heroWrites()[0].payload).toMatchObject({ stats: { current_faith: 45 } });
+  });
+
+  it('a Rolagem Virtual preenche o d4 sem confirmar sozinha', () => {
+    renderControls();
+    openLongRest();
+    fireEvent.click(screen.getByRole('button', { name: /Rolar 1d4/ }));
+    expect(screen.getByRole('spinbutton')).toHaveValue(4);
+    expect(state.calls).toEqual([]);
+  });
+
+  it('d4 vazio ou fora de 1 a 4 é recusado e nada é gravado', () => {
+    renderControls();
+    openLongRest();
+    confirm();
+    expect(screen.getByText(/Insira o resultado do d4/)).toBeInTheDocument();
+    typeDie('5');
+    confirm();
+    expect(screen.getByText(/entre 1 e 4/)).toBeInTheDocument();
+    expect(state.calls).toEqual([]);
+  });
+
+  it('cancelar fecha o diálogo sem gravar', () => {
+    renderControls();
+    openLongRest();
+    fireEvent.click(screen.getByRole('button', { name: /Cancelar/ }));
+    expect(screen.queryByRole('spinbutton')).toBeNull();
+    expect(state.calls).toEqual([]);
   });
 });
