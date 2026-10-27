@@ -6,13 +6,15 @@
 --
 -- `short_rest_id` é a identidade do descanso aberto (nulo = fechado). Quem pediu e quem terminou são
 -- listas de personagens. O Mestre continua fechando o descanso pela atualização direta da sessão
--- (Descanso Longo e avanço de período), pela política que já existe.
+-- (Descanso Longo e avanço de período), pela política que já existe. `short_rest_refused_at` guarda
+-- a recusa do Pedido de Descanso pelo Mestre, para o jogador ver o aviso.
 
 alter table public.game_sessions
   add column short_rest_id uuid,
   add column short_rest_opened_by text check (short_rest_opened_by in ('master', 'group')),
   add column short_rest_requested uuid[] not null default '{}',
   add column short_rest_finished uuid[] not null default '{}',
+  add column short_rest_refused_at timestamptz,
   add constraint game_sessions_short_rest_pair_check
     check ((short_rest_id is null) = (short_rest_opened_by is null));
 
@@ -51,6 +53,7 @@ begin
       short_rest_opened_by = 'master',
       short_rest_requested = '{}',
       short_rest_finished = '{}',
+      short_rest_refused_at = null,
       short_rests_today = coalesce(short_rests_today, 0) + 1
   where id = p_session_id;
 
@@ -79,7 +82,8 @@ begin
   set short_rest_id = null,
       short_rest_opened_by = null,
       short_rest_requested = '{}',
-      short_rest_finished = '{}'
+      short_rest_finished = '{}',
+      short_rest_refused_at = null
   where id = p_session_id;
 end;
 $$;

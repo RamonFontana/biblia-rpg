@@ -21,6 +21,7 @@ describe('getShortRestState', () => {
       openedBy: null,
       restsLeft: 2,
       block: null,
+      refused: false,
     });
   });
 
@@ -38,7 +39,13 @@ describe('getShortRestState', () => {
       { short_rests_today: 1, short_rest_id: 'r1', short_rest_opened_by: 'master' },
       false,
     );
-    expect(state).toStrictEqual({ isOpen: true, openedBy: 'master', restsLeft: 1, block: 'open' });
+    expect(state).toStrictEqual({
+      isOpen: true,
+      openedBy: 'master',
+      restsLeft: 1,
+      block: 'open',
+      refused: false,
+    });
   });
 
   it('o descanso aberto pelo grupo é reconhecido', () => {
@@ -48,6 +55,25 @@ describe('getShortRestState', () => {
         false,
       ).openedBy,
     ).toBe('group');
+  });
+
+  it('a recusa do Mestre aparece enquanto o descanso está fechado', () => {
+    const refused = { ...closed, short_rest_refused_at: '2026-10-28T12:00:00Z' };
+    expect(getShortRestState(refused, false).refused).toBe(true);
+    expect(getShortRestState(closed, false).refused).toBe(false);
+    expect(getShortRestState({ ...closed, short_rest_refused_at: null }, false).refused).toBe(
+      false,
+    );
+  });
+
+  it('com o descanso aberto a recusa antiga não conta', () => {
+    const session = {
+      short_rests_today: 1,
+      short_rest_id: 'r1',
+      short_rest_opened_by: 'master',
+      short_rest_refused_at: '2026-10-28T12:00:00Z',
+    };
+    expect(getShortRestState(session, false).refused).toBe(false);
   });
 
   it('combate em andamento bloqueia', () => {
@@ -106,6 +132,7 @@ describe('CLOSED_SHORT_REST', () => {
       short_rest_opened_by: null,
       short_rest_requested: [],
       short_rest_finished: [],
+      short_rest_refused_at: null,
     });
   });
 });

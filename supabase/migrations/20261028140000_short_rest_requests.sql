@@ -76,12 +76,15 @@ begin
         short_rest_opened_by = 'group',
         short_rest_requested = '{}',
         short_rest_finished = '{}',
+        short_rest_refused_at = null,
         short_rests_today = coalesce(short_rests_today, 0) + 1
     where id = p_session_id;
     return true;
   end if;
 
-  update public.game_sessions set short_rest_requested = v_requested where id = p_session_id;
+  update public.game_sessions
+  set short_rest_requested = v_requested, short_rest_refused_at = null
+  where id = p_session_id;
   return false;
 end;
 $$;
@@ -137,7 +140,8 @@ begin
     set short_rest_id = null,
         short_rest_opened_by = null,
         short_rest_requested = '{}',
-        short_rest_finished = '{}'
+        short_rest_finished = '{}',
+        short_rest_refused_at = null
     where id = p_session_id;
     return true;
   end if;
@@ -164,7 +168,9 @@ begin
     raise exception 'Apenas o Mestre recusa o pedido de descanso' using errcode = '42501';
   end if;
 
-  update public.game_sessions set short_rest_requested = '{}' where id = p_session_id;
+  update public.game_sessions
+  set short_rest_requested = '{}', short_rest_refused_at = now()
+  where id = p_session_id;
 end;
 $$;
 

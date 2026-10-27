@@ -301,5 +301,14 @@ test.describe('Descanso Curto', () => {
       timeout: 15_000,
     });
     await expect(pRute.getByText('0 de 2 pediram')).toBeVisible({ timeout: 15_000 });
+    // Quem não pediu também fica sabendo que o Mestre recusou.
+    const refusal = 'O Mestre recusou o pedido de descanso.';
+    await expect(pRute.getByText(refusal)).toBeVisible({ timeout: 15_000 });
+    await expect(pEliabe.getByText(refusal)).toBeVisible();
+    await expect(master.getByText(refusal)).toHaveCount(0);
+
+    // Um novo pedido apaga o aviso.
+    await pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
+    await expect(pRute.getByText(refusal)).toHaveCount(0, { timeout: 15_000 });
   });
 });

@@ -16,6 +16,8 @@ export interface ShortRestSession {
   /** Os personagens que pediram o descanso e os que já terminaram (ausentes valem nenhum). */
   short_rest_requested?: string[] | null;
   short_rest_finished?: string[] | null;
+  /** Quando o Mestre recusou o Pedido de Descanso; some ao abrir, ao fechar e num novo pedido. */
+  short_rest_refused_at?: string | null;
 }
 
 export interface ShortRestState {
@@ -23,14 +25,17 @@ export interface ShortRestState {
   openedBy: ShortRestOpenedBy | null;
   restsLeft: number;
   block: ShortRestBlock | null;
+  /** O Mestre recusou o pedido e o descanso segue fechado. */
+  refused: boolean;
 }
 
-/** O que a sessão grava ao fechar o Descanso Curto: nada aberto, nenhum pedido, ninguém terminou. */
+/** O que a sessão grava ao fechar o Descanso Curto: nada aberto, nenhum pedido, ninguém terminou, nenhuma recusa. */
 export const CLOSED_SHORT_REST = {
   short_rest_id: null,
   short_rest_opened_by: null,
   short_rest_requested: [] as string[],
   short_rest_finished: [] as string[],
+  short_rest_refused_at: null,
 };
 
 export function getShortRestState(
@@ -50,6 +55,7 @@ export function getShortRestState(
     openedBy: isOpen ? (session.short_rest_opened_by as ShortRestOpenedBy) : null,
     restsLeft: Math.max(0, MAX_SHORT_RESTS_PER_DAY - taken),
     block,
+    refused: !isOpen && !!session.short_rest_refused_at,
   };
 }
 

@@ -103,6 +103,9 @@ export function ShortRestCard({
           {roster.total > 0 && (!state.block || roster.requested.length > 0) && (
             <p className="text-sm text-stone-400 mt-2">{requestSummaryText(roster)}</p>
           )}
+          {role === 'player' && state.refused && (
+            <p className="text-sm text-amber-400 mt-2">O Mestre recusou o pedido de descanso.</p>
+          )}
           {role === 'player' && !state.block && !myCharacterId && (
             <p className="text-sm text-stone-400 mt-2">Aguardando o Mestre abrir o descanso.</p>
           )}

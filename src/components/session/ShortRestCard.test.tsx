@@ -217,6 +217,34 @@ describe('ShortRestCard: Pedido de Descanso e "Terminei"', () => {
     expect(screen.getByText('2 de 3 pediram (Eliabe, Noé)')).toBeInTheDocument();
   });
 
+  it('o jogador vê que o Mestre recusou o pedido', () => {
+    renderRest('player', { short_rest_refused_at: '2026-10-28T12:00:00Z' }, 'p2');
+    expect(screen.getByText('O Mestre recusou o pedido de descanso.')).toBeInTheDocument();
+  });
+
+  it('sem recusa o aviso não aparece', () => {
+    renderRest('player', {}, 'p2');
+    expect(screen.queryByText('O Mestre recusou o pedido de descanso.')).toBeNull();
+  });
+
+  it('com o descanso aberto o aviso de recusa some', () => {
+    renderRest(
+      'player',
+      {
+        short_rest_id: 'r1',
+        short_rest_opened_by: 'master',
+        short_rest_refused_at: '2026-10-28T12:00:00Z',
+      },
+      'p2',
+    );
+    expect(screen.queryByText('O Mestre recusou o pedido de descanso.')).toBeNull();
+  });
+
+  it('o Mestre não vê o aviso que é dirigido aos jogadores', () => {
+    renderRest('master', { short_rest_refused_at: '2026-10-28T12:00:00Z' });
+    expect(screen.queryByText('O Mestre recusou o pedido de descanso.')).toBeNull();
+  });
+
   it('o jogador pede o descanso pelo próprio personagem', async () => {
     renderRest('player', {}, 'p2');
     fireEvent.click(screen.getByRole('button', { name: 'Pedir Descanso Curto' }));

@@ -367,6 +367,7 @@ export type Database = {
           short_rest_finished: string[]
           short_rest_id: string | null
           short_rest_opened_by: string | null
+          short_rest_refused_at: string | null
           short_rest_requested: string[]
           short_rests_today: number | null
           status: string
@@ -384,6 +385,7 @@ export type Database = {
           short_rest_finished?: string[]
           short_rest_id?: string | null
           short_rest_opened_by?: string | null
+          short_rest_refused_at?: string | null
           short_rest_requested?: string[]
           short_rests_today?: number | null
           status: string
@@ -401,6 +403,7 @@ export type Database = {
           short_rest_finished?: string[]
           short_rest_id?: string | null
           short_rest_opened_by?: string | null
+          short_rest_refused_at?: string | null
           short_rest_requested?: string[]
           short_rests_today?: number | null
           status?: string
