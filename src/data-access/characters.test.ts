@@ -58,6 +58,7 @@ import {
   updateCharacter,
   updateCharacterDeathState,
   markShortRestRecharge,
+  spendHitDie,
   updateCharacterEquipment,
   updateCharacterRest,
   updateCharacterSkills,
@@ -135,6 +136,35 @@ describe('markShortRestRecharge', () => {
   it('lança o erro ao gravar', async () => {
     state.respond = () => ({ error: failure });
     await expect(markShortRestRecharge('c1', {}, 'rest-1')).rejects.toBe(failure);
+  });
+});
+
+describe('spendHitDie', () => {
+  it('grava o PV novo e os Dados de Vida gastos numa só atualização', async () => {
+    await spendHitDie('c1', { stats, hitDiceSpent: 3, wakeUp: false });
+    const calls = callsOf(state.calls, 'characters', 'update');
+    expect(calls).toHaveLength(1);
+    expect(calls[0].payload).toEqual({ stats, hit_dice_spent: 3 });
+    expect(filterOf(calls[0], 'eq', 'id')).toBe('c1');
+  });
+
+  it('acordar o Estável zera o estado dos Testes de Morte na mesma atualização', async () => {
+    await spendHitDie('c1', { stats, hitDiceSpent: 1, wakeUp: true });
+    const [call] = callsOf(state.calls, 'characters', 'update');
+    expect(call.payload).toEqual({
+      stats,
+      hit_dice_spent: 1,
+      is_stable: false,
+      death_saves_successes: 0,
+      death_saves_failures: 0,
+    });
+  });
+
+  it('lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(spendHitDie('c1', { stats, hitDiceSpent: 1, wakeUp: false })).rejects.toBe(
+      failure,
+    );
   });
 });
 

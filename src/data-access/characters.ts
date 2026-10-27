@@ -157,6 +157,29 @@ export async function markShortRestRecharge(
   if (error) throw error;
 }
 
+/**
+ * Grava um Dado de Vida gasto: o PV novo e a contagem de gastos juntos. Quem estava Estável
+ * acorda (`wakeUp`): sai do Estável e os Testes de Morte recomeçam do zero.
+ */
+export async function spendHitDie(
+  id: string,
+  patch: { stats: Partial<CharacterStats>; hitDiceSpent: number; wakeUp: boolean },
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({
+      stats: toJson(patch.stats),
+      hit_dice_spent: patch.hitDiceSpent,
+      ...(patch.wakeUp && {
+        is_stable: false,
+        death_saves_successes: 0,
+        death_saves_failures: 0,
+      }),
+    })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function setCharacterVisible(id: string, isVisible: boolean): Promise<void> {
   const { error } = await supabase
     .from('characters')
