@@ -414,3 +414,79 @@ describe('resolveAbilityUseRolls', () => {
     ).rejects.toThrow('não tem TR');
   });
 });
+
+describe('submitAbilityUse: Habilidade que remove Condição', () => {
+  const purificacao: AbilityDefinition = {
+    id: 'vocation-sacerdote-6-purificacao',
+    name: 'Purificação',
+    sourceType: 'vocation',
+    sourceId: 'sacerdote',
+    minLevel: 6,
+    actionType: 'action',
+    usageType: 'short_rest',
+    maxUses: 1,
+    effect: 'Encerra Amedrontado, Atordoado, Envenenado ou Possessão.',
+    combatEffect: {
+      targets: 'ally',
+      remove: { mode: 'choice', conditionIds: ['amedrontado', 'atordoado', 'envenenado'] },
+    },
+  };
+  const ally = {
+    participantId: 'p3',
+    entityId: 'c3',
+    entityType: 'player',
+    name: 'Bob',
+    ac: 12,
+    conditionIds: ['envenenado', 'cego'],
+  };
+  const submission = {
+    ...base,
+    ability: purificacao,
+    targets: [ally],
+    removals: { p3: 'envenenado' },
+  };
+
+  it('manda à função do banco a Condição que sai de cada aliado, sem ler proteção', async () => {
+    await submitAbilityUse(submission);
+    expect(sent()).toMatchObject({
+      p_targets: [{ participantId: 'p3', conditions: [], remove: ['envenenado'] }],
+    });
+    expect(callsOf(state.calls, 'characters', 'select')).toHaveLength(0);
+  });
+
+  it('devolve o que saiu de cada alvo', async () => {
+    const outcome = await submitAbilityUse(submission);
+    expect(outcome.results).toEqual([
+      { participantId: 'p3', name: 'Bob', conditions: [], removed: ['envenenado'], messages: [] },
+    ]);
+  });
+
+  it('sem a escolha da Condição, nada é registrado nem gasto', async () => {
+    await expect(submitAbilityUse({ ...submission, removals: {} })).rejects.toThrow(
+      'Escolha a Condição que sai de Bob',
+    );
+    expect(callsOf(state.calls, 'record_ability_use', 'rpc')).toHaveLength(0);
+    expect(charUpdates()).toHaveLength(0);
+  });
+
+  it('o aliado sem o que tirar é registrado com o aviso, e o uso é gasto', async () => {
+    const clean = { ...ally, conditionIds: ['cego'] };
+    const outcome = await submitAbilityUse({ ...submission, targets: [clean], removals: {} });
+    expect(sent()).toMatchObject({
+      p_targets: [{ participantId: 'p3', conditions: [], remove: [] }],
+    });
+    expect(outcome.results[0].messages).toEqual(['não tinha Amedrontado, Atordoado ou Envenenado']);
+    expect(charUpdates()).toHaveLength(1);
+  });
+
+  it('a Habilidade que só aplica não manda `remove`', async () => {
+    await submitAbilityUse(base);
+    expect(sent()).toEqual(
+      expect.objectContaining({
+        p_targets: [
+          { participantId: 'p2', conditions: [{ conditionId: 'paralisado', duration: 1 }] },
+        ],
+      }),
+    );
+  });
+});

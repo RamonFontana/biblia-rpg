@@ -323,6 +323,17 @@ describe('recordAbilityUse', () => {
     });
   });
 
+  it('manda as Condições que saem de cada alvo', async () => {
+    state.respond = () => ({ data: 'use-2' });
+    const removal = {
+      ...use,
+      targets: [{ participantId: 'p3', conditions: [], remove: ['envenenado'] }],
+    };
+    await recordAbilityUse(removal);
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).toMatchObject({ p_targets: removal.targets });
+  });
+
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(recordAbilityUse(use)).rejects.toBe(failure);

@@ -226,7 +226,12 @@ export interface AbilityUseRecord {
   abilityName: string;
   actionType: string;
   /** Por alvo: as Condições que chegam depois da Resistência a Condição e das imunidades. */
-  targets: { participantId: string; conditions: ConditionEntry[] }[];
+  targets: {
+    participantId: string;
+    conditions: ConditionEntry[];
+    /** As Condições que saem do alvo (Habilidade que remove): aplicadas na hora, sem TR. */
+    remove?: string[];
+  }[];
   /** O TR dos alvos: o uso fica pendente até o Mestre lançar (as Condições não entram agora). */
   save?: { attribute: string; cd: number };
 }

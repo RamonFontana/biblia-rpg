@@ -15,7 +15,11 @@ import {
 import {
   abilityImmunities,
   abilityUseTargets,
+  hasRemoval,
+  removalBlock,
   resolveAbilityEffect,
+  resolveAbilityRemoval,
+  type RemovalChoices,
   type TargetProtection,
 } from '@/domain/abilityEffect';
 import {
@@ -39,6 +43,8 @@ export interface AbilityUseSubmission {
   userParticipantId: string;
   /** Os alvos que o jogador marcou. */
   targets: AttackTarget[];
+  /** Só nas Habilidades que tiram Condição: a que o jogador escolheu tirar de cada alvo. */
+  removals?: RemovalChoices;
   /**
    * A ficha de quem usa: os usos e a Fé gastos saem dela; a Vocação, o nível e os atributos dão a
    * CD da Habilidade quando ela impõe um TR.
@@ -58,7 +64,9 @@ export interface AbilityTargetResult {
   name: string;
   /** As Condições que chegaram ao alvo (vazio se anuladas). */
   conditions: ConditionEntry[];
-  /** As frases de Resistência a Condição e de imunidade para o Mestre. */
+  /** Só nas Habilidades que tiram Condição: as que saíram do alvo. */
+  removed?: string[];
+  /** As frases de Resistência a Condição e de imunidade (ou "não tinha…") para o Mestre. */
   messages: string[];
 }
 
@@ -101,6 +109,21 @@ async function protectionOf(entityId: string, entityType: string): Promise<Targe
   return { resistanceLevels, immuneConditionIds: abilityImmunities(abilities.map((a) => a.id)) };
 }
 
+/** Grava o uso e a Fé gastos na ficha. Falhar aqui não desfaz o efeito já registrado (só o loga). */
+async function spendAbilityUse(
+  characterId: string,
+  spent: { skills: unknown; stats?: unknown },
+): Promise<void> {
+  try {
+    await updateCharacter(characterId, {
+      skills: spent.skills,
+      ...(spent.stats ? { stats: spent.stats } : {}),
+    } as Parameters<typeof updateCharacter>[1]);
+  } catch (error) {
+    console.error('Error spending the Ability use:', error);
+  }
+}
+
 /**
  * Usa a Habilidade (ADR 0007): calcula as Condições de cada alvo, manda à função do banco e só
  * então gasta o uso e a Fé na ficha. Se o banco recusa (turno, combate), nada é gasto; se gravar o
@@ -130,6 +153,42 @@ export async function submitAbilityUse(use: AbilityUseSubmission): Promise<Abili
       }
     : undefined;
 
+  // Tirar Condição de aliado: sem TR, sem Resistência a Condição e sem ler a proteção do alvo.
+  if (hasRemoval(effect)) {
+    const removalTargets = use.targets.map((t) => ({
+      participantId: t.participantId,
+      name: t.name,
+      conditionIds: t.conditionIds,
+    }));
+    const choices = use.removals ?? {};
+    const block = removalBlock(effect, removalTargets, choices);
+    if (block) throw new Error(block);
+    const removals = resolveAbilityRemoval(effect, removalTargets, choices);
+
+    const id = await recordAbilityUse({
+      userParticipantId: use.userParticipantId,
+      abilityId: ability.id,
+      abilityName: ability.name,
+      actionType: ability.actionType,
+      targets: removals.map(({ participantId, removed }) => ({
+        participantId,
+        conditions: [],
+        remove: removed,
+      })),
+    });
+    await spendAbilityUse(character.id, spent);
+    return {
+      id,
+      results: removals.map(({ participantId, name, removed, messages }) => ({
+        participantId,
+        name,
+        conditions: [],
+        removed,
+        messages,
+      })),
+    };
+  }
+
   const results: AbilityTargetResult[] = [];
   for (const target of use.targets) {
     const resolved = pending
@@ -152,14 +211,7 @@ export async function submitAbilityUse(use: AbilityUseSubmission): Promise<Abili
     ...(pending && { save: pending }),
   });
 
-  try {
-    await updateCharacter(character.id, {
-      skills: spent.skills,
-      ...(spent.stats ? { stats: spent.stats } : {}),
-    } as Parameters<typeof updateCharacter>[1]);
-  } catch (error) {
-    console.error('Error spending the Ability use:', error);
-  }
+  await spendAbilityUse(character.id, spent);
 
   for (const result of results) {
     for (const message of result.messages) {
