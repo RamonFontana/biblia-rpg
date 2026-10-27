@@ -1,7 +1,7 @@
 // O painel de uso de uma Habilidade com efeito de combate: o jogador marca os alvos, vê o que o app
 // aplica e o que fica com o Mestre, usa e lê o resultado por alvo. Termos: CONTEXT.md (Habilidade).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { AttackTarget } from '@/lib/attackSetup';
 import { AbilityUsePanel } from './AbilityUsePanel';
@@ -264,5 +264,183 @@ describe('AbilityUsePanel: Habilidade com TR', () => {
     await useThePanel();
     view.rerender({ id: 'use-1', status: 'expired', cd: 17, targets: [] });
     expect(screen.getByText(/combate acabou antes do TR/)).toBeVisible();
+  });
+});
+
+describe('AbilityUsePanel: Habilidade que tira Condição', () => {
+  const ally = (id: string, name: string, conditionIds: string[]): AttackTarget => ({
+    participantId: id,
+    entityId: `c-${id}`,
+    entityType: 'player',
+    name,
+    ac: 12,
+    conditionIds,
+  });
+  const purificacao: AbilityDefinition = {
+    id: 'vocation-sacerdote-6-purificacao',
+    name: 'Purificação',
+    sourceType: 'vocation',
+    sourceId: 'sacerdote',
+    minLevel: 6,
+    actionType: 'action',
+    usageType: 'short_rest',
+    maxUses: 1,
+    effect: 'Encerra Amedrontado, Atordoado, Envenenado ou Possessão.',
+    combatEffect: {
+      targets: 'ally',
+      remove: { mode: 'choice', conditionIds: ['amedrontado', 'atordoado', 'envenenado'] },
+    },
+  };
+  const ungido: AbilityDefinition = {
+    ...purificacao,
+    id: 'tribe-aser-12-ungido',
+    name: 'Ungido',
+    effect: 'Cura 3d8 PV e remove envenenamento/doença do alvo.',
+    combatEffect: { targets: 'ally', remove: { mode: 'fixed', conditionIds: ['envenenado'] } },
+  };
+  const unificador: AbilityDefinition = {
+    ...purificacao,
+    id: 'tribe-manasses-20-o-unificador',
+    name: 'O Unificador',
+    effect: 'Aliados 18m perdem condição negativa e resistem dano mundano.',
+    combatEffect: { targets: 'allies', remove: { mode: 'per_target' } },
+  };
+  const bob = ally('p3', 'Bob', ['envenenado', 'cego']);
+  const eli = ally('p4', 'Eliabe', ['caido']);
+
+  const removalOutcome = (removed: string[], messages: string[] = []) => ({
+    id: 'use-9',
+    results: [{ participantId: 'p3', name: 'Bob', conditions: [], removed, messages }],
+  });
+  const render1 = (
+    ability: AbilityDefinition,
+    targets: AttackTarget[],
+    outcome = removalOutcome(['envenenado']),
+  ) => {
+    const onUse = vi.fn().mockResolvedValue(outcome);
+    render(
+      <AbilityUsePanel
+        ability={ability}
+        targets={targets}
+        blockedReason={null}
+        onUse={onUse}
+        onClose={vi.fn()}
+      />,
+    );
+    return { onUse };
+  };
+
+  it('diz o que o app tira e que a cura e o dano do texto ficam com o Mestre', () => {
+    render1(ungido, [bob]);
+    expect(screen.getByText('O app tira: Envenenado do aliado')).toBeVisible();
+    expect(screen.queryByText(/O app aplica/)).toBeNull();
+    expect(screen.getByText(/cura, dano e bônus do texto ficam com o Mestre/i)).toBeVisible();
+    expect(screen.getByText(/Cura 3d8 PV/)).toBeVisible();
+  });
+
+  it('a lista de Purificação mostra as Condições que ela tira', () => {
+    render1(purificacao, [bob]);
+    expect(
+      screen.getByText('O app tira: Amedrontado, Atordoado ou Envenenado do aliado'),
+    ).toBeVisible();
+  });
+
+  it('escolhida: só oferece as Condições da lista que o aliado tem', () => {
+    render1(purificacao, [bob]);
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p3' } });
+    const options = within(screen.getByLabelText('Condição que sai de Bob'))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+      .filter((t) => t !== 'Escolha...');
+    expect(options).toEqual(['Envenenado']);
+  });
+
+  it('escolhida: só usa depois de escolher a Condição, e manda a escolha', () => {
+    const { onUse } = render1(purificacao, [bob]);
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p3' } });
+    expect(screen.getByRole('button', { name: 'Usar Habilidade' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Condição que sai de Bob'), {
+      target: { value: 'envenenado' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(onUse).toHaveBeenCalledWith([bob], { p3: 'envenenado' });
+  });
+
+  it('escolhida: o aliado sem nada da lista não pede escolha e o jogador é avisado', () => {
+    const { onUse } = render1(purificacao, [eli]);
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p4' } });
+    expect(screen.queryByLabelText('Condição que sai de Eliabe')).toBeNull();
+    expect(screen.getByText('Eliabe não tem Condição que esta Habilidade tire.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(onUse).toHaveBeenCalledWith([eli], {});
+  });
+
+  it('fixa: não pede escolha, mostra o que sai e usa', () => {
+    const { onUse } = render1(ungido, [bob]);
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p3' } });
+    expect(screen.queryByLabelText(/Condição que sai de/)).toBeNull();
+    expect(screen.getByText('Sai de Bob: Envenenado')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(onUse).toHaveBeenCalledWith([bob], {});
+  });
+
+  it('uma por alvo: cada aliado marcado pede a sua escolha, entre as Condições que ele tem', () => {
+    const { onUse } = render1(unificador, [bob, eli]);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Bob' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Eliabe' }));
+    const button = screen.getByRole('button', { name: 'Usar Habilidade' });
+    expect(button).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Condição que sai de Bob'), {
+      target: { value: 'cego' },
+    });
+    expect(button).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Condição que sai de Eliabe'), {
+      target: { value: 'caido' },
+    });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(onUse).toHaveBeenCalledWith([bob, eli], { p3: 'cego', p4: 'caido' });
+  });
+
+  it('desmarcar o aliado tira a escolha dele', () => {
+    const { onUse } = render1(unificador, [bob, eli]);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Bob' }));
+    fireEvent.change(screen.getByLabelText('Condição que sai de Bob'), {
+      target: { value: 'cego' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Bob' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Eliabe' }));
+    fireEvent.change(screen.getByLabelText('Condição que sai de Eliabe'), {
+      target: { value: 'caido' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(onUse).toHaveBeenCalledWith([eli], { p4: 'caido' });
+  });
+
+  it('depois de usar, mostra o que saiu de cada alvo', async () => {
+    render1(ungido, [bob]);
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(await screen.findByText('Bob: deixou de estar Envenenado')).toBeVisible();
+    expect(screen.queryByText(/resistiu/)).toBeNull();
+  });
+
+  it('o aliado que não tinha o que tirar aparece com o aviso, sem "resistiu"', async () => {
+    render1(ungido, [eli], {
+      id: 'use-9',
+      results: [
+        {
+          participantId: 'p3',
+          name: 'Bob',
+          conditions: [],
+          removed: [],
+          messages: ['não tinha Envenenado'],
+        },
+      ],
+    });
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    expect(await screen.findByText('Bob: não tinha Envenenado')).toBeVisible();
+    expect(screen.queryByText(/resistiu/)).toBeNull();
   });
 });

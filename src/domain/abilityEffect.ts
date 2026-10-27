@@ -78,6 +78,14 @@ export function removableConditions(
   return targetConditionIds.filter((id) => remove.conditionIds.includes(id));
 }
 
+/** O que a Habilidade tira, para o texto do painel ("Envenenado", "A, B ou C", "uma Condição…"). */
+export function describeRemoval(effect: Pick<AbilityEffect, 'remove'>): string {
+  const { remove } = effect;
+  if (!remove) return '';
+  if (remove.mode === 'per_target') return 'uma Condição à sua escolha de cada aliado';
+  return joinOr(remove.conditionIds.map(conditionName));
+}
+
 /** Um aliado que vai perder Condição: o que ele tem agora. */
 export interface RemovalTarget {
   participantId: string;

@@ -35,6 +35,11 @@ function abilityTargetsText(use: CombatAbilityUse): string {
   if (use.status === 'expired') return 'expirou sem efeito (o combate acabou antes do TR)';
   return targets
     .map((t) => {
+      if (t.removedIds !== undefined) {
+        return t.removedIds.length > 0
+          ? `${t.name}: tirou ${t.removedIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')}`
+          : `${t.name}: não tinha o que tirar`;
+      }
       const outcome =
         t.conditionIds.length > 0
           ? t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')

@@ -4,7 +4,15 @@ import { Button } from '../ui/button';
 import { CONDITIONS } from '@/content/conditions';
 import type { AbilityDefinition } from '@/content/schemas';
 import type { CombatAbilityUse } from '@/data-access/combat';
-import { abilityUseTargets, isSingleTarget } from '@/domain/abilityEffect';
+import {
+  abilityUseTargets,
+  describeRemoval,
+  hasRemoval,
+  isSingleTarget,
+  removableConditions,
+  removalBlock,
+  type RemovalChoices,
+} from '@/domain/abilityEffect';
 import { saveAttributeLabel } from '@/domain/abilitySave';
 import { getErrorMessage } from '@/lib/errorMessage';
 import type { AttackTarget } from '@/lib/attackSetup';
@@ -19,7 +27,8 @@ interface AbilityUsePanelProps {
   blockedReason: string | null;
   /** A CD da Habilidade do personagem, quando ela impõe um TR. */
   cd?: number;
-  onUse: (selected: AttackTarget[]) => Promise<AbilityUseOutcome>;
+  /** `removals` só vem nas Habilidades que tiram Condição: a que o jogador escolheu por alvo. */
+  onUse: (selected: AttackTarget[], removals?: RemovalChoices) => Promise<AbilityUseOutcome>;
   onClose: () => void;
   /** O uso gravado, ao vivo: quando o Mestre lança o TR, o resultado chega por aqui. */
   liveUse?: CombatAbilityUse;
@@ -43,6 +52,7 @@ export function AbilityUsePanel({
 }: AbilityUsePanelProps) {
   const effect = ability.combatEffect;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [choices, setChoices] = useState<RemovalChoices>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<AbilityUseOutcome | null>(null);
@@ -50,7 +60,15 @@ export function AbilityUsePanel({
 
   const single = isSingleTarget(effect);
   const selected = targets.filter((t) => selectedIds.includes(t.participantId));
-  const canUse = !blockedReason && !busy && selected.length > 0;
+  const removing = hasRemoval(effect);
+  // Só as escolhas dos alvos que continuam marcados.
+  const selectedChoices: RemovalChoices = Object.fromEntries(
+    selected.flatMap((t) =>
+      choices[t.participantId] ? [[t.participantId, choices[t.participantId]]] : [],
+    ),
+  );
+  const incomplete = removing && removalBlock(effect, selected, selectedChoices) !== null;
+  const canUse = !blockedReason && !busy && selected.length > 0 && !incomplete;
 
   const toggle = (id: string, on: boolean) =>
     setSelectedIds((ids) => (on ? [...ids, id] : ids.filter((x) => x !== id)));
@@ -59,7 +77,7 @@ export function AbilityUsePanel({
     setBusy(true);
     setError(null);
     try {
-      setOutcome(await onUse(selected));
+      setOutcome(await (removing ? onUse(selected, selectedChoices) : onUse(selected)));
     } catch (e) {
       setError(getErrorMessage(e, 'Não foi possível usar a Habilidade.'));
     } finally {
@@ -78,9 +96,23 @@ export function AbilityUsePanel({
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-stone-300">
-          O app aplica: {effect.apply.map((a) => conditionText(a.conditionId, a.rounds)).join(', ')}
-        </p>
+        {effect.apply && (
+          <p className="text-sm text-stone-300">
+            O app aplica:{' '}
+            {effect.apply.map((a) => conditionText(a.conditionId, a.rounds)).join(', ')}
+          </p>
+        )}
+        {removing && (
+          <>
+            <p className="text-sm text-stone-300">
+              O app tira: {describeRemoval(effect)}
+              {effect.remove?.mode === 'per_target' ? '' : ' do aliado'}
+            </p>
+            <p className="text-xs text-stone-400">
+              Cura, dano e bônus do texto ficam com o Mestre.
+            </p>
+          </>
+        )}
         {effect.save && (
           <p className="text-sm text-stone-300">
             TR de {saveAttributeLabel(effect.save.attribute)} dos alvos
@@ -97,19 +129,30 @@ export function AbilityUsePanel({
             <ul className="space-y-1 text-sm text-stone-300">
               {outcome.results.map((r) => (
                 <li key={r.participantId}>
-                  <p>
-                    {r.name}:{' '}
-                    {r.conditions.length === 0
-                      ? 'resistiu'
-                      : r.conditions
-                          .map((c) => CONDITIONS[c.conditionId]?.name ?? c.conditionId)
-                          .join(' e ')}
-                  </p>
-                  {r.messages.map((m) => (
-                    <p key={m} className="text-xs text-amber-400">
-                      {m}
+                  {r.removed !== undefined ? (
+                    <p>
+                      {r.name}:{' '}
+                      {r.removed.length > 0
+                        ? `deixou de estar ${r.removed.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')}`
+                        : (r.messages[0] ?? 'não tinha Condição a remover')}
                     </p>
-                  ))}
+                  ) : (
+                    <>
+                      <p>
+                        {r.name}:{' '}
+                        {r.conditions.length === 0
+                          ? 'resistiu'
+                          : r.conditions
+                              .map((c) => CONDITIONS[c.conditionId]?.name ?? c.conditionId)
+                              .join(' e ')}
+                      </p>
+                      {r.messages.map((m) => (
+                        <p key={m} className="text-xs text-amber-400">
+                          {m}
+                        </p>
+                      ))}
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -149,6 +192,43 @@ export function AbilityUsePanel({
                 ))}
               </fieldset>
             )}
+            {removing &&
+              selected.map((t) => {
+                const options = removableConditions(effect, t.conditionIds);
+                if (options.length === 0) {
+                  return (
+                    <p key={t.participantId} className="text-sm text-amber-400">
+                      {t.name} não tem Condição que esta Habilidade tire.
+                    </p>
+                  );
+                }
+                if (effect.remove?.mode === 'fixed') {
+                  return (
+                    <p key={t.participantId} className="text-sm text-stone-300">
+                      Sai de {t.name}: {CONDITIONS[options[0]]?.name ?? options[0]}
+                    </p>
+                  );
+                }
+                return (
+                  <label key={t.participantId} className="block text-sm text-stone-300">
+                    Condição que sai de {t.name}
+                    <select
+                      value={choices[t.participantId] ?? ''}
+                      onChange={(e) =>
+                        setChoices((current) => ({ ...current, [t.participantId]: e.target.value }))
+                      }
+                      className="mt-1 w-full rounded border border-stone-700 bg-stone-800 px-3 py-2 text-stone-200"
+                    >
+                      <option value="">Escolha...</option>
+                      {options.map((id) => (
+                        <option key={id} value={id}>
+                          {CONDITIONS[id]?.name ?? id}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
             {blockedReason && <p className="text-sm font-medium text-red-400">{blockedReason}</p>}
             {error && (
               <p role="alert" className="text-sm font-medium text-red-400">

@@ -320,11 +320,12 @@ export function PlayerCombatView({
                 : undefined
             }
             liveUse={abilityUses.find((use) => use.id === lastUseId)}
-            onUse={async (selected) => {
+            onUse={async (selected, removals) => {
               const outcome = await submitAbilityUse({
                 ability: usingAbility,
                 userParticipantId: participant.id,
                 targets: selected,
+                removals,
                 character: {
                   id: character.id,
                   skills: character.skills,

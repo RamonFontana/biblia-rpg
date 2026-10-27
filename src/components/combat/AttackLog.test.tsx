@@ -171,6 +171,27 @@ describe('AttackLog: usos de Habilidade', () => {
     expect(screen.getByRole('listitem')).toHaveTextContent('Filisteu: resistiu');
   });
 
+  it('um uso que tira Condição diz o que saiu de cada aliado', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            ability_name: 'Purificação',
+            targets: [
+              { participantId: 'p3', name: 'Bob', conditions: [], removed: ['envenenado'] },
+              { participantId: 'p4', name: 'Rute', conditions: [], removed: [] },
+            ],
+          }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'Eliabe usou Purificação · Bob: tirou Envenenado · Rute: não tinha o que tirar',
+    );
+    expect(screen.getByRole('listitem')).not.toHaveTextContent('resistiu');
+  });
+
   it('um uso com TR pendente diz o TR e a CD que o Mestre vai lançar', () => {
     render(
       <AttackLog
