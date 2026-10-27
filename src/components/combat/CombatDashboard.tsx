@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AbilityPendingPanel } from './AbilityPendingPanel';
 import { AttackLog } from './AttackLog';
+import { EnemyAbilityPanel } from './EnemyAbilityPanel';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import { useCombatStore } from '../../store/combatStore';
@@ -103,6 +104,9 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
       </div>
     );
   }
+
+  const nameOf = (entityId: string) =>
+    availableEntities.find((e) => e.id === entityId)?.name ?? 'Desconhecido';
 
   const handleApplyDamage = (participantId: string, name: string) => {
     setSelectedParticipant({ id: participantId, name });
@@ -274,6 +278,25 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
           </Button>
         </div>
       ))}
+
+      <EnemyAbilityPanel
+        sessionId={activeCombat.session_id}
+        enemies={participants
+          .filter((p) => p.entity_type === 'enemy' && p.hp_current > 0)
+          .map((p) => ({
+            participantId: p.id,
+            entityId: p.entity_id,
+            name: nameOf(p.entity_id),
+          }))}
+        characters={participants
+          .filter((p) => p.entity_type !== 'enemy')
+          .map((p) => ({
+            participantId: p.id,
+            entityId: p.entity_id,
+            entityType: p.entity_type,
+            name: nameOf(p.entity_id),
+          }))}
+      />
 
       <AbilityPendingPanel uses={abilityUses} participants={participants} />
 

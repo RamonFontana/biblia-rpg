@@ -27,6 +27,9 @@ vi.mock('./HealthModificationModal', async () => ({
 vi.mock('./AbilityPendingPanel', async () => ({
   AbilityPendingPanel: (await import('@/test/stubs')).makeStub('AbilityPendingPanel'),
 }));
+vi.mock('./EnemyAbilityPanel', async () => ({
+  EnemyAbilityPanel: (await import('@/test/stubs')).makeStub('EnemyAbilityPanel'),
+}));
 vi.mock('./MasterDeathControls', async () => ({
   MasterDeathControls: (await import('@/test/stubs')).makeStub('MasterDeathControls'),
 }));
@@ -519,5 +522,40 @@ describe('CombatDashboard: TRs de Habilidades pendentes', () => {
     expect(stubProps('AbilityPendingPanel')!.participants).toEqual(
       useCombatStore.getState().participants,
     );
+  });
+});
+
+describe('CombatDashboard: Habilidades dos inimigos', () => {
+  const entities = [
+    { id: 'ent-p1', name: 'Eliabe', type: 'player' as const, hpCurrent: 10 },
+    { id: 'ent-p2', name: 'Anakim', type: 'enemy' as const, hpCurrent: 30 },
+    { id: 'ent-p3', name: 'Bandido', type: 'enemy' as const, hpCurrent: 0 },
+    { id: 'ent-p4', name: 'Jonas', type: 'npc' as const, hpCurrent: 8 },
+  ];
+
+  it('passa os inimigos de pé e os personagens, com os nomes, à sessão do combate', () => {
+    startCombat([
+      participant('p1'),
+      participant('p2', { entity_type: 'enemy', hp_current: 30 }),
+      participant('p3', { entity_type: 'enemy', hp_current: 0 }),
+      participant('p4', { entity_type: 'npc' }),
+    ]);
+    render(<CombatDashboard availableEntities={entities} />);
+    const props = stubProps('EnemyAbilityPanel')!;
+    expect(props.sessionId).toBe('s');
+    expect(props.enemies).toEqual([{ participantId: 'p2', entityId: 'ent-p2', name: 'Anakim' }]);
+    expect(props.characters).toEqual([
+      { participantId: 'p1', entityId: 'ent-p1', entityType: 'player', name: 'Eliabe' },
+      { participantId: 'p4', entityId: 'ent-p4', entityType: 'npc', name: 'Jonas' },
+    ]);
+  });
+
+  it('um participante sem nome conhecido aparece como Desconhecido', () => {
+    startCombat([participant('p1'), participant('p2', { entity_type: 'enemy' })]);
+    render(<CombatDashboard availableEntities={[]} />);
+    const props = stubProps('EnemyAbilityPanel')!;
+    expect(props.enemies).toEqual([
+      { participantId: 'p2', entityId: 'ent-p2', name: 'Desconhecido' },
+    ]);
   });
 });
