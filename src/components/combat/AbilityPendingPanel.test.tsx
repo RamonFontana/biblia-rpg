@@ -6,6 +6,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { CombatAbilityUse } from '@/data-access/combat';
 
 const h = vi.hoisted(() => ({ resolveAbilityUseRolls: vi.fn() }));
+vi.mock('@/hooks/useTestResults', () => ({ useTestResults: () => [] }));
+vi.mock('@/services/enemyAbilityService', () => ({ resolveEnemyAbilityUse: vi.fn() }));
 vi.mock('@/services/abilityService', () => ({ resolveAbilityUseRolls: h.resolveAbilityUseRolls }));
 vi.mock('@/lib/systemRng', async () => ({
   systemRng: (await import('@/domain/rng')).createSeededRng(11),
@@ -177,5 +179,24 @@ describe('AbilityPendingPanel', () => {
   it('dois usos pendentes têm painéis separados', () => {
     setup([usageRow(), usageRow({ id: 'u2', ability_name: 'Grito de Guerra', user_name: 'Rute' })]);
     expect(screen.getAllByRole('button', { name: 'Resolver TR' })).toHaveLength(2);
+  });
+
+  it('o uso de Habilidade de inimigo vai para o painel dos TRs no celular', () => {
+    render(
+      <AbilityPendingPanel
+        uses={[usageRow({ test_id: 'test-1', ability_name: 'Presença Aterradora' })]}
+        participants={[
+          { id: 'p2', entity_id: 'c2', entity_type: 'player' },
+          { id: 'p3', entity_id: 'c3', entity_type: 'player' },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Aplicar resultados' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Resolver TR' })).not.toBeInTheDocument();
+  });
+
+  it('o uso de Habilidade de jogador continua com o Resolver TR', () => {
+    render(<AbilityPendingPanel uses={[usageRow()]} participants={participants} />);
+    expect(screen.getByRole('button', { name: 'Resolver TR' })).toBeInTheDocument();
   });
 });

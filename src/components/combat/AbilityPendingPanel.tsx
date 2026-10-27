@@ -13,6 +13,7 @@ import { pickCountingDie, type MasterMark } from '@/domain/testMode';
 import { getErrorMessage } from '@/lib/errorMessage';
 import { systemRng } from '@/lib/systemRng';
 import { resolveAbilityUseRolls } from '@/services/abilityService';
+import { EnemyAbilityPendingUse } from './EnemyAbilityPendingUse';
 
 interface AbilityPendingPanelProps {
   /** Os usos de Habilidade do combate; só os pendentes (com TR) aparecem aqui. */
@@ -42,9 +43,14 @@ export function AbilityPendingPanel({ uses, participants }: AbilityPendingPanelP
 
   return (
     <section className="space-y-3" aria-label="TRs de Habilidades pendentes">
-      {pending.map((use) => (
-        <PendingUse key={use.id} use={use} participants={participants} />
-      ))}
+      {pending.map((use) =>
+        // Habilidade de inimigo: os jogadores fazem o TR no celular (ADR 0007).
+        use.enemy_effect !== null || use.test_id !== null ? (
+          <EnemyAbilityPendingUse key={use.id} use={use} participants={participants} />
+        ) : (
+          <PendingUse key={use.id} use={use} participants={participants} />
+        ),
+      )}
     </section>
   );
 }
