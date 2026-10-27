@@ -48,6 +48,109 @@ export function abilityImmunities(abilityIds: string[]): string[] {
   return abilityIds.flatMap((id) => (ABILITY_IMMUNITIES[id] ? [ABILITY_IMMUNITIES[id]] : []));
 }
 
+/** A Habilidade tira Condição dos alvos (aliados, sem TR e sem passar pela Resistência a Condição). */
+export function hasRemoval(effect: Pick<AbilityEffect, 'targets' | 'remove'>): boolean {
+  return effect.remove !== undefined;
+}
+
+/** O nome da Condição para o texto de tela. */
+function conditionName(conditionId: string): string {
+  return CONDITIONS[conditionId]?.name ?? conditionId;
+}
+
+/** "A", "A ou B", "A, B ou C". */
+function joinOr(names: string[]): string {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} ou ${names[names.length - 1]}`;
+}
+
+/**
+ * As Condições que a Habilidade pode tirar de um alvo que tem estas: as da lista que ele tem
+ * (remoção fixa ou escolhida) ou qualquer uma que ele tenha (uma por alvo).
+ */
+export function removableConditions(
+  effect: Pick<AbilityEffect, 'targets' | 'remove'>,
+  targetConditionIds: string[],
+): string[] {
+  const { remove } = effect;
+  if (!remove) return [];
+  if (remove.mode === 'per_target') return [...targetConditionIds];
+  return targetConditionIds.filter((id) => remove.conditionIds.includes(id));
+}
+
+/** Um aliado que vai perder Condição: o que ele tem agora. */
+export interface RemovalTarget {
+  participantId: string;
+  name: string;
+  conditionIds: string[];
+}
+
+/** A Condição que o jogador escolheu tirar de cada alvo, pelo id do participante. */
+export type RemovalChoices = Record<string, string | undefined>;
+
+/**
+ * Por que a escolha das Condições a tirar não está pronta, ou `null` se está. A remoção fixa não
+ * pede escolha; nas outras, cada alvo que tem o que tirar precisa de uma escolha válida.
+ */
+export function removalBlock(
+  effect: Pick<AbilityEffect, 'targets' | 'remove'>,
+  targets: RemovalTarget[],
+  choices: RemovalChoices,
+): string | null {
+  const { remove } = effect;
+  if (!remove || remove.mode === 'fixed') return null;
+  for (const target of targets) {
+    if (removableConditions(effect, target.conditionIds).length === 0) continue;
+    const chosen = choices[target.participantId];
+    if (!chosen) return `Escolha a Condição que sai de ${target.name}`;
+    if (remove.mode === 'choice' && !remove.conditionIds.includes(chosen)) {
+      return `${conditionName(chosen)} não pode sair de ${target.name}`;
+    }
+    if (!target.conditionIds.includes(chosen)) {
+      return `${target.name} não tem ${conditionName(chosen)}`;
+    }
+  }
+  return null;
+}
+
+export interface RemovalResult {
+  participantId: string;
+  name: string;
+  /** As Condições que saem do alvo. */
+  removed: string[];
+  /** O aviso para o Mestre quando o alvo não tinha o que tirar. */
+  messages: string[];
+}
+
+/**
+ * As Condições que saem de cada alvo. Quem não tem o que tirar é ignorado e vira um aviso
+ * ("não tinha Envenenado"). Tirar Condição de um aliado não passa pela Resistência a Condição.
+ */
+export function resolveAbilityRemoval(
+  effect: Pick<AbilityEffect, 'targets' | 'remove'>,
+  targets: RemovalTarget[],
+  choices: RemovalChoices,
+): RemovalResult[] {
+  const { remove } = effect;
+  return targets.map(({ participantId, name, conditionIds }) => {
+    const removable = removableConditions(effect, conditionIds);
+    const chosen = choices[participantId];
+    let removed: string[] = [];
+    if (remove?.mode === 'fixed') removed = removable;
+    else if (chosen && removable.includes(chosen)) removed = [chosen];
+
+    let messages: string[] = [];
+    if (removed.length === 0) {
+      const wanted =
+        remove && remove.mode !== 'per_target'
+          ? `não tinha ${joinOr(remove.conditionIds.map(conditionName))}`
+          : 'não tinha Condição a remover';
+      messages = [wanted];
+    }
+    return { participantId, name, removed, messages };
+  });
+}
+
 export interface AbilityUseContext {
   actionType: string;
   hasActiveCombat: boolean;
@@ -99,7 +202,7 @@ export function resolveAbilityEffect(
 ): { conditions: ConditionEntry[]; messages: string[] } {
   const conditions: ConditionEntry[] = [];
   const messages: string[] = [];
-  for (const { conditionId, rounds } of effect.apply) {
+  for (const { conditionId, rounds } of effect.apply ?? []) {
     if (protection.immuneConditionIds.includes(conditionId)) {
       messages.push(`Imunidade: imune a ${CONDITIONS[conditionId]?.name ?? conditionId}`);
       continue;
@@ -119,11 +222,24 @@ export function resolveAbilityEffect(
 export function describeAbilityUse(use: {
   userName: string;
   abilityName: string;
-  targets: { name: string; conditionIds: string[]; failed?: boolean }[];
+  targets: {
+    name: string;
+    conditionIds: string[];
+    failed?: boolean;
+    /** Só nos usos que tiram Condição: as que saíram e o aviso de quem não tinha o que tirar. */
+    removedIds?: string[];
+    messages?: string[];
+  }[];
 }): string {
   const parts = use.targets.map((t) => {
+    if (t.removedIds !== undefined) {
+      if (t.removedIds.length > 0) {
+        return `${t.name} deixou de estar ${t.removedIds.map(conditionName).join(' e ')}`;
+      }
+      return `${t.name} ${t.messages?.[0] ?? 'não tinha Condição a remover'}`;
+    }
     if (t.conditionIds.length > 0) {
-      return `${t.name} ficou ${t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')}`;
+      return `${t.name} ficou ${t.conditionIds.map(conditionName).join(' e ')}`;
     }
     if (t.failed === undefined) return `${t.name} resistiu`;
     return t.failed ? `${t.name} falhou no TR, mas resistiu à Condição` : `${t.name} passou no TR`;
@@ -145,6 +261,8 @@ export interface AbilityUseTarget {
   participantId: string;
   name: string;
   conditionIds: string[];
+  /** Só nos usos que tiram Condição: as que saíram do alvo. */
+  removedIds?: string[];
   /** Só nos usos com TR já resolvidos: o dado que valeu, o total e se o alvo falhou. */
   natural?: number;
   total?: number;
@@ -159,6 +277,7 @@ export function abilityUseTargets(targets: unknown): AbilityUseTarget[] {
       participantId: string;
       name: string;
       conditions?: ConditionEntry[];
+      removed?: string[];
       natural?: number;
       total?: number;
       failed?: boolean;
@@ -166,6 +285,7 @@ export function abilityUseTargets(targets: unknown): AbilityUseTarget[] {
       participantId: t.participantId,
       name: t.name,
       conditionIds: (t.conditions ?? []).map((c) => c.conditionId),
+      ...(t.removed && { removedIds: t.removed }),
       ...(t.failed !== undefined && { natural: t.natural, total: t.total, failed: t.failed }),
     }),
   );

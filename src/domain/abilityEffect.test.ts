@@ -8,11 +8,16 @@ import {
   describeAbilityUse,
   describePendingUse,
   getAbilityEffectBlock,
+  hasRemoval,
   isSingleTarget,
+  removableConditions,
+  removalBlock,
+  resolveAbilityRemoval,
   resolveAbilityEffect,
   effectTargetPool,
   type AbilityUseContext,
 } from './abilityEffect';
+import type { AbilityEffect } from '@/content/schemas';
 
 const effect = (targets: Parameters<typeof isSingleTarget>[0]['targets']) => ({
   targets,
@@ -319,5 +324,127 @@ describe('uso com TR: textos', () => {
         failed: false,
       },
     ]);
+  });
+});
+
+describe('remoção de Condição', () => {
+  const fixed: AbilityEffect = {
+    targets: 'ally',
+    remove: { mode: 'fixed', conditionIds: ['envenenado'] },
+  };
+  const choice: AbilityEffect = {
+    targets: 'ally',
+    remove: { mode: 'choice', conditionIds: ['amedrontado', 'atordoado', 'envenenado'] },
+  };
+  const perTarget: AbilityEffect = { targets: 'allies', remove: { mode: 'per_target' } };
+
+  it('só a Habilidade com `remove` remove; a que só aplica não', () => {
+    expect(hasRemoval(fixed)).toBe(true);
+    expect(hasRemoval(effect('enemy'))).toBe(false);
+  });
+
+  it('o que dá para remover: as da lista que o alvo tem, ou qualquer uma que ele tenha', () => {
+    expect(removableConditions(fixed, ['envenenado', 'cego'])).toEqual(['envenenado']);
+    expect(removableConditions(fixed, ['cego'])).toEqual([]);
+    expect(removableConditions(choice, ['cego', 'atordoado', 'envenenado'])).toEqual([
+      'atordoado',
+      'envenenado',
+    ]);
+    expect(removableConditions(perTarget, ['cego', 'caido'])).toEqual(['cego', 'caido']);
+  });
+
+  it('a Habilidade que só aplica não remove nada', () => {
+    expect(removableConditions(effect('enemy'), ['cego'])).toEqual([]);
+  });
+
+  const bob = { participantId: 'p1', name: 'Bob', conditionIds: ['envenenado', 'cego'] };
+  const eli = { participantId: 'p2', name: 'Eliabe', conditionIds: ['caido'] };
+
+  it('fixa: tira a Condição citada sem pedir escolha', () => {
+    expect(resolveAbilityRemoval(fixed, [bob], {})).toEqual([
+      { participantId: 'p1', name: 'Bob', removed: ['envenenado'], messages: [] },
+    ]);
+    expect(removalBlock(fixed, [bob], {})).toBeNull();
+  });
+
+  it('fixa: o aliado que não tem a Condição é ignorado e o Mestre é avisado', () => {
+    expect(resolveAbilityRemoval(fixed, [eli], {})).toEqual([
+      { participantId: 'p2', name: 'Eliabe', removed: [], messages: ['não tinha Envenenado'] },
+    ]);
+  });
+
+  it('escolhida: tira só a Condição que o jogador escolheu', () => {
+    const [result] = resolveAbilityRemoval(choice, [bob], { p1: 'envenenado' });
+    expect(result.removed).toEqual(['envenenado']);
+  });
+
+  it('escolhida: exige a escolha e recusa uma fora da lista ou que o alvo não tem', () => {
+    expect(removalBlock(choice, [bob], {})).toBe('Escolha a Condição que sai de Bob');
+    expect(removalBlock(choice, [bob], { p1: 'cego' })).toBe('Cego não pode sair de Bob');
+    expect(removalBlock(choice, [bob], { p1: 'atordoado' })).toBe('Bob não tem Atordoado');
+    expect(removalBlock(choice, [bob], { p1: 'envenenado' })).toBeNull();
+  });
+
+  it('escolhida: sem nenhuma Condição da lista no alvo, nada a escolher', () => {
+    expect(removalBlock(choice, [eli], {})).toBeNull();
+    expect(resolveAbilityRemoval(choice, [eli], {})).toEqual([
+      {
+        participantId: 'p2',
+        name: 'Eliabe',
+        removed: [],
+        messages: ['não tinha Amedrontado, Atordoado ou Envenenado'],
+      },
+    ]);
+  });
+
+  it('uma por alvo: cada aliado perde a Condição que o jogador escolheu para ele', () => {
+    const results = resolveAbilityRemoval(perTarget, [bob, eli], { p1: 'cego', p2: 'caido' });
+    expect(results.map((r) => r.removed)).toEqual([['cego'], ['caido']]);
+    expect(removalBlock(perTarget, [bob, eli], { p1: 'cego' })).toBe(
+      'Escolha a Condição que sai de Eliabe',
+    );
+  });
+
+  it('uma por alvo: o aliado sem Condição fica de fora, sem pedir escolha', () => {
+    const clean = { participantId: 'p3', name: 'Rute', conditionIds: [] };
+    expect(removalBlock(perTarget, [clean], {})).toBeNull();
+    expect(resolveAbilityRemoval(perTarget, [clean], {})[0].messages).toEqual([
+      'não tinha Condição a remover',
+    ]);
+  });
+
+  it('a remoção ignora a Resistência a Condição e as imunidades (só aplicar passa por elas)', () => {
+    const [result] = resolveAbilityRemoval(fixed, [bob], {});
+    expect(result.removed).toEqual(['envenenado']);
+  });
+});
+
+describe('frase do uso com remoção', () => {
+  it('conta o que saiu de cada alvo', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Alice',
+        abilityName: 'Purificação',
+        targets: [{ name: 'Bob', conditionIds: [], removedIds: ['envenenado'] }],
+      }),
+    ).toBe('Alice usou Purificação: Bob deixou de estar Envenenado.');
+  });
+
+  it('o alvo sem nada a remover aparece como "não tinha"', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Alice',
+        abilityName: 'Ungido',
+        targets: [
+          { name: 'Bob', conditionIds: [], removedIds: [], messages: ['não tinha Envenenado'] },
+        ],
+      }),
+    ).toBe('Alice usou Ungido: Bob não tinha Envenenado.');
+  });
+
+  it('o uso gravado traz as Condições removidas de cada alvo', () => {
+    expect(
+      abilityUseTargets([{ participantId: 'p1', name: 'Bob', conditions: [], removed: ['cego'] }]),
+    ).toEqual([{ participantId: 'p1', name: 'Bob', conditionIds: [], removedIds: ['cego'] }]);
   });
 });
