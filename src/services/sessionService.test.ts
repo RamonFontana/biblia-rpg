@@ -238,6 +238,58 @@ describe('createGameSession', () => {
     expect(filterOf(mark, 'in', 'id')).toEqual(['player-1', 'Filisteu-id']);
   });
 
+  describe('Início de Partida: os personagens dos jogadores entram Descansados', () => {
+    const rowsOf =
+      (...rows: Record<string, unknown>[]) =>
+      (call: FakeCall) =>
+        call.table === 'characters' && call.op === 'select' ? { data: rows } : respond(call);
+    const restWrites = () =>
+      callsOf(state.calls, 'characters', 'update').filter(
+        (c) => filterOf(c, 'eq', 'id') !== undefined,
+      );
+
+    it('PV máximo, usos de Habilidade restaurados, Dados de Vida devolvidos e morte zerada', async () => {
+      state.respond = rowsOf({
+        id: 'player-1',
+        is_dead: false,
+        stats: { pv: 30, current_pv: 4, current_faith: 40 },
+        skills: { ability_uses: { a: 1 }, path_choices: { tribe: 'A' } },
+      });
+      await createGameSession(payload());
+      const [write] = restWrites();
+      expect(filterOf(write, 'eq', 'id')).toBe('player-1');
+      expect(write.payload).toEqual({
+        stats: { pv: 30, current_pv: 30, current_faith: 40 },
+        skills: { ability_uses: {}, path_choices: { tribe: 'A' } },
+        hit_dice_spent: 0,
+        is_stable: false,
+        death_saves_successes: 0,
+        death_saves_failures: 0,
+      });
+    });
+
+    it('só os participantes dos jogadores: NPC jogável e inimigo criados agora ficam de fora', async () => {
+      state.respond = rowsOf({ id: 'player-1', stats: { pv: 10 }, skills: null });
+      await createGameSession(payload({ npcs: [playableNpc], enemies: [enemy] }));
+      const select = callsOf(state.calls, 'characters', 'select')[0];
+      expect(filterOf(select, 'in', 'id')).toEqual(['player-1']);
+    });
+
+    it('personagem Morto não volta à vida', async () => {
+      state.respond = rowsOf({ id: 'player-1', is_dead: true, stats: { pv: 10 }, skills: null });
+      await createGameSession(payload());
+      expect(restWrites()).toEqual([]);
+    });
+
+    it('erro ao restaurar é só registrado; a sessão é devolvida', async () => {
+      state.respond = (call) =>
+        call.table === 'characters' && call.op === 'select'
+          ? { error: new Error('falhou') }
+          : respond(call);
+      expect(await createGameSession(payload())).toBe('session-new');
+    });
+  });
+
   it('sem participantes, não marca ficha nenhuma', async () => {
     state.respond = respond;
     await createGameSession(payload({ participant_character_ids: [] }));

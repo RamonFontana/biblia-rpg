@@ -8,6 +8,7 @@ import {
   canTakeLongRest,
   canTakeShortRest,
   hasPriestInGroup,
+  restedForNewSession,
 } from '@/domain/rest';
 
 describe('Descanso Curto', () => {
@@ -81,5 +82,45 @@ describe('Descanso Longo: efeito na ficha', () => {
     const result = applyLongRestToStats(stats, 1);
     expect(result).toMatchObject({ ca: 12, status: 'Vivo' });
     expect(stats.current_faith).toBe(10);
+  });
+});
+
+describe('Início de Partida: o personagem entra Descansado (regras-base 6.3)', () => {
+  const sheet = {
+    stats: { pv: 30, current_pv: 4, current_faith: 40, status: 'Vivo' },
+    skills: { path_choices: { tribe: 'A' as const }, ability_uses: { a: 1, b: 2 } },
+  };
+
+  it('PV máximo, Habilidades restauradas e nenhum Dado de Vida gasto', () => {
+    const rested = restedForNewSession(sheet);
+    expect(rested.stats.current_pv).toBe(30);
+    expect(rested.skills.ability_uses).toEqual({});
+    expect(rested.hit_dice_spent).toBe(0);
+  });
+
+  it('não mexe na Fé, que persiste entre as sessões', () => {
+    expect(restedForNewSession(sheet).stats.current_faith).toBe(40);
+  });
+
+  it('preserva os outros campos de stats e de skills e não altera o objeto recebido', () => {
+    const rested = restedForNewSession(sheet);
+    expect(rested.stats).toMatchObject({ pv: 30, status: 'Vivo' });
+    expect(rested.skills.path_choices).toEqual({ tribe: 'A' });
+    expect(sheet.stats.current_pv).toBe(4);
+    expect(sheet.skills.ability_uses).toEqual({ a: 1, b: 2 });
+  });
+
+  it('quem estava Estável acorda: zera o estado de morte', () => {
+    expect(restedForNewSession(sheet).deathState).toEqual({
+      is_stable: false,
+      death_saves_successes: 0,
+      death_saves_failures: 0,
+    });
+  });
+
+  it('sem PV máximo gravado, enche até o padrão de 10', () => {
+    expect(restedForNewSession({ stats: { current_pv: 1 }, skills: null }).stats.current_pv).toBe(
+      10,
+    );
   });
 });

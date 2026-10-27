@@ -41,3 +41,25 @@ export function applyLongRestToStats<T extends RestStats>(
     current_faith: addFaith(stats, faithRecovered),
   };
 }
+
+/** Habilidades com usos gastos gravados em `skills`; o resto da ficha passa intacto. */
+interface RestSkills {
+  ability_uses?: Record<string, number>;
+}
+
+/**
+ * O personagem no Início de Partida (regras-base 6.3): PV máximo, usos de Habilidade restaurados,
+ * Dados de Vida devolvidos e o estado de morte zerado (quem estava Estável acorda). A Fé não muda:
+ * ela persiste entre as sessões.
+ */
+export function restedForNewSession<T extends RestStats, S extends RestSkills>(sheet: {
+  stats: T;
+  skills: S | null | undefined;
+}) {
+  return {
+    stats: { ...sheet.stats, current_pv: getMaxPv(sheet.stats) },
+    skills: { ...(sheet.skills ?? ({} as S)), ability_uses: {} as Record<string, number> },
+    hit_dice_spent: 0,
+    deathState: { is_stable: false, death_saves_successes: 0, death_saves_failures: 0 },
+  };
+}

@@ -59,6 +59,7 @@ import {
   updateCharacterDeathState,
   markShortRestRecharge,
   spendHitDie,
+  restCharactersForNewSession,
   updateCharacterEquipment,
   updateCharacterRest,
   updateCharacterSkills,
@@ -599,6 +600,19 @@ describe('fichas de uma sessão (criar, marcar, apagar)', () => {
     const [call] = callsOf(state.calls, 'characters', 'update');
     expect(call.payload).toEqual({ has_participated_in_session: true });
     expect(filterOf(call, 'in', 'id')).toEqual(['a', 'b']);
+  });
+
+  it('restCharactersForNewSession sem ids não consulta o banco', async () => {
+    await restCharactersForNewSession([]);
+    expect(state.calls).toEqual([]);
+  });
+
+  it('restCharactersForNewSession lança o erro de uma atualização que falhou', async () => {
+    state.respond = (call) =>
+      call.op === 'select'
+        ? { data: [{ id: 'a', is_dead: false, stats: { pv: 9 }, skills: null }] }
+        : { error: new Error('falhou') };
+    await expect(restCharactersForNewSession(['a'])).rejects.toThrow('falhou');
   });
 
   it('filterNpcAndEnemyIds devolve só os ids que são NPC ou inimigo', async () => {

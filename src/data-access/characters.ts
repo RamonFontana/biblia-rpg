@@ -15,6 +15,7 @@ import { toJson } from './json';
 import { subscribeToTables } from './realtime';
 import { uniqueChannelName } from '@/lib/channelName';
 import { syncInventoryItems } from './inventory';
+import { restedForNewSession } from '@/domain/rest';
 
 export type CharacterRow = Tables<'characters'>;
 
@@ -51,6 +52,42 @@ export async function markCharactersParticipated(ids: string[]): Promise<void> {
     .update({ has_participated_in_session: true })
     .in('id', ids);
   if (error) throw error;
+}
+
+/**
+ * Início de Partida (regras-base 6.3): os personagens entram Descansados, com PV máximo, usos de
+ * Habilidade restaurados e Dados de Vida devolvidos. Quem está Morto não volta.
+ */
+export async function restCharactersForNewSession(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { data, error } = await supabase
+    .from('characters')
+    .select('id, stats, skills, is_dead')
+    .in('id', ids);
+  if (error) throw error;
+
+  const results = await Promise.all(
+    (data ?? [])
+      .filter((row) => !row.is_dead)
+      .map(async (row) => {
+        const rested = restedForNewSession({
+          stats: (row.stats ?? {}) as CharacterStats,
+          skills: row.skills as CharacterSkills | null,
+        });
+        const { error: updateError } = await supabase
+          .from('characters')
+          .update({
+            stats: toJson(rested.stats),
+            skills: toJson(rested.skills),
+            hit_dice_spent: rested.hit_dice_spent,
+            ...rested.deathState,
+          })
+          .eq('id', row.id);
+        return updateError;
+      }),
+  );
+  const failed = results.find(Boolean);
+  if (failed) throw failed;
 }
 
 /** Marca que a Inspiração foi usada hoje: o dia da sessão e a sessão. O dia novo a devolve. */
