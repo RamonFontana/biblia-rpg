@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
 import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
+import { ShortRestCard } from '@/components/session/ShortRestCard';
+import { useShortRestRecharge } from '@/hooks/useShortRestRecharge';
 import { InspirationPanel } from '@/components/session/InspirationPanel';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
@@ -63,6 +66,12 @@ export function PlayerSessionView({
   onAcceptTrade,
   onRejectTrade,
 }: PlayerSessionViewProps) {
+  // Cada celular recarrega o próprio personagem quando o Descanso Curto abre (ADR 0006).
+  const rechargeTargets = useMemo(() => (myCharacter ? [myCharacter] : []), [myCharacter]);
+  useShortRestRecharge(sessionData.short_rest_id, rechargeTargets, (id, patch) =>
+    updateLocal('player', id, patch),
+  );
+
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="p-3 md:p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
@@ -73,6 +82,13 @@ export function PlayerSessionView({
           Você está conectado como jogador. Aguarde as instruções do Mestre.
         </p>
       </div>
+
+      <ShortRestCard
+        role="player"
+        sessionId={sessionId}
+        session={sessionData}
+        hasActiveCombat={hasActiveCombat}
+      />
 
       <PlayerRestIndicator sessionData={sessionData} />
 

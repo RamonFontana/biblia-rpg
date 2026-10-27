@@ -4,21 +4,20 @@ import { updateGameSession, type GameSession, type SessionNpc } from '@/data-acc
 import type { Character } from '@/features/character-management/types';
 import type { CharacterSkills } from '@/features/character-creation/types';
 import { Button } from '@/components/ui/button';
-import { Coffee, Moon, Loader2 } from 'lucide-react';
+import { Moon, Loader2 } from 'lucide-react';
 import { calculateRechargedAbilities } from '@/utils/abilityUtils';
 import {
   applyLongRestToStats,
   calculateFaithRecovery,
   canTakeLongRest,
-  canTakeShortRest,
   hasPriestInGroup,
 } from '@/domain/rest';
-import { characterVitalsService } from '@/data-access/vitals';
+import { CLOSED_SHORT_REST } from '@/domain/shortRest';
 import { LongRestDialog } from './LongRestDialog';
 
 interface SessionRestControlsProps {
   sessionId: string;
-  sessionData: Pick<GameSession, 'short_rests_today' | 'current_day' | 'last_long_rest_day'> | null;
+  sessionData: Pick<GameSession, 'current_day' | 'last_long_rest_day'> | null;
   playerCharacters: { character?: Character | null }[];
   npcs?: SessionNpc[];
   onRestCompleted?: () => void;
@@ -49,65 +48,10 @@ export function SessionRestControls({
 
   if (!sessionData) return null;
 
-  const shortRestsTaken = sessionData.short_rests_today || 0;
   const currentDay = sessionData.current_day || 1;
   const lastLongRestDay = sessionData.last_long_rest_day || 1;
 
-  const canShortRest = canTakeShortRest(shortRestsTaken);
   const canLongRest = canTakeLongRest(currentDay, lastLongRestDay);
-
-  const handleShortRest = async () => {
-    if (!canShortRest || isResting) return;
-
-    const amountStr = window.prompt(
-      'Quantidade de PV recuperada para todos os personagens no Descanso Curto (deixe em branco para 0):',
-    );
-    if (amountStr === null) return; // User cancelled
-
-    const amount = parseInt(amountStr || '0', 10);
-    if (isNaN(amount) || amount < 0) {
-      alert('Valor inválido.');
-      return;
-    }
-
-    setIsResting(true);
-
-    try {
-      // 1. Update session tracking
-      await updateGameSession(sessionId, { short_rests_today: shortRestsTaken + 1 });
-
-      // 2. Heal (possibly 0 PV) and recharge short-rest abilities for everyone
-      const allCharacters = restTargets(playerCharacters, npcs);
-
-      const updates = allCharacters.map((char) => {
-        const currentStats = char.stats || {};
-
-        // Calculate recharged abilities
-        const currentSkills = (char.skills || {}) as CharacterSkills;
-        const abilityUses = currentSkills.ability_uses || {};
-        const newAbilityUses = calculateRechargedAbilities(abilityUses, 'short_rest');
-
-        const newSkills = {
-          ...currentSkills,
-          ability_uses: newAbilityUses,
-        };
-
-        return characterVitalsService.healCurrentPv('characters', char.id, currentStats, amount, {
-          skills: newSkills,
-        });
-      });
-
-      await Promise.all(updates);
-      if (onRestCompleted) onRestCompleted();
-
-      alert(`Descanso Curto concluído! Todos recuperaram ${amount} PV.`);
-    } catch (error) {
-      console.error('Erro ao acionar descanso curto:', error);
-      alert('Erro ao iniciar descanso curto.');
-    } finally {
-      setIsResting(false);
-    }
-  };
 
   const handleLongRest = async (baseFaithRoll: number) => {
     if (!canLongRest || isResting) return;
@@ -118,6 +62,7 @@ export function SessionRestControls({
       await updateGameSession(sessionId, {
         last_long_rest_day: currentDay,
         short_rests_today: 0, // Reset short rests just in case
+        ...CLOSED_SHORT_REST, // o Descanso Longo fecha um Curto que esteja aberto
       });
 
       // 2. Check if there's a Priest for the Faith bonus
@@ -168,20 +113,6 @@ export function SessionRestControls({
         Controles de Descanso
       </h3>
       <div className="flex flex-wrap gap-4">
-        <Button
-          onClick={handleShortRest}
-          disabled={!canShortRest || isResting}
-          variant="outline"
-          className="bg-green-900/20 text-green-500 border-green-800 hover:bg-green-900/40 hover:text-green-400"
-        >
-          {isResting ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Coffee className="w-4 h-4 mr-2" />
-          )}
-          Descanso Curto ({2 - shortRestsTaken} restantes)
-        </Button>
-
         <Button
           onClick={() => setLongRestOpen(true)}
           disabled={!canLongRest || isResting}

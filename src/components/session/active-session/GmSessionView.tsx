@@ -1,7 +1,10 @@
 import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { SessionEnemyList } from '@/components/session/SessionEnemyList';
+import { useMemo } from 'react';
 import { SessionRestControls } from '@/components/session/SessionRestControls';
+import { ShortRestCard } from '@/components/session/ShortRestCard';
+import { useShortRestRecharge } from '@/hooks/useShortRestRecharge';
 import { RuptureAlert } from '@/components/session/RuptureAlert';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import type { PresenceState } from '@/data-access/realtime';
@@ -59,6 +62,12 @@ export function GmSessionView({
   onRejectTrade,
   onNPCNegotiate,
 }: GmSessionViewProps) {
+  // Os NPCs jogáveis têm ficha: o Mestre recarrega as Habilidades deles no Descanso Curto (ADR 0006).
+  const playableNpcs = useMemo(() => npcs.filter((n) => n.is_playable && !n.is_enemy), [npcs]);
+  useShortRestRecharge(sessionData.short_rest_id, playableNpcs, (id, patch) =>
+    updateLocal('npc', id, patch),
+  );
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="p-3 md:p-4 bg-amber-900/20 border border-amber-700/50 rounded-md mb-4 md:mb-6">
@@ -71,6 +80,13 @@ export function GmSessionView({
       </div>
 
       <RuptureAlert players={playerCharacters} />
+
+      <ShortRestCard
+        role="master"
+        sessionId={sessionId}
+        session={sessionData}
+        hasActiveCombat={hasActiveCombat}
+      />
 
       <SessionRestControls
         sessionId={sessionId}

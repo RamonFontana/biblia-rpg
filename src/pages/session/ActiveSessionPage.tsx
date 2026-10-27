@@ -13,6 +13,7 @@ import { useSessionTrades } from '@/hooks/useSessionTrades';
 import { useSessionTradeActions } from '@/hooks/useSessionTradeActions';
 import { useCombatToast } from '@/hooks/useCombatToast';
 import { advanceSessionClock } from '@/domain/sessionTime';
+import { CLOSED_SHORT_REST } from '@/domain/shortRest';
 import { findMyActiveTrade, findTradesToCancelOnLeave } from '@/domain/trades';
 import { buildCombatEntities } from '@/lib/combatEntities';
 import { TradeDialog } from '@/components/session/TradeDialog';
@@ -117,7 +118,7 @@ export function ActiveSessionPage() {
     if (!id || !sessionData) return;
 
     try {
-      await updateGameSession(id, advanceSessionClock(sessionData));
+      await updateGameSession(id, { ...advanceSessionClock(sessionData), ...CLOSED_SHORT_REST });
     } catch (error) {
       console.error('Erro ao avançar o tempo:', error);
     }

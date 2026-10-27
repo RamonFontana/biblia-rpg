@@ -1,6 +1,6 @@
-// Os avisos de Descanso para o jogador: o Curto está disponível enquanto o dia teve menos de 2;
-// o Longo, a partir do dia seguinte ao último (1 por dia, a mesma regra do botão do Mestre). Cada aviso tem texto e ícone próprios (a cor
-// é só reforço). Decisões: ROADMAP.md, Onda 4, passo 6c-3.
+// O aviso de Descanso Longo para o jogador: aparece a partir do dia seguinte ao último (1 por dia, a
+// mesma regra do botão do Mestre). O Descanso Curto é o cartão ShortRestCard (ADR 0006).
+// Decisões: ROADMAP.md, Onda 4, passo 6c-3.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
@@ -9,12 +9,10 @@ import { PlayerRestIndicator } from './PlayerRestIndicator';
 afterEach(cleanup);
 
 const session = (over: Record<string, number> = {}) => ({
-  short_rests_today: 0,
   current_day: 1,
   last_long_rest_day: 1,
   ...over,
 });
-const SHORT = 'Descanso Curto Disponível (Mestre)';
 const LONG = 'Descanso Longo Disponível (Mestre)';
 
 describe('PlayerRestIndicator', () => {
@@ -23,25 +21,9 @@ describe('PlayerRestIndicator', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('no começo do dia só o Curto está disponível', () => {
-    render(<PlayerRestIndicator sessionData={session()} />);
-    expect(screen.getByText(SHORT)).toBeTruthy();
-    expect(screen.queryByText(LONG)).toBeNull();
-  });
-
-  it('o Curto vale enquanto houve menos de 2 no dia', () => {
-    render(<PlayerRestIndicator sessionData={session({ short_rests_today: 1 })} />);
-    expect(screen.getByText(SHORT)).toBeTruthy();
-  });
-
-  it('depois de 2 Descansos Curtos no dia, o Curto some', () => {
-    render(
-      <PlayerRestIndicator
-        sessionData={session({ short_rests_today: 2, current_day: 2, last_long_rest_day: 1 })}
-      />,
-    );
-    expect(screen.queryByText(SHORT)).toBeNull();
-    expect(screen.getByText(LONG)).toBeTruthy();
+  it('no mesmo dia do último Descanso Longo, não desenha nada', () => {
+    const { container } = render(<PlayerRestIndicator sessionData={session()} />);
+    expect(container.firstChild).toBeNull();
   });
 
   it('o Longo aparece no dia seguinte ao último, não no mesmo dia', () => {
@@ -55,26 +37,22 @@ describe('PlayerRestIndicator', () => {
     expect(screen.getByText(LONG)).toBeTruthy();
   });
 
-  it('com os dois disponíveis, mostra os dois, com ícones diferentes', () => {
+  it('o aviso tem texto e ícone próprios (a cor é só reforço)', () => {
     const { container } = render(
       <PlayerRestIndicator sessionData={session({ current_day: 4, last_long_rest_day: 1 })} />,
     );
-    expect(screen.getByText(SHORT)).toBeTruthy();
     expect(screen.getByText(LONG)).toBeTruthy();
     const icons = Array.from(container.querySelectorAll('svg')).map((svg) =>
       svg.getAttribute('class'),
     );
-    expect(icons).toHaveLength(2);
-    expect(icons[0]).toContain('lucide-coffee');
-    expect(icons[1]).toContain('lucide-moon');
+    expect(icons).toHaveLength(1);
+    expect(icons[0]).toContain('lucide-moon');
   });
 
-  it('sem nenhum dos dois, não desenha nada', () => {
-    const { container } = render(
-      <PlayerRestIndicator
-        sessionData={session({ short_rests_today: 2, current_day: 1, last_long_rest_day: 1 })}
-      />,
+  it('não fala do Descanso Curto', () => {
+    render(
+      <PlayerRestIndicator sessionData={session({ current_day: 4, last_long_rest_day: 1 })} />,
     );
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByText(/Curto/)).toBeNull();
   });
 });
