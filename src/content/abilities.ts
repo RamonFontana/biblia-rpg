@@ -612,6 +612,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     effect: 'Atinge chão para derrubar em cone.',
+    combatEffect: { targets: 'enemies', apply: [{ conditionId: 'caido' }] },
   },
   {
     id: 'tribe-gade-20-escudo-de-deus',
@@ -1005,6 +1006,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'combat',
     maxUses: 1,
     effect: 'Paralisa inimigo por 1 turno (peso da culpa).',
+    combatEffect: { targets: 'enemy', apply: [{ conditionId: 'paralisado', rounds: 1 }] },
   },
   {
     id: 'tribe-levi-16-sacrificio-de-l',
@@ -2100,6 +2102,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     effect: 'Aliado a 0 PV: causa 2d10+SAB dano e Amedronta agressor.',
+    combatEffect: { targets: 'aggressor', apply: [{ conditionId: 'amedrontado' }] },
   },
   {
     id: 'vocation-sacerdote-18-intervencao-mai',

@@ -51,6 +51,23 @@ export const itemSchema = z.strictObject({
 
 export type ContentItem = z.infer<typeof itemSchema>;
 
+/**
+ * O efeito de combate de uma Habilidade (Onda 5, feature 4): quem recebe e as Condições aplicadas,
+ * com a duração em rodadas (sem duração, a Condição fica até ser removida). O texto livre
+ * (`effect`) continua: cura, dano e bônus seguem como texto, aplicados pelo Mestre.
+ */
+export const abilityEffectSchema = z.strictObject({
+  targets: z.enum(['enemy', 'enemies', 'ally', 'allies', 'aggressor']),
+  apply: z
+    .array(
+      z.strictObject({
+        conditionId: z.string().min(1),
+        rounds: z.number().int().min(1).max(100).optional(),
+      }),
+    )
+    .min(1),
+});
+
 export const abilitySchema = z.strictObject({
   id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
   name: z.string().min(1),
@@ -71,16 +88,10 @@ export const abilitySchema = z.strictObject({
   maxUses: z.number().int().min(1).max(10).optional(),
   faithCost: z.number().int().min(1).max(100).optional(),
   effect: z.string().min(1),
-  applyConditions: z
-    .array(
-      z.strictObject({
-        conditionId: z.string().min(1),
-        duration: z.number().int().min(1).optional(),
-      }),
-    )
-    .optional(),
+  combatEffect: abilityEffectSchema.optional(),
 });
 
+export type AbilityEffect = z.infer<typeof abilityEffectSchema>;
 export type AbilityDefinition = z.infer<typeof abilitySchema>;
 
 /** Kit inicial de uma Vocação: o texto da criação de personagem e os itens que o personagem recebe. */

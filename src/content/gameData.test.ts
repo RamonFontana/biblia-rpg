@@ -119,7 +119,7 @@ function collectViolations(): string[] {
     const p = `ability:${ability.id}`;
     violations.push(...schemaViolations(p, abilitySchema, ability));
 
-    for (const { conditionId } of ability.applyConditions ?? []) {
+    for (const { conditionId } of ability.combatEffect?.apply ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
 
