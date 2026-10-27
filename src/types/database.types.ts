@@ -344,6 +344,7 @@ export type Database = {
       }
       combat_participants: {
         Row: {
+          ability_state: Json
           combat_id: string
           conditions: Json
           created_at: string
@@ -356,6 +357,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ability_state?: Json
           combat_id: string
           conditions?: Json
           created_at?: string
@@ -368,6 +370,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ability_state?: Json
           combat_id?: string
           conditions?: Json
           created_at?: string
