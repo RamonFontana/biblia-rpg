@@ -11,7 +11,7 @@
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
-| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa), tickets em `.scratch/fe-na-mesa/`; ver o andamento na seção da Onda 5 |
+| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa) concluída; feature 2 (ataque físico) em andamento, tickets em `.scratch/ataque-fisico/`; ver o andamento na seção da Onda 5 |
 
 
 ## Contexto
@@ -556,6 +556,11 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 - **Ticket 04, Inspiração:** feito. `getInspirationStatus` (motor): disponível para o Inabalável que não a gastou hoje, usada se foi gasta hoje nesta sessão, nenhuma nos demais casos; o dia novo a devolve pela comparação, sem zerar nada. Migration `20261025140000_inspiration` (`characters.inspiration_used_day` e `inspiration_session_id`, `session_test_results.inspiration_used`). **Refinamento da spec:** além do dia, a ficha guarda a sessão em que a Inspiração foi gasta, para o "dia 3" de uma sessão não valer como o "dia 3" de outra (um personagem passa por várias sessões). O jogador gasta a Inspiração num Teste do app (Vantagem, só conta no envio) ou pelo botão "Usei a Inspiração" no painel da tela da sessão; o cartão do Mestre mostra disponível ou usada hoje. Falhar ao marcar o dia depois do envio não desfaz o resultado (o pior caso é a Inspiração continuar disponível).
 
 **Feature 1 (Fé na mesa): os 5 tickets estão feitos.** Falta aplicar as 3 migrations na produção (`20261025120000`, `20261025130000`, `20261025140000`) e rodar `npm run gen:types` depois, para confirmar os tipos editados à mão.
+
+**Andamento da feature 2 (ataque físico).**
+- **Ticket 01, ataque básico de ponta a ponta:** feito. Motor `attack` (atributo por tipo de arma, Proficiência, acerto contra a CA, Acerto Crítico, Falha Crítica, lembrete do dado e dano). Migration `20261027120000_combat_attacks` (tabela `combat_attacks` e a função `apply_attack`, ADR 0005; a tabela entra na publicação do Realtime). O jogador ataca no próprio turno por um painel que substitui o `PhysicalRollForm` (removido, com as 4 supressões de lint); o Mestre vê o aviso e a lista dos últimos ataques. A regra do Sacerdote e do Sábio com armas marciais foi para o motor (`isWeaponProficient`), e `checkWeaponProficiency` passou a delegar a ele.
+- **Divergência registrada (doc × código), decisão do autor pendente:** `docs/vocacoes/batedor.md` diz que o Batedor usa armas simples mais Espada Curta, Arco Curto e Faca de Bronze; o código só nega armas marciais ao Sacerdote, então o Batedor usa qualquer arma marcial. Mantive o comportamento atual (o aviso "Não proficiente" não aparece para o Batedor com Espada Longa). Se valer o doc, a regra passa a ser uma lista de armas por Vocação.
+- **Efeito de bordo:** o desempate da iniciativa passou a ser por criação e id, igual na tela e na função do banco (antes dependia da ordem física das linhas).
 
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 

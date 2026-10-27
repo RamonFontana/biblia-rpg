@@ -149,8 +149,9 @@ Em seu turno, um personagem pode:
 Quem passa o turno é o Mestre, no app, quando o jogador avisa que terminou.
 
 ### 6.2 Dano, PV e Morte
-- **Acertando o Alvo**: Rola-se `1d20 + Modificador de Força (ou Destreza para acuidade/distância) + Proficiência`. Se igualar ou superar a CA do alvo, acerta.
-- **Dano**: Conforme a arma, mais o Modificador de atributo usado.
+- **Acertando o Alvo**: Rola-se `1d20 + Modificador de Força (ou Destreza para acuidade/distância) + Proficiência`. Se igualar ou superar a CA do alvo, acerta. A Proficiência só entra com arma em que a Vocação é proficiente. O alvo pode ser inimigo, NPC ou aliado.
+- **Acerto Crítico e Falha Crítica**: Um **20 natural** sempre acerta e os dados de dano da arma são rolados duas vezes (o modificador entra uma vez só). Um **1 natural** sempre erra.
+- **Dano**: Conforme a arma, mais o Modificador de atributo usado. Desarmado, 1 + Modificador de Força.
 - **Ficar a 0 PV**: O personagem cai Inconsciente e fica **Morrendo**. Deve fazer **Testes de Morte** em seus próximos turnos (1d20: 10 ou mais é sucesso, 9 ou menos é falha; um 1 natural conta como duas falhas e um 20 natural devolve o personagem com 1 PV).
   - **3 sucessos**: Estabiliza (vivo, mas inconsciente com 0 PV). Um aliado também pode estabilizar o personagem com um teste de Medicina (CD 10) como Ação.
   - **3 falhas**: Morte Permanente. O personagem sofre um **Soft Delete** no sistema, bloqueando o acesso do usuário, mantendo a ficha apenas como um memorial histórico.
