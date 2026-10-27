@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Motor: dado do Versátil, modo de arremesso (atributo e à distância), arma de munição sempre à distância
-- [ ] Serviço: munição gasta pela regra existente, ataque bloqueado com 0, arremesso sem gasto
-- [ ] Painel do jogador: escolha do Versátil e do modo, aviso de munição
-- [ ] Testes do motor, do serviço, dos componentes e um E2E (arco gasta munição; sem munição bloqueia), com mutação conferida
+- [x] Motor: dado do Versátil, modo de arremesso (atributo e à distância), arma de munição sempre à distância
+- [x] Serviço: munição gasta pela regra existente, ataque bloqueado com 0, arremesso sem gasto
+- [x] Painel do jogador: escolha do Versátil e do modo, aviso de munição
+- [x] Testes do motor, do serviço, dos componentes e um E2E (arco gasta munição; sem munição bloqueia), com mutação conferida

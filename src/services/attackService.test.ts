@@ -115,3 +115,47 @@ describe('submitAttack: modalidade e Inspiração', () => {
     expect(console.error).toHaveBeenCalled();
   });
 });
+
+describe('submitAttack: munição', () => {
+  const withAmmo = { ...base, ammunition: { characterItemId: 'ci-flechas' } };
+  const stock = (quantity: number) => (call: FakeCall) =>
+    call.table === 'character_items' && call.op === 'select'
+      ? { data: { quantity } }
+      : { data: 'atk-1' };
+  const ammoWrites = () => callsOf(state.calls, 'character_items', 'update');
+
+  it('gasta 1 munição depois de registrar o ataque', async () => {
+    state.respond = stock(5);
+    await submitAttack(withAmmo);
+    expect(ammoWrites()).toHaveLength(1);
+    expect(ammoWrites()[0].payload).toEqual({ quantity: 4 });
+  });
+
+  it('gasta a munição também no erro (a flecha foi disparada)', async () => {
+    state.respond = stock(5);
+    await submitAttack({ ...withAmmo, result: { ...result, hit: false } });
+    expect(ammoWrites()[0].payload).toEqual({ quantity: 4 });
+  });
+
+  it('se o ataque é recusado, a munição não é gasta', async () => {
+    state.respond = (call) =>
+      call.table === 'apply_attack'
+        ? { error: new Error('Não é o turno do atacante') }
+        : stock(5)(call);
+    await expect(submitAttack(withAmmo)).rejects.toThrow();
+    expect(ammoWrites()).toEqual([]);
+  });
+
+  it('arma sem munição não toca no inventário', async () => {
+    await submitAttack(base);
+    expect(ammoWrites()).toEqual([]);
+  });
+
+  it('se gastar a munição falha, o ataque registrado fica e não lança', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    state.respond = stock(0);
+    await expect(submitAttack(withAmmo)).resolves.toBe('atk-1');
+    expect(ammoWrites()).toEqual([]);
+  });
+});

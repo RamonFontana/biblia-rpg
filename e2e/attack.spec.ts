@@ -21,7 +21,15 @@ async function equipWeapon(seed: Seed, characterId: string, slug: string) {
  * Uma mesa com Eliabe (Guerreiro, Espada Curta, FOR 14), Rute (aliada) e um Filisteu (CA 12, 20 PV),
  * no combate, com a iniciativa dando o primeiro turno a Eliabe.
  */
-async function openFight(seed: Seed, signIn: SignIn, faith = 50) {
+async function openFight(
+  seed: Seed,
+  signIn: SignIn,
+  {
+    faith = 50,
+    weapon = 'espada_curta',
+    ammo,
+  }: { faith?: number; weapon?: string; ammo?: [string, number] } = {},
+) {
   const eliabe = await seed.createCharacter('player1', {
     name: 'Eliabe',
     stats: { pv: 11, current_pv: 11, ca: 11, faith, current_faith: faith },
@@ -31,7 +39,8 @@ async function openFight(seed: Seed, signIn: SignIn, faith = 50) {
     stats: { pv: 11, current_pv: 11, ca: 11, faith: 50 },
   });
   const filisteu = await seed.createEnemy(FILISTEU, { pv: 20, ca: 12 });
-  await equipWeapon(seed, eliabe, 'espada_curta');
+  await equipWeapon(seed, eliabe, weapon);
+  if (ammo) await seed.giveItem(eliabe, ammo[0], ammo[1]);
   const sessionId = await seed.createSession({ characters: [eliabe, rute, filisteu] });
 
   const master = await signIn('master');
@@ -171,7 +180,7 @@ test.describe('ataque físico', () => {
     seed,
     signIn,
   }) => {
-    const { master, player, eliabe } = await openFight(seed, signIn, 80);
+    const { master, player, eliabe } = await openFight(seed, signIn, { faith: 80 });
 
     await expect(player.getByText('Inspiração disponível').first()).toBeVisible();
     await player.getByRole('checkbox', { name: /Usar Inspiração/ }).check();
@@ -195,5 +204,44 @@ test.describe('ataque físico', () => {
       .eq('id', eliabe)
       .single();
     expect(character.data?.inspiration_used_day).toBe(1);
+  });
+
+  test('o arco gasta 1 flecha por ataque e, sem flechas, o ataque é bloqueado', async ({
+    seed,
+    signIn,
+  }) => {
+    const { player, eliabe } = await openFight(seed, signIn, {
+      weapon: 'arco_curto',
+      ammo: ['flechas', 1],
+    });
+
+    await expect(player.getByText(/Munição: Flecha/)).toContainText('1');
+    await player.getByLabel('Alvo').selectOption({ label: FILISTEU });
+    await player.getByLabel('d20 natural').fill('10'); // 10 + 1 (DES) + 2 = 13 ≥ CA 12
+    await player.getByRole('button', { name: 'Atacar' }).click();
+    await player.getByLabel('Dano rolado').fill('3');
+    await player.getByRole('button', { name: 'Aplicar dano' }).click();
+    await expect(player.getByText('4 de dano.')).toBeVisible(); // 3 + 1 (DES)
+
+    const quiver = await adminClient()
+      .from('character_items')
+      .select('quantity')
+      .eq('character_id', eliabe);
+    expect(quiver.data?.map((row) => row.quantity).sort()).toEqual([1, 0].sort());
+
+    await player.getByRole('button', { name: 'Novo ataque' }).click();
+    await expect(player.getByText(/Sem munição \(Flecha\)/)).toBeVisible();
+  });
+
+  test('a arma Versátil ataca com duas mãos e rola o dado maior', async ({ seed, signIn }) => {
+    const { player } = await openFight(seed, signIn, { weapon: 'machado' });
+
+    await expect(player.getByText(/Arma:/)).toContainText('1d8 cortante');
+    await player.getByRole('checkbox', { name: /Duas Mãos/ }).check();
+    await expect(player.getByText(/Arma:/)).toContainText('1d10 cortante');
+    await player.getByLabel('Alvo').selectOption({ label: FILISTEU });
+    await player.getByLabel('d20 natural').fill('10');
+    await player.getByRole('button', { name: 'Atacar' }).click();
+    await expect(player.getByText('Role 1d10.')).toBeVisible();
   });
 });

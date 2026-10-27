@@ -4,7 +4,11 @@
 import { describe, expect, it } from 'vitest';
 import { createSeededRng } from '@/domain/rng';
 import {
+  ammunitionSlug,
   attackAbility,
+  canThrow,
+  canUseTwoHands,
+  effectiveWeapon,
   computeDamage,
   damageReminder,
   describeAttack,
@@ -40,6 +44,21 @@ const spear: AttackWeapon = {
   damage: '1d6 perfurante',
   category: 'Simples',
   properties: ['thrown', 'versatile'],
+};
+
+const axe: AttackWeapon = {
+  id: 'machado',
+  damage: '1d8 cortante',
+  category: 'Marcial',
+  properties: ['versatile'],
+  description: 'Versátil (1d10)',
+};
+const spearV: AttackWeapon = { ...spear, description: 'Arremesso (9/36m), Versátil (1d8)' };
+const bow: AttackWeapon = {
+  id: 'arco_curto',
+  damage: '1d6 perfurante',
+  category: 'Marcial',
+  properties: ['ammunition'],
 };
 
 const base: AttackInput = {
@@ -311,6 +330,74 @@ describe('weaponIsRanged', () => {
     expect(weaponIsRanged(sling)).toBe(true);
     expect(weaponIsRanged(sword)).toBe(false);
     expect(weaponIsRanged(null)).toBe(false);
+  });
+
+  it('a arma de arremesso é à distância só quando arremessada', () => {
+    expect(weaponIsRanged(spear, true)).toBe(true);
+    expect(weaponIsRanged(spear, false)).toBe(false);
+    expect(weaponIsRanged(spear)).toBe(false);
+  });
+
+  it('arremessar uma arma que não é de arremesso não a torna à distância', () => {
+    expect(weaponIsRanged(sword, true)).toBe(false);
+  });
+});
+
+describe('canThrow', () => {
+  it('só as armas de arremesso (Lança, Adaga, Dardo)', () => {
+    expect(canThrow(spear)).toBe(true);
+    expect(canThrow(dagger)).toBe(true);
+    expect(canThrow(sword)).toBe(false);
+    expect(canThrow(sling)).toBe(false);
+    expect(canThrow(null)).toBe(false);
+  });
+});
+
+describe('Versátil', () => {
+  it('canUseTwoHands: arma Versátil com a outra mão livre', () => {
+    expect(canUseTwoHands(axe, true)).toBe(true);
+    expect(canUseTwoHands(axe, false)).toBe(false);
+    expect(canUseTwoHands(dagger, true)).toBe(false);
+    expect(canUseTwoHands(null, true)).toBe(false);
+  });
+
+  it('effectiveWeapon: com duas mãos troca o dado pelo Versátil e mantém o tipo de dano', () => {
+    expect(effectiveWeapon(axe, true).damage).toBe('1d10 cortante');
+    expect(effectiveWeapon(spearV, true).damage).toBe('1d8 perfurante');
+  });
+
+  it('effectiveWeapon: a uma mão, ou sem dado Versátil, fica como está', () => {
+    expect(effectiveWeapon(axe, false)).toBe(axe);
+    expect(effectiveWeapon(dagger, true)).toBe(dagger);
+    const withoutDie = { ...axe, description: 'Versátil' };
+    expect(effectiveWeapon(withoutDie, true)).toBe(withoutDie);
+  });
+
+  it('o lembrete e a Rolagem Virtual do dano seguem o dado Versátil', () => {
+    const twoHanded = effectiveWeapon(axe, true);
+    expect(damageReminder(twoHanded, false)).toBe('Role 1d10.');
+    expect(damageReminder(twoHanded, true)).toBe('Role 2d10.');
+    for (let seed = 1; seed <= 40; seed++) {
+      expect(rollDamage(twoHanded, false, createSeededRng(seed))).toBeLessThanOrEqual(10);
+    }
+    const max = Math.max(
+      ...Array.from({ length: 60 }, (_, i) => rollDamage(twoHanded, false, createSeededRng(i + 1))),
+    );
+    expect(max).toBeGreaterThan(8);
+  });
+});
+
+describe('ammunitionSlug', () => {
+  it('a funda gasta Pedra para Funda e os arcos gastam Flecha', () => {
+    expect(ammunitionSlug(sling)).toBe('pedras_funda');
+    expect(ammunitionSlug(bow)).toBe('flechas');
+    expect(ammunitionSlug({ ...bow, id: 'arco_longo' })).toBe('flechas');
+  });
+
+  it('armas sem munição não gastam nada', () => {
+    expect(ammunitionSlug(sword)).toBeNull();
+    expect(ammunitionSlug(spear)).toBeNull();
+    expect(ammunitionSlug(null)).toBeNull();
   });
 });
 

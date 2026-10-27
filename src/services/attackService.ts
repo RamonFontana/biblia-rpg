@@ -1,5 +1,6 @@
 import { markInspirationUsed } from '@/data-access/characters';
 import { applyAttack } from '@/data-access/combat';
+import { consumeAmmo } from '@/data-access/inventory';
 import type { AttackResult } from '@/domain/attack';
 import type { TestMode } from '@/domain/testMode';
 
@@ -16,6 +17,8 @@ export interface AttackSubmission {
   rolls: number[] | null;
   /** Presente quando o jogador gastou a Inspiração neste ataque: a ficha, a sessão e o dia. */
   inspiration?: { characterId: string; sessionId: string; day: number };
+  /** A munição que a arma gasta (funda, arco): 1 por ataque. */
+  ammunition?: { characterItemId: string };
 }
 
 /**
@@ -50,5 +53,8 @@ export async function submitAttack(attack: AttackSubmission): Promise<string> {
       console.error('Error marking the Inspiration as used:', error);
     }
   }
+
+  // Gastar a munição também é depois do registro; `consumeAmmo` registra a falha e devolve false.
+  if (attack.ammunition) await consumeAmmo(attack.ammunition.characterItemId, 1);
   return id;
 }

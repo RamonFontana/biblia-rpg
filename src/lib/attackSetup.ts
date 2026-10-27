@@ -1,5 +1,5 @@
 import { ITEMS_DB } from '@/content/items';
-import type { AttackWeapon } from '@/domain/attack';
+import { ammunitionSlug, type AttackWeapon } from '@/domain/attack';
 import type { ConditionEntry } from '@/types/combat';
 import type { CombatInventoryItem } from '@/types/inventory';
 import { getEquippedSlots } from './equipmentUtils';
@@ -27,7 +27,35 @@ export function resolveMainHandWeapon(character: {
       damage: content.damage,
       category: content.category,
       properties: content.properties,
+      description: content.description,
     },
+  };
+}
+
+/** A outra mão está livre: nada nela (a arma de duas mãos ocupa as duas). */
+export function isOffHandFree(character: { equipment?: unknown }): boolean {
+  return !getEquippedSlots(character.equipment as never).offHand;
+}
+
+/**
+ * A munição que a arma gasta, no inventário: o item (`null` se não há), a quantidade e o nome.
+ * `null` se a arma não gasta munição.
+ */
+export function resolveAmmunition(
+  character: { character_items?: CombatInventoryItem[] },
+  weapon: AttackWeapon | null,
+): { characterItemId: string | null; quantity: number; name: string } | null {
+  const slug = ammunitionSlug(weapon);
+  if (!slug) return null;
+  const content = ITEMS_DB.find((i) => i.id === slug);
+  const owned = character.character_items?.find((ci) => {
+    const catalog = Array.isArray(ci.items) ? ci.items[0] : ci.items;
+    return catalog?.slug === slug;
+  });
+  return {
+    characterItemId: owned?.id ?? null,
+    quantity: owned?.quantity ?? 0,
+    name: content?.name ?? slug,
   };
 }
 

@@ -1,7 +1,12 @@
 // O que a tela de ataque lê do combate e da ficha: a arma da mão principal (do conteúdo, pelo slug
 // do item) e os alvos possíveis (os outros participantes do combate, com nome e CA).
 import { describe, expect, it } from 'vitest';
-import { buildAttackTargets, resolveMainHandWeapon } from './attackSetup';
+import {
+  buildAttackTargets,
+  isOffHandFree,
+  resolveAmmunition,
+  resolveMainHandWeapon,
+} from './attackSetup';
 
 const item = (id: string, slug: string | null, asList = false) => {
   const catalog = { slug, name: slug ?? 'x' };
@@ -62,6 +67,70 @@ describe('resolveMainHandWeapon', () => {
         character_items: [item('ci-1', 'inexistente')],
       }),
     ).toBeNull();
+  });
+});
+
+describe('resolveMainHandWeapon: a descrição vem junto (o dado Versátil sai dela)', () => {
+  it('traz o texto do item', () => {
+    const found = resolveMainHandWeapon({
+      equipment: { head: null, body: null, mainHand: 'ci-1', offHand: null },
+      character_items: [item('ci-1', 'machado')],
+    });
+    expect(found?.weapon.description).toContain('Versátil (1d10)');
+  });
+});
+
+describe('isOffHandFree', () => {
+  it('a outra mão está livre quando não há nada nela', () => {
+    expect(
+      isOffHandFree({ equipment: { head: null, body: null, mainHand: 'a', offHand: null } }),
+    ).toBe(true);
+  });
+
+  it('um escudo (ou outro item) na outra mão a ocupa', () => {
+    expect(
+      isOffHandFree({ equipment: { head: null, body: null, mainHand: 'a', offHand: 'b' } }),
+    ).toBe(false);
+  });
+
+  it('a arma de duas mãos ocupa as duas', () => {
+    expect(
+      isOffHandFree({ equipment: { head: null, body: null, mainHand: 'a', offHand: 'a' } }),
+    ).toBe(false);
+  });
+
+  it('a ficha antiga, com a lista de compras, tem as mãos livres', () => {
+    expect(isOffHandFree({ equipment: [] as never })).toBe(true);
+  });
+});
+
+describe('resolveAmmunition', () => {
+  const owned = (id: string, slug: string, quantity: number) => ({
+    id,
+    quantity,
+    items: { slug, name: slug },
+  });
+
+  it('acha a munição da arma no inventário, com a quantidade', () => {
+    expect(
+      resolveAmmunition(
+        { character_items: [owned('i1', 'flechas', 12), owned('i2', 'pedras_funda', 3)] },
+        { id: 'arco_curto', properties: ['ammunition'] },
+      ),
+    ).toEqual({ characterItemId: 'i1', quantity: 12, name: 'Flecha' });
+  });
+
+  it('a arma de munição sem a munição no inventário tem quantidade 0', () => {
+    expect(
+      resolveAmmunition({ character_items: [] }, { id: 'funda', properties: ['ammunition'] }),
+    ).toEqual({ characterItemId: null, quantity: 0, name: 'Pedra para Funda' });
+  });
+
+  it('arma que não gasta munição devolve nulo', () => {
+    expect(
+      resolveAmmunition({ character_items: [owned('i1', 'flechas', 3)] }, { id: 'adaga' }),
+    ).toBeNull();
+    expect(resolveAmmunition({ character_items: [] }, null)).toBeNull();
   });
 });
 

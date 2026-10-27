@@ -35,6 +35,7 @@ export type ConsumableInventoryItem = InventoryItem & { items: { effects: ItemEf
 export interface CombatInventoryItem {
   id?: string;
   item_id?: string;
+  quantity?: number | null;
   level?: number | null;
   custom_condition_resistances?: string[] | null;
   items?: InventoryCatalogItem | InventoryCatalogItem[] | null;

@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import {
+  canThrow,
+  canUseTwoHands,
   computeDamage,
   damageReminder,
+  effectiveWeapon,
   isWeaponProficient,
   resolveAttack,
   resolveAttackMode,
@@ -15,7 +18,12 @@ import { pickCountingDie, rollTestDice, type TestMode } from '@/domain/testMode'
 import { systemRng } from '@/lib/systemRng';
 import { ModeBanner } from '../session/player-test/ModeBanner';
 import { getErrorMessage } from '@/lib/errorMessage';
-import { resolveMainHandWeapon, type AttackTarget } from '@/lib/attackSetup';
+import {
+  isOffHandFree,
+  resolveAmmunition,
+  resolveMainHandWeapon,
+  type AttackTarget,
+} from '@/lib/attackSetup';
 import { submitAttack } from '@/services/attackService';
 import type { CombatInventoryItem } from '@/types/inventory';
 
@@ -83,12 +91,22 @@ export function AttackPanel({
   const [rolledDamage, setRolledDamage] = useState<number | ''>('');
   const [rolledDice, setRolledDice] = useState<number[] | null>(null);
   const [useInspiration, setUseInspiration] = useState(false);
+  const [twoHands, setTwoHands] = useState(false);
+  const [throwing, setThrowing] = useState(false);
   const [stage, setStage] = useState<Stage>({ name: 'form' });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const equipped = resolveMainHandWeapon(character);
-  const weapon = equipped?.weapon ?? null;
+  const baseWeapon = equipped?.weapon ?? null;
+  // Arremesso e duas mãos: arremessar uma arma de arremesso exclui o Versátil; o dado Versátil só
+  // vale com a outra mão livre.
+  const isThrowing = throwing && canThrow(baseWeapon);
+  const offHandFree = isOffHandFree(character);
+  const canTwoHands = !isThrowing && canUseTwoHands(baseWeapon, offHandFree);
+  const weapon = baseWeapon ? effectiveWeapon(baseWeapon, twoHands && canTwoHands) : null;
+  const ammunition = resolveAmmunition(character, baseWeapon);
+  const outOfAmmo = !!ammunition && ammunition.quantity <= 0;
   const attributes = character.attributes ?? {};
   const vocation = character.vocation ?? '';
 
@@ -97,7 +115,7 @@ export function AttackPanel({
   const resolved = resolveAttackMode({
     attackerConditions: attackerConditionIds,
     targetConditions: target?.conditionIds ?? [],
-    ranged: weaponIsRanged(weapon),
+    ranged: weaponIsRanged(baseWeapon, isThrowing),
     inspirationUsed: inspirationOn,
   });
 
@@ -121,6 +139,9 @@ export function AttackPanel({
         damage,
         appliedMode: rolled.mode,
         rolls: rolled.rolls,
+        ...(ammunition?.characterItemId
+          ? { ammunition: { characterItemId: ammunition.characterItemId } }
+          : {}),
         ...(rolled.useInspiration && inspiration
           ? { inspiration: { characterId, sessionId: inspiration.sessionId, day: inspiration.day } }
           : {}),
@@ -207,6 +228,8 @@ export function AttackPanel({
     setRolledDamage('');
     setRolledDice(null);
     setUseInspiration(false);
+    setTwoHands(false);
+    setThrowing(false);
     setError(null);
   };
 
@@ -218,7 +241,7 @@ export function AttackPanel({
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           Atacar
-          {weapon && !isWeaponProficient(vocation, weapon.category) && (
+          {baseWeapon && !isWeaponProficient(vocation, baseWeapon.category) && (
             <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-400">
               Não proficiente
             </span>
@@ -241,6 +264,48 @@ export function AttackPanel({
             {actionUsed && (
               <p className="text-sm text-amber-400">
                 Ação principal já usada neste turno. Desmarque-a no checklist para atacar de novo.
+              </p>
+            )}
+            {canThrow(baseWeapon) && (
+              <div role="radiogroup" aria-label="Tipo de ataque" className="flex gap-2">
+                {[
+                  { label: 'Corpo a corpo', value: false },
+                  { label: 'Arremesso', value: true },
+                ].map(({ label, value }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    role="radio"
+                    aria-checked={throwing === value}
+                    aria-label={label}
+                    onClick={() => setThrowing(value)}
+                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                      throwing === value
+                        ? 'border-amber-600 bg-amber-600 text-stone-900'
+                        : 'border-stone-600 bg-stone-800 text-stone-300 hover:bg-stone-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {canTwoHands && (
+              <label className="flex items-center gap-2 text-sm text-stone-300">
+                <input
+                  type="checkbox"
+                  checked={twoHands}
+                  onChange={(e) => setTwoHands(e.target.checked)}
+                  className="accent-amber-500"
+                />
+                Ataque com Duas Mãos (Versátil)
+              </label>
+            )}
+            {ammunition && (
+              <p className={`text-sm ${outOfAmmo ? 'text-red-400' : 'text-stone-300'}`}>
+                {outOfAmmo
+                  ? `Sem munição (${ammunition.name}). Recupere ou compre mais para atacar.`
+                  : `Munição: ${ammunition.name} ${ammunition.quantity}`}
               </p>
             )}
             {inspiration?.available && (
@@ -311,7 +376,7 @@ export function AttackPanel({
               <Button
                 type="button"
                 onClick={handleAttack}
-                disabled={actionUsed || isSubmitting || targets.length === 0}
+                disabled={actionUsed || isSubmitting || targets.length === 0 || outOfAmmo}
                 className="min-h-[44px]"
               >
                 Atacar

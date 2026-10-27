@@ -16,6 +16,8 @@ export interface AttackWeapon {
   damage?: string;
   category?: string;
   properties?: string[];
+  /** O texto do item; o dado Versátil sai dele (`Versátil (1d10)`). */
+  description?: string;
 }
 
 export interface AttackInput {
@@ -123,9 +125,45 @@ export function describeAttack(attack: {
   return `${attackerName} errou ${targetName}${attack.fumble ? ' (falha crítica)' : ''}.`;
 }
 
-/** Se o ataque é à distância: a arma de munição (funda, arco). */
-export function weaponIsRanged(weapon: AttackWeapon | null): boolean {
-  return !!weapon?.properties?.includes('ammunition');
+/** Se o ataque é à distância: a arma de munição (funda, arco), ou a de arremesso quando arremessada. */
+export function weaponIsRanged(weapon: AttackWeapon | null, throwing = false): boolean {
+  if (weapon?.properties?.includes('ammunition')) return true;
+  return throwing && canThrow(weapon);
+}
+
+/** As armas de arremesso (Lança, Adaga, Dardo) podem ser usadas de perto ou arremessadas. */
+export function canThrow(weapon: AttackWeapon | null): boolean {
+  return !!weapon?.properties?.includes('thrown');
+}
+
+/** Arma Versátil com a outra mão livre pode ser usada com as duas mãos. */
+export function canUseTwoHands(weapon: AttackWeapon | null, offHandFree: boolean): boolean {
+  return offHandFree && !!weapon?.properties?.includes('versatile');
+}
+
+/** O dado Versátil do texto da arma (`Versátil (1d10)` → `1d10`). */
+function versatileDie(weapon: AttackWeapon): string | null {
+  return /Versátil \((\d+d\d+)\)/.exec(weapon.description ?? '')?.[1] ?? null;
+}
+
+/** A arma como será usada: com as duas mãos, o dado Versátil (o tipo de dano continua). */
+export function effectiveWeapon(weapon: AttackWeapon, twoHands: boolean): AttackWeapon {
+  const die = twoHands ? versatileDie(weapon) : null;
+  const type = /^\d+d\d+ (.+)$/.exec(weapon.damage ?? '')?.[1];
+  return die && type ? { ...weapon, damage: `${die} ${type}` } : weapon;
+}
+
+// A munição de cada arma é um item do inventário, pelo slug do conteúdo.
+const AMMUNITION: Record<string, string> = {
+  funda: 'pedras_funda',
+  arco_curto: 'flechas',
+  arco_longo: 'flechas',
+};
+
+/** O slug da munição que a arma gasta, ou `null` se não gasta. */
+export function ammunitionSlug(weapon: AttackWeapon | null): string | null {
+  if (!weapon?.properties?.includes('ammunition')) return null;
+  return AMMUNITION[weapon.id ?? ''] ?? null;
 }
 
 export interface AttackModeInput {

@@ -387,3 +387,135 @@ describe('AttackPanel: Rolagem Virtual', () => {
     expect(screen.queryByRole('button', { name: 'Rolar dano' })).toBeNull();
   });
 });
+
+describe('AttackPanel: Versátil, arremesso e munição', () => {
+  const armed = (
+    slug: string,
+    extra: { offHand?: string | null; ammo?: { slug: string; quantity: number } } = {},
+  ) => ({
+    attributes: { for: 16, des: 12 },
+    level: 1,
+    vocation: 'Guerreiro',
+    equipment: { head: null, body: null, mainHand: 'ci-1', offHand: extra.offHand ?? null },
+    character_items: [
+      { id: 'ci-1', items: { slug, name: slug } },
+      ...(extra.ammo
+        ? [
+            {
+              id: 'ci-ammo',
+              quantity: extra.ammo.quantity,
+              items: { slug: extra.ammo.slug, name: extra.ammo.slug },
+            },
+          ]
+        : []),
+    ],
+  });
+  const twoHands = () => screen.queryByRole('checkbox', { name: /Duas Mãos/ });
+  const mode = (name: string) => screen.getByRole('radio', { name });
+
+  describe('Versátil', () => {
+    it('com a outra mão livre, oferece o ataque com duas mãos e o dado maior', async () => {
+      show({ character: armed('espada_longa') });
+      expect(twoHands()).toBeInTheDocument();
+      expect(screen.getByText(/1d8 cortante/)).toBeInTheDocument();
+      fireEvent.click(twoHands()!);
+      expect(screen.getByText(/1d10 cortante/)).toBeInTheDocument();
+      pick('Rute');
+      roll('15');
+      attack();
+      await screen.findByText('Acertou!');
+      expect(screen.getByText('Role 1d10.')).toBeInTheDocument();
+    });
+
+    it('com a outra mão ocupada (escudo), não oferece', () => {
+      show({ character: armed('espada_longa', { offHand: 'ci-escudo' }) });
+      expect(twoHands()).toBeNull();
+    });
+
+    it('arma que não é Versátil não oferece', () => {
+      show({ character: armed('espada_curta') });
+      expect(twoHands()).toBeNull();
+    });
+
+    it('arremessando, não se usa com duas mãos', () => {
+      show({ character: armed('lanca') });
+      expect(twoHands()).toBeInTheDocument();
+      fireEvent.click(mode('Arremesso'));
+      expect(twoHands()).toBeNull();
+    });
+  });
+
+  describe('arremesso', () => {
+    it('a arma de arremesso escolhe entre corpo a corpo e arremesso, e as outras não', () => {
+      show({ character: armed('adaga') });
+      expect(mode('Corpo a corpo')).toBeChecked();
+      expect(mode('Arremesso')).not.toBeChecked();
+      cleanup();
+      show({ character: armed('espada_curta') });
+      expect(screen.queryByRole('radio', { name: 'Arremesso' })).toBeNull();
+    });
+
+    it('contra alvo Caído: Vantagem de perto e Desvantagem arremessando', () => {
+      show({
+        character: armed('adaga'),
+        targets: [{ participantId: 'p-down', name: 'Caído', ac: 10, conditionIds: ['caido'] }],
+      });
+      fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p-down' } });
+      expect(screen.getByText('✨ Vantagem')).toBeInTheDocument();
+      fireEvent.click(mode('Arremesso'));
+      expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+      expect(screen.getByText('Motivo: Alvo Caído (à distância)')).toBeInTheDocument();
+    });
+
+    it('arremessar não gasta munição', async () => {
+      show({ character: armed('adaga') });
+      fireEvent.click(mode('Arremesso'));
+      pick('Filisteu');
+      roll('2');
+      attack();
+      await screen.findByText('Errou');
+      expect(h.submitAttack.mock.calls[0][0].ammunition).toBeUndefined();
+    });
+  });
+
+  describe('munição', () => {
+    it('mostra a munição que resta', () => {
+      show({ character: armed('arco_curto', { ammo: { slug: 'flechas', quantity: 12 } }) });
+      expect(screen.getByText(/Munição: Flecha/)).toHaveTextContent('12');
+    });
+
+    it('o ataque gasta a munição (manda o item ao serviço)', async () => {
+      show({ character: armed('funda', { ammo: { slug: 'pedras_funda', quantity: 3 } }) });
+      pick('Filisteu');
+      roll('2');
+      attack();
+      await screen.findByText('Errou');
+      expect(h.submitAttack.mock.calls[0][0].ammunition).toEqual({ characterItemId: 'ci-ammo' });
+    });
+
+    it('sem munição, bloqueia o ataque e diz o motivo', () => {
+      show({ character: armed('arco_curto', { ammo: { slug: 'flechas', quantity: 0 } }) });
+      expect(screen.getByText(/Sem munição \(Flecha\)/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Atacar' })).toBeDisabled();
+    });
+
+    it('sem a munição no inventário, também bloqueia', () => {
+      show({ character: armed('arco_curto') });
+      expect(screen.getByRole('button', { name: 'Atacar' })).toBeDisabled();
+    });
+
+    it('à distância, o alvo Caído dá Desvantagem', () => {
+      show({
+        character: armed('arco_curto', { ammo: { slug: 'flechas', quantity: 5 } }),
+        targets: [{ participantId: 'p-down', name: 'Caído', ac: 10, conditionIds: ['caido'] }],
+      });
+      fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p-down' } });
+      expect(screen.getByText('⚠️ Desvantagem')).toBeInTheDocument();
+    });
+
+    it('arma de corpo a corpo não mostra munição', () => {
+      show({ character: armed('espada_curta') });
+      expect(screen.queryByText(/Munição/)).toBeNull();
+    });
+  });
+});
