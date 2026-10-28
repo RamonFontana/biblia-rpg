@@ -24,7 +24,7 @@ Quando código e doc divergirem, registre a divergência em `docs/ROADMAP.md` e 
 
 ## Arquitetura
 
-O código está migrando por ondas; o plano, as decisões tomadas e a dívida registrada estão em `docs/ROADMAP.md`. A Onda 4 está concluída e a Rodada 2 (decisões de regra) respondida; a próxima etapa são as features da Onda 5. Leia a seção da onda em andamento antes de refatorar.
+O código está migrando por ondas; o plano, as decisões tomadas e a dívida registrada estão em `docs/ROADMAP.md`. As Ondas 4 e 5 (as quatro features: Fé na mesa, ataque físico, Dados de Vida e efeitos de Habilidade) estão concluídas; a próxima etapa é reestruturar o layout da sessão (Onda 6) e então o mapa. Leia a seção da onda em andamento antes de refatorar.
 
 Arquitetura alvo:
 - **`src/domain/`: motor do jogo puro.** Regras (atributos, PV, Fé, descanso, testes de morte, munição, consumíveis, level-up, CA, Resistência a Condição, lista de Condições, loja inicial da criação; quem dispara o tique por rodada ainda é o `combatStore`) sem React, Supabase nem estado global. A aleatoriedade entra como parâmetro `Rng` (`src/domain/rng.ts`; teste com `createSeededRng(seed)`, app com `systemRng` de `src/lib/systemRng.ts`). O lint garante a pureza: o motor só importa de `src/domain`, `src/content` e `src/types`, e não usa `Math.random`.

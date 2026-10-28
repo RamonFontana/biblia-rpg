@@ -40,4 +40,7 @@ jobs:
           retention-days: 14
       - name: Parar o Supabase
         if: always()
+        # Só limpeza: o runner descarta a máquina de qualquer jeito, e o Podman falhou ao parar um
+        # container depois de 54 testes passarem (26/10). Isso não pode pintar o job de vermelho.
+        continue-on-error: true
         run: npm run e2e:down
