@@ -1,7 +1,8 @@
 import { CONDITIONS } from '@/content/conditions';
-import { abilityUseTargets } from '@/domain/abilityEffect';
+import { abilityUseTargets, type AbilityUseTarget } from '@/domain/abilityEffect';
 import { saveAttributeLabel, type SaveAttribute } from '@/domain/abilitySave';
 import { describeWeaponEffect } from '@/domain/attack';
+import { describeReminder, enemyEffectOfUse } from '@/domain/enemyAbility';
 import type { CombatAbilityUse, CombatAttack } from '@/data-access/combat';
 import type { ConditionEntry } from '@/types/combat';
 
@@ -55,7 +56,17 @@ function abilityTargetsText(use: CombatAbilityUse): string {
           : '';
       return `${t.name}: ${roll}${outcome}${faith}`;
     })
+    .concat(reminderOf(use, targets) ?? [])
     .join(' · ');
+}
+
+/** O lembrete da Habilidade de inimigo (o que o app não aplica) para quem falhou no TR. */
+function reminderOf(use: CombatAbilityUse, targets: AbilityUseTarget[]): string | null {
+  if (use.status !== 'resolved') return null;
+  return describeReminder(
+    enemyEffectOfUse(use),
+    targets.filter((t) => t.failed).map((t) => t.name),
+  );
 }
 
 type LogEntry =
