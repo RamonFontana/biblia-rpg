@@ -1758,8 +1758,7 @@ export const ABILITIES: AbilityDefinition[] = [
     sourceType: 'vocation',
     sourceId: 'batedor',
     minLevel: 14,
-    // Adendo ao Ataque Furtivo (sem espaço de turno próprio): vale como Ação Livre para o jogador
-    // poder usá-la no combate; o doc a lista como Passiva.
+    // Adendo ao Ataque Furtivo, sem espaço de turno próprio: o jogador a escolhe ao acertar.
     actionType: 'free_action',
     usageType: 'unlimited',
     effect: 'Abdica 3d6 do Furtivo p/ forçar TR CON. Falha = Atordoado.',
