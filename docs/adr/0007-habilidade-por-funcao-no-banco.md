@@ -12,6 +12,6 @@ Quando a Habilidade impõe TR, o uso fica **pendente**: o Mestre lança os TRs d
 
 ## Consequences
 
-- Um uso pendente depende do Mestre lançar os TRs; se o combate acabar antes, o uso pendente cai sem efeito (o uso e a Fé já foram gastos).
+- Um uso pendente depende do Mestre lançar os TRs; se o combate acabar antes, o uso pendente expira sem efeito no fim do combate (o uso e a Fé já foram gastos), e o Teste de sessão que ele abriu nos celulares é cancelado.
 - A Resistência a Condição e as imunidades de Habilidade passiva entram no motor antes da gravação, como no efeito de arma.
 - A função segue o gate de RLS: `search_path` fixo e `revoke execute ... from public, anon`, com teste por papel em `supabase/tests/rls.sql`.

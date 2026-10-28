@@ -218,6 +218,18 @@ export function abilityStateOf(raw: unknown): EnemyAbilityStateMap {
   return state;
 }
 
+/**
+ * O lembrete de um efeito que o app não aplica (a Desvantagem do Grito Atormentador), para quem
+ * falhou no TR; `null` sem lembrete ou sem ninguém que falhou.
+ */
+export function describeReminder(
+  effect: Pick<EnemyAbilityEffect, 'reminder'> | null,
+  failedNames: string[],
+): string | null {
+  if (!effect?.reminder || failedNames.length === 0) return null;
+  return `Lembrete (${failedNames.join(', ')}): ${effect.reminder}`;
+}
+
 /** O efeito gravado no uso, ou o da biblioteca (usos antigos); `null` se nenhum vale. */
 export function enemyEffectOfUse(use: {
   ability_id: string;

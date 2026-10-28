@@ -285,10 +285,17 @@ describe('checkWeaponProficiency', () => {
     expect(checkWeaponProficiency({}, 'Sacerdote')).toBe(true);
   });
 
-  it('arma marcial vale para Guerreiro, Batedor e Caçador', () => {
-    for (const vocation of ['Guerreiro', 'Batedor', 'Caçador']) {
+  it('arma marcial vale para Guerreiro e Caçador', () => {
+    for (const vocation of ['Guerreiro', 'Caçador']) {
       expect(checkWeaponProficiency(martial, vocation)).toBe(true);
     }
+  });
+
+  it('o Batedor só usa, das marciais, a espada curta e o arco curto', () => {
+    expect(checkWeaponProficiency({ ...martial, slug: 'espada_curta' }, 'Batedor')).toBe(true);
+    expect(checkWeaponProficiency({ ...martial, slug: 'arco_curto' }, 'Batedor')).toBe(true);
+    expect(checkWeaponProficiency({ ...martial, slug: 'espada_longa' }, 'Batedor')).toBe(false);
+    expect(checkWeaponProficiency(martial, 'Batedor')).toBe(false);
   });
 
   it.each(['Sacerdote', 'SACERDOTE', 'Sábio', 'sabio', 'Levita'])(

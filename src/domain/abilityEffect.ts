@@ -2,6 +2,7 @@
 // uso é permitido e as Condições que chegam ao alvo depois da Resistência a Condição e das
 // imunidades de Habilidade passiva.
 // Termos: CONTEXT.md (Habilidade, Condição, Resistência a Condição).
+import { ABILITIES } from '@/content/abilities';
 import { CONDITIONS } from '@/content/conditions';
 import type { AbilityEffect } from '@/content/schemas';
 import type { ConditionEntry } from '@/types/combat';
@@ -35,17 +36,17 @@ export function isSingleTarget(effect: Pick<AbilityEffect, 'targets'>): boolean 
   return effect.targets === 'enemy' || effect.targets === 'ally' || effect.targets === 'aggressor';
 }
 
-/** A Condição a que cada Habilidade passiva pessoal torna o personagem imune. */
-const ABILITY_IMMUNITIES: Record<string, string> = {
-  'tribe-aser-4-calcado-de-ferr': 'caido',
-  'tribe-naftali-20-rapidez-divina': 'paralisado',
-  'tribe-simeao-12-sangue-amargo': 'envenenado',
-  'vocation-sacerdote-18-servo-consagrad': 'amedrontado',
-};
+/** A Condição a que cada Habilidade passiva pessoal torna o personagem imune (`conditionImmunity`). */
+const ABILITY_IMMUNITIES = new Map(
+  ABILITIES.flatMap((a) => (a.conditionImmunity ? [[a.id, a.conditionImmunity] as const] : [])),
+);
 
 /** As Condições a que as Habilidades (as que o personagem tem desbloqueadas) dão imunidade. */
 export function abilityImmunities(abilityIds: string[]): string[] {
-  return abilityIds.flatMap((id) => (ABILITY_IMMUNITIES[id] ? [ABILITY_IMMUNITIES[id]] : []));
+  return abilityIds.flatMap((id) => {
+    const conditionId = ABILITY_IMMUNITIES.get(id);
+    return conditionId ? [conditionId] : [];
+  });
 }
 
 /** A Habilidade tira Condição dos alvos (aliados, sem TR e sem passar pela Resistência a Condição). */

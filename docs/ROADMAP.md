@@ -327,7 +327,7 @@ Termos canônicos: `CONTEXT.md`. Decisões de arquitetura: `docs/adr/`.
 
 **C. Features novas** (Onda 5, via `/to-spec` → `/to-tickets` → `/tdd`)
 1. Tipos de Teste de Fé no app: Clamor (atalhos + Pedido Egoísta), Tentação e Testemunho.
-2. Sustento no Descanso Longo: tela de confirmação do Mestre (inclui NPCs aliados, desmarcável), aviso no celular de cada jogador e Exausto automático.
+2. Sustento no Descanso Longo: tela de confirmação do Mestre (inclui NPCs aliados, desmarcável), aviso no celular de cada jogador e Exausto automático. **Adiado para depois do layout (decisão do autor, 2026-10-28):** é a primeira feature da tela nova, porque mexe no diálogo do Descanso Longo e no aviso do celular, que a Onda 6 reorganiza.
 3. Efeitos do Estado de Fé: Inspiração (Inabalável), desvantagem (Abalado), Ruptura.
 4. ~~Dados de Vida nos descansos.~~ FEITO (feature 3 da Onda 5).
 
@@ -592,7 +592,20 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 
 **Feature 4 (efeitos de Habilidade): os 5 tickets estão feitos.** Migrations aplicadas na produção; `gen:types` conferido.
 
-**Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
+**Decisões do autor sobre o que a Onda 5 deixou em aberto (2026-10-28).** Aplicado no PR `fix/wave-5-open-decisions`:
+- **Proficiência de armas do Batedor:** vale o doc. O Batedor usa armas simples e, das marciais, só a Espada Curta e o Arco Curto (a Faca de Bronze já é simples); a lista fica em `VOCATION_MARTIAL_WEAPONS` (`src/content/proficiencies.ts`). Com outra arma marcial, a Proficiência sai do ataque e o slot avisa; a loja da criação esconde as demais marciais. **Falta conferir no banco** quais fichas de Batedor carregam outra arma marcial (o MCP do Supabase não estava autenticado nesta sessão).
+- **Golpe Incapacitante:** é Ação Livre no doc de Batedor, como o conteúdo já o jogava.
+- **Imunidades de Habilidade passiva:** saíram do domínio para o campo `conditionImmunity` do conteúdo, conferido pelo gate de dados.
+- **Uso pendente no fim do combate:** a migration `20261030120000_expire_pending_ability_uses` expira o uso pendente quando o combate deixa de estar ativo e cancela o Teste de sessão que a Habilidade de inimigo abriu nos celulares. **Falta aplicar na produção.**
+- **Lembrete de Desvantagem:** fica no histórico do combate ao lado de quem falhou no TR, além do aviso na tela do Mestre.
+- **CA do alvo pelo Realtime:** aceito e registrado no ADR 0005 (mesa de amigos, ADR 0004).
+- **Proficiência no TR:** aceito como regra; `regras-base.md` §6.6 diz que o personagem do jogador soma a Proficiência quando o atributo do TR é um dos dois Testes de Resistência da Vocação. **Observado, não mexi:** o TR do NPC jogável contra Habilidade de inimigo e o dos inimigos contra Habilidade de jogador somam só o modificador.
+- **Cancelar o TR de quem não respondeu:** fica coletivo ("Aplicar resultados").
+- **Presets de inimigo com Habilidade (Anakim, Endemoniado, Sacerdote de Baal):** entram num PR pequeno depois do layout, com os números de `docs/bestiario/` conferidos pelo autor.
+- **Arestas da mesa** (NPC escondido que não some em tempo real, carteira com 0 Siclos que volta a 50, iniciativa sorteada opcional, a janela entre a leitura e a assinatura do canal em `useGameSession`, `useCharacterSheet` e `MasterDeathControls`): continuam adiadas; a Onda 6 já mexe nas três telas da janela de leitura.
+- **Ainda sem decisão:** o alerta de Morrendo que também dispara para o Estável e só vale ao vivo; a ordem de turno duplicada na tela e no banco; os 13 pontos de conteúdo bíblico (§2).
+
+**Depois da Onda 5:** refatorar o layout da sessão (Onda 6); em seguida o Sustento no Descanso Longo e os presets de inimigo com Habilidade, na tela nova; e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 
 ## 6. O que VOCÊ precisa fazer fora do código
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.

@@ -5,6 +5,7 @@ import { calculateModifier, calculateProficiency } from './attributes';
 import { rollDice } from './dice';
 import type { Rng } from './rng';
 import { CONDITIONS } from '@/content/conditions';
+import { VOCATION_MARTIAL_WEAPONS } from '@/content/proficiencies';
 import { applyConditionResistance } from './armorResistance';
 import { combineModes, type ResolvedTestMode } from './testMode';
 import type { ConditionEntry, WeaponEffect } from '@/types/combat';
@@ -63,11 +64,20 @@ export function attackAbility(
 // Vocações que não usam armas marciais ("Levita" é como fichas antigas chamam o Sacerdote da tribo).
 const NO_MARTIAL_WEAPONS = ['sacerdote', 'levita'];
 
-/** O Sacerdote (e o Sábio) não usa armas marciais; as demais Vocações usam as duas categorias. */
-export function isWeaponProficient(vocation: string, category: string | undefined): boolean {
-  const isMartial = (category ?? '').toLowerCase().includes('marcial');
-  const vocationName = (canonicalVocation(vocation) ?? '').toLowerCase();
-  return !(isMartial && NO_MARTIAL_WEAPONS.includes(vocationName));
+/**
+ * O Sacerdote (e o Sábio) não usa armas marciais; o Batedor usa só as marciais da lista dele
+ * (`VOCATION_MARTIAL_WEAPONS`); as demais Vocações usam as duas categorias.
+ */
+export function isWeaponProficient(
+  vocation: string,
+  category: string | undefined,
+  weaponId?: string | null,
+): boolean {
+  if (!(category ?? '').toLowerCase().includes('marcial')) return true;
+  const vocationName = canonicalVocation(vocation) ?? '';
+  if (NO_MARTIAL_WEAPONS.includes(vocationName.toLowerCase())) return false;
+  const allowed = VOCATION_MARTIAL_WEAPONS[vocationName];
+  return !allowed || (!!weaponId && allowed.includes(weaponId));
 }
 
 /** O d20 contra a CA: 20 natural acerta sempre (crítico) e 1 natural erra sempre. */
@@ -75,7 +85,7 @@ export function resolveAttack(input: AttackInput): AttackResult {
   const ability = attackAbility(input.weapon, input.attributes);
   const modifier = calculateModifier(input.attributes[ability]);
   const proficient = input.weapon
-    ? isWeaponProficient(input.vocation, input.weapon.category)
+    ? isWeaponProficient(input.vocation, input.weapon.category, input.weapon.id)
     : true;
   const proficiencyBonus = proficient ? calculateProficiency(input.level) : 0;
   const total = input.naturalRoll + modifier + proficiencyBonus;
@@ -304,7 +314,7 @@ export function describeAttackBonus(
   const ability = attackAbility(input.weapon, input.attributes);
   const modifier = calculateModifier(input.attributes[ability]);
   const proficient = input.weapon
-    ? isWeaponProficient(input.vocation, input.weapon.category)
+    ? isWeaponProficient(input.vocation, input.weapon.category, input.weapon.id)
     : true;
   const parts = [`d20`, `${ability.toUpperCase()} ${signed(modifier)}`];
   if (proficient) parts.push(`Proficiência ${signed(calculateProficiency(input.level))}`);

@@ -129,7 +129,7 @@ describe('AttackLog: efeito de arma', () => {
   });
 });
 
-const use = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
+const abilityUse = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
   id: 'u1',
   combat_id: 'c1',
   user_participant_id: 'p1',
@@ -155,7 +155,7 @@ const use = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
 
 describe('AttackLog: usos de Habilidade', () => {
   it('só com usos, a lista aparece', () => {
-    render(<AttackLog attacks={[]} abilityUses={[use()]} />);
+    render(<AttackLog attacks={[]} abilityUses={[abilityUse()]} />);
     expect(screen.getByRole('listitem')).toHaveTextContent(
       'Eliabe usou Palavra de Autoridade · Filisteu: Paralisado',
     );
@@ -166,7 +166,7 @@ describe('AttackLog: usos de Habilidade', () => {
       <AttackLog
         attacks={[]}
         abilityUses={[
-          use({ targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }] }),
+          abilityUse({ targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }] }),
         ]}
       />,
     );
@@ -178,7 +178,7 @@ describe('AttackLog: usos de Habilidade', () => {
       <AttackLog
         attacks={[]}
         abilityUses={[
-          use({
+          abilityUse({
             ability_name: 'Purificação',
             targets: [
               { participantId: 'p3', name: 'Bob', conditions: [], removed: ['envenenado'] },
@@ -199,7 +199,7 @@ describe('AttackLog: usos de Habilidade', () => {
       <AttackLog
         attacks={[]}
         abilityUses={[
-          use({
+          abilityUse({
             status: 'pending',
             cd: 13,
             save_attribute: 'sab',
@@ -218,7 +218,7 @@ describe('AttackLog: usos de Habilidade', () => {
       <AttackLog
         attacks={[]}
         abilityUses={[
-          use({
+          abilityUse({
             status: 'resolved',
             cd: 13,
             save_attribute: 'sab',
@@ -254,7 +254,7 @@ describe('AttackLog: usos de Habilidade', () => {
       <AttackLog
         attacks={[]}
         abilityUses={[
-          use({
+          abilityUse({
             status: 'resolved',
             cd: 12,
             save_attribute: 'sab',
@@ -289,8 +289,50 @@ describe('AttackLog: usos de Habilidade', () => {
     expect(row).not.toHaveTextContent('Rute: d20 15 (17 contra CD 12) · passou · perdeu');
   });
 
+  const grito = (failed: boolean) =>
+    abilityUse({
+      status: 'resolved',
+      cd: 12,
+      save_attribute: 'sab',
+      ability_id: 'enemy-grito-atormentador',
+      targets: [
+        {
+          participantId: 'p2',
+          name: 'Eliabe',
+          conditions: [],
+          natural: failed ? 4 : 15,
+          total: failed ? 6 : 17,
+          failed,
+          faithLost: failed ? 2 : 0,
+        },
+      ],
+    });
+
+  it('o lembrete da Habilidade de inimigo fica no histórico de quem falhou', () => {
+    render(<AttackLog attacks={[]} abilityUses={[grito(true)]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'Lembrete (Eliabe): Desvantagem na próxima jogada de ataque de quem falhou.',
+    );
+  });
+
+  it('sem ninguém que falhou, o lembrete não aparece', () => {
+    render(<AttackLog attacks={[]} abilityUses={[grito(false)]} />);
+    expect(screen.getByRole('listitem')).not.toHaveTextContent('Lembrete');
+  });
+
+  it('o lembrete gravado no uso vale mais que o da biblioteca', () => {
+    const stored = {
+      save: { attribute: 'sab', cd: 12 },
+      faithLoss: { sides: 4 },
+      usage: 'recharge',
+      reminder: 'Recua 3 m.',
+    };
+    render(<AttackLog attacks={[]} abilityUses={[{ ...grito(true), enemy_effect: stored }]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent('Lembrete (Eliabe): Recua 3 m.');
+  });
+
   it('um uso que expirou sem o TR diz que não teve efeito', () => {
-    render(<AttackLog attacks={[]} abilityUses={[use({ status: 'expired', cd: 13 })]} />);
+    render(<AttackLog attacks={[]} abilityUses={[abilityUse({ status: 'expired', cd: 13 })]} />);
     expect(screen.getByRole('listitem')).toHaveTextContent('expirou sem efeito');
   });
 
@@ -298,7 +340,7 @@ describe('AttackLog: usos de Habilidade', () => {
     render(
       <AttackLog
         attacks={[attack({ id: 'a1', created_at: '2026-10-27T10:00:00Z' })]}
-        abilityUses={[use({ created_at: '2026-10-27T10:05:00Z' })]}
+        abilityUses={[abilityUse({ created_at: '2026-10-27T10:05:00Z' })]}
       />,
     );
     const rows = screen.getAllByRole('listitem');
@@ -307,7 +349,7 @@ describe('AttackLog: usos de Habilidade', () => {
   });
 
   it('o título diz ataques e Habilidades quando há usos', () => {
-    render(<AttackLog attacks={[attack()]} abilityUses={[use()]} />);
+    render(<AttackLog attacks={[attack()]} abilityUses={[abilityUse()]} />);
     expect(screen.getByRole('heading', { name: 'Últimos ataques e Habilidades' })).toBeVisible();
   });
 

@@ -23,7 +23,7 @@ O Batedor é o especialista em espreitar, coletar informações e realizar elimi
 
 ### Nível 14: Ataque Furtivo (7d6) e Golpe Incapacitante
 - **Ataque Furtivo (7d6)**: Seu dano do Ataque Furtivo aumenta para 7d6.
-- **Golpe Incapacitante**: Quando você acerta o Ataque Furtivo, pode abdicar de 3d6 do dano para forçar o alvo a fazer um Teste de Constituição (CD 8 + Proficiência + Modificador de DES). Se falhar, o alvo fica Atordoado até o final do próximo turno dele.
+- **Golpe Incapacitante (Ação Livre)**: Quando você acerta o Ataque Furtivo, pode abdicar de 3d6 do dano para forçar o alvo a fazer um Teste de Constituição (CD 8 + Proficiência + Modificador de DES). Se falhar, o alvo fica Atordoado até o final do próximo turno dele.
 
 ### Nível 18: Ataque Furtivo (9d6) e Lâmina Fantasma
 - **Ataque Furtivo (9d6)**: Seu dano do Ataque Furtivo aumenta para 9d6.
@@ -42,6 +42,6 @@ O Batedor é o especialista em espreitar, coletar informações e realizar elimi
 | Ataque Furtivo (5d6) | 10 | Passiva | 5d6 | - | Dano extra furtivo aumenta. |
 | Mente Escorregadia | 10 | Passiva | - | - | Vantagem TR Sabedoria contra Tentações/Medo/Possessão. |
 | Ataque Furtivo (7d6) | 14 | Passiva | 7d6 | - | Dano extra furtivo aumenta. |
-| Golpe Incapacitante | 14 | Passiva | - | - | Abdica 3d6 do Furtivo p/ forçar TR CON. Falha = Atordoado. |
+| Golpe Incapacitante | 14 | Ação Livre | - | - | Abdica 3d6 do Furtivo p/ forçar TR CON. Falha = Atordoado. |
 | Ataque Furtivo (9d6) | 18 | Passiva | 9d6 | - | Dano extra furtivo aumenta. |
 | Lâmina Fantasma | 18 | Passiva | - | 1 / D. Longo | Erra Furtivo -> rerrola c/ Vantagem. Acertou = maximiza dano. |

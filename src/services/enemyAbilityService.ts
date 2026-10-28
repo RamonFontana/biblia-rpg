@@ -28,6 +28,7 @@ import {
   abilityStateKey,
   checkFaithDie,
   enemyAbilityStatus,
+  describeReminder,
   enemyEffectOfUse,
   enemyEffectAsAbilityEffect,
   faithLostBy,
@@ -301,11 +302,13 @@ export async function resolveEnemyAbilityUse(input: {
     for (const { name, messages } of outcomes) {
       for (const message of messages) toast(`${name}: ${message}`);
     }
-    // O lembrete é do Mestre (o app não aplica a Desvantagem): o aviso é local, só na tela dele.
-    const failedNames = outcomes.filter((o) => o.failed).map((o) => o.name);
-    if (effect.reminder && failedNames.length > 0) {
-      toast(`Lembrete (${failedNames.join(', ')}): ${effect.reminder}`);
-    }
+    // O lembrete é do Mestre (o app não aplica a Desvantagem): o aviso aparece na tela dele e fica
+    // no histórico do combate.
+    const reminder = describeReminder(
+      effect,
+      outcomes.filter((o) => o.failed).map((o) => o.name),
+    );
+    if (reminder) toast(reminder);
   }
   return { status, results: outcomes, faithLost, reminder: effect.reminder };
 }

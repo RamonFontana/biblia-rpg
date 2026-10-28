@@ -113,8 +113,10 @@ export function unequipSlot(
   return newEquipment;
 }
 
-/** O que a proficiência lê de uma arma: o catálogo (`effects.weaponCategory`) ou o `type` dela. */
+/** O que a proficiência lê de uma arma: o catálogo (`effects.weaponCategory`) ou o `type` dela, e o slug. */
 interface WeaponLike {
+  /** O slug do item no catálogo: o Batedor usa só algumas armas marciais. */
+  slug?: string | null;
   type?: string | null;
   effects?: ItemEffects | null;
 }
@@ -131,7 +133,7 @@ export function checkWeaponProficiency(
   // A regra (o Sacerdote não usa arma marcial) é do motor; aqui só se acha a categoria.
   const category =
     weaponCategory.includes('marcial') || weaponType.includes('marcial') ? 'Marcial' : undefined;
-  return isWeaponProficient(vocation, category);
+  return isWeaponProficient(vocation, category, weapon.slug);
 }
 
 /** Modificador de DES da ficha. Atributo ausente ou inválido vale 10 (modificador 0). */
