@@ -124,6 +124,15 @@ describe('isWeaponProficient', () => {
   it('a arma sem categoria conta como simples', () => {
     expect(isWeaponProficient('Sacerdote', undefined)).toBe(true);
   });
+
+  it('o Batedor usa armas simples e, das marciais, só a espada curta e o arco curto', () => {
+    expect(isWeaponProficient('Batedor', 'Simples', 'adaga')).toBe(true);
+    expect(isWeaponProficient('Batedor', 'Marcial', 'espada_curta')).toBe(true);
+    expect(isWeaponProficient('Batedor', 'Marcial', 'arco_curto')).toBe(true);
+    expect(isWeaponProficient('Batedor', 'Marcial', 'espada_longa')).toBe(false);
+    expect(isWeaponProficient('Batedor', 'Marcial', 'arco_longo')).toBe(false);
+    expect(isWeaponProficient('Batedor', 'Marcial', undefined)).toBe(false);
+  });
 });
 
 describe('resolveAttack: o total', () => {

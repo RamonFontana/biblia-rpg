@@ -2,7 +2,7 @@
 // Pacote Inicial), extraída de EquipmentMerchant sem alteração de comportamento.
 // Conteúdo: src/content/{items,kits,proficiencies}.ts. Termos: CONTEXT.md (Vocação).
 import { ITEMS_DB } from '@/content/items';
-import { VOCATION_PROFICIENCIES } from '@/content/proficiencies';
+import { VOCATION_MARTIAL_WEAPONS, VOCATION_PROFICIENCIES } from '@/content/proficiencies';
 
 /** Moedas (Siclos) com que todo personagem começa a loja. */
 export const STARTING_COINS = 50;
@@ -100,5 +100,6 @@ export function sellItem<T extends PurchasedItem>(purse: Purse<T>, index: number
 /** Itens do catálogo que a Vocação sabe usar; Vocação desconhecida vê só a categoria "Todas". */
 export function getStoreItems(vocation: string) {
   const allowed = VOCATION_PROFICIENCIES[vocation] || ['Todas'];
-  return ITEMS_DB.filter((item) => allowed.includes(item.category));
+  const weapons = VOCATION_MARTIAL_WEAPONS[vocation] ?? [];
+  return ITEMS_DB.filter((item) => allowed.includes(item.category) || weapons.includes(item.id));
 }

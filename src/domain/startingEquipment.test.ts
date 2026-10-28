@@ -135,10 +135,19 @@ describe('sellItem e sellValue', () => {
 
 describe('getStoreItems', () => {
   it('lista só categorias que a Vocação sabe usar', () => {
-    const items = getStoreItems('Batedor');
+    const items = getStoreItems('Caçador');
     expect(items.length).toBeGreaterThan(0);
-    for (const item of items) expect(VOCATION_PROFICIENCIES.Batedor).toContain(item.category);
+    for (const item of items) expect(VOCATION_PROFICIENCIES['Caçador']).toContain(item.category);
     expect(items.some((i) => i.category === 'Pesada')).toBe(false);
+  });
+
+  it('o Batedor vê as armas simples e, das marciais, só a espada curta e o arco curto', () => {
+    const martial = getStoreItems('Batedor')
+      .filter((i) => i.category === 'Marcial')
+      .map((i) => i.id)
+      .sort();
+    expect(martial).toEqual(['arco_curto', 'espada_curta']);
+    expect(getStoreItems('Batedor').some((i) => i.id === 'adaga')).toBe(true);
   });
 
   it('Vocação desconhecida vê só a categoria "Todas"', () => {
