@@ -160,6 +160,8 @@ export const abilitySchema = z.strictObject({
   faithCost: z.number().int().min(1).max(100).optional(),
   effect: z.string().min(1),
   combatEffect: abilityEffectSchema.optional(),
+  /** A Condição a que a Habilidade passiva torna o personagem imune (nenhum efeito a aplica). */
+  conditionImmunity: z.string().min(1).optional(),
 });
 
 export type AbilityEffect = z.infer<typeof abilityEffectSchema>;

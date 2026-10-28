@@ -34,6 +34,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'passive',
     usageType: 'unlimited',
     effect: 'Imunidade a ser derrubado (prono) ou empurrado contra a vontade.',
+    conditionImmunity: 'caido',
   },
   {
     id: 'tribe-aser-4-delicias-reais',
@@ -1291,6 +1292,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'passive',
     usageType: 'unlimited',
     effect: 'Ignora penalidade vel., imune paralisia física, solta cordas.',
+    conditionImmunity: 'paralisado',
   },
   {
     id: 'tribe-ruben-1-a-lingua-do-com',
@@ -1501,6 +1503,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'passive',
     usageType: 'unlimited',
     effect: 'Imune a veneno; causa dano a quem o morder.',
+    conditionImmunity: 'envenenado',
   },
   {
     id: 'tribe-simeao-12-nuvem-calmante',
@@ -2147,5 +2150,6 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'passive',
     usageType: 'unlimited',
     effect: 'Fé nunca < 30. Imune a Amedrontado e Possessão.',
+    conditionImmunity: 'amedrontado',
   },
 ];

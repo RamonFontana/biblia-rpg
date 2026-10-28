@@ -140,6 +140,9 @@ function collectViolations(): string[] {
     for (const { conditionId } of ability.combatEffect?.apply ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
+    const immunity = ability.conditionImmunity;
+    if (immunity && !conditionIds.has(immunity))
+      violations.push(`${p}:unknown-condition:${immunity}`);
     const remove = ability.combatEffect?.remove;
     for (const conditionId of remove && 'conditionIds' in remove ? remove.conditionIds : []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
