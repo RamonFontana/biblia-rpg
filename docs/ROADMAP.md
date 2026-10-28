@@ -11,7 +11,7 @@
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
-| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa) concluída; feature 2 (ataque físico) implementada, tickets em `.scratch/ataque-fisico/` (migration aplicada); feature 3 (Dados de Vida) concluída; feature 4 (efeitos de Habilidade) implementada, tickets em `.scratch/efeitos-de-habilidade/` (falta aplicar 5 migrations na produção); ver o andamento na seção da Onda 5 |
+| 5 — Features novas | **concluída em 2026-10-28**: Fé na mesa (PR #60), ataque físico (#61), Dados de Vida (#62) e efeitos de Habilidade (#63), todas com migrations aplicadas na produção. Resta o que cada feature registrou como decisão do autor. Próximo: refatorar o layout da sessão (Onda 6) e então o mapa |
 
 
 ## Contexto
@@ -555,7 +555,7 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 
 - **Ticket 04, Inspiração:** feito. `getInspirationStatus` (motor): disponível para o Inabalável que não a gastou hoje, usada se foi gasta hoje nesta sessão, nenhuma nos demais casos; o dia novo a devolve pela comparação, sem zerar nada. Migration `20261025140000_inspiration` (`characters.inspiration_used_day` e `inspiration_session_id`, `session_test_results.inspiration_used`). **Refinamento da spec:** além do dia, a ficha guarda a sessão em que a Inspiração foi gasta, para o "dia 3" de uma sessão não valer como o "dia 3" de outra (um personagem passa por várias sessões). O jogador gasta a Inspiração num Teste do app (Vantagem, só conta no envio) ou pelo botão "Usei a Inspiração" no painel da tela da sessão; o cartão do Mestre mostra disponível ou usada hoje. Falhar ao marcar o dia depois do envio não desfaz o resultado (o pior caso é a Inspiração continuar disponível).
 
-**Feature 1 (Fé na mesa): os 5 tickets estão feitos.** Falta aplicar as 3 migrations na produção (`20261025120000`, `20261025130000`, `20261025140000`) e rodar `npm run gen:types` depois, para confirmar os tipos editados à mão.
+**Feature 1 (Fé na mesa): os 5 tickets estão feitos.** Migrations aplicadas na produção; `gen:types` conferido.
 
 **Andamento da feature 2 (ataque físico).**
 - **Ticket 01, ataque básico de ponta a ponta:** feito. Motor `attack` (atributo por tipo de arma, Proficiência, acerto contra a CA, Acerto Crítico, Falha Crítica, lembrete do dado e dano). Migration `20261027120000_combat_attacks` (tabela `combat_attacks` e a função `apply_attack`, ADR 0005; a tabela entra na publicação do Realtime). O jogador ataca no próprio turno por um painel que substitui o `PhysicalRollForm` (removido, com as 4 supressões de lint); o Mestre vê o aviso e a lista dos últimos ataques. A regra do Sacerdote e do Sábio com armas marciais foi para o motor (`isWeaponProficient`), e `checkWeaponProficiency` passou a delegar a ele.
@@ -566,7 +566,7 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 
 **Revisão da feature 2 (`/code-review`, Standards e Spec).** Corrigido: o painel mostra o atributo e a Proficiência da soma (sem a CA) e as propriedades da arma; o aviso do ataque leva o efeito de arma; mudar o alvo ou a Inspiração depois de rolar o d20 apaga os dados rolados; `apply_attack` recusa quem ataca a si mesmo ou a 0 PV. **GAP novo (decisão do autor):** a política de leitura de `combat_attacks` deixa qualquer jogador da sessão ler `target_ac`, `total` e `natural_roll` pelo Realtime, então a CA "escondida" só o é na tela. Fechar de verdade pede separar o que é do Mestre (CA, d20, total) numa tabela só dele, ou aceitar (ADR 0004, mesa de amigos). **Observado, não mexi:** o alerta de Morrendo também dispara para o alvo Estável (a 0 PV) e só vale ao vivo (recarregar o perde); a ordem de turno está duplicada na tela e na função do banco, sem teste que as ligue.
 
-**Feature 2 (ataque físico): os 5 tickets estão feitos.** Falta aplicar a migration `20261027120000_combat_attacks` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
+**Feature 2 (ataque físico): os 5 tickets estão feitos.** Migration aplicada na produção; `gen:types` conferido.
 - **Divergência registrada (doc × código), decisão do autor pendente:** `docs/vocacoes/batedor.md` diz que o Batedor usa armas simples mais Espada Curta, Arco Curto e Faca de Bronze; o código só nega armas marciais ao Sacerdote, então o Batedor usa qualquer arma marcial. Mantive o comportamento atual (o aviso "Não proficiente" não aparece para o Batedor com Espada Longa). Se valer o doc, a regra passa a ser uma lista de armas por Vocação.
 - **Efeito de bordo:** o desempate da iniciativa passou a ser por criação e id, igual na tela e na função do banco (antes dependia da ordem física das linhas).
 
@@ -579,7 +579,7 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 - **Ticket 06, Descanso Longo e sessão nova:** feito. O Longo devolve metade dos Dados de Vida gastos, arredondada para cima (`hitDiceSpentAfterLongRest`; o D&D 5e devolveria metade do total, a regra do autor é a dos gastos). **`fix:` Início de Partida (`regras-base.md` 6.3):** a sessão nova deixa os personagens dos jogadores Descansados (PV máximo, usos de Habilidade e Dados de Vida; Morto não volta; a Fé e o estado de morte não mudam). Antes, criar a sessão não mexia nas fichas.
 - **Pendente:** um NPC simples (`session_npcs`) não tem Dados de Vida e o Longo continua sem efeito sobre ele (comportamento anterior).
 
-**Feature 3 (Dados de Vida): os 6 tickets estão feitos.** Falta aplicar as migrations `20261028120000`, `20261028130000` e `20261028140000` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
+**Feature 3 (Dados de Vida): os 6 tickets estão feitos.** Migrations aplicadas na produção; `gen:types` conferido.
 
 **Andamento da feature 4 (efeitos de Habilidade).** Spec e tickets em `.scratch/efeitos-de-habilidade/`; ADR 0007.
 - **Ticket 01, Habilidade sem TR aplica Condição:** feito. `combatEffect` no conteúdo (alvos e Condições com duração em rodadas); migration `20261029120000_ability_uses` (tabela `combat_ability_uses` e `record_ability_use`, ADR 0007); motor `abilityEffect.ts` (uso permitido, duração, Resistência a Condição e as quatro imunidades de Habilidade passiva: Calçado de Ferro, Rapidez Divina, Sangue Amargo e Servo Consagrado); `submitAbilityUse`; `AbilityUsePanel`; histórico unificado com os ataques no `AttackLog`. A Reação vale fora do turno; Ação e Ação Bônus só no turno. Palavra de Autoridade, Golpe Sísmico e Retribuição Divina ganham o efeito. Saiu o `combatEngine` (código morto) e o `applyConditions` antigo.
@@ -590,7 +590,7 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 - **Revisão da feature 4 (`/code-review`, Standards e Spec).** Corrigido: o esquema da Habilidade de inimigo recusa perda de Fé sem TR (sem TR ninguém "falha" e a Fé nunca seria tirada). **Decisões do autor pendentes:** (a) o mapa de imunidades de Habilidade passiva (`ABILITY_IMMUNITIES`) mora em `src/domain/abilityEffect.ts` e não em `src/content` (uma Habilidade nova com imunidade exige editar o domínio); (b) o pendente que o combate deixa para trás só vira `expired` quando o Mestre tenta resolver; (c) "cancelar o TR" de quem não respondeu é coletivo ("Aplicar resultados" deixa sem efeito todos os que não responderam), não por jogador; (d) o lembrete de Desvantagem não fica no histórico gravado; (e) só o Leão da Judeia tem preset com Habilidade.
 - **Pendente:** o TR do Teste de sessão soma a Proficiência só quando o atributo é o da Vocação do personagem (regra existente), o que pode divergir da CD do bestiário.
 
-**Feature 4 (efeitos de Habilidade): os 5 tickets estão feitos.** Falta aplicar as migrations `20261029120000` a `20261029160000` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
+**Feature 4 (efeitos de Habilidade): os 5 tickets estão feitos.** Migrations aplicadas na produção; `gen:types` conferido.
 
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 
@@ -618,14 +618,8 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 ## Dívida congelada pelos gates
 Os gates bloqueiam dívida **nova**; a existente fica registrada aqui e só pode diminuir.
 
-### Lint: `eslint-suppressions.json` (4 em 2026-10-22)
-| Regra | Qtde |
-|---|---|
-| `@typescript-eslint/no-explicit-any` | 2 |
-| `no-restricted-imports` (Supabase fora da camada de dados) | 1 |
-| `@typescript-eslint/no-unused-vars` | 1 |
-
-Restam só as 4 do `PhysicalRollForm` (2 `any`, 1 `no-unused-vars`, 1 `no-restricted-imports`), a tela parada do ataque físico, que a Onda 5 reescreve.
+### Lint: `eslint-suppressions.json` (vazio desde a feature 2 da Onda 5)
+Nenhuma supressão: as 4 que restavam eram do `PhysicalRollForm`, removido na reescrita do ataque físico. Erro novo falha o lint.
 
 Ao corrigir uma violação, rode `npm run lint:prune`; o lint falha enquanto houver supressão órfã.
 
