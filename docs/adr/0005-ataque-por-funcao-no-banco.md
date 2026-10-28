@@ -8,3 +8,4 @@ Descartamos abrir o RLS para que o jogador altere o PV de qualquer participante,
 
 - A conta (acerto, crítico, dano, modalidade) fica no motor; a função só valida quem pode gravar e grava de forma atômica, o que também resolve dois danos seguidos que liam o mesmo PV.
 - A função segue o gate de RLS: `search_path` fixo e `revoke execute ... from public, anon`, com teste por papel em `supabase/tests/rls.sql`.
+- A CA do alvo, o d20 e o total do ataque ficam legíveis a qualquer jogador da sessão pelo Realtime de `combat_attacks`; só a tela os esconde. Aceito pelo autor em 2026-10-28: é mesa presencial entre amigos (ADR 0004), e separar esses números numa tabela só do Mestre pediria tabela, função e migration para um risco que a mesa já tem.
