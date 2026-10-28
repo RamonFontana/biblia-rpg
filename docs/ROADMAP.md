@@ -11,7 +11,7 @@
 | 3 — Motor e dados | concluída em 2026-10-18: passos 1 a 7 feitos (CLI e schema-base, `src/domain`, Fé, conteúdo, CA, Resistência a Condição e RLS). Resta só o que cada passo registrou como pendência |
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
-| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa) concluída; feature 2 (ataque físico) implementada, tickets em `.scratch/ataque-fisico/` (migration aplicada); feature 3 (Dados de Vida) implementada, tickets em `.scratch/dados-de-vida/` (falta aplicar 3 migrations na produção); ver o andamento na seção da Onda 5 |
+| 5 — Features novas | **em andamento**: feature 1 (Fé na mesa) concluída; feature 2 (ataque físico) implementada, tickets em `.scratch/ataque-fisico/` (migration aplicada); feature 3 (Dados de Vida) concluída; feature 4 (efeitos de Habilidade) implementada, tickets em `.scratch/efeitos-de-habilidade/` (falta aplicar 5 migrations na produção); ver o andamento na seção da Onda 5 |
 
 
 ## Contexto
@@ -540,7 +540,7 @@ Cada uma passa por grill-with-docs → `/to-spec` → `/to-tickets` → `/tdd`, 
 1. **Fé na mesa + Inspiração e Fortaleza** (M): as decisões Q1 a Q5 da Rodada 2 (dado virtual com Vantagem e Desvantagem, atalhos 0/−20/−50 na Tentação e no Testemunho, selo do Estado de Fé, alerta de Ruptura), Inspiração 1x/dia no Inabalável e a Fortaleza aplicada pelo Mestre (Vantagem ou +1d4 de Fé).
 2. **Ataque físico** (G): reescrever a tela parada de ataque e dano; zera as 4 supressões do `PhysicalRollForm`.
 3. **Dados de Vida** (M): Q6 da Rodada 2.
-4. **Efeitos de Habilidade** (G): Condições aplicadas pela Habilidade e Habilidades de inimigo.
+4. ~~**Efeitos de Habilidade** (G): Condições aplicadas pela Habilidade e Habilidades de inimigo.~~ FEITO.
 
 Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira zerada que volta a 50, iniciativa sorteada opcional). Quando a campanha pedir: itens próprios do Mestre (ADR 0003). Sem código, decisão do autor: a revisão dos 13 pontos de conteúdo bíblico (§2).
 
@@ -580,6 +580,17 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 - **Pendente:** um NPC simples (`session_npcs`) não tem Dados de Vida e o Longo continua sem efeito sobre ele (comportamento anterior).
 
 **Feature 3 (Dados de Vida): os 6 tickets estão feitos.** Falta aplicar as migrations `20261028120000`, `20261028130000` e `20261028140000` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
+
+**Andamento da feature 4 (efeitos de Habilidade).** Spec e tickets em `.scratch/efeitos-de-habilidade/`; ADR 0007.
+- **Ticket 01, Habilidade sem TR aplica Condição:** feito. `combatEffect` no conteúdo (alvos e Condições com duração em rodadas); migration `20261029120000_ability_uses` (tabela `combat_ability_uses` e `record_ability_use`, ADR 0007); motor `abilityEffect.ts` (uso permitido, duração, Resistência a Condição e as quatro imunidades de Habilidade passiva: Calçado de Ferro, Rapidez Divina, Sangue Amargo e Servo Consagrado); `submitAbilityUse`; `AbilityUsePanel`; histórico unificado com os ataques no `AttackLog`. A Reação vale fora do turno; Ação e Ação Bônus só no turno. Palavra de Autoridade, Golpe Sísmico e Retribuição Divina ganham o efeito. Saiu o `combatEngine` (código morto) e o `applyConditions` antigo.
+- **Ticket 02, Habilidade com TR:** feito. Motor `abilitySave.ts` (CD da Habilidade = 8 + Proficiência + atributo da Vocação, `regras-base.md` §6.6; TR do alvo com Vantagem e Desvantagem). Migration `20261029130000_ability_use_save`: com TR, `record_ability_use` grava o uso `pending`; `resolve_ability_use`, só do Mestre, aplica a Condição de quem falhou; combate encerrado expira o uso. `AbilityPendingPanel` no painel do Mestre; o jogador vê a CD, espera e lê o resultado por alvo. Tática do Cântaro Quebrado, Grito de Guerra e Golpe Incapacitante ganham o efeito. **Divergência:** o Golpe Incapacitante é passiva no doc de Batedor e virou `free_action` no conteúdo para aparecer na lista de combate (decisão do autor pendente).
+- **Ticket 03, Habilidade que remove Condição:** feito. `combatEffect.remove` (fixa, escolhida de uma lista ou uma por aliado) em Purificação, O Unificador, Ungido e Cataplasma de Gileade. Migration `20261029140000_ability_use_remove`: a remoção só tira o que o alvo tem; com TR não remove; inimigo não perde Condição por Habilidade. A remoção ignora a Resistência a Condição. A cura e a Possessão continuam como texto.
+- **Ticket 04, Habilidade de inimigo com TR no celular:** feito. Biblioteca do bestiário em `src/content/enemyAbilities.ts` (Presença Aterradora, Grito Atormentador, Maldição de Baal, Salto e Bote); o formulário do inimigo escolhe dela ou monta um efeito personalizado; só o preset do Leão da Judeia traz Habilidade (os demais pelo seletor). Migration `20261029150000_enemy_ability_use` (`record_enemy_ability_use`, só do Mestre, reaproveita `resolve_ability_use`). O TR chega ao celular pelo Teste de sessão; o Mestre aplica os resultados (quem não respondeu fica sem efeito) e rola o TR do NPC jogável. Só um Teste de sessão ativo por vez.
+- **Ticket 05, Fé, uso e Recarga de inimigo:** feito. Migration `20261029160000_enemy_ability_state` (`combat_participants.ability_state`). O Mestre rola o dado de Fé de quem falhou (digitado ou Rolagem Virtual) e a Fé cai com piso 0; "1 por combate" e Recarga desabilitam o Usar; no turno do inimigo o Mestre lança o d6 da Recarga (5-6 devolve); o lembrete da Desvantagem do Grito Atormentador aparece ao Mestre.
+- **Revisão da feature 4 (`/code-review`, Standards e Spec).** Corrigido: o esquema da Habilidade de inimigo recusa perda de Fé sem TR (sem TR ninguém "falha" e a Fé nunca seria tirada). **Decisões do autor pendentes:** (a) o mapa de imunidades de Habilidade passiva (`ABILITY_IMMUNITIES`) mora em `src/domain/abilityEffect.ts` e não em `src/content` (uma Habilidade nova com imunidade exige editar o domínio); (b) o pendente que o combate deixa para trás só vira `expired` quando o Mestre tenta resolver; (c) "cancelar o TR" de quem não respondeu é coletivo ("Aplicar resultados" deixa sem efeito todos os que não responderam), não por jogador; (d) o lembrete de Desvantagem não fica no histórico gravado; (e) só o Leão da Judeia tem preset com Habilidade.
+- **Pendente:** o TR do Teste de sessão soma a Proficiência só quando o atributo é o da Vocação do personagem (regra existente), o que pode divergir da CD do bestiário.
+
+**Feature 4 (efeitos de Habilidade): os 5 tickets estão feitos.** Falta aplicar as migrations `20261029120000` a `20261029160000` na produção e rodar `npm run gen:types` para conferir os tipos editados à mão.
 
 **Depois da Onda 5:** refatorar o layout da sessão e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
 

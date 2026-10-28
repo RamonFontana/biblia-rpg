@@ -28,8 +28,12 @@ import {
   getCharactersForCombatEnd,
   getCombat,
   insertCombatParticipants,
+  listCombatAbilityUses,
   listCombatAttacks,
   listCombatParticipants,
+  recordAbilityUse,
+  resolveAbilityUse,
+  setEnemyAbilityState,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
@@ -180,6 +184,18 @@ describe('gravações do combate', () => {
     expect(filterOf(call, 'eq', 'id')).toBe('p1');
   });
 
+  it('setEnemyAbilityState grava o estado de uso das Habilidades do inimigo', async () => {
+    await setEnemyAbilityState('p1', { 'enemy-grito-atormentador': 'recharging' });
+    const [call] = callsOf(state.calls, 'combat_participants', 'update');
+    expect(call.payload).toEqual({ ability_state: { 'enemy-grito-atormentador': 'recharging' } });
+    expect(filterOf(call, 'eq', 'id')).toBe('p1');
+  });
+
+  it('setEnemyAbilityState lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(setEnemyAbilityState('p1', {})).rejects.toBe(failure);
+  });
+
   it('updateCombatTurn grava turno e rodada', async () => {
     await updateCombatTurn('combat-1', 2, 3);
     const [call] = callsOf(state.calls, 'combats', 'update');
@@ -292,5 +308,111 @@ describe('listCombatAttacks', () => {
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
     await expect(listCombatAttacks('c1', 10)).rejects.toBe(failure);
+  });
+});
+
+describe('recordAbilityUse', () => {
+  const use = {
+    userParticipantId: 'p1',
+    abilityId: 'tribe-levi-16-palavra-de-auto',
+    abilityName: 'Palavra de Autoridade',
+    actionType: 'action',
+    targets: [
+      { participantId: 'p2', conditions: [{ conditionId: 'paralisado', duration: 1 }] },
+      { participantId: 'p3', conditions: [] },
+    ],
+  };
+
+  it('chama a função do banco com os alvos e as Condições que chegaram, e devolve o id', async () => {
+    state.respond = () => ({ data: 'use-1' });
+    await expect(recordAbilityUse(use)).resolves.toBe('use-1');
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).toEqual({
+      p_user_participant_id: 'p1',
+      p_ability_id: 'tribe-levi-16-palavra-de-auto',
+      p_ability_name: 'Palavra de Autoridade',
+      p_action_type: 'action',
+      p_targets: use.targets,
+    });
+  });
+
+  it('manda as Condições que saem de cada alvo', async () => {
+    state.respond = () => ({ data: 'use-2' });
+    const removal = {
+      ...use,
+      targets: [{ participantId: 'p3', conditions: [], remove: ['envenenado'] }],
+    };
+    await recordAbilityUse(removal);
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).toMatchObject({ p_targets: removal.targets });
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(recordAbilityUse(use)).rejects.toBe(failure);
+  });
+
+  it('com TR manda o atributo e a CD, e as Condições ficam de fora', async () => {
+    state.respond = () => ({ data: 'use-2' });
+    await recordAbilityUse({
+      ...use,
+      save: { attribute: 'sab', cd: 13 },
+      targets: [{ participantId: 'p2', conditions: [] }],
+    });
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).toMatchObject({ p_save: { attribute: 'sab', cd: 13 } });
+  });
+
+  it('sem TR não manda o parâmetro do TR', async () => {
+    state.respond = () => ({ data: 'use-1' });
+    await recordAbilityUse(use);
+    const [call] = callsOf(state.calls, 'record_ability_use', 'rpc');
+    expect(call.payload).not.toHaveProperty('p_save');
+  });
+});
+
+describe('resolveAbilityUse', () => {
+  const results = [
+    {
+      participantId: 'p2',
+      natural: 4,
+      total: 9,
+      failed: true,
+      mode: 'normal',
+      conditions: [{ conditionId: 'amedrontado', duration: 10 }],
+    },
+  ];
+
+  it('chama a função do banco com o resultado de cada alvo e devolve o estado do uso', async () => {
+    state.respond = () => ({ data: 'resolved' });
+    await expect(resolveAbilityUse('use-1', results)).resolves.toBe('resolved');
+    const [call] = callsOf(state.calls, 'resolve_ability_use', 'rpc');
+    expect(call.payload).toEqual({ p_use_id: 'use-1', p_results: results });
+  });
+
+  it('devolve expired quando o combate já acabou', async () => {
+    state.respond = () => ({ data: 'expired' });
+    await expect(resolveAbilityUse('use-1', results)).resolves.toBe('expired');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(resolveAbilityUse('use-1', results)).rejects.toBe(failure);
+  });
+});
+
+describe('listCombatAbilityUses', () => {
+  it('lê os últimos usos do combate, do mais novo para o mais antigo', async () => {
+    state.respond = () => ({ data: [{ id: 'u1' }] });
+    await expect(listCombatAbilityUses('c1', 10)).resolves.toEqual([{ id: 'u1' }]);
+    const [call] = callsOf(state.calls, 'combat_ability_uses', 'select');
+    expect(filterOf(call, 'eq', 'combat_id')).toBe('c1');
+    expect(call.filters).toContainEqual(['order', 'created_at', { ascending: false }]);
+    expect(call.filters).toContainEqual(['limit', 10]);
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(listCombatAbilityUses('c1', 10)).rejects.toBe(failure);
   });
 });

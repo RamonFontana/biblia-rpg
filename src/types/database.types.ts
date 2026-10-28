@@ -175,6 +175,79 @@ export type Database = {
           },
         ]
       }
+      combat_ability_uses: {
+        Row: {
+          ability_id: string
+          ability_name: string
+          action_type: string
+          cd: number | null
+          combat_id: string
+          created_at: string
+          enemy_effect: Json | null
+          id: string
+          save_attribute: string | null
+          status: string
+          targets: Json
+          test_id: string | null
+          user_name: string
+          user_participant_id: string
+        }
+        Insert: {
+          ability_id: string
+          ability_name: string
+          action_type: string
+          cd?: number | null
+          combat_id: string
+          created_at?: string
+          enemy_effect?: Json | null
+          id?: string
+          save_attribute?: string | null
+          status?: string
+          targets?: Json
+          test_id?: string | null
+          user_name: string
+          user_participant_id: string
+        }
+        Update: {
+          ability_id?: string
+          ability_name?: string
+          action_type?: string
+          cd?: number | null
+          combat_id?: string
+          created_at?: string
+          enemy_effect?: Json | null
+          id?: string
+          save_attribute?: string | null
+          status?: string
+          targets?: Json
+          test_id?: string | null
+          user_name?: string
+          user_participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_ability_uses_combat_id_fkey"
+            columns: ["combat_id"]
+            isOneToOne: false
+            referencedRelation: "combats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_ability_uses_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "session_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_ability_uses_user_participant_id_fkey"
+            columns: ["user_participant_id"]
+            isOneToOne: false
+            referencedRelation: "combat_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       combat_attacks: {
         Row: {
           applied_mode: string
@@ -271,6 +344,7 @@ export type Database = {
       }
       combat_participants: {
         Row: {
+          ability_state: Json
           combat_id: string
           conditions: Json
           created_at: string
@@ -283,6 +357,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ability_state?: Json
           combat_id: string
           conditions?: Json
           created_at?: string
@@ -295,6 +370,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ability_state?: Json
           combat_id?: string
           conditions?: Json
           created_at?: string
@@ -925,10 +1001,37 @@ export type Database = {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
       }
+      record_ability_use: {
+        Args: {
+          p_ability_id: string
+          p_ability_name: string
+          p_action_type: string
+          p_save?: Json
+          p_targets: Json
+          p_user_participant_id: string
+        }
+        Returns: string
+      }
+      record_enemy_ability_use: {
+        Args: {
+          p_ability_id: string
+          p_ability_name: string
+          p_effect?: Json
+          p_enemy_participant_id: string
+          p_save?: Json
+          p_targets: Json
+          p_test_id?: string
+        }
+        Returns: string
+      }
       refuse_short_rest_requests: { Args: { p_session_id: string }; Returns: undefined }
       request_short_rest: {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
+      }
+      resolve_ability_use: {
+        Args: { p_results: Json; p_use_id: string }
+        Returns: string
       }
       short_rest_player_ids: { Args: { p_session_id: string }; Returns: string[] }
       use_consumable_item: {

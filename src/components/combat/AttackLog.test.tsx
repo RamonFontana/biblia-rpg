@@ -2,7 +2,7 @@
 // CA, o resultado e o dano. Termos: CONTEXT.md (Ataque, Acerto Crítico, Falha Crítica, CA).
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { CombatAttack } from '@/data-access/combat';
+import type { CombatAbilityUse, CombatAttack } from '@/data-access/combat';
 import { AttackLog } from './AttackLog';
 
 afterEach(cleanup);
@@ -126,5 +126,193 @@ describe('AttackLog: efeito de arma', () => {
   it('sem disparo, não fala em efeito de arma', () => {
     render(<AttackLog attacks={[attack()]} />);
     expect(screen.getByRole('listitem')).not.toHaveTextContent('Efeito de arma');
+  });
+});
+
+const use = (over: Partial<CombatAbilityUse> = {}): CombatAbilityUse => ({
+  id: 'u1',
+  combat_id: 'c1',
+  user_participant_id: 'p1',
+  user_name: 'Eliabe',
+  ability_id: 'tribe-levi-16-palavra-de-auto',
+  ability_name: 'Palavra de Autoridade',
+  action_type: 'action',
+  status: 'applied',
+  cd: null,
+  save_attribute: null,
+  test_id: null,
+  enemy_effect: null,
+  targets: [
+    {
+      participantId: 'p2',
+      name: 'Filisteu',
+      conditions: [{ conditionId: 'paralisado', duration: 1 }],
+    },
+  ],
+  created_at: '2026-10-27T10:05:00Z',
+  ...over,
+});
+
+describe('AttackLog: usos de Habilidade', () => {
+  it('só com usos, a lista aparece', () => {
+    render(<AttackLog attacks={[]} abilityUses={[use()]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'Eliabe usou Palavra de Autoridade · Filisteu: Paralisado',
+    );
+  });
+
+  it('o alvo que resistiu aparece como resistiu', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({ targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }] }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent('Filisteu: resistiu');
+  });
+
+  it('um uso que tira Condição diz o que saiu de cada aliado', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            ability_name: 'Purificação',
+            targets: [
+              { participantId: 'p3', name: 'Bob', conditions: [], removed: ['envenenado'] },
+              { participantId: 'p4', name: 'Rute', conditions: [], removed: [] },
+            ],
+          }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'Eliabe usou Purificação · Bob: tirou Envenenado · Rute: não tinha o que tirar',
+    );
+    expect(screen.getByRole('listitem')).not.toHaveTextContent('resistiu');
+  });
+
+  it('um uso com TR pendente diz o TR e a CD que o Mestre vai lançar', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            status: 'pending',
+            cd: 13,
+            save_attribute: 'sab',
+            targets: [{ participantId: 'p2', name: 'Filisteu', conditions: [] }],
+          }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'aguardando o TR de Sabedoria (CD 13) · Filisteu',
+    );
+  });
+
+  it('um uso com TR resolvido mostra o dado, o total e o resultado de cada alvo', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            status: 'resolved',
+            cd: 13,
+            save_attribute: 'sab',
+            targets: [
+              {
+                participantId: 'p2',
+                name: 'Filisteu',
+                conditions: [{ conditionId: 'amedrontado', duration: 10 }],
+                natural: 4,
+                total: 9,
+                failed: true,
+              },
+              {
+                participantId: 'p3',
+                name: 'Bandido',
+                conditions: [],
+                natural: 15,
+                total: 19,
+                failed: false,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent('Filisteu: d20 4 (9 contra CD 13) · Amedrontado');
+    expect(row).toHaveTextContent('Bandido: d20 15 (19 contra CD 13) · passou');
+  });
+
+  it('um uso que tira Fé mostra quanto cada alvo perdeu', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          use({
+            status: 'resolved',
+            cd: 12,
+            save_attribute: 'sab',
+            ability_id: 'enemy-grito-atormentador',
+            targets: [
+              {
+                participantId: 'p2',
+                name: 'Eliabe',
+                conditions: [],
+                natural: 4,
+                total: 6,
+                failed: true,
+                faithLost: 3,
+              },
+              {
+                participantId: 'p3',
+                name: 'Rute',
+                conditions: [],
+                natural: 15,
+                total: 17,
+                failed: false,
+                faithLost: 0,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent('Eliabe: d20 4 (6 contra CD 12) · falhou · perdeu 3 de Fé');
+    expect(row).toHaveTextContent('Rute: d20 15 (17 contra CD 12) · passou');
+    expect(row).not.toHaveTextContent('Rute: d20 15 (17 contra CD 12) · passou · perdeu');
+  });
+
+  it('um uso que expirou sem o TR diz que não teve efeito', () => {
+    render(<AttackLog attacks={[]} abilityUses={[use({ status: 'expired', cd: 13 })]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent('expirou sem efeito');
+  });
+
+  it('ataques e usos ficam juntos, do mais novo para o mais antigo', () => {
+    render(
+      <AttackLog
+        attacks={[attack({ id: 'a1', created_at: '2026-10-27T10:00:00Z' })]}
+        abilityUses={[use({ created_at: '2026-10-27T10:05:00Z' })]}
+      />,
+    );
+    const rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('Palavra de Autoridade');
+    expect(rows[1]).toHaveTextContent('Eliabe → Filisteu');
+  });
+
+  it('o título diz ataques e Habilidades quando há usos', () => {
+    render(<AttackLog attacks={[attack()]} abilityUses={[use()]} />);
+    expect(screen.getByRole('heading', { name: 'Últimos ataques e Habilidades' })).toBeVisible();
+  });
+
+  it('sem usos, o título continua "Últimos ataques"', () => {
+    render(<AttackLog attacks={[attack()]} abilityUses={[]} />);
+    expect(screen.getByRole('heading', { name: 'Últimos ataques' })).toBeVisible();
   });
 });

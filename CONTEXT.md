@@ -180,6 +180,22 @@ Personagem com 0 PV, inconsciente, que já não faz Testes de Morte (3 sucessos 
 **Morto**:
 Personagem que acumulou 3 falhas em Testes de Morte. A ficha vira memorial e o jogador perde o acesso.
 
+## Habilidades
+
+**Habilidade**:
+Poder de Tribo ou de Vocação do personagem, com uso limitado (por descanso, por combate, por semana) e às vezes custo de Fé. Na mesa, a maioria é narrativa; as que aplicam ou removem Condição têm o efeito aplicado pelo app.
+_Avoid_: skill, poder, magia
+
+**CD da Habilidade**:
+A CD do TR que a Habilidade de um personagem impõe ao alvo: 8 + Proficiência + o modificador do atributo da Vocação (SAB para Sacerdote/Sábio e Caçador, FOR para Guerreiro, DES para Batedor), também nas Habilidades de Tribo.
+
+**Habilidade de inimigo**:
+Ação ou passiva de um inimigo, vinda do bestiário ou criada pelo Mestre. Pode impor um TR com CD própria, aplicar Condição ou tirar Fé de quem falha.
+
+**Recarga**:
+Uso de Habilidade de inimigo que volta quando o Mestre tira 5 ou 6 num d6 no início do turno do inimigo.
+_Avoid_: cooldown
+
 ## Progressão
 
 **Marco**:

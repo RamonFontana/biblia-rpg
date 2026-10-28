@@ -90,4 +90,43 @@ describe('EnemySheet', () => {
     open(enemy({ skills: { ability_uses: {} } }));
     expect(screen.queryByText('Habilidades')).toBeNull();
   });
+
+  describe('Habilidades com efeito no jogo', () => {
+    it('mostra o efeito da Habilidade da biblioteca', () => {
+      open(
+        enemy({
+          skills: [
+            {
+              name: 'Presença Aterradora',
+              description: 'Assusta quem vê.',
+              libraryId: 'enemy-presenca-aterradora',
+            },
+          ],
+        }),
+      );
+      expect(
+        screen.getByText('Efeito: TR de Sabedoria CD 13 · Amedrontado (10 rodadas)'),
+      ).toBeInTheDocument();
+    });
+
+    it('mostra o efeito de uma Habilidade personalizada', () => {
+      open(
+        enemy({
+          skills: [
+            {
+              name: 'Laço',
+              description: '',
+              effect: { apply: [{ conditionId: 'agarrado', rounds: 3 }], usage: 'per_combat' },
+            },
+          ],
+        }),
+      );
+      expect(screen.getByText('Efeito: Agarrado (3 rodadas) · 1 por combate')).toBeInTheDocument();
+    });
+
+    it('uma Habilidade só com texto não mostra efeito', () => {
+      open(enemy({ skills: [{ name: 'Comando', description: 'Aliados ganham bônus' }] }));
+      expect(screen.queryByText(/^Efeito:/)).toBeNull();
+    });
+  });
 });

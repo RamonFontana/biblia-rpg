@@ -80,6 +80,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'long_rest',
     maxUses: 1,
     effect: 'Cura 3d8 PV e remove envenenamento/doença do alvo.',
+    combatEffect: { targets: 'ally', remove: { mode: 'fixed', conditionIds: ['envenenado'] } },
   },
   {
     id: 'tribe-aser-12-banquete-do-aca',
@@ -612,6 +613,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     effect: 'Atinge chão para derrubar em cone.',
+    combatEffect: { targets: 'enemies', apply: [{ conditionId: 'caido' }] },
   },
   {
     id: 'tribe-gade-20-escudo-de-deus',
@@ -1005,6 +1007,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'combat',
     maxUses: 1,
     effect: 'Paralisa inimigo por 1 turno (peso da culpa).',
+    combatEffect: { targets: 'enemy', apply: [{ conditionId: 'paralisado', rounds: 1 }] },
   },
   {
     id: 'tribe-levi-16-sacrificio-de-l',
@@ -1117,6 +1120,11 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'long_rest',
     maxUses: 1,
     effect: 'Inimigos 9m Teste SAB; falha = Amedrontado (1 min).',
+    combatEffect: {
+      targets: 'enemies',
+      save: { attribute: 'sab' },
+      apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+    },
   },
   {
     id: 'tribe-manasses-12-implacavel',
@@ -1162,6 +1170,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'combat',
     maxUses: 1,
     effect: 'Aliados 18m perdem condição negativa e resistem dano mundano.',
+    combatEffect: { targets: 'allies', remove: { mode: 'per_target' } },
   },
   {
     id: 'tribe-naftali-1-passos-de-gazel',
@@ -1458,6 +1467,7 @@ export const ABILITIES: AbilityDefinition[] = [
     actionType: 'action',
     usageType: 'unlimited',
     effect: 'Cura e estanca sangramento.',
+    combatEffect: { targets: 'ally', remove: { mode: 'fixed', conditionIds: ['sangrando'] } },
   },
   {
     id: 'tribe-simeao-8-veneno-lentific',
@@ -1748,9 +1758,16 @@ export const ABILITIES: AbilityDefinition[] = [
     sourceType: 'vocation',
     sourceId: 'batedor',
     minLevel: 14,
-    actionType: 'passive',
+    // Adendo ao Ataque Furtivo (sem espaço de turno próprio): vale como Ação Livre para o jogador
+    // poder usá-la no combate; o doc a lista como Passiva.
+    actionType: 'free_action',
     usageType: 'unlimited',
     effect: 'Abdica 3d6 do Furtivo p/ forçar TR CON. Falha = Atordoado.',
+    combatEffect: {
+      targets: 'enemy',
+      save: { attribute: 'con' },
+      apply: [{ conditionId: 'atordoado', rounds: 1 }],
+    },
   },
   {
     id: 'vocation-batedor-18-ataque-furtivo',
@@ -1966,6 +1983,11 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'long_rest',
     maxUses: 1,
     effect: '6 aliados c/ Vant. atq e curam 2d6 PV. Inimigos TR SAB/fogem.',
+    combatEffect: {
+      targets: 'enemies',
+      save: { attribute: 'sab' },
+      apply: [{ conditionId: 'amedrontado', rounds: 10 }],
+    },
   },
   {
     id: 'vocation-sacerdote-1-imposicao-de-ma',
@@ -2046,6 +2068,10 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     effect: 'Encerra Amedrontado, Atordoado, Envenenado ou Possessão.',
+    combatEffect: {
+      targets: 'ally',
+      remove: { mode: 'choice', conditionIds: ['amedrontado', 'atordoado', 'envenenado'] },
+    },
   },
   {
     id: 'vocation-sacerdote-6-jejum-protetivo',
@@ -2100,6 +2126,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     effect: 'Aliado a 0 PV: causa 2d10+SAB dano e Amedronta agressor.',
+    combatEffect: { targets: 'aggressor', apply: [{ conditionId: 'amedrontado' }] },
   },
   {
     id: 'vocation-sacerdote-18-intervencao-mai',

@@ -10,9 +10,16 @@ import { SKILLS_LIST } from '@/features/character-management/utils/characterMath
 import { VOCATION_RULES } from '@/features/character-management/utils/rules/vocations';
 import { ABILITIES } from './abilities';
 import { CONDITIONS } from './conditions';
+import { ENEMY_ABILITIES } from './enemyAbilities';
 import { ITEMS_DB } from './items';
 import { KITS_DB } from './kits';
-import { abilitySchema, conditionSchema, itemSchema, kitSchema } from './schemas';
+import {
+  abilitySchema,
+  conditionSchema,
+  enemyAbilitySchema,
+  itemSchema,
+  kitSchema,
+} from './schemas';
 import knownViolations from './known-violations.json';
 
 const normalize = (s: string) =>
@@ -105,6 +112,17 @@ function collectViolations(): string[] {
   for (const id of duplicates(ABILITIES.map((a) => a.id)))
     violations.push(`ability:${id}:duplicate-id`);
 
+  // Habilidades de inimigo (biblioteca do bestiário).
+  for (const id of duplicates(ENEMY_ABILITIES.map((a) => a.id)))
+    violations.push(`enemy-ability:${id}:duplicate-id`);
+  for (const ability of ENEMY_ABILITIES) {
+    const p = `enemy-ability:${ability.id}`;
+    violations.push(...schemaViolations(p, enemyAbilitySchema, ability));
+    for (const { conditionId } of ability.effect.apply ?? []) {
+      if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
+    }
+  }
+
   const vocationIds = new Set(Object.keys(VOCATION_RULES).map(normalize));
 
   // Vocações: toda perícia elegível existe na lista de perícias.
@@ -119,9 +137,21 @@ function collectViolations(): string[] {
     const p = `ability:${ability.id}`;
     violations.push(...schemaViolations(p, abilitySchema, ability));
 
-    for (const { conditionId } of ability.applyConditions ?? []) {
+    for (const { conditionId } of ability.combatEffect?.apply ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
+    const remove = ability.combatEffect?.remove;
+    for (const conditionId of remove && 'conditionIds' in remove ? remove.conditionIds : []) {
+      if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
+    }
+    // Tirar Condição é para quem ajuda: o alvo é um aliado, nunca um inimigo.
+    if (remove && !['ally', 'allies'].includes(ability.combatEffect?.targets ?? ''))
+      violations.push(`${p}:remove-from-non-ally`);
+    // A remoção não tem TR: o aliado não resiste a ser curado.
+    if (remove && ability.combatEffect?.save) violations.push(`${p}:remove-with-save`);
+    // Passiva não se usa: um efeito de combate nela nunca seria aplicado.
+    if (ability.combatEffect && ability.actionType === 'passive')
+      violations.push(`${p}:combat-effect-on-passive`);
 
     const limited = LIMITED_USAGE.includes(ability.usageType);
     if (limited && ability.maxUses === undefined) violations.push(`${p}:limited-without-max-uses`);

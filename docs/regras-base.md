@@ -184,6 +184,10 @@ Quem passa o turno é o Mestre, no app, quando o jogador avisa que terminou.
 
 > **Nota**: Situações não cobertas por estas condições são resolvidas pelo bom senso do Mestre.
 
+### 6.6 CD das Habilidades
+
+Quando uma Habilidade de Tribo ou de Vocação pede um Teste de Resistência (TR) ao alvo, a **CD** é **8 + Proficiência + Modificador do atributo da Vocação** do personagem que a usa: **Sabedoria** para Sacerdote/Sábio e Caçador, **Força** para Guerreiro e **Destreza** para Batedor. Vale também para as Habilidades de Tribo. O alvo rola 1d20 + o modificador do atributo do TR contra essa CD; quem falha sofre a Condição da Habilidade, e quem passa não sofre nada. A Resistência a Condição do alvo ainda pode reduzir a duração ou anular a Condição.
+
 ---
 
 ## 7. Guia de Criação de Personagem

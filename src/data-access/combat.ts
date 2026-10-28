@@ -2,6 +2,7 @@
 // combate pedem às fichas. As funções lançam o erro do Supabase; quem chama decide o que fazer.
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert } from '@/types/database.types';
+import type { EnemyAbilityEffect } from '@/content/schemas';
 import type { TestMode } from '@/domain/testMode';
 import type { ConditionEntry } from '@/types/combat';
 import type { CharacterSkills } from '@/features/character-creation/types';
@@ -10,6 +11,7 @@ import { toJson } from './json';
 export type Combat = Tables<'combats'>;
 export type CombatParticipant = Tables<'combat_participants'>;
 export type CombatAttack = Tables<'combat_attacks'>;
+export type CombatAbilityUse = Tables<'combat_ability_uses'>;
 
 export async function createCombat(sessionId: string): Promise<Combat> {
   const { data, error } = await supabase
@@ -114,6 +116,18 @@ export async function setParticipantConditions(
   }
 }
 
+/** O Mestre grava o estado de uso das Habilidades de um inimigo (usada, em recarga). */
+export async function setEnemyAbilityState(
+  participantId: string,
+  abilityState: Record<string, 'used' | 'recharging'>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('combat_participants')
+    .update({ ability_state: toJson(abilityState) })
+    .eq('id', participantId);
+  if (error) throw error;
+}
+
 export async function updateCombatTurn(
   combatId: string,
   turnIndex: number,
@@ -211,6 +225,117 @@ export async function applyAttack(attack: AttackRecord): Promise<string> {
 export async function listCombatAttacks(combatId: string, limit: number): Promise<CombatAttack[]> {
   const { data, error } = await supabase
     .from('combat_attacks')
+    .select('*')
+    .eq('combat_id', combatId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
+export interface AbilityUseRecord {
+  userParticipantId: string;
+  abilityId: string;
+  abilityName: string;
+  actionType: string;
+  /** Por alvo: as Condições que chegam depois da Resistência a Condição e das imunidades. */
+  targets: {
+    participantId: string;
+    conditions: ConditionEntry[];
+    /** As Condições que saem do alvo (Habilidade que remove): aplicadas na hora, sem TR. */
+    remove?: string[];
+  }[];
+  /** O TR dos alvos: o uso fica pendente até o Mestre lançar (as Condições não entram agora). */
+  save?: { attribute: string; cd: number };
+}
+
+/**
+ * Registra o uso de uma Habilidade pela função do banco (ADR 0007): ela confere que o chamador é o
+ * dono do usuário, o combate ativo e o turno (Ação e Ação Bônus), aplica as Condições nos alvos e
+ * grava o uso. Devolve o id do registro.
+ */
+export async function recordAbilityUse(use: AbilityUseRecord): Promise<string> {
+  const { data, error } = await supabase.rpc('record_ability_use', {
+    p_user_participant_id: use.userParticipantId,
+    p_ability_id: use.abilityId,
+    p_ability_name: use.abilityName,
+    p_action_type: use.actionType,
+    p_targets: toJson(use.targets),
+    ...(use.save && { p_save: toJson(use.save) }),
+  });
+  if (error) throw error;
+  return data;
+}
+
+export interface EnemyAbilityUseRecord {
+  enemyParticipantId: string;
+  /** O id da biblioteca ou `enemy-custom`. */
+  abilityId: string;
+  abilityName: string;
+  /** Por alvo (personagens): as Condições que chegam já, sem TR. Com TR a lista vai vazia. */
+  targets: { participantId: string; conditions: ConditionEntry[] }[];
+  /** O TR dos alvos: o uso fica pendente até o Mestre aplicar os resultados. */
+  save?: { attribute: string; cd: number };
+  /** O Teste de sessão que leva o TR aos celulares dos jogadores. */
+  testId?: string;
+  /** O efeito como foi aplicado (a resolução e a perda de Fé leem daqui). */
+  effect: EnemyAbilityEffect;
+}
+
+/**
+ * O Mestre usa a Habilidade de um inimigo contra personagens pela função do banco (ADR 0007): ela
+ * confere o Mestre, o combate ativo e os alvos, aplica as Condições (sem TR) e grava o uso.
+ */
+export async function recordEnemyAbilityUse(use: EnemyAbilityUseRecord): Promise<string> {
+  const { data, error } = await supabase.rpc('record_enemy_ability_use', {
+    p_enemy_participant_id: use.enemyParticipantId,
+    p_ability_id: use.abilityId,
+    p_ability_name: use.abilityName,
+    p_targets: toJson(use.targets),
+    p_effect: toJson(use.effect),
+    ...(use.save && { p_save: toJson(use.save) }),
+    ...(use.testId && { p_test_id: use.testId }),
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** O resultado do TR de um alvo, já calculado pelo motor (`failed` decide se as Condições entram). */
+export interface AbilitySaveOutcome {
+  participantId: string;
+  /** Nulo quando o alvo não respondeu o TR (Habilidade de inimigo): ele fica sem efeito. */
+  natural: number | null;
+  total: number | null;
+  failed: boolean;
+  mode: string;
+  conditions: ConditionEntry[];
+  /** Só nas Habilidades de inimigo que tiram Fé: a Fé que este alvo perdeu (0 se passou). */
+  faithLost?: number;
+}
+
+/**
+ * O Mestre resolve um uso pendente pela função do banco (ADR 0007): aplica as Condições de quem
+ * falhou. Devolve `resolved`, ou `expired` se o combate já acabou (o uso cai sem efeito).
+ */
+export async function resolveAbilityUse(
+  useId: string,
+  results: AbilitySaveOutcome[],
+): Promise<'resolved' | 'expired'> {
+  const { data, error } = await supabase.rpc('resolve_ability_use', {
+    p_use_id: useId,
+    p_results: toJson(results),
+  });
+  if (error) throw error;
+  return data as 'resolved' | 'expired';
+}
+
+/** Os últimos usos de Habilidade do combate, do mais novo para o mais antigo. */
+export async function listCombatAbilityUses(
+  combatId: string,
+  limit: number,
+): Promise<CombatAbilityUse[]> {
+  const { data, error } = await supabase
+    .from('combat_ability_uses')
     .select('*')
     .eq('combat_id', combatId)
     .order('created_at', { ascending: false })

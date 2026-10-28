@@ -24,6 +24,12 @@ vi.mock('../conditions/ConditionSelector', async () => ({
 vi.mock('./HealthModificationModal', async () => ({
   HealthModificationModal: (await import('@/test/stubs')).makeStub('HealthModificationModal'),
 }));
+vi.mock('./AbilityPendingPanel', async () => ({
+  AbilityPendingPanel: (await import('@/test/stubs')).makeStub('AbilityPendingPanel'),
+}));
+vi.mock('./EnemyAbilityPanel', async () => ({
+  EnemyAbilityPanel: (await import('@/test/stubs')).makeStub('EnemyAbilityPanel'),
+}));
 vi.mock('./MasterDeathControls', async () => ({
   MasterDeathControls: (await import('@/test/stubs')).makeStub('MasterDeathControls'),
 }));
@@ -77,7 +83,12 @@ afterEach(() => {
   cleanup();
   clearStubs();
   vi.clearAllMocks();
-  useCombatStore.setState({ activeCombat: null, participants: [], currentTurnParticipant: null });
+  useCombatStore.setState({
+    activeCombat: null,
+    participants: [],
+    currentTurnParticipant: null,
+    abilityUses: [],
+  });
 });
 
 const call = (fn: unknown, ...args: unknown[]) =>
@@ -497,5 +508,75 @@ describe('CombatDashboard: golpe em quem já estava Morrendo', () => {
     strike({ target_hp_before: 3 });
     strike({ hit: false });
     expect(screen.queryByText(/já estava Morrendo/)).toBeNull();
+  });
+});
+
+describe('CombatDashboard: TRs de Habilidades pendentes', () => {
+  it('passa ao painel os usos do combate e os participantes', () => {
+    const uses = [{ id: 'u1', status: 'pending' }];
+    const parts = [participant('p1'), participant('p2', { entity_type: 'enemy' })];
+    startCombat(parts);
+    useCombatStore.setState({ abilityUses: uses as never });
+    render(<CombatDashboard />);
+    expect(stubProps('AbilityPendingPanel')!.uses).toEqual(uses);
+    expect(stubProps('AbilityPendingPanel')!.participants).toEqual(
+      useCombatStore.getState().participants,
+    );
+  });
+});
+
+describe('CombatDashboard: Habilidades dos inimigos', () => {
+  const entities = [
+    { id: 'ent-p1', name: 'Eliabe', type: 'player' as const, hpCurrent: 10 },
+    { id: 'ent-p2', name: 'Anakim', type: 'enemy' as const, hpCurrent: 30 },
+    { id: 'ent-p3', name: 'Bandido', type: 'enemy' as const, hpCurrent: 0 },
+    { id: 'ent-p4', name: 'Jonas', type: 'npc' as const, hpCurrent: 8 },
+  ];
+
+  it('passa os inimigos de pé e os personagens, com os nomes, à sessão do combate', () => {
+    startCombat([
+      participant('p1'),
+      participant('p2', { entity_type: 'enemy', hp_current: 30 }),
+      participant('p3', { entity_type: 'enemy', hp_current: 0 }),
+      participant('p4', { entity_type: 'npc' }),
+    ]);
+    render(<CombatDashboard availableEntities={entities} />);
+    const props = stubProps('EnemyAbilityPanel')!;
+    expect(props.sessionId).toBe('s');
+    expect(props.enemies).toEqual([
+      { participantId: 'p2', entityId: 'ent-p2', name: 'Anakim', abilityState: {} },
+    ]);
+    expect(props.characters).toEqual([
+      { participantId: 'p1', entityId: 'ent-p1', entityType: 'player', name: 'Eliabe' },
+      { participantId: 'p4', entityId: 'ent-p4', entityType: 'npc', name: 'Jonas' },
+    ]);
+  });
+
+  it('um participante sem nome conhecido aparece como Desconhecido', () => {
+    startCombat([participant('p1'), participant('p2', { entity_type: 'enemy' })]);
+    render(<CombatDashboard availableEntities={[]} />);
+    const props = stubProps('EnemyAbilityPanel')!;
+    expect(props.enemies).toEqual([
+      { participantId: 'p2', entityId: 'ent-p2', name: 'Desconhecido', abilityState: {} },
+    ]);
+  });
+
+  it('leva ao painel o estado de uso de cada inimigo e de quem é o turno', () => {
+    startCombat(
+      [
+        participant('p1'),
+        participant('p2', {
+          entity_type: 'enemy',
+          ability_state: { 'enemy-grito-atormentador': 'recharging', lixo: 'x' },
+        } as Partial<CombatParticipant>),
+      ],
+      1,
+    );
+    render(<CombatDashboard availableEntities={entities} />);
+    const props = stubProps('EnemyAbilityPanel')!;
+    expect((props.enemies as { abilityState: unknown }[])[0].abilityState).toEqual({
+      'enemy-grito-atormentador': 'recharging',
+    });
+    expect(props.currentTurnParticipantId).toBe('p2');
   });
 });

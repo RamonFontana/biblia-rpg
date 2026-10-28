@@ -51,6 +51,94 @@ export const itemSchema = z.strictObject({
 
 export type ContentItem = z.infer<typeof itemSchema>;
 
+/**
+ * O efeito de combate de uma Habilidade (Onda 5, feature 4): quem recebe e as Condições aplicadas,
+ * com a duração em rodadas (sem duração, a Condição fica até ser removida). O texto livre
+ * (`effect`) continua: cura, dano e bônus seguem como texto, aplicados pelo Mestre.
+ */
+export const abilityEffectSchema = z
+  .strictObject({
+    targets: z.enum(['enemy', 'enemies', 'ally', 'allies', 'aggressor']),
+    /** O TR do alvo (atributo): a Condição só entra em quem falha. Sem TR, entra em todos. */
+    save: z
+      .strictObject({ attribute: z.enum(['for', 'des', 'con', 'int', 'sab', 'car']) })
+      .optional(),
+    apply: z
+      .array(
+        z.strictObject({
+          conditionId: z.string().min(1),
+          rounds: z.number().int().min(1).max(100).optional(),
+        }),
+      )
+      .min(1)
+      .optional(),
+    /**
+     * A Condição que a Habilidade tira dos alvos (aliados, sem TR): `fixed` tira a Condição citada,
+     * `choice` deixa o jogador escolher uma da lista e `per_target` deixa escolher uma de cada alvo,
+     * entre as que ele tem.
+     */
+    remove: z
+      .discriminatedUnion('mode', [
+        z.strictObject({
+          mode: z.literal('fixed'),
+          conditionIds: z.array(z.string().min(1)).length(1),
+        }),
+        z.strictObject({
+          mode: z.literal('choice'),
+          conditionIds: z.array(z.string().min(1)).min(2),
+        }),
+        z.strictObject({ mode: z.literal('per_target') }),
+      ])
+      .optional(),
+  })
+  .refine((effect) => effect.apply !== undefined || effect.remove !== undefined, {
+    message: 'O efeito precisa aplicar ou remover uma Condição',
+  });
+
+/**
+ * O efeito de uma Habilidade de inimigo (Onda 5, feature 4): o TR que os personagens fazem (atributo
+ * e CD fixa), as Condições de quem falhar, a Fé que perdem (1d4 ou 1d6, o Mestre rola) e o uso.
+ * `recharge` volta com 5 ou 6 num d6 no início do turno do inimigo (CONTEXT.md, Recarga).
+ */
+export const enemyAbilityEffectSchema = z
+  .strictObject({
+    save: z
+      .strictObject({
+        attribute: z.enum(['for', 'des', 'con', 'int', 'sab', 'car']),
+        cd: z.number().int().min(1).max(40),
+      })
+      .optional(),
+    apply: z
+      .array(
+        z.strictObject({
+          conditionId: z.string().min(1),
+          rounds: z.number().int().min(1).max(100).optional(),
+        }),
+      )
+      .min(1)
+      .optional(),
+    faithLoss: z.strictObject({ sides: z.union([z.literal(4), z.literal(6)]) }).optional(),
+    usage: z.enum(['unlimited', 'per_combat', 'recharge']),
+    /** O lembrete de um efeito que o app não aplica (a Desvantagem no próximo ataque). */
+    reminder: z.string().min(1).optional(),
+  })
+  .refine((effect) => effect.apply !== undefined || effect.faithLoss !== undefined, {
+    message: 'O efeito precisa aplicar uma Condição ou tirar Fé',
+  })
+  .refine((effect) => effect.faithLoss === undefined || effect.save !== undefined, {
+    message: 'A perda de Fé só vale para quem falha num TR',
+  });
+
+export const enemyAbilitySchema = z.strictObject({
+  id: z.string().regex(/^enemy-[a-z0-9-]+$/),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  effect: enemyAbilityEffectSchema,
+});
+
+export type EnemyAbilityEffect = z.infer<typeof enemyAbilityEffectSchema>;
+export type EnemyAbilityDefinition = z.infer<typeof enemyAbilitySchema>;
+
 export const abilitySchema = z.strictObject({
   id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),
   name: z.string().min(1),
@@ -71,16 +159,10 @@ export const abilitySchema = z.strictObject({
   maxUses: z.number().int().min(1).max(10).optional(),
   faithCost: z.number().int().min(1).max(100).optional(),
   effect: z.string().min(1),
-  applyConditions: z
-    .array(
-      z.strictObject({
-        conditionId: z.string().min(1),
-        duration: z.number().int().min(1).optional(),
-      }),
-    )
-    .optional(),
+  combatEffect: abilityEffectSchema.optional(),
 });
 
+export type AbilityEffect = z.infer<typeof abilityEffectSchema>;
 export type AbilityDefinition = z.infer<typeof abilitySchema>;
 
 /** Kit inicial de uma Vocação: o texto da criação de personagem e os itens que o personagem recebe. */
