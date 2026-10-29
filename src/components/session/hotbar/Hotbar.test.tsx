@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 import type { AbilityDefinition } from '@/content/schemas';
-import { Hotbar, type HotbarEntry } from './Hotbar';
+import { Hotbar, type HotbarEntry, type HotbarItem } from './Hotbar';
 
 const ability = (id: string, over: Partial<AbilityDefinition> = {}): AbilityDefinition => ({
   id,
@@ -29,6 +29,7 @@ const entry = (a: AbilityDefinition, over: Partial<HotbarEntry> = {}): HotbarEnt
 const onUse = vi.fn();
 const onOpenDice = vi.fn();
 const onCancelUse = vi.fn();
+const onUseItem = vi.fn();
 
 const show = (entries: HotbarEntry[], props: Partial<Parameters<typeof Hotbar>[0]> = {}) =>
   render(
@@ -37,6 +38,7 @@ const show = (entries: HotbarEntry[], props: Partial<Parameters<typeof Hotbar>[0
       onUse={onUse}
       onOpenDice={onOpenDice}
       onCancelUse={onCancelUse}
+      onUseItem={onUseItem}
       {...props}
     />,
   );
@@ -329,5 +331,87 @@ describe('Hotbar: usar', () => {
     fireEvent.click(tile(/^Golpe A/));
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onCancelUse).toHaveBeenCalledTimes(1);
+  });
+});
+
+const BALSAMO: HotbarItem = {
+  id: 'ci1',
+  name: 'Bálsamo de Gileade',
+  quantity: 2,
+  description: 'Cura 1d4 PV.',
+};
+const RACAO: HotbarItem = {
+  id: 'ci2',
+  name: 'Ração',
+  quantity: 3,
+  description: 'Sustento no Descanso Longo.',
+};
+
+describe('Hotbar: a aba Itens', () => {
+  it('fica entre a Livre e as Passivas, com a contagem dos itens', () => {
+    show(MIXED, { items: [BALSAMO, RACAO] });
+    expect(tabNames()).toEqual(['Ação 2', 'Ação Bônus 1', 'Reação 1', 'Itens 2', 'Passivas 2']);
+  });
+
+  it('sem consumíveis nem munição, a aba some', () => {
+    show(MIXED, { items: [], ammo: null });
+    expect(tabNames()).not.toContain('Itens 0');
+    expect(screen.queryByRole('tab', { name: /^Itens/ })).not.toBeInTheDocument();
+  });
+
+  it('só com munição, a aba existe e conta o contador', () => {
+    show([], { items: [], ammo: { name: 'Flechas', quantity: 12 } });
+    expect(tabNames()).toEqual(['Itens 1']);
+  });
+
+  it('mostra cada consumível com a quantidade, e o nome acessível diz as unidades', () => {
+    show([], { items: [BALSAMO, RACAO] });
+    expect(tile('Bálsamo de Gileade, 2 unidades')).toHaveTextContent('×2');
+    expect(tile('Ração, 3 unidades')).toHaveTextContent('×3');
+  });
+
+  it('um consumível de uma só unidade diz "1 unidade"', () => {
+    show([], { items: [{ ...BALSAMO, quantity: 1 }] });
+    expect(tile('Bálsamo de Gileade, 1 unidade')).toBeInTheDocument();
+  });
+
+  it('a munição é um contador, não um botão', () => {
+    show([], { items: [BALSAMO], ammo: { name: 'Flechas', quantity: 12 } });
+    expect(screen.getByText('Flechas: 12')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Flechas/ })).not.toBeInTheDocument();
+  });
+
+  it('o consumível abre o mesmo Cartão, com o texto e o Usar', () => {
+    show([], { items: [BALSAMO] });
+    fireEvent.click(tile(/^Bálsamo de Gileade/));
+    const card = screen.getByRole('dialog', { name: 'Bálsamo de Gileade' });
+    expect(card).toHaveTextContent('Cura 1d4 PV.');
+    expect(card).toHaveTextContent('2 unidades');
+    expect(within(card).getByRole('button', { name: 'Usar' })).toBeEnabled();
+  });
+
+  it('Usar pede o consumo uma vez e fecha o Cartão', () => {
+    show([], { items: [BALSAMO] });
+    fireEvent.click(tile(/^Bálsamo de Gileade/));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Usar' }));
+    expect(onUseItem).toHaveBeenCalledTimes(1);
+    expect(onUseItem).toHaveBeenCalledWith(expect.objectContaining({ id: 'ci1' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('enquanto grava, o Usar do consumível fica desabilitado', () => {
+    show([], { items: [BALSAMO], busy: true });
+    fireEvent.click(tile(/^Bálsamo de Gileade/));
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Usar' })).toBeDisabled();
+  });
+
+  it('abre ao segurar, como as Habilidades', () => {
+    show([], { items: [BALSAMO] });
+    const t = tile(/^Bálsamo de Gileade/);
+    fireEvent.pointerDown(t, { pointerType: 'touch' });
+    act(() => {
+      vi.advanceTimersByTime(451);
+    });
+    expect(screen.getByRole('dialog', { name: 'Bálsamo de Gileade' })).toBeInTheDocument();
   });
 });

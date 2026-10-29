@@ -87,6 +87,31 @@ test.describe('criar a sessão', () => {
 });
 
 test.describe('entrar na sessão', () => {
+  test('o jogador usa um consumível pela Hotbar', async ({ seed, signIn }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    await seed.giveItem(eliabe, 'racao', 3);
+    await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+
+    const player = await signIn('player1');
+    await player.getByRole('link', { name: `Entrar: ${SESSION_NAME}` }).click();
+
+    await player.getByRole('tab', { name: /^Itens/ }).click();
+    await player.getByRole('button', { name: 'Ração de Viagem, 3 unidades' }).click();
+    await player
+      .getByRole('dialog', { name: 'Ração de Viagem' })
+      .getByRole('button', { name: 'Usar', exact: true })
+      .click();
+
+    await expect(player.getByRole('button', { name: 'Ração de Viagem, 2 unidades' })).toBeVisible();
+    const { data, error } = await adminClient()
+      .from('character_items')
+      .select('quantity')
+      .eq('character_id', eliabe)
+      .single();
+    if (error) throw error;
+    expect(data.quantity).toBe(2);
+  });
+
   test('o jogador convocado entra pela Home e vê a própria ficha', async ({ seed, signIn }) => {
     const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
     const rute = await seed.createCharacter('player2', { name: 'Rute' });

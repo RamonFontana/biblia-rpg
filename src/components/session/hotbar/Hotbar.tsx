@@ -20,8 +20,26 @@ export interface HotbarEntry {
   cd?: number;
 }
 
+/** Um consumível do inventário que dá para usar agora. */
+export interface HotbarItem {
+  /** A linha do inventário (`character_items`). */
+  id: string;
+  name: string;
+  quantity: number;
+  description: string;
+}
+
+/** A munição da arma equipada, só como contador (ela se gasta ao atacar). */
+export interface HotbarAmmo {
+  name: string;
+  quantity: number;
+}
+
 interface HotbarProps {
   entries: HotbarEntry[];
+  items?: HotbarItem[];
+  ammo?: HotbarAmmo | null;
+  onUseItem?: (item: HotbarItem) => void;
   /** Pede o uso. Devolve `'targets'` quando o Cartão deve seguir aberto para escolher alvos. */
   onUse: (ability: AbilityDefinition) => 'targets' | void;
   onOpenDice: () => void;
@@ -35,14 +53,15 @@ interface HotbarProps {
 }
 
 type Slot = 'action' | 'bonus' | 'reaction' | 'free';
-type Tab = Slot | 'passivas';
+type Tab = Slot | 'itens' | 'passivas';
 
-const TAB_ORDER: Tab[] = ['action', 'bonus', 'reaction', 'free', 'passivas'];
+const TAB_ORDER: Tab[] = ['action', 'bonus', 'reaction', 'free', 'itens', 'passivas'];
 const TAB_LABEL: Record<Tab, string> = {
   action: 'Ação',
   bonus: 'Ação Bônus',
   reaction: 'Reação',
   free: 'Livre',
+  itens: 'Itens',
   passivas: 'Passivas',
 };
 const SLOT_OF: Record<AbilityDefinition['actionType'], Tab> = {
@@ -106,6 +125,9 @@ function tileSub(entry: HotbarEntry): string {
 
 export function Hotbar({
   entries,
+  items = [],
+  ammo = null,
+  onUseItem,
   onUse,
   onOpenDice,
   busy = false,
@@ -113,19 +135,25 @@ export function Hotbar({
   renderTargeting,
   onCancelUse,
 }: HotbarProps) {
+  const itemCount = items.length + (ammo ? 1 : 0);
   const groups = TAB_ORDER.map((id) => ({
     id,
     entries: entries.filter((e) => SLOT_OF[e.ability.actionType] === id),
-  })).filter((g) => g.entries.length > 0);
+    count:
+      id === 'itens'
+        ? itemCount
+        : entries.filter((e) => SLOT_OF[e.ability.actionType] === id).length,
+  })).filter((g) => g.count > 0);
 
   const [chosen, setChosen] = useState<Tab>('action');
   const current = groups.find((g) => g.id === chosen) ?? groups[0];
-  const [open, setOpen] = useState<HotbarEntry | null>(null);
+  const [open, setOpen] = useState<{ kind: 'ability' | 'item'; id: string } | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({});
 
   // O Cartão mostra sempre a Habilidade como está agora (os usos mudam depois de usar).
-  const card = open && entries.find((e) => e.ability.id === open.ability.id);
+  const card = open?.kind === 'ability' ? entries.find((e) => e.ability.id === open.id) : undefined;
+  const itemCard = open?.kind === 'item' ? items.find((i) => i.id === open.id) : undefined;
 
   const close = () => {
     if (targetingId) onCancelUse?.();
@@ -154,10 +182,10 @@ export function Hotbar({
 
   return (
     <div className="relative border-t border-stone-800 bg-stone-900">
-      {card && (
+      {(card || itemCard) && (
         <motion.div
           role="dialog"
-          aria-label={card.ability.name}
+          aria-label={card ? card.ability.name : itemCard?.name}
           className="absolute inset-x-2 bottom-full z-30 mb-2 max-h-[55dvh] overflow-y-auto rounded-xl border border-amber-500/40 bg-stone-900 p-4 shadow-2xl"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -165,7 +193,9 @@ export function Hotbar({
           onKeyDown={(event) => event.key === 'Escape' && close()}
         >
           <div className="mb-2 flex items-start justify-between gap-2">
-            <h2 className="font-serif text-lg text-amber-500">{card.ability.name}</h2>
+            <h2 className="font-serif text-lg text-amber-500">
+              {card ? card.ability.name : itemCard?.name}
+            </h2>
             <button
               type="button"
               autoFocus
@@ -176,10 +206,19 @@ export function Hotbar({
               <X className="h-5 w-5" />
             </button>
           </div>
-          {targetingId === card.ability.id && renderTargeting ? (
+          {itemCard ? (
+            <ItemCardBody
+              item={itemCard}
+              busy={busy}
+              onUse={() => {
+                onUseItem?.(itemCard);
+                close();
+              }}
+            />
+          ) : card && targetingId === card.ability.id && renderTargeting ? (
             renderTargeting(card.ability)
           ) : (
-            <CardBody entry={card} busy={busy} onUse={() => use(card)} />
+            card && <CardBody entry={card} busy={busy} onUse={() => use(card)} />
           )}
         </motion.div>
       )}
@@ -202,7 +241,7 @@ export function Hotbar({
                 current?.id === group.id ? 'bg-stone-800 text-amber-400' : 'text-stone-400'
               }`}
             >
-              {TAB_LABEL[group.id]} <span className="text-stone-500">{group.entries.length}</span>
+              {TAB_LABEL[group.id]} <span className="text-stone-500">{group.count}</span>
               {current?.id === group.id && (
                 <motion.span
                   layoutId="hotbar-tab-underline"
@@ -232,13 +271,32 @@ export function Hotbar({
             Nenhuma habilidade disponível.
           </p>
         )}
+        {current?.id === 'itens' && (
+          <>
+            {items.map((item) => (
+              <ItemTile
+                key={item.id}
+                item={item}
+                onOpen={(node) => {
+                  returnFocus.current = node;
+                  setOpen({ kind: 'item', id: item.id });
+                }}
+              />
+            ))}
+            {ammo && (
+              <p className="flex min-h-[60px] items-center justify-center rounded-lg border border-stone-700 p-2 text-center text-xs text-stone-300">
+                {`${ammo.name}: ${ammo.quantity}`}
+              </p>
+            )}
+          </>
+        )}
         {current?.entries.map((entry) => (
           <Tile
             key={entry.ability.id}
             entry={entry}
             onOpen={(node) => {
               returnFocus.current = node;
-              setOpen(entry);
+              setOpen({ kind: 'ability', id: entry.ability.id });
             }}
           />
         ))}
@@ -332,6 +390,58 @@ function CardBody({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+const unitsText = (quantity: number) => `${quantity} ${quantity === 1 ? 'unidade' : 'unidades'}`;
+
+function ItemTile({ item, onOpen }: { item: HotbarItem; onOpen: (node: HTMLElement) => void }) {
+  const node = useRef<HTMLButtonElement>(null);
+  const press = usePressToOpen(() => node.current && onOpen(node.current));
+  return (
+    <motion.button
+      ref={node}
+      type="button"
+      aria-label={`${item.name}, ${unitsText(item.quantity)}`}
+      {...press}
+      whileTap={{ scale: 0.94 }}
+      className="flex min-h-[60px] items-center rounded-lg border border-stone-600 bg-stone-900 p-2 text-left text-stone-100 select-none [-webkit-touch-callout:none]"
+    >
+      <span className="min-w-0">
+        <span className="line-clamp-2 block text-[11px] leading-tight">{item.name}</span>
+        <span className="block text-[10px] text-stone-500">×{item.quantity}</span>
+      </span>
+    </motion.button>
+  );
+}
+
+function ItemCardBody({
+  item,
+  busy,
+  onUse,
+}: {
+  item: HotbarItem;
+  busy: boolean;
+  onUse: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <ul className="flex flex-wrap gap-1.5 text-[11px]">
+        <li className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-500">Consumível</li>
+        <li className="rounded border border-stone-700 px-2 py-0.5 text-stone-300">
+          {unitsText(item.quantity)}
+        </li>
+      </ul>
+      <p className="text-sm text-stone-400">{item.description}</p>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onUse}
+        className="h-12 w-full rounded bg-amber-600 font-bold text-stone-900 transition-colors hover:bg-amber-500 disabled:opacity-50"
+      >
+        Usar
+      </button>
     </div>
   );
 }

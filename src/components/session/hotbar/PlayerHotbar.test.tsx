@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
+  consumeInventoryItem: vi.fn(),
   submitAbilityUse: vi.fn(),
   updateCharacter: vi.fn(),
   getAbilitiesForCharacter: vi.fn(),
@@ -20,6 +21,12 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 vi.mock('@/data-access/characters', () => ({ updateCharacter: h.updateCharacter }));
+vi.mock('@/data-access/inventory', () => ({
+  addInventoryItem: vi.fn(),
+  consumeInventoryItem: h.consumeInventoryItem,
+  removeInventoryItem: vi.fn(),
+  setInventoryQuantity: vi.fn(),
+}));
 vi.mock('@/utils/abilityUtils', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/abilityUtils')>()),
   getAbilitiesForCharacter: h.getAbilitiesForCharacter,
@@ -125,6 +132,7 @@ const useAbility = async (id: string) => {
 
 beforeEach(() => {
   h.updateCharacter.mockResolvedValue(undefined);
+  h.consumeInventoryItem.mockResolvedValue(undefined);
   h.getAbilitiesForCharacter.mockReturnValue([ability('a1')]);
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -525,5 +533,134 @@ describe('PlayerHotbar: os espaços do turno', () => {
     startCombat([participant({ hp_current: 0 })]);
     view();
     expect(screen.queryByRole('group', { name: 'Espaços do turno' })).not.toBeInTheDocument();
+  });
+});
+
+describe('PlayerHotbar: a aba Itens', () => {
+  const owned = (id: string, quantity: number, items: Record<string, unknown>) => ({
+    id,
+    quantity,
+    level: 1,
+    items,
+  });
+  const BALSAMO = owned('ci1', 2, {
+    slug: 'balsamo',
+    name: 'Bálsamo de Gileade',
+    description: 'Cura 2 PV. 1 dia de nutrição',
+    is_consumable: true,
+    effects: {},
+  });
+  const FLECHAS = owned('ci-fl', 12, { slug: 'flechas', name: 'Flecha', is_consumable: true });
+  const ARCO = owned('ci-bow', 1, { slug: 'arco_curto', name: 'Arco Curto', is_consumable: false });
+  const ESPADA = owned('ci-sw', 1, { slug: 'espada', name: 'Espada', is_consumable: false });
+  const withItems = (items: unknown[], over: Partial<Character> = {}) =>
+    sheet({ character_items: items, ...over } as Partial<Character>);
+  const goToItems = () => fireEvent.click(screen.getByRole('tab', { name: /^Itens/ }));
+
+  it('só os consumíveis que não são munição entram, com a quantidade', () => {
+    view(withItems([BALSAMO, FLECHAS, ESPADA]));
+    goToItems();
+    expect(
+      screen.getByRole('button', { name: 'Bálsamo de Gileade, 2 unidades' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Flecha/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Espada/ })).not.toBeInTheDocument();
+  });
+
+  it('sem consumíveis nem arma de munição, não há aba Itens', () => {
+    view(withItems([ESPADA, FLECHAS]));
+    expect(screen.queryByRole('tab', { name: /^Itens/ })).not.toBeInTheDocument();
+  });
+
+  it('com o arco na mão principal, a munição aparece como contador', () => {
+    view(withItems([ARCO, FLECHAS], { equipment: { mainHand: 'ci-bow' } } as Partial<Character>));
+    goToItems();
+    expect(screen.getByText('Flecha: 12')).toBeInTheDocument();
+  });
+
+  it('o arco guardado na mochila não mostra o contador', () => {
+    view(withItems([ARCO, FLECHAS]));
+    expect(screen.queryByRole('tab', { name: /^Itens/ })).not.toBeInTheDocument();
+  });
+
+  it('usar o consumível gasta pelo caminho do Inventário, com a cura já resolvida', async () => {
+    view(withItems([BALSAMO]));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    await pressUse();
+    expect(h.consumeInventoryItem).toHaveBeenCalledWith({
+      characterId: 'c1',
+      characterItemId: 'ci1',
+      currentQuantity: 2,
+      itemEffects: { heal: 2 },
+      currentStats: sheet().stats,
+      isPlayable: true,
+    });
+  });
+
+  it('avisa a tela da quantidade nova e da cura aplicada', async () => {
+    view(withItems([BALSAMO, ESPADA]));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    await pressUse();
+    expect(onCharacterPatch).toHaveBeenCalledWith({
+      character_items: [{ ...BALSAMO, quantity: 1 }, ESPADA],
+      stats: { ...sheet().stats, current_pv: 11 },
+    });
+  });
+
+  it('a última unidade sai da lista', async () => {
+    const last = { ...BALSAMO, quantity: 1 };
+    view(withItems([last, ESPADA]));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    await pressUse();
+    expect(onCharacterPatch).toHaveBeenCalledWith(
+      expect.objectContaining({ character_items: [ESPADA] }),
+    );
+  });
+
+  it('um consumível sem efeito na ficha (Ração) só reduz a quantidade', async () => {
+    const racao = owned('ci2', 3, {
+      slug: 'racao',
+      name: 'Ração de Viagem',
+      description: 'Sustento: pão seco.',
+      is_consumable: true,
+    });
+    view(withItems([racao]));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Ração de Viagem/ }));
+    await pressUse();
+    expect(onCharacterPatch).toHaveBeenCalledWith({
+      character_items: [{ ...racao, quantity: 2 }],
+    });
+  });
+
+  it('o NPC jogável consome pela ficha de NPC', async () => {
+    view(withItems([BALSAMO], { is_npc: true } as Partial<Character>));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    await pressUse();
+    expect(h.consumeInventoryItem).toHaveBeenCalledWith(
+      expect.objectContaining({ isPlayable: false }),
+    );
+  });
+
+  it('a falha ao consumir é registrada e a tela não é avisada', async () => {
+    h.consumeInventoryItem.mockRejectedValueOnce(new Error('sem rede'));
+    view(withItems([BALSAMO]));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    await pressUse();
+    expect(console.error).toHaveBeenCalledWith('Error using item:', expect.any(Error));
+    expect(onCharacterPatch).not.toHaveBeenCalled();
+  });
+
+  it('o consumível vale dentro e fora do combate', () => {
+    startCombat([participant()]);
+    view(withItems([BALSAMO]));
+    goToItems();
+    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    expect(within(card()).getByRole('button', { name: 'Usar' })).toBeEnabled();
   });
 });

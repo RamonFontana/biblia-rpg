@@ -1,7 +1,12 @@
 // CARACTERIZAÇÃO: fixa o comportamento ATUAL da munição.
 // Termos: CONTEXT.md. Decisão: a recuperação de munição segue automática, 50% por unidade (ADR 0001).
 import { describe, expect, it } from 'vitest';
-import { calculateRecoveredQuantity, canConsumeAmmo, rollAmmoRecovery } from '@/domain/ammo';
+import {
+  calculateRecoveredQuantity,
+  canConsumeAmmo,
+  isAmmunitionItem,
+  rollAmmoRecovery,
+} from '@/domain/ammo';
 import { createSeededRng } from '@/domain/rng';
 
 // Sorteio determinístico: devolve os valores em ordem.
@@ -72,4 +77,20 @@ describe('canConsumeAmmo', () => {
     expect(canConsumeAmmo(2, 3)).toBe(false);
     expect(canConsumeAmmo(0, 1)).toBe(false);
   });
+});
+
+describe('isAmmunitionItem: o que a Hotbar e o Inventário tratam como munição', () => {
+  it.each(['Flechas', 'Flecha de Bronze', 'Pedras de Funda', 'Pedra Lisa'])(
+    '%s é munição',
+    (name) => {
+      expect(isAmmunitionItem(name)).toBe(true);
+    },
+  );
+
+  it.each(['Bálsamo de Gileade', 'Ração', 'Odre', undefined, null, ''])(
+    '%s não é munição',
+    (name) => {
+      expect(isAmmunitionItem(name)).toBe(false);
+    },
+  );
 });

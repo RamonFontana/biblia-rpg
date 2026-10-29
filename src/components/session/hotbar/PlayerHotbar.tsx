@@ -16,14 +16,19 @@ import { buildAttackTargets } from '@/lib/attackSetup';
 import { submitAbilityUse } from '@/services/abilityService';
 import { useCombatStore } from '@/store/combatStore';
 import { abilitySkills, getAbilitiesForCharacter } from '@/utils/abilityUtils';
-import { Hotbar, type HotbarEntry } from './Hotbar';
+import { isAmmunitionItem } from '@/domain/ammo';
+import { applyConsumableEffects, normalizeHealingEffects } from '@/domain/consumables';
+import { resolveAmmunition, resolveMainHandWeapon } from '@/lib/attackSetup';
+import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
+import type { CombatInventoryItem, InventoryCatalogItem } from '@/types/inventory';
+import { Hotbar, type HotbarAmmo, type HotbarEntry, type HotbarItem } from './Hotbar';
 
 interface PlayerHotbarProps {
   character: Character | null | undefined;
   /** Quem está na sessão, com nome e CA: os alvos possíveis das Habilidades. */
   entities: { id: string; name: string; totalAc: number }[];
   /** Avisa a tela do que foi gravado na ficha, para a Hotbar mudar já. */
-  onCharacterPatch?: (patch: Partial<Pick<Character, 'skills' | 'stats'>>) => void;
+  onCharacterPatch?: (patch: Record<string, unknown>) => void;
   onOpenDice: () => void;
 }
 
@@ -49,6 +54,7 @@ export function PlayerHotbar({
   } = useCombatStore();
 
   const [isUpdating, setIsUpdating] = useState(false);
+  const { consumeItem, isUpdating: isConsuming } = useUpdateNPCInventory();
   const [targetingId, setTargetingId] = useState<string | null>(null);
   // O uso que acabou de ser gravado: o resultado do TR chega pelo armazém quando o Mestre lança.
   const [lastUseId, setLastUseId] = useState<string | null>(null);
@@ -107,6 +113,58 @@ export function PlayerHotbar({
     cd: ability.combatEffect?.save ? cd : undefined,
   }));
 
+  const ownedItems =
+    (character as { character_items?: CombatInventoryItem[] }).character_items ?? [];
+  const catalogOf = (owned: CombatInventoryItem): InventoryCatalogItem | undefined =>
+    Array.isArray(owned.items) ? owned.items[0] : (owned.items ?? undefined);
+
+  // Os consumíveis que dá para usar (a munição se gasta ao atacar, não aqui).
+  const usable = ownedItems.filter((owned) => {
+    const catalog = catalogOf(owned);
+    return !!catalog?.is_consumable && !isAmmunitionItem(catalog.name) && (owned.quantity ?? 0) > 0;
+  });
+  const items: HotbarItem[] = usable.map((owned) => ({
+    id: owned.id ?? '',
+    name: catalogOf(owned)?.name ?? 'Item',
+    quantity: owned.quantity ?? 0,
+    description: catalogOf(owned)?.description ?? '',
+  }));
+  const ammunition = resolveAmmunition(
+    { character_items: ownedItems },
+    resolveMainHandWeapon({ equipment: character.equipment, character_items: ownedItems })
+      ?.weapon ?? null,
+  );
+  const ammo: HotbarAmmo | null = ammunition
+    ? { name: ammunition.name, quantity: ammunition.quantity }
+    : null;
+
+  const useItem = async (item: HotbarItem) => {
+    const owned = ownedItems.find((o) => o.id === item.id);
+    if (!owned || isConsuming) return;
+    const catalog = catalogOf(owned);
+    const effects = normalizeHealingEffects(
+      (catalog?.effects ?? {}) as { heal?: number; heal_dice?: string; restore_faith?: number },
+      catalog?.description ?? undefined,
+      owned.level || 1,
+    );
+    const quantity = owned.quantity ?? 0;
+    const result = await consumeItem(
+      character.id,
+      item.id,
+      quantity,
+      effects,
+      character.stats ?? {},
+      !character.is_npc,
+    );
+    if (!result.success) return;
+    const { stats, hasChanges } = applyConsumableEffects(character.stats ?? {}, effects);
+    const character_items =
+      quantity <= 1
+        ? ownedItems.filter((o) => o.id !== item.id)
+        : ownedItems.map((o) => (o.id === item.id ? { ...o, quantity: quantity - 1 } : o));
+    onCharacterPatch?.({ character_items, ...(hasChanges ? { stats } : {}) });
+  };
+
   const spendUse = async (ability: AbilityDefinition) => {
     if (isUpdating) return;
     setIsUpdating(true);
@@ -116,7 +174,7 @@ export function PlayerHotbar({
       if (!used) return;
       const patch = { skills: used.skills, ...(used.stats ? { stats: used.stats } : {}) };
       await updateCharacter(character.id, patch);
-      onCharacterPatch?.(patch as Partial<Pick<Character, 'skills' | 'stats'>>);
+      onCharacterPatch?.(patch);
     } catch (error) {
       console.error('Failed to use ability:', error);
     } finally {
@@ -203,7 +261,10 @@ export function PlayerHotbar({
         entries={entries}
         onUse={onUse}
         onOpenDice={onOpenDice}
-        busy={isUpdating}
+        items={items}
+        ammo={ammo}
+        onUseItem={useItem}
+        busy={isUpdating || isConsuming}
         targetingId={targetingId}
         renderTargeting={renderTargeting}
         onCancelUse={() => setTargetingId(null)}

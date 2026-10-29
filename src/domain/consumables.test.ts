@@ -3,7 +3,11 @@
 // Termos: CONTEXT.md (Sustento, Ração, Qualidade).
 import { describe, expect, it } from 'vitest';
 import { ITEMS_DB } from '@/content/items';
-import { applyConsumableEffects, resolveHealing } from '@/domain/consumables';
+import {
+  applyConsumableEffects,
+  normalizeHealingEffects,
+  resolveHealing,
+} from '@/domain/consumables';
 
 describe('resolveHealing: de onde vem a cura', () => {
   it('usa os efeitos gravados no item quando existem', () => {
@@ -124,5 +128,32 @@ describe('applyConsumableEffects', () => {
     const stats = { pv: 20, current_pv: 5 };
     applyConsumableEffects(stats, { heal: 3 });
     expect(stats.current_pv).toBe(5);
+  });
+});
+
+describe('normalizeHealingEffects: a cura que o Inventário e a Hotbar entregam ao consumir', () => {
+  it('sem efeitos gravados, lê a cura da descrição e guarda os outros efeitos', () => {
+    expect(normalizeHealingEffects({ restore_faith: 5 }, 'Cura 2 PV. Sabor amargo', 1)).toEqual({
+      restore_faith: 5,
+      heal: 2,
+    });
+  });
+
+  it('o dado de cura sobe um degrau por Qualidade acima de 1', () => {
+    expect(normalizeHealingEffects({ heal_dice: '1d4' }, undefined, 2)).toEqual({
+      heal_dice: '1d6',
+    });
+  });
+
+  it('a cura fixa soma +2 por Qualidade acima de 1', () => {
+    expect(normalizeHealingEffects({ heal: 3 }, undefined, 3)).toEqual({ heal: 7 });
+  });
+
+  it('sem cura nenhuma (Ração, Odre), devolve os efeitos como vieram', () => {
+    expect(normalizeHealingEffects({}, 'Sustento no Descanso Longo.', 1)).toEqual({});
+  });
+
+  it('sem efeitos nem descrição, devolve um objeto vazio', () => {
+    expect(normalizeHealingEffects(undefined, undefined, 1)).toEqual({});
   });
 });
