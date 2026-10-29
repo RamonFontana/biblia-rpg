@@ -43,6 +43,8 @@ interface AttackPanelProps {
   /** Os ids das Condições do atacante (Envenenado, Cego, Impedido dão Desvantagem). */
   attackerConditionIds: string[];
   targets: AttackTarget[];
+  /** O alvo já escolhido (o jogador tocou em Atacar no cartão do Retrato). */
+  initialTargetId?: string;
   /** A Inspiração de hoje: se está disponível, e a sessão e o dia que ela gasta. */
   inspiration?: { available: boolean; sessionId: string; day: number };
   /** Avisa a tela do dia gravado quando a Inspiração foi gasta neste ataque. */
@@ -83,12 +85,13 @@ export function AttackPanel({
   attackerParticipantId,
   attackerConditionIds,
   targets,
+  initialTargetId,
   inspiration,
   onInspirationUsed,
   actionUsed,
   onActionUsed,
 }: AttackPanelProps) {
-  const [targetId, setTargetId] = useState('');
+  const [targetId, setTargetId] = useState(initialTargetId ?? '');
   const [natural, setNatural] = useState<number | ''>('');
   const [rolledDamage, setRolledDamage] = useState<number | ''>('');
   const [rolledDice, setRolledDice] = useState<number[] | null>(null);

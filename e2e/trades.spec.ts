@@ -1,10 +1,24 @@
 import { adminClient } from './support/admin';
 import { offerCoins, offerItem, readyButton, tradeSide } from './support/trade';
+import { closePanel, negotiateWith, openPanel } from './support/ui';
+import type { Page } from '@playwright/test';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
 const SESSION_NAME = 'Invasão a Jericó';
 
 /** Eliabe (50 SP, uma adaga) e Rute (20 SP) na mesma sessão, os dois online. */
+const retrato = (page: Page, name: string) =>
+  page
+    .getByRole('region', { name: 'Retratos' })
+    .getByRole('button', { name: new RegExp(`^${name},`) });
+
+/** A lista do Grupo marca quem está numa troca; ela mora num Painel, que se abre só para ler. */
+async function expectNegotiating(page: Page, count: number) {
+  await openPanel(page, 'Grupo');
+  await expect(page.getByText('⚖️ Negociando...')).toHaveCount(count);
+  await closePanel(page);
+}
+
 async function openTable(seed: Seed, signIn: SignIn) {
   const eliabe = await seed.createCharacter('player1', { name: 'Eliabe', coins: 50 });
   const rute = await seed.createCharacter('player2', { name: 'Rute', coins: 20 });
@@ -15,7 +29,9 @@ async function openTable(seed: Seed, signIn: SignIn) {
   await eliabePage.goto(`/session/${sessionId}`);
   const rutePage = await signIn('player2');
   await rutePage.goto(`/session/${sessionId}`);
-  await expect(eliabePage.getByText('Participantes Online (2)')).toBeVisible();
+  // Os dois já enxergam um ao outro no Palco antes de pedir a troca.
+  await expect(retrato(eliabePage, 'Rute')).toBeVisible();
+  await expect(retrato(rutePage, 'Eliabe')).toBeVisible();
   return { eliabePage, rutePage, eliabe, rute, sessionId };
 }
 
@@ -47,11 +63,11 @@ test.describe('negociação entre jogadores', () => {
   test('o pedido chega ao outro jogador, que pode recusar', async ({ seed, signIn }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
 
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
 
     await expect(rutePage.getByText('Solicitação de Troca')).toBeVisible();
     await expect(rutePage.getByText('Eliabe quer negociar com você')).toBeVisible();
-    await expect(eliabePage.getByText('⚖️ Negociando...')).toHaveCount(2);
+    await expectNegotiating(eliabePage, 2);
     await expect(eliabePage.getByText('Pedido de Troca enviado')).toBeVisible();
     await expect(eliabePage.getByText(/Você quer negociar com\s*Rute/)).toBeVisible();
 
@@ -59,7 +75,7 @@ test.describe('negociação entre jogadores', () => {
 
     await expect(rutePage.getByText('Solicitação de Troca')).toHaveCount(0);
     await expect(eliabePage.getByText('Pedido de Troca enviado')).toHaveCount(0);
-    await expect(eliabePage.getByText('⚖️ Negociando...')).toHaveCount(0);
+    await expectNegotiating(eliabePage, 0);
     await expect(eliabePage.getByRole('dialog')).toHaveCount(0);
     expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
   });
@@ -67,27 +83,27 @@ test.describe('negociação entre jogadores', () => {
   test('quem pediu a troca pode cancelar o pedido antes da resposta', async ({ seed, signIn }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
 
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await expect(rutePage.getByText('Eliabe quer negociar com você')).toBeVisible();
 
     await eliabePage.getByRole('button', { name: 'Cancelar pedido' }).click();
 
     await expect(eliabePage.getByText('Pedido de Troca enviado')).toHaveCount(0);
     await expect(rutePage.getByText('Solicitação de Troca')).toHaveCount(0);
-    await expect(rutePage.getByText('⚖️ Negociando...')).toHaveCount(0);
+    await expectNegotiating(rutePage, 0);
     expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
   });
 
   test('sair da mesa cancela o pedido de troca aberto', async ({ seed, signIn }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
 
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await expect(rutePage.getByText('Solicitação de Troca')).toBeVisible();
 
     await eliabePage.getByRole('link', { name: 'Home' }).click();
 
     await expect(rutePage.getByText('Solicitação de Troca')).toHaveCount(0);
-    await expect(rutePage.getByText('⚖️ Negociando...')).toHaveCount(0);
+    await expectNegotiating(rutePage, 0);
     expect(await tradeStatuses()).toEqual([{ type: 'player_trade', status: 'cancelled' }]);
   });
 
@@ -97,7 +113,7 @@ test.describe('negociação entre jogadores', () => {
   }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
 
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await rutePage.getByRole('button', { name: 'Aceitar' }).click();
 
     for (const page of [eliabePage, rutePage]) {
@@ -113,7 +129,7 @@ test.describe('negociação entre jogadores', () => {
 
   test('os dois ficam prontos e a troca move o item e os SP', async ({ seed, signIn }) => {
     const { eliabePage, rutePage, eliabe, rute } = await openTable(seed, signIn);
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await rutePage.getByRole('button', { name: 'Aceitar' }).click();
 
     // Cada um monta a própria oferta antes de qualquer Pronto: mudar a oferta desmarca os dois.
@@ -137,8 +153,10 @@ test.describe('negociação entre jogadores', () => {
     await expect(eliabePage.getByRole('dialog')).toHaveCount(0);
     await expect(rutePage.getByRole('dialog')).toHaveCount(0);
 
-    // As fichas já mostram o resultado, sem recarregar.
+    // As fichas já mostram o resultado, sem recarregar a página.
+    await openPanel(rutePage, 'Ficha');
     await expect(rutePage.getByText('Faca/Adaga de Bronze')).toBeVisible();
+    await openPanel(eliabePage, 'Ficha');
     await expect(eliabePage.getByText('Inventário vazio.')).toBeVisible();
 
     expect(await inventoryOf(eliabe)).toEqual([]);
@@ -151,7 +169,7 @@ test.describe('negociação entre jogadores', () => {
 
   test('mudar a oferta depois do Pronto desmarca os dois lados', async ({ seed, signIn }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await rutePage.getByRole('button', { name: 'Aceitar' }).click();
 
     const eliabeSide = tradeSide(eliabePage.getByRole('dialog'), 'Eliabe');
@@ -169,7 +187,7 @@ test.describe('negociação entre jogadores', () => {
 
   test('não fica pronto quem oferece mais SP do que tem', async ({ seed, signIn }) => {
     const { eliabePage, rutePage } = await openTable(seed, signIn);
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await rutePage.getByRole('button', { name: 'Aceitar' }).click();
 
     const eliabeSide = tradeSide(eliabePage.getByRole('dialog'), 'Eliabe');
@@ -185,7 +203,7 @@ test.describe('negociação entre jogadores', () => {
 
   test('desmarcar o pronto desfaz a espera e nada é executado', async ({ seed, signIn }) => {
     const { eliabePage, rutePage, eliabe, rute } = await openTable(seed, signIn);
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await rutePage.getByRole('button', { name: 'Aceitar' }).click();
 
     const eliabeSide = tradeSide(eliabePage.getByRole('dialog'), 'Eliabe');
@@ -204,7 +222,7 @@ test.describe('negociação entre jogadores', () => {
 
   test('cancelar a negociação fecha a janela dos dois e nada muda', async ({ seed, signIn }) => {
     const { eliabePage, rutePage, eliabe, rute } = await openTable(seed, signIn);
-    await eliabePage.getByRole('button', { name: 'Negociar' }).click();
+    await negotiateWith(eliabePage, 'Rute');
     await rutePage.getByRole('button', { name: 'Aceitar' }).click();
     const eliabeSide = tradeSide(eliabePage.getByRole('dialog'), 'Eliabe');
     await offerItem(eliabeSide, 'Faca/Adaga de Bronze');
@@ -275,7 +293,7 @@ test.describe('negociação com NPC', () => {
     await expect(master.getByText('VISÍVEL')).toBeVisible();
     await expect(player.getByText('Raabe')).toBeVisible();
 
-    await player.getByRole('button', { name: '⚖️ Negociar' }).click();
+    await negotiateWith(player, 'Raabe');
     await expect(master.getByText('Eliabe quer negociar com Raabe')).toBeVisible();
     await expect(player.getByText(/Aguardando o Mestre aceitar a troca com\s*Raabe/)).toBeVisible();
     await master.getByRole('button', { name: 'Aceitar' }).click();

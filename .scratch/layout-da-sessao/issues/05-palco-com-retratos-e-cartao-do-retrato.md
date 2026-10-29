@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Retratos do grupo, dos NPCs visíveis e dos inimigos em combate, cada um com nome acessível
-- [ ] Cartão do Retrato com PV, Condições, Negociar e Atacar, usando os fluxos de hoje (troca e ataque)
-- [ ] A lista de participantes e o menu de token deixam de aparecer à parte, e os testes de componente deles continuam passando
-- [ ] No celular, a margem do trilho garante que nenhum Retrato fique coberto
-- [ ] O delta de dano ou de cura flutua do Retrato; o reduced-motion é testado
-- [ ] E2E `trades` e `attack` abrem a troca e o ataque pelo cartão do Retrato
+- [x] Retratos do grupo, dos NPCs visíveis e dos inimigos em combate, cada um com nome acessível
+- [x] Cartão do Retrato com PV, Condições, Negociar e Atacar, usando os fluxos de hoje (troca e ataque)
+- [x] A lista de participantes e o menu de token deixam de aparecer à parte, e os testes de componente deles continuam passando
+- [x] No celular, a margem do trilho garante que nenhum Retrato fique coberto
+- [x] O delta de dano ou de cura flutua do Retrato; o reduced-motion é testado
+- [x] E2E `trades` e `attack` abrem a troca e o ataque pelo cartão do Retrato

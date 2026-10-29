@@ -7,8 +7,8 @@ import { FortitudeDialog } from './FortitudeDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CharacterSheetView } from '../character/CharacterSheetView';
 import { TokenContextMenu } from './TokenContextMenu';
-import { TradeRequestNotification } from './TradeRequestNotification';
-import { TradePendingNotice } from './TradePendingNotice';
+import { TradeNotices } from './TradeNotices';
+import { pendingTradesOf } from '@/lib/pendingTrades';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { updateCharacterStats } from '@/data-access/characters';
@@ -40,6 +40,8 @@ interface SessionParticipantListProps {
   activeTrades?: TradeWithItems[];
   onUpdatePlayerData?: (characterId: string, data: Partial<Character>) => void;
   onUpdateNPCData?: (npcId: string, data: Partial<Character>) => void;
+  /** Desenha os avisos de troca por cima da tela. Quem já os mostra por fora desliga. */
+  showTradeNotices?: boolean;
   onNegotiate?: (targetUserId: string) => void;
   onShop?: (targetUserId: string) => void;
   onNPCNegotiate?: (npc: SessionNpc) => void;
@@ -61,6 +63,7 @@ export function SessionParticipantList({
   activeTrades = [],
   onUpdatePlayerData,
   onUpdateNPCData,
+  showTradeNotices = true,
   onNegotiate,
   onShop,
   onNPCNegotiate,
@@ -84,22 +87,12 @@ export function SessionParticipantList({
     );
   };
 
-  const pendingTradesForUser = activeTrades.filter((t) => {
-    if (t.status !== 'pending') return false;
-    if (t.type === 'player_trade') {
-      const targetUser = playerCharacters.find((pc) => pc.character.id === t.target_character_id);
-      return targetUser?.user_id === user?.id;
-    }
-    if (t.type === 'npc_trade' && isGM) {
-      return true;
-    }
-    return false;
+  const { forUser: pendingTradesForUser, fromUser: pendingTradesFromUser } = pendingTradesOf({
+    activeTrades,
+    playerCharacters,
+    userId: user?.id,
+    isGM,
   });
-
-  // O pedido que a própria pessoa fez e que ainda espera resposta.
-  const pendingTradesFromUser = activeTrades.filter(
-    (t) => t.status === 'pending' && !!user && t.initiator_user_id === user.id,
-  );
 
   const npcsForTradeNames = tradeNpcs ?? npcs;
   const tradeNpcName = (trade: TradeWithItems) => {
@@ -389,27 +382,16 @@ export function SessionParticipantList({
         )}
       </div>
 
-      {(pendingTradesForUser.length > 0 || pendingTradesFromUser.length > 0) && (
-        <div className="fixed bottom-4 right-4 z-50 flex flex-col-reverse items-end gap-3 max-w-[calc(100vw-2rem)]">
-          {pendingTradesForUser.map((trade) => (
-            <TradeRequestNotification
-              key={trade.id}
-              trade={trade}
-              playerCharacters={playerCharacters}
-              npcName={tradeNpcName(trade)}
-              onAccept={(id) => onAcceptTrade?.(id)}
-              onReject={(id) => onRejectTrade?.(id)}
-            />
-          ))}
-          {pendingTradesFromUser.map((trade) => (
-            <TradePendingNotice
-              key={trade.id}
-              trade={trade}
-              targetName={tradeTargetName(trade)}
-              onCancel={(id) => onRejectTrade?.(id)}
-            />
-          ))}
-        </div>
+      {showTradeNotices && (
+        <TradeNotices
+          forUser={pendingTradesForUser}
+          fromUser={pendingTradesFromUser}
+          playerCharacters={playerCharacters}
+          npcName={tradeNpcName}
+          targetName={tradeTargetName}
+          onAccept={onAcceptTrade}
+          onReject={onRejectTrade}
+        />
       )}
 
       <Dialog open={!!selectedUserId} onOpenChange={(open: boolean) => !open && closeSheet()}>
