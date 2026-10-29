@@ -130,6 +130,9 @@ vi.mock('@/components/combat/CombatDashboard', async () => ({
 vi.mock('@/components/combat/PlayerCombatView', async () => ({
   PlayerCombatView: (await import('@/test/stubs')).makeStub('PlayerCombatView'),
 }));
+vi.mock('@/components/session/hotbar/PlayerHotbar', async () => ({
+  PlayerHotbar: (await import('@/test/stubs')).makeStub('PlayerHotbar'),
+}));
 vi.mock('@/components/session/active-session/PlayerStatusBar', async () => ({
   PlayerStatusBar: (await import('@/test/stubs')).makeStub('PlayerStatusBar'),
 }));
@@ -698,6 +701,40 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
       call('PlayerStatusBar', 'onInspirationUsed', { inspiration_used_day: 2 });
     });
     expect(h.roster.updateLocal).toHaveBeenCalledWith('player', 'c1', { inspiration_used_day: 2 });
+  });
+
+  it('a Hotbar recebe a ficha do jogador e quem está na sessão, dentro e fora do combate', async () => {
+    await renderPage();
+    expect(prop('PlayerHotbar', 'character')).toMatchObject({ id: 'c1' });
+    expect(pluck(prop('PlayerHotbar', 'entities'), 'id')).toContain('e1');
+  });
+
+  it('os Dados da Hotbar abrem o diálogo de dados', async () => {
+    await renderPage();
+    expect(props('DiceRollerDialog')).toMatchObject({ isOpen: false });
+    act(() => {
+      call('PlayerHotbar', 'onOpenDice');
+    });
+    expect(props('DiceRollerDialog')).toMatchObject({ isOpen: true });
+  });
+
+  it('o que a Hotbar grava na ficha chega à tela', async () => {
+    await renderPage();
+    const patch = { skills: { ability_uses: { a1: 1 } } };
+    act(() => {
+      call('PlayerHotbar', 'onCharacterPatch', patch);
+    });
+    expect(h.roster.updateLocal).toHaveBeenCalledWith('player', 'c1', patch);
+  });
+
+  it('o Mestre e o espectador não têm Hotbar', async () => {
+    asGm();
+    await renderPage();
+    expect(hasStub('PlayerHotbar')).toBe(false);
+    cleanup();
+    h.user = { id: 'u3' };
+    await renderPage();
+    expect(hasStub('PlayerHotbar')).toBe(false);
   });
 
   it('a Inspiração mora na Barra de Status, não no Palco', async () => {

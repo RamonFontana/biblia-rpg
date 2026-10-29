@@ -5,6 +5,7 @@ import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
 import { ShortRestCard } from '@/components/session/ShortRestCard';
 import { useShortRestRecharge } from '@/hooks/useShortRestRecharge';
 import { PlayerStatusBar } from './PlayerStatusBar';
+import { PlayerHotbar } from '@/components/session/hotbar/PlayerHotbar';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
@@ -51,6 +52,8 @@ interface PlayerSessionViewProps {
   onNPCNegotiate: (npc: { id: string; name?: string; is_playable?: boolean }) => void;
   onAcceptTrade: (tradeId: string) => void;
   onRejectTrade: (tradeId: string) => void;
+  /** Abre o diálogo de dados da tela. */
+  onOpenDice: () => void;
 }
 
 /**
@@ -77,6 +80,7 @@ export function PlayerSessionView({
   onNPCNegotiate,
   onAcceptTrade,
   onRejectTrade,
+  onOpenDice,
 }: PlayerSessionViewProps) {
   // Cada celular recarrega o próprio personagem quando o Descanso Curto abre (ADR 0006).
   const rechargeTargets = useMemo(() => (myCharacter ? [myCharacter] : []), [myCharacter]);
@@ -159,6 +163,12 @@ export function PlayerSessionView({
             </div>
           )}
         </main>
+        <PlayerHotbar
+          character={myCharacter}
+          entities={entities}
+          onCharacterPatch={(patch) => myCharacter && updateLocal('player', myCharacter.id, patch)}
+          onOpenDice={onOpenDice}
+        />
       </div>
 
       <DockRail items={dock} onOpen={setPanel} />
