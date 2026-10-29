@@ -12,6 +12,7 @@
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
 | 5 — Features novas | **concluída em 2026-10-28**: Fé na mesa (PR #60), ataque físico (#61), Dados de Vida (#62) e efeitos de Habilidade (#63), todas com migrations aplicadas na produção. Resta o que cada feature registrou como decisão do autor. Próximo: refatorar o layout da sessão (Onda 6) e então o mapa |
+| 6 — Layout da sessão | **grill e protótipo feitos em 2026-10-29; spec em `.scratch/layout-da-sessao/spec.md`** (ADRs 0008 e 0009, termos em `CONTEXT.md`); próximo: protótipo descartável no celular, depois `/to-spec`. Detalhe em "Onda 6" |
 
 
 ## Contexto
@@ -606,6 +607,38 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 - **Ainda sem decisão:** o alerta de Morrendo que também dispara para o Estável e só vale ao vivo; a ordem de turno duplicada na tela e no banco; os 13 pontos de conteúdo bíblico (§2).
 
 **Depois da Onda 5:** refatorar o layout da sessão (Onda 6); em seguida o Sustento no Descanso Longo e os presets de inimigo com Habilidade, na tela nova; e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
+
+### Onda 6: layout da sessão (grill de 2026-10-29)
+
+Nenhuma regra de jogo muda. Antes de refatorar, leia os ADRs 0008 (motion e bottom sheet próprio) e 0009 (Palco, dock e Painéis) e a seção "Tela da sessão" do `CONTEXT.md`.
+
+**Decisões do autor.**
+- **Moldura:** Barra de Status fixa no topo, Palco no centro (o mapa entra ali), Hotbar embaixo e um dock que abre Painéis. Abaixo de `md` o dock é um trilho flutuante na borda direita do Palco (que reserva a largura dele) e o Painel sobe como bottom sheet; de `md` a `lg` há um trilho lateral e o Painel cobre o Palco; de `lg` em diante o Painel abre ao lado. Toque de no mínimo 44 px (48 px na Hotbar) e `safe-area` do iOS.
+- **Barra de Status:** retrato, PV, Fé com o Estado de Fé, Condições com rodadas, Inspiração, selo de turno e chip de dia e período. Os espaços do turno ficam acima da Hotbar, só no combate.
+- **Hotbar:** abas Ação, Ação Bônus, Reação, Livre, Itens (consumíveis com quantidade e munição como contador) e Passivas, só as que têm conteúdo; peças grandes com o nome escrito e os usos; área de altura fixa (duas fileiras) que rola por dentro; Dados na ponta das abas. Visível fora do combate.
+- **Cartão de Habilidade:** clique, toque, Enter ou segurar abre o cartão logo acima da Hotbar (o Palco continua à vista), e o **Usar** fica dentro dele (sempre dois toques). Sem dica de hover: o nome já está na peça. Os consumíveis seguem o mesmo gesto.
+- **Palco:** Retratos de quem está na cena, que viram os pins do mapa; o cartão do Retrato absorve o `SessionParticipantList` e o `TokenContextMenu`. No combate, faixa de iniciativa e feed dos últimos 3 eventos.
+- **Dock do jogador:** Ficha, Inventário, Grupo, Histórico, Descanso, com selo de atenção.
+- **Mestre:** mesma moldura; trilho com Jogadores, Inimigos, NPCs, Testes, Descanso, Histórico e Sessão; coluna fixa de combate na web; Barra do Mestre com os comandos de hoje (mesmos nomes acessíveis). No celular, o Palco vira a lista de iniciativa durante o combate, com o botão "Cena".
+- **Hotbar do NPC jogável (capacidade nova):** aparece no turno dele e pelo seletor "Agir como". Não pede migration: `record_ability_use` já aceita o Mestre como dono do NPC.
+- **Espectador:** a mesma moldura só para leitura (Palco, iniciativa, feed; dock com Ficha e Grupo).
+- **Motion:** só `motion`, sem `vaul` (ADR 0008). Painel, dano e cura, turno, uso de Habilidade e entrada da Hotbar; nada em loop; `prefers-reduced-motion` deixa só opacidade.
+
+**Fatias** (cada PR deixa o app jogável):
+1. `motion`, a moldura vazia (Barra de Status, Palco, Hotbar, dock), o Painel responsivo e a seção da tela da sessão no `DESIGN.md`; os componentes atuais entram nos Painéis sem mudança.
+2. A Barra de Status do jogador.
+3. A Hotbar, o Cartão de Habilidade e os espaços do turno.
+4. Os consumíveis e a munição na Hotbar.
+5. O Palco: Retratos, cartão do Retrato, faixa de iniciativa e feed.
+6. O Mestre na web: trilho, coluna de combate e Barra do Mestre.
+7. `fix:` das chaves do NPC jogável (teste de caracterização, gravar `for/des/…` sem `stats.ca`, migration de dados das fichas existentes); depois a Hotbar do NPC.
+8. O Mestre no celular e o espectador.
+
+**E2E.** Os nomes acessíveis continuam os mesmos. O ajudante `openPanel(page, nome)` em `e2e/support/ui.ts` abre o Painel antes de procurar o que passou a morar nele; um projeto Playwright `mobile` (`devices['Pixel 7']`) roda `session`, `ability` e `combat`. Os testes de componente não mudam.
+
+**Protótipo (2026-10-29, branch `prototype/session-layout`, commit `6ee68b5`).** Três variantes da Hotbar e do dock. Veredito do autor: as Habilidades como na B (abas por espaço do turno, peças com nome, Cartão acima da Hotbar) e o dock como na C (trilho na borda do Palco); o resto como no grill. Falta testar à mão o arrasto do bottom sheet num iPhone. **Próximo passo:** `/tdd` pelos tickets em `.scratch/layout-da-sessao/issues/` (01 e 07 começam já).
+
+**Para depois:** slots da Hotbar fixados pelo jogador (hoje é automática); troca automática de aba no combate (Reação fora do turno); arte de ícone por Habilidade; o Sustento no Descanso Longo e os presets de inimigo com Habilidade entram na tela nova, como já decidido.
 
 ## 6. O que VOCÊ precisa fazer fora do código
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.
