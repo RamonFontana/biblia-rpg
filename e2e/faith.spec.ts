@@ -171,7 +171,7 @@ test.describe('Fortaleza', () => {
     };
 
     await giveFortitude('3');
-    await expect(player.getByText('43/100').first()).toBeVisible();
+    await expect(player.getByText('Fé 43')).toBeVisible();
     expect(await faithOf(eliabe)).toBe(43);
 
     // Sem limite por dia, e o teto de 100 vale.
@@ -182,7 +182,7 @@ test.describe('Fortaleza', () => {
     if (error) throw error;
     await expect(master.getByText('99/100')).toBeVisible();
     await giveFortitude('4');
-    await expect(player.getByText('100/100').first()).toBeVisible();
+    await expect(player.getByText('Fé 100')).toBeVisible();
     expect(await faithOf(eliabe)).toBe(100);
   });
 });

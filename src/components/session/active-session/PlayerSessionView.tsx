@@ -4,7 +4,7 @@ import { SessionParticipantList } from '@/components/session/SessionParticipantL
 import { PlayerRestIndicator } from '@/components/session/PlayerRestIndicator';
 import { ShortRestCard } from '@/components/session/ShortRestCard';
 import { useShortRestRecharge } from '@/hooks/useShortRestRecharge';
-import { InspirationPanel } from '@/components/session/InspirationPanel';
+import { PlayerStatusBar } from './PlayerStatusBar';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
@@ -96,7 +96,15 @@ export function PlayerSessionView({
   );
 
   const [panel, setPanel] = useState<PlayerPanel | null>(null);
-  const { attacks, abilityUses } = useCombatStore();
+  const { attacks, abilityUses, currentTurnParticipant } = useCombatStore();
+  const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
+  const turn =
+    hasActiveCombat && currentTurnParticipant
+      ? {
+          isMine: currentTurnParticipant.entity_id === myCharacter?.id,
+          name: entities.find((e) => e.id === currentTurnParticipant.entity_id)?.name ?? 'Inimigo',
+        }
+      : null;
 
   const restState = getShortRestState(sessionData, hasActiveCombat);
   const dock: DockItem<PlayerPanel>[] = [
@@ -120,36 +128,38 @@ export function PlayerSessionView({
 
   return (
     <div className="relative flex min-h-[70vh] flex-col md:flex-row">
-      <main aria-label="Palco" className="flex min-w-0 flex-1 flex-col gap-4 pr-16 md:pr-0">
-        {myCharacter && (
-          <InspirationPanel
-            character={myCharacter}
-            sessionId={sessionId}
-            day={sessionData.current_day || 1}
-            onUsed={(patch) => updateLocal('player', myCharacter.id, patch)}
-          />
-        )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <PlayerStatusBar
+          character={myCharacter}
+          sessionId={sessionId}
+          day={sessionData.current_day || 1}
+          period={sessionData.current_period || 'Manhã'}
+          turn={turn}
+          onOpenSheet={() => setPanel('ficha')}
+          onInspirationUsed={(patch) => myCharacter && updateLocal('player', myCharacter.id, patch)}
+        />
+        <main aria-label="Palco" className="flex min-w-0 flex-1 flex-col gap-4 pr-16 md:pr-0">
+          {myCharacter &&
+            getCurrentPv(myCharacter.stats) <= 0 &&
+            !myCharacter.is_dead &&
+            !hasActiveCombat && <DeathSavesModal character={myCharacter} />}
 
-        {myCharacter &&
-          getCurrentPv(myCharacter.stats) <= 0 &&
-          !myCharacter.is_dead &&
-          !hasActiveCombat && <DeathSavesModal character={myCharacter} />}
-
-        {hasActiveCombat && (
-          <div className="w-full p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-            <PlayerCombatView
-              character={myCharacter}
-              enemies={enemies}
-              isLoading={isCharactersLoading}
-              entities={buildCombatEntities({ playerCharacters, npcs, enemies })}
-              inspirationContext={{ sessionId, day: sessionData.current_day || 1 }}
-              onInspirationUsed={
-                myCharacter ? (patch) => updateLocal('player', myCharacter.id, patch) : undefined
-              }
-            />
-          </div>
-        )}
-      </main>
+          {hasActiveCombat && (
+            <div className="w-full p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
+              <PlayerCombatView
+                character={myCharacter}
+                enemies={enemies}
+                isLoading={isCharactersLoading}
+                entities={entities}
+                inspirationContext={{ sessionId, day: sessionData.current_day || 1 }}
+                onInspirationUsed={
+                  myCharacter ? (patch) => updateLocal('player', myCharacter.id, patch) : undefined
+                }
+              />
+            </div>
+          )}
+        </main>
+      </div>
 
       <DockRail items={dock} onOpen={setPanel} />
 

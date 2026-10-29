@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   unsubscribeSession: vi.fn(),
   combat: {
     activeCombat: null as null | object,
+    currentTurnParticipant: null as null | { entity_id: string },
     attacks: [] as unknown[],
     abilityUses: [] as unknown[],
     initSubscriptions: vi.fn(),
@@ -129,6 +130,9 @@ vi.mock('@/components/combat/CombatDashboard', async () => ({
 vi.mock('@/components/combat/PlayerCombatView', async () => ({
   PlayerCombatView: (await import('@/test/stubs')).makeStub('PlayerCombatView'),
 }));
+vi.mock('@/components/session/active-session/PlayerStatusBar', async () => ({
+  PlayerStatusBar: (await import('@/test/stubs')).makeStub('PlayerStatusBar'),
+}));
 vi.mock('@/components/combat/AttackLog', async () => ({
   AttackLog: (await import('@/test/stubs')).makeStub('AttackLog'),
 }));
@@ -189,6 +193,7 @@ beforeEach(() => {
   h.session = { ...baseSession };
   h.sessionListener = undefined;
   h.combat.activeCombat = null;
+  h.combat.currentTurnParticipant = null;
   h.tests = { activeTests: [], testResults: {} };
   h.roster.playerCharacters = [
     { user_id: 'u1', character: character('c1') },
@@ -654,9 +659,50 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
     expect(prop('DeathSavesModal', 'character')).toMatchObject({ id: 'c1' });
   });
 
-  it('a Inspiração fica à mão, fora dos Painéis', async () => {
+  it('a Barra de Status recebe a ficha do jogador, o dia e o período, sem turno fora do combate', async () => {
     await renderPage();
-    expect(hasStub('InspirationPanel')).toBe(true);
+    expect(prop('PlayerStatusBar', 'character')).toMatchObject({ id: 'c1' });
+    expect(props('PlayerStatusBar')).toMatchObject({
+      sessionId: 's1',
+      day: 2,
+      period: 'Manhã',
+      turn: null,
+    });
+  });
+
+  it('no combate, a Barra de Status diz de quem é o turno', async () => {
+    h.combat.activeCombat = { id: 'cb1' };
+    h.combat.currentTurnParticipant = { entity_id: 'e1' };
+    await renderPage();
+    expect(prop('PlayerStatusBar', 'turn')).toEqual({ isMine: false, name: 'Filisteu' });
+  });
+
+  it('no combate, quando o turno é do personagem do jogador, o selo é "o meu"', async () => {
+    h.combat.activeCombat = { id: 'cb1' };
+    h.combat.currentTurnParticipant = { entity_id: 'c1' };
+    await renderPage();
+    expect(prop('PlayerStatusBar', 'turn')).toMatchObject({ isMine: true });
+  });
+
+  it('tocar na Barra de Status abre o Painel Ficha', async () => {
+    await renderPage();
+    act(() => {
+      call('PlayerStatusBar', 'onOpenSheet');
+    });
+    expect(screen.getByRole('dialog', { name: 'Ficha' })).toBeInTheDocument();
+  });
+
+  it('a Inspiração usada na Barra de Status chega à ficha da tela', async () => {
+    await renderPage();
+    act(() => {
+      call('PlayerStatusBar', 'onInspirationUsed', { inspiration_used_day: 2 });
+    });
+    expect(h.roster.updateLocal).toHaveBeenCalledWith('player', 'c1', { inspiration_used_day: 2 });
+  });
+
+  it('a Inspiração mora na Barra de Status, não no Palco', async () => {
+    await renderPage();
+    expect(hasStub('InspirationPanel')).toBe(false);
   });
 });
 

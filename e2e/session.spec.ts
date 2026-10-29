@@ -97,6 +97,10 @@ test.describe('entrar na sessão', () => {
 
     await expect(player.getByRole('heading', { name: SESSION_NAME })).toBeVisible();
     await expect(player.getByRole('main', { name: 'Palco' })).toBeVisible();
+    // PV e Fé ficam sempre à vista na Barra de Status, sem abrir nada.
+    const statusBar = player.getByRole('region', { name: 'Barra de Status' });
+    await expect(statusBar.getByRole('progressbar', { name: 'PV' })).toBeVisible();
+    await expect(statusBar.getByText(/^Fé \d+$/)).toBeVisible();
     await openPanel(player, 'Ficha');
     await expect(player.getByText('Vocação: Guerreiro')).toBeVisible();
     await expect(player.getByText('Visão do Mestre')).toHaveCount(0);
