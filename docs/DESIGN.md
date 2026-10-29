@@ -81,6 +81,16 @@ Trilho `w-full bg-stone-700 h-2 rounded-full overflow-hidden`; preenchimento `bg
 **Painel lateral de detalhes** (`Sheet` do shadcn)
 `SheetContent` com `bg-stone-900 border-l border-stone-700 text-stone-100 overflow-y-auto sm:max-w-md w-full`; título `text-2xl font-serif text-amber-500`; corpo separado por `mt-8 pt-6 border-t border-stone-800`.
 
+## Tela da sessão (Palco, trilho e Painéis)
+Termos e decisões: `CONTEXT.md` ("Tela da sessão") e os ADRs 0008 e 0009.
+- **Moldura:** o Palco ocupa o centro (`main`, nome acessível "Palco"); o trilho fica na borda direita e a Barra de Status e a Hotbar entram acima e abaixo nos tickets seguintes. Abaixo de `md` o trilho flutua sobre o Palco (`absolute top-2 right-2`) e o Palco reserva a largura dele (`pr-16`); de `md` em diante o trilho é uma coluna ao lado do Palco.
+- **Trilho** (`DockRail`, `nav` chamado "Painéis"): contêiner `rounded-full border border-stone-700 bg-stone-900/90 p-1.5` no celular, `md:border-l md:bg-stone-900` na web. Botões `h-12 w-12 rounded-full text-stone-300 hover:bg-stone-800 hover:text-amber-500`, com ícone lucide `h-6 w-6`, `aria-label` e `title`. Selo de atenção: `h-2.5 w-2.5 rounded-full bg-amber-500` no canto, com `data-attention` no botão.
+- **Painel** (`DockPanel`, diálogo do Radix):
+  - Abaixo de `md`: bottom sheet `rounded-t-2xl border-t border-stone-700 bg-stone-900`, alça `h-1.5 w-10 rounded-full bg-stone-600`, véu `bg-stone-950/60`, meia altura `55dvh` e tela cheia `92dvh`, `padding-bottom: env(safe-area-inset-bottom)`.
+  - De `md` em diante: lateral `w-[26rem] border-l border-stone-700 bg-stone-900`. Abaixo de `lg` é modal, com véu; a partir de `lg` não é modal, para o Palco seguir à vista.
+  - Cabeçalho `border-b border-stone-800 px-4 py-2`, título `font-serif text-xl text-amber-500`, botão Fechar de 44 px.
+- **Movimento:** mola curta de `stiffness 520 / damping 42` para abrir e fechar; `MotionConfig reducedMotion="user"` deixa só a opacidade.
+
 ## Movimento e estados
 - Transições curtas: `transition-colors` em botões e links, `transition-all` em cartões de escolha.
 - Desabilitado: `disabled:opacity-50 disabled:cursor-not-allowed`.

@@ -17,7 +17,15 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // O celular (Pixel 7, Chromium nativo): a moldura da sessão muda de forma abaixo de `md`.
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 7'] },
+      testMatch: ['session.spec.ts', 'ability.spec.ts', 'combat.spec.ts'],
+    },
+  ],
   webServer: {
     command: `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort`,
     url: `http://127.0.0.1:${port}`,

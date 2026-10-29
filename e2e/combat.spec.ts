@@ -8,6 +8,7 @@ import {
 } from './support/combat';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
+import { openPanel } from './support/ui';
 const GUARD = 'Guarda de Jericó';
 
 /** Uma mesa com Eliabe (jogador 1, 11 PV) e um Guarda (inimigo, 12 PV), os dois já online. */
@@ -376,6 +377,7 @@ test.describe('finalizar o combate', () => {
 
     await expect(master.getByText(/Painel de Combate/)).toHaveCount(0);
     await expect(player.getByText('Inimigos na Cena')).toHaveCount(0);
+    await openPanel(player, 'Ficha');
     await expect(sheetPv(player)).toHaveText(/7\s*\/11\s*PV/);
 
     // A lista de inimigos do Mestre mostra o inimigo morto na hora, sem recarregar, e ele
