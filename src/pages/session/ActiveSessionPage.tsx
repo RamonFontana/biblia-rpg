@@ -203,6 +203,7 @@ export function ActiveSessionPage() {
             onNPCNegotiate={handleNPCNegotiate}
             onAcceptTrade={handleAcceptTrade}
             onRejectTrade={handleRejectTrade}
+            onOpenDice={() => setIsDiceRollerOpen(true)}
           />
         )}
       </div>

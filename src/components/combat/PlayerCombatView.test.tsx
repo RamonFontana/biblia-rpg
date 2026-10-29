@@ -1,15 +1,9 @@
 // CARACTERIZAÇÃO: a visão de combate do jogador: o cabeçalho, o turno, o painel de Teste de Morte,
-// o checklist e as Habilidades (quando ficam bloqueadas e o que usar uma grava). As Habilidades são
-// falsas para o teste não depender do conteúdo. Decisões: ROADMAP.md, Onda 4, passo 7f.
-// Termos: CONTEXT.md (Habilidade, Fé, Morrendo).
+// o ataque e o aviso de quem foi atingido. As Habilidades e os espaços do turno moraram aqui até a
+// Onda 6 (ticket 03): hoje vivem na Hotbar (`PlayerHotbar.test.tsx`). Decisões: ROADMAP.md, Onda 4,
+// passo 7f. Termos: CONTEXT.md (Fé, Morrendo).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
-
-const h = vi.hoisted(() => ({
-  submitAbilityUse: vi.fn(),
-  updateCharacter: vi.fn(),
-  getAbilitiesForCharacter: vi.fn(),
-}));
+import { act, cleanup, render, screen } from '@testing-library/react';
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -19,47 +13,20 @@ vi.mock('@/lib/supabase', () => ({
     },
   },
 }));
-vi.mock('@/data-access/characters', () => ({ updateCharacter: h.updateCharacter }));
-vi.mock('../../utils/abilityUtils', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../utils/abilityUtils')>()),
-  getAbilitiesForCharacter: h.getAbilitiesForCharacter,
-}));
 vi.mock('./EnemyCombatList', async () => ({
   EnemyCombatList: (await import('@/test/stubs')).makeStub('EnemyCombatList'),
 }));
 vi.mock('./DeathSavesModal', async () => ({
   DeathSavesModal: (await import('@/test/stubs')).makeStub('DeathSavesModal'),
 }));
-vi.mock('@/services/abilityService', () => ({ submitAbilityUse: h.submitAbilityUse }));
-vi.mock('./AbilityUsePanel', async () => ({
-  AbilityUsePanel: (await import('@/test/stubs')).makeStub('AbilityUsePanel'),
-}));
 vi.mock('./AttackPanel', async () => ({
   AttackPanel: (await import('@/test/stubs')).makeStub('AttackPanel'),
-}));
-vi.mock('./AbilityCard', async () => ({
-  AbilityCard: (await import('@/test/stubs')).makeStub('AbilityCard', (props) =>
-    String((props.ability as { id: string }).id),
-  ),
 }));
 
 import { clearStubs, stubProps } from '@/test/stubs';
 import { useCombatStore, type CombatParticipant } from '@/store/combatStore';
-import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '@/features/character-management/types';
 import { PlayerCombatView } from './PlayerCombatView';
-
-const ability = (id: string, over: Partial<AbilityDefinition> = {}): AbilityDefinition => ({
-  id,
-  name: id,
-  sourceType: 'vocation',
-  sourceId: 'guerreiro',
-  minLevel: 1,
-  actionType: 'action',
-  usageType: 'long_rest',
-  effect: 'Efeito',
-  ...over,
-});
 
 const sheet = (over: Partial<Character> = {}): Character => ({
   id: 'c1',
@@ -109,14 +76,7 @@ const startCombat = (parts: CombatParticipant[], turnIndex = 0) =>
 const view = (character: Character | null = sheet()) =>
   render(<PlayerCombatView character={character} enemies={[]} isLoading={false} />);
 
-const useAbility = (id: string) =>
-  act(async () => {
-    await (stubProps('AbilityCard', id)!.onUse as () => Promise<void>)();
-  });
-
 beforeEach(() => {
-  h.updateCharacter.mockResolvedValue(undefined);
-  h.getAbilitiesForCharacter.mockReturnValue([ability('a1')]);
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -143,139 +103,9 @@ describe('PlayerCombatView: cabeçalho', () => {
     expect(screen.getByText('• Guerreiro')).toBeInTheDocument();
   });
 
-  it('sem personagem não há cabeçalho nem Habilidades', () => {
+  it('sem personagem não há cabeçalho', () => {
     view(null);
     expect(screen.queryByRole('heading', { name: 'Eliab' })).toBeNull();
-    expect(screen.getByText('Nenhuma habilidade disponível.')).toBeInTheDocument();
-  });
-});
-
-describe('PlayerCombatView: Habilidades do personagem', () => {
-  it('busca pela tribo, vocação, nível e Caminhos escolhidos', () => {
-    const path_choices = { tribe: { 4: 'A' as const }, vocation: 'B' as const };
-    view(sheet({ level: 5, skills: { path_choices } }));
-    expect(h.getAbilitiesForCharacter).toHaveBeenCalledWith('Judá', 'Guerreiro', 5, path_choices);
-  });
-
-  it.each([
-    ['sem tribo', { tribe: '' }],
-    ['sem vocação', { vocation: '' }],
-    ['sem nível', { level: 0 }],
-  ])('%s, não há Habilidades', (_name, over) => {
-    view(sheet(over));
-    expect(h.getAbilitiesForCharacter).not.toHaveBeenCalled();
-    expect(screen.getByText('Nenhuma habilidade disponível.')).toBeInTheDocument();
-  });
-
-  it('o nível que chega como texto vale como número', () => {
-    view(sheet({ level: '4' as never }));
-    expect(h.getAbilitiesForCharacter).toHaveBeenCalledWith('Judá', 'Guerreiro', 4, undefined);
-  });
-});
-
-describe('PlayerCombatView: Habilidade bloqueada ou livre', () => {
-  it('fora do combate, a Habilidade de combate fica bloqueada', () => {
-    h.getAbilitiesForCharacter.mockReturnValue([
-      ability('a1', { usageType: 'combat' }),
-      ability('a2'),
-    ]);
-    view();
-    expect(stubProps('AbilityCard', 'a1')).toMatchObject({
-      disabled: true,
-      disabledReason: 'Apenas em combate',
-    });
-    expect(stubProps('AbilityCard', 'a2')).toMatchObject({ disabled: false, disabledReason: '' });
-  });
-
-  it('em combate, a Habilidade de combate fica livre', () => {
-    h.getAbilitiesForCharacter.mockReturnValue([ability('a1', { usageType: 'combat' })]);
-    startCombat([participant()]);
-    view();
-    expect(stubProps('AbilityCard', 'a1')).toMatchObject({ disabled: false });
-  });
-
-  it('sem Fé suficiente, bloqueia com o motivo', () => {
-    h.getAbilitiesForCharacter.mockReturnValue([ability('a1', { faithCost: 50 })]);
-    view();
-    expect(stubProps('AbilityCard', 'a1')).toMatchObject({
-      disabled: true,
-      disabledReason: 'Fé Insuficiente',
-    });
-  });
-
-  it('com Fé suficiente, fica livre', () => {
-    h.getAbilitiesForCharacter.mockReturnValue([ability('a1', { faithCost: 10 })]);
-    view();
-    expect(stubProps('AbilityCard', 'a1')).toMatchObject({ disabled: false });
-  });
-
-  it('mostra os usos que restam e bloqueia sem usos', () => {
-    h.getAbilitiesForCharacter.mockReturnValue([
-      ability('a1', { maxUses: 2 }),
-      ability('a2', { maxUses: 1 }),
-      ability('a3'),
-    ]);
-    view(sheet({ skills: { ability_uses: { a1: 1, a2: 1 } } }));
-    expect(stubProps('AbilityCard', 'a1')).toMatchObject({ currentUses: 1, disabled: false });
-    expect(stubProps('AbilityCard', 'a2')).toMatchObject({
-      currentUses: 0,
-      disabled: true,
-      disabledReason: 'Sem Usos',
-    });
-    expect(stubProps('AbilityCard', 'a3')!.currentUses).toBeUndefined();
-  });
-});
-
-describe('PlayerCombatView: usar uma Habilidade', () => {
-  it('grava mais um uso das Habilidades e preserva o resto de skills', async () => {
-    view(sheet({ skills: { ability_uses: { a1: 1, x: 3 }, path_choices: { tribe: 'A' } } }));
-    await useAbility('a1');
-    expect(h.updateCharacter).toHaveBeenCalledWith('c1', {
-      skills: { ability_uses: { a1: 2, x: 3 }, path_choices: { tribe: 'A' } },
-    });
-  });
-
-  it('sem usos anteriores, começa em 1', async () => {
-    view(sheet({ skills: undefined }));
-    await useAbility('a1');
-    expect(h.updateCharacter).toHaveBeenCalledWith('c1', { skills: { ability_uses: { a1: 1 } } });
-  });
-
-  it('a Habilidade que custa Fé também grava a Fé que sobra', async () => {
-    h.getAbilitiesForCharacter.mockReturnValue([ability('a1', { faithCost: 15 })]);
-    view();
-    await useAbility('a1');
-    expect(h.updateCharacter).toHaveBeenCalledWith('c1', {
-      skills: { ability_uses: { a1: 1 } },
-      stats: { pv: 12, current_pv: 9, ca: 11, faith: 50, current_faith: 25 },
-    });
-  });
-
-  it('sem Fé suficiente, não grava nada', async () => {
-    h.getAbilitiesForCharacter.mockReturnValue([ability('a1', { faithCost: 90 })]);
-    view();
-    await useAbility('a1');
-    expect(h.updateCharacter).not.toHaveBeenCalled();
-    expect(console.error).not.toHaveBeenCalled();
-  });
-
-  it('a falha ao gravar é registrada e o botão volta a liberar', async () => {
-    h.updateCharacter.mockRejectedValueOnce(new Error('sem rede'));
-    view();
-    await useAbility('a1');
-    expect(console.error).toHaveBeenCalledWith('Failed to use ability:', expect.any(Error));
-    await waitFor(() => expect(stubProps('AbilityCard', 'a1')).toMatchObject({ disabled: false }));
-  });
-
-  it('enquanto grava, todas as Habilidades ficam bloqueadas', async () => {
-    let resolve: () => void = () => {};
-    h.updateCharacter.mockReturnValueOnce(new Promise<void>((r) => (resolve = r)));
-    view();
-    act(() => {
-      void (stubProps('AbilityCard', 'a1')!.onUse as () => Promise<void>)();
-    });
-    await waitFor(() => expect(stubProps('AbilityCard', 'a1')).toMatchObject({ disabled: true }));
-    await act(async () => resolve());
   });
 });
 
@@ -322,17 +152,15 @@ describe('PlayerCombatView: o PV em combate', () => {
 });
 
 describe('PlayerCombatView: o combate', () => {
-  it('sem combate, não há lista de inimigos, turno nem checklist', () => {
+  it('sem combate, não há lista de inimigos nem turno', () => {
     view();
     expect(document.querySelector('[data-stub="EnemyCombatList"]')).toBeNull();
-    expect(screen.queryByText('Checklist de Ações (Sua Referência)')).toBeNull();
   });
 
-  it('em combate mostra os inimigos e o checklist', () => {
+  it('em combate mostra os inimigos', () => {
     startCombat([participant()]);
     view();
     expect(stubProps('EnemyCombatList')).toMatchObject({ enemies: [], isLoading: false });
-    expect(screen.getByText('Checklist de Ações (Sua Referência)')).toBeInTheDocument();
   });
 
   it('no turno do jogador, avisa', () => {
@@ -347,7 +175,7 @@ describe('PlayerCombatView: o combate', () => {
     expect(screen.queryByText('É O SEU TURNO!')).toBeNull();
   });
 
-  it('com PV 0 no combate, mostra o Teste de Morte e esconde o turno e o checklist', () => {
+  it('com PV 0 no combate, mostra o Teste de Morte e esconde o turno', () => {
     startCombat([participant({ hp_current: 0 })]);
     view();
     expect(stubProps('DeathSavesModal')).toMatchObject({
@@ -355,7 +183,6 @@ describe('PlayerCombatView: o combate', () => {
       participantId: 'part-1',
     });
     expect(screen.queryByText('É O SEU TURNO!')).toBeNull();
-    expect(screen.queryByText('Checklist de Ações (Sua Referência)')).toBeNull();
   });
 });
 
@@ -546,227 +373,5 @@ describe('PlayerCombatView: o aviso de quem foi atingido', () => {
     });
     expect(screen.queryByText(/Você foi atingido/)).toBeNull();
     vi.useRealTimers();
-  });
-});
-
-describe('PlayerCombatView: Habilidade com efeito de combate', () => {
-  const entities = [
-    { id: 'c1', name: 'Eliab', totalAc: 14 },
-    { id: 'c2', name: 'Rute', totalAc: 12 },
-    { id: 'e1', name: 'Filisteu', totalAc: 15 },
-  ];
-  const parts = [
-    participant({ id: 'part-1', entity_id: 'c1', initiative: 20 }),
-    participant({ id: 'part-2', entity_id: 'c2', initiative: 15 }),
-    participant({ id: 'part-3', entity_id: 'e1', entity_type: 'enemy', initiative: 10 }),
-  ];
-  const withEffect = (over: Partial<AbilityDefinition> = {}) =>
-    ability('a1', {
-      usageType: 'combat',
-      maxUses: 1,
-      combatEffect: { targets: 'enemy', apply: [{ conditionId: 'paralisado', rounds: 1 }] },
-      ...over,
-    });
-  const effectView = () =>
-    render(
-      <PlayerCombatView character={sheet()} enemies={[]} isLoading={false} entities={entities} />,
-    );
-  const outcome = { id: 'use-1', results: [] };
-
-  beforeEach(() => {
-    h.getAbilitiesForCharacter.mockReturnValue([withEffect()]);
-    h.submitAbilityUse.mockResolvedValue(outcome);
-  });
-
-  it('em combate, usar abre o painel de alvos e não gasta nada ainda', async () => {
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')).toBeDefined();
-    expect(h.updateCharacter).not.toHaveBeenCalled();
-  });
-
-  it('o painel só oferece os alvos que o efeito permite (inimigo)', async () => {
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    expect(
-      (stubProps('AbilityUsePanel')!.targets as { participantId: string }[]).map(
-        (t) => t.participantId,
-      ),
-    ).toEqual(['part-3']);
-  });
-
-  it('sem combate, a Habilidade só gasta o uso, como antes', async () => {
-    h.getAbilitiesForCharacter.mockReturnValue([withEffect({ usageType: 'long_rest' })]);
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')).toBeUndefined();
-    expect(h.updateCharacter).toHaveBeenCalledTimes(1);
-  });
-
-  it('uma Habilidade sem efeito não abre o painel', async () => {
-    h.getAbilitiesForCharacter.mockReturnValue([ability('a1', { usageType: 'long_rest' })]);
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')).toBeUndefined();
-    expect(h.updateCharacter).toHaveBeenCalledTimes(1);
-  });
-
-  it('no turno do jogador, o painel não tem bloqueio', async () => {
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')!.blockedReason).toBeNull();
-  });
-
-  it('fora do turno, a Ação fica bloqueada com o motivo', async () => {
-    startCombat(parts, 1);
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')!.blockedReason).toBe('Não é o seu turno');
-  });
-
-  it('a Reação vale fora do turno', async () => {
-    h.getAbilitiesForCharacter.mockReturnValue([withEffect({ actionType: 'reaction' })]);
-    startCombat(parts, 1);
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')!.blockedReason).toBeNull();
-  });
-
-  it('com a Ação já usada, bloqueia', async () => {
-    startCombat(parts, 0);
-    useCombatStore.setState({ hasUsedAction: true });
-    effectView();
-    await useAbility('a1');
-    expect(stubProps('AbilityUsePanel')!.blockedReason).toBe('Ação já usada neste turno');
-  });
-
-  it('usar manda ao serviço o participante, os alvos marcados e a ficha, e marca a Ação', async () => {
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    const selected = (stubProps('AbilityUsePanel')!.targets as unknown[]).slice(0, 1);
-    await act(async () => {
-      await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)(selected);
-    });
-    expect(h.submitAbilityUse).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userParticipantId: 'part-1',
-        targets: selected,
-        character: expect.objectContaining({ id: 'c1' }),
-      }),
-    );
-    expect(useCombatStore.getState().hasUsedAction).toBe(true);
-  });
-
-  it('a Ação Bônus e a Reação marcam o espaço delas', async () => {
-    h.getAbilitiesForCharacter.mockReturnValue([withEffect({ actionType: 'bonus_action' })]);
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    await act(async () => {
-      await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)([]);
-    });
-    expect(useCombatStore.getState().hasUsedBonusAction).toBe(true);
-    expect(useCombatStore.getState().hasUsedAction).toBe(false);
-  });
-
-  it('se o serviço recusa, o espaço do turno não é marcado', async () => {
-    h.submitAbilityUse.mockRejectedValue(new Error('Não é o turno'));
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    await act(async () => {
-      await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)([]).catch(
-        () => {},
-      );
-    });
-    expect(useCombatStore.getState().hasUsedAction).toBe(false);
-  });
-
-  describe('com TR', () => {
-    const withSave = () =>
-      withEffect({
-        combatEffect: {
-          targets: 'enemies',
-          save: { attribute: 'sab' },
-          apply: [{ conditionId: 'amedrontado', rounds: 10 }],
-        },
-      });
-    const saveView = () =>
-      render(
-        <PlayerCombatView
-          character={sheet({ attributes: { for: 16 } } as Partial<Character>)}
-          enemies={[]}
-          isLoading={false}
-          entities={entities}
-        />,
-      );
-
-    it('o painel recebe a CD da Habilidade do personagem (Guerreiro nível 3, FOR 16)', async () => {
-      h.getAbilitiesForCharacter.mockReturnValue([withSave()]);
-      startCombat(parts, 0);
-      saveView();
-      await useAbility('a1');
-      expect(stubProps('AbilityUsePanel')!.cd).toBe(13);
-    });
-
-    it('sem TR o painel não recebe CD', async () => {
-      startCombat(parts, 0);
-      effectView();
-      await useAbility('a1');
-      expect(stubProps('AbilityUsePanel')!.cd).toBeUndefined();
-    });
-
-    it('o serviço recebe a Vocação, o nível e os atributos para calcular a CD', async () => {
-      h.getAbilitiesForCharacter.mockReturnValue([withSave()]);
-      startCombat(parts, 0);
-      saveView();
-      await useAbility('a1');
-      await act(async () => {
-        await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)([]);
-      });
-      expect(h.submitAbilityUse).toHaveBeenCalledWith(
-        expect.objectContaining({
-          character: expect.objectContaining({
-            vocation: 'Guerreiro',
-            level: 3,
-            attributes: { for: 16 },
-          }),
-        }),
-      );
-    });
-
-    it('o painel recebe o uso gravado ao vivo, para mostrar o resultado do TR', async () => {
-      h.getAbilitiesForCharacter.mockReturnValue([withSave()]);
-      h.submitAbilityUse.mockResolvedValue({ id: 'use-1', results: [] });
-      startCombat(parts, 0);
-      saveView();
-      await useAbility('a1');
-      await act(async () => {
-        await (stubProps('AbilityUsePanel')!.onUse as (s: unknown[]) => Promise<unknown>)([]);
-      });
-      expect(stubProps('AbilityUsePanel')!.liveUse).toBeUndefined();
-      await act(async () => {
-        useCombatStore.setState({
-          abilityUses: [{ id: 'use-1', status: 'resolved' } as never],
-        });
-      });
-      expect(stubProps('AbilityUsePanel')!.liveUse).toMatchObject({ id: 'use-1' });
-    });
-  });
-
-  it('fechar o painel o tira da tela', async () => {
-    startCombat(parts, 0);
-    effectView();
-    await useAbility('a1');
-    expect(document.querySelector('[data-stub="AbilityUsePanel"]')).not.toBeNull();
-    await act(async () => {
-      (stubProps('AbilityUsePanel')!.onClose as () => void)();
-    });
-    expect(document.querySelector('[data-stub="AbilityUsePanel"]')).toBeNull();
   });
 });

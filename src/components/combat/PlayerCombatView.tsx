@@ -1,28 +1,16 @@
 import { useCombatStore } from '../../store/combatStore';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Checkbox } from '../ui/checkbox';
-import { Label } from '../ui/label';
 // import { Button } from '../ui/button';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { updateCharacter } from '@/data-access/characters';
+import { useEffect, useRef, useState } from 'react';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
 import { AttackPanel } from './AttackPanel';
-import { AbilityUsePanel } from './AbilityUsePanel';
-import { abilitySkills, getAbilitiesForCharacter } from '../../utils/abilityUtils';
-import { AbilityCard } from './AbilityCard';
-import type { AbilityDefinition } from '@/content/schemas';
 import type { Character } from '../../features/character-management/types';
 import { buildAttackTargets, conditionIdsOf } from '@/lib/attackSetup';
 import { getInspirationStatus } from '@/domain/inspiration';
 import { describeHitOnTarget } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import type { CombatInventoryItem } from '@/types/inventory';
-import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
-import { effectTargetPool, getAbilityEffectBlock } from '@/domain/abilityEffect';
-import { abilityCd } from '@/domain/abilitySave';
-import { submitAbilityUse } from '@/services/abilityService';
 import { getMaxPv } from '@/domain/vitals';
 
 interface PlayerCombatViewProps {
@@ -50,69 +38,8 @@ export function PlayerCombatView({
   onInspirationUsed,
 }: PlayerCombatViewProps) {
   const playerId = character?.id;
-  const [isUpdating, setIsUpdating] = useState(false);
-  const {
-    activeCombat,
-    currentTurnParticipant,
-    participants,
-    abilityUses,
-    hasUsedMovement,
-    hasUsedAction,
-    hasUsedBonusAction,
-    hasUsedReaction,
-    toggleMovement,
-    toggleAction,
-    toggleBonusAction,
-    toggleReaction,
-  } = useCombatStore();
-
-  const [usingAbilityId, setUsingAbilityId] = useState<string | null>(null);
-  // O uso que acabou de ser gravado: o resultado do TR chega pelo armazém quando o Mestre lança.
-  const [lastUseId, setLastUseId] = useState<string | null>(null);
-
-  const handleUseAbility = async (ability: AbilityDefinition) => {
-    if (!character || isUpdating) return;
-
-    // Com combate ativo, a Habilidade com efeito abre o painel de alvos (ADR 0007); sem combate,
-    // ou sem efeito, só gasta o uso e a Fé.
-    if (ability.combatEffect && activeCombat) {
-      setUsingAbilityId(ability.id);
-      return;
-    }
-
-    // Optimistic UI state could be handled here if we tracked it locally,
-    // but we'll rely on the parent component's real-time subscription or fast refetch.
-    setIsUpdating(true);
-
-    try {
-      const used = applyAbilityUse(ability, abilitySkills(character), character.stats);
-
-      if (!used) {
-        // Not enough faith
-        setIsUpdating(false);
-        return;
-      }
-
-      await updateCharacter(character.id, {
-        skills: used.skills,
-        ...(used.stats ? { stats: used.stats } : {}),
-      });
-    } catch (error) {
-      console.error('Failed to use ability:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const characterAbilities = useMemo(() => {
-    if (!character || !character.tribe || !character.vocation || !character.level) return [];
-
-    // Convert level (could be string if from older DB but should be number)
-    const level = Number(character.level) || 1;
-    const pathChoices = abilitySkills(character)?.path_choices;
-
-    return getAbilitiesForCharacter(character.tribe, character.vocation, level, pathChoices);
-  }, [character]);
+  const { activeCombat, currentTurnParticipant, participants, hasUsedAction, toggleAction } =
+    useCombatStore();
 
   // O aviso de quem foi atingido: só ataques ao vivo, e some sozinho.
   const [hitNotice, setHitNotice] = useState<string | null>(null);
@@ -136,32 +63,6 @@ export function PlayerCombatView({
   const isMyTurn = activeCombat && currentTurnParticipant?.entity_id === playerId;
   const participant = participants.find((p) => p.entity_id === playerId);
   const isDying = activeCombat && participant && participant.hp_current <= 0;
-
-  // A Habilidade com efeito que o jogador está usando agora (o painel de alvos).
-  const usingAbility = characterAbilities.find((a) => a.id === usingAbilityId);
-  const abilityBlock = (ability: AbilityDefinition) => {
-    const availability = getAbilityAvailability(
-      ability,
-      abilitySkills(character),
-      character?.stats,
-    );
-    if (availability.disabled) return availability.reason;
-    return getAbilityEffectBlock({
-      actionType: ability.actionType,
-      hasActiveCombat: !!activeCombat,
-      dying: !!isDying,
-      isMyTurn: !!isMyTurn,
-      actionUsed: hasUsedAction,
-      bonusActionUsed: hasUsedBonusAction,
-      reactionUsed: hasUsedReaction,
-    });
-  };
-  // Usar a Habilidade ocupa o espaço do turno dela (Ação, Ação Bônus ou Reação).
-  const markTurnSlot = (actionType: string) => {
-    if (actionType === 'action' && !hasUsedAction) toggleAction();
-    if (actionType === 'bonus_action' && !hasUsedBonusAction) toggleBonusAction();
-    if (actionType === 'reaction' && !hasUsedReaction) toggleReaction();
-  };
 
   return (
     <div className="space-y-6">
@@ -246,141 +147,8 @@ export function PlayerCombatView({
               }}
             />
           )}
-
-          {!isDying && (
-            <Card className={isMyTurn ? 'border-primary ring-1 ring-primary' : ''}>
-              <CardHeader>
-                <CardTitle>Checklist de Ações (Sua Referência)</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="movement"
-                    checked={hasUsedMovement}
-                    onCheckedChange={toggleMovement}
-                  />
-                  <Label htmlFor="movement" className="text-lg">
-                    Movimento
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="action" checked={hasUsedAction} onCheckedChange={toggleAction} />
-                  <Label htmlFor="action" className="text-lg">
-                    Ação Principal
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="bonus"
-                    checked={hasUsedBonusAction}
-                    onCheckedChange={toggleBonusAction}
-                  />
-                  <Label htmlFor="bonus" className="text-lg">
-                    Ação Bônus
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="reaction"
-                    checked={hasUsedReaction}
-                    onCheckedChange={toggleReaction}
-                  />
-                  <Label htmlFor="reaction" className="text-lg">
-                    Reação
-                  </Label>
-                </div>
-
-                <p className="text-xs text-muted-foreground pt-4">
-                  * Este checklist é apenas visual e não impede suas mecânicas in-game. Ele é limpo
-                  automaticamente a cada mudança de turno.
-                </p>
-              </CardContent>
-            </Card>
-          )}
         </>
       )}
-
-      <div className="space-y-4 mt-8">
-        <h3 className="text-xl font-bold text-stone-200">Habilidades</h3>
-        {usingAbility?.combatEffect && character && participant && (
-          <AbilityUsePanel
-            ability={usingAbility}
-            targets={effectTargetPool(
-              usingAbility.combatEffect,
-              buildAttackTargets(participants, participant.id, entities),
-            )}
-            blockedReason={abilityBlock(usingAbility)}
-            cd={
-              usingAbility.combatEffect.save
-                ? abilityCd({
-                    vocation: character.vocation,
-                    level: Number(character.level) || 1,
-                    attributes: character.attributes,
-                  })
-                : undefined
-            }
-            liveUse={abilityUses.find((use) => use.id === lastUseId)}
-            onUse={async (selected, removals) => {
-              const outcome = await submitAbilityUse({
-                ability: usingAbility,
-                userParticipantId: participant.id,
-                targets: selected,
-                removals,
-                character: {
-                  id: character.id,
-                  skills: character.skills,
-                  stats: character.stats,
-                  vocation: character.vocation,
-                  level: character.level,
-                  attributes: character.attributes,
-                },
-              });
-              setLastUseId(outcome.id);
-              markTurnSlot(usingAbility.actionType);
-              return outcome;
-            }}
-            onClose={() => setUsingAbilityId(null)}
-          />
-        )}
-        {characterAbilities.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nenhuma habilidade disponível.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {characterAbilities.map((ability) => {
-              const availability = getAbilityAvailability(
-                ability,
-                abilitySkills(character),
-                character?.stats,
-              );
-              const currentUses = availability.remainingUses;
-              let disabled: boolean;
-              let disabledReason: string;
-
-              if (!activeCombat && ability.usageType === 'combat') {
-                disabled = true;
-                disabledReason = 'Apenas em combate';
-              } else if (isUpdating) {
-                disabled = true;
-                disabledReason = '';
-              } else {
-                disabled = availability.disabled;
-                disabledReason = availability.reason;
-              }
-
-              return (
-                <AbilityCard
-                  key={ability.id}
-                  ability={ability}
-                  currentUses={currentUses}
-                  onUse={() => handleUseAbility(ability)}
-                  disabled={disabled}
-                  disabledReason={disabledReason}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
