@@ -89,6 +89,12 @@ Termos e decisões: `CONTEXT.md` ("Tela da sessão") e os ADRs 0008 e 0009.
   - Abaixo de `md`: bottom sheet `rounded-t-2xl border-t border-stone-700 bg-stone-900`, alça `h-1.5 w-10 rounded-full bg-stone-600`, véu `bg-stone-950/60`, meia altura `55dvh` e tela cheia `92dvh`, `padding-bottom: env(safe-area-inset-bottom)`.
   - De `md` em diante: lateral `w-[26rem] border-l border-stone-700 bg-stone-900`. Abaixo de `lg` é modal, com véu; a partir de `lg` não é modal, para o Palco seguir à vista.
   - Cabeçalho `border-b border-stone-800 px-4 py-2`, título `font-serif text-xl text-amber-500`, botão Fechar de 44 px.
+- **Hotbar** (`Hotbar`): barra `border-t border-stone-800 bg-stone-900` embaixo da moldura, com `padding-bottom: env(safe-area-inset-bottom)`.
+  - **Abas** (`tablist` "Grupos da Hotbar"): `h-11 flex-1 rounded-t-lg text-[11px]`; ativa `bg-stone-800 text-amber-400` com o sublinhado `h-0.5 bg-amber-500` que desliza (`layoutId`), inativa `text-stone-400`. O rótulo leva a contagem em `text-stone-500`. Setas movem entre as abas. O botão Dados (`h-11 w-12`, ícone `Dices`) fica na ponta.
+  - **Área das peças** (`tabpanel`): `h-[9.5rem] grid grid-cols-3 sm:grid-cols-6 gap-2 overflow-y-auto bg-stone-800 p-2`, altura de duas fileiras; rola por dentro.
+  - **Peça**: `min-h-[60px] rounded-lg p-2` com o nome em `text-[11px]` (até duas linhas) e a linha de uso em `text-[10px] text-stone-500`. Ativa `border border-amber-500/40 bg-stone-900 text-stone-100`; passiva `border border-dashed border-stone-600 text-stone-400`; bloqueada `opacity-40`. Segurar 450 ms abre como o toque.
+  - **Faixa dos espaços do turno** (`group` "Espaços do turno", só no combate): `border-t border-stone-800 bg-stone-900 px-3 py-2`, caixas de seleção de 44 px de altura (Movimento, Ação Principal, Ação Bônus, Reação).
+- **Cartão de Habilidade** (`dialog` com o nome da Habilidade): sobe acima da Hotbar, `absolute inset-x-2 bottom-full mb-2 max-h-[55dvh] overflow-y-auto rounded-xl border border-amber-500/40 bg-stone-900 p-4 shadow-2xl`. Título `font-serif text-lg text-amber-500`, ✕ de 44 px, chips `rounded bg-amber-500/10 text-amber-500` (tipo) e `border border-stone-700 text-stone-300` (custo, usos), texto `text-sm text-stone-400`. O **Usar** é o botão primário em largura total (`h-12 w-full bg-amber-600 text-stone-900 font-bold`), desabilitado com o motivo em `text-xs text-red-400` abaixo.
 - **Movimento:** mola curta de `stiffness 520 / damping 42` para abrir e fechar; `MotionConfig reducedMotion="user"` deixa só a opacidade.
 
 ## Movimento e estados

@@ -17,22 +17,22 @@ type Aba = 'action' | 'bonus' | 'reaction' | 'free' | 'itens' | 'passivas';
 
 **Status:** ready-for-agent
 
-- [ ] A Hotbar recebe as Habilidades, o contexto do turno e os usos e devolve o pedido de usar; os usos, a Fé e o espaço do turno são gastos como hoje
-- [ ] O motivo do bloqueio vem das funções do motor que já existem (disponibilidade e depois bloqueio do efeito), sem regra nova
-- [ ] A aba escolhida se mantém; se ficar vazia, a Hotbar cai na primeira aba com conteúdo; não troca sozinha no combate
-- [ ] O Cartão fecha por ✕, Esc, toque fora e troca de aba; o foco entra nele e volta à peça
-- [ ] O pressionar e segurar abre o Cartão em 450 ms, com vibração curta onde houver e sem o menu de contexto do sistema
-- [ ] Acessibilidade:
+- [x] A Hotbar recebe as Habilidades, o contexto do turno e os usos e devolve o pedido de usar; os usos, a Fé e o espaço do turno são gastos como hoje
+- [x] O motivo do bloqueio vem das funções do motor que já existem (disponibilidade e depois bloqueio do efeito), sem regra nova
+- [x] A aba escolhida se mantém; se ficar vazia, a Hotbar cai na primeira aba com conteúdo; não troca sozinha no combate
+- [x] O Cartão fecha por ✕, Esc, toque fora e troca de aba; o foco entra nele e volta à peça
+- [x] O pressionar e segurar abre o Cartão em 450 ms, com vibração curta onde houver e sem o menu de contexto do sistema
+- [x] Acessibilidade:
   - [ ] as abas são `tablist`/`tab`/`tabpanel` com setas;
   - [ ] o nome acessível da peça é "Golpe Sísmico, Ação, 1 de 1 por combate";
   - [ ] o Cartão é `dialog` com nome;
   - [ ] as peças têm no mínimo 48 px.
-- [ ] Motion: o sublinhado da aba desliza, o Cartão sobe, a peça afunda ao usar e os contadores contam; o reduced-motion é testado
-- [ ] Teste novo da Hotbar. Cobre:
+- [x] Motion: o sublinhado da aba desliza, o Cartão sobe, a peça afunda ao usar e os contadores contam; o reduced-motion é testado
+- [x] Teste novo da Hotbar. Cobre:
   - [ ] as abas e a ordem no nível 1 (Guerreiro de Judá) e no nível 20 (Sacerdote de Simeão, caminho B);
   - [ ] os motivos de bloqueio: fora do turno, espaço usado, Reação fora do turno, sem usos, sem Fé, a 0 PV;
   - [ ] abrir o Cartão por clique, Enter e segurar;
   - [ ] Usar chamando o pedido uma vez só;
   - [ ] a aba Passivas sem Usar.
-- [ ] `DESIGN.md` recebe as receitas da peça, da aba e do Cartão
-- [ ] E2E `ability` e `combat` usam a Habilidade pela Hotbar (aba, Cartão, Usar) no desktop e no `mobile`
+- [x] `DESIGN.md` recebe as receitas da peça, da aba e do Cartão
+- [x] E2E `ability` e `combat` usam a Habilidade pela Hotbar (aba, Cartão, Usar) no desktop e no `mobile`

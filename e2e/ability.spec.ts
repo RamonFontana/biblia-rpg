@@ -52,21 +52,25 @@ async function openFight(
   return { master, player, ally, eliabe, rute, filisteu, bandido };
 }
 
-/**
- * O cartão de uma Habilidade na lista da visão de combate (a ficha, mais abaixo, também lista as
- * Habilidades, com outro caminho de uso).
- */
-function abilityCard(player: Page, name: string): Locator {
-  const list = player.getByRole('heading', { name: 'Habilidades', level: 3 }).first().locator('..');
-  // Os blocos de fora também casam com o filtro; o último, em ordem do documento, é o cartão.
-  return list.locator('div.bg-stone-900.border-stone-800').filter({ hasText: name }).last();
+type Slot = 'Ação' | 'Ação Bônus' | 'Reação';
+const TAB: Record<Slot, RegExp> = {
+  Ação: /^Ação \d/,
+  'Ação Bônus': /^Ação Bônus/,
+  Reação: /^Reação/,
+};
+
+/** Abre o Cartão da Habilidade pela Hotbar: a aba do espaço do turno e depois a peça. */
+async function openAbility(player: Page, name: string, slot: Slot = 'Ação'): Promise<Locator> {
+  await player.getByRole('tab', { name: TAB[slot] }).click();
+  await player.getByRole('button', { name: new RegExp(`^${name}`) }).click();
+  const card = player.getByRole('dialog', { name });
+  await expect(card).toBeVisible();
+  return card;
 }
 
-/** O painel de uso aberto (no turno do jogador o painel de ataque também tem um "Alvo"). */
+/** O painel de uso aberto: mora dentro do Cartão da Habilidade. */
 function usePanel(player: Page): Locator {
-  return player.locator('div[class*="border-amber-600/60"]').filter({
-    has: player.getByRole('button', { name: 'Usar Habilidade' }),
-  });
+  return player.getByRole('dialog');
 }
 
 /** As Condições gravadas no participante do combate de uma ficha. */
@@ -88,9 +92,8 @@ test.describe('efeito de Habilidade', () => {
     const { master, player, eliabe, filisteu } = await openFight(seed, signIn);
 
     await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
-    await abilityCard(player, 'Palavra de Autoridade')
-      .getByRole('button', { name: 'Usar' })
-      .click();
+    const card = await openAbility(player, 'Palavra de Autoridade');
+    await card.getByRole('button', { name: 'Usar', exact: true }).click();
     await expect(player.getByText('O app aplica: Paralisado por 1 rodada')).toBeVisible();
     await usePanel(player).getByLabel('Alvo').selectOption({ label: FILISTEU });
     await usePanel(player).getByRole('button', { name: 'Usar Habilidade' }).click();
@@ -112,10 +115,10 @@ test.describe('efeito de Habilidade', () => {
     });
 
     // A Ação principal ficou marcada, e a Habilidade (1 por combate) está sem usos.
-    await expect(player.getByLabel('Ação Principal')).toBeChecked();
-    await expect(
-      abilityCard(player, 'Palavra de Autoridade').getByRole('button', { name: 'Usar' }),
-    ).toBeDisabled();
+    await expect(player.getByRole('checkbox', { name: 'Ação Principal' })).toBeChecked();
+    await usePanel(player).getByRole('button', { name: 'Fechar' }).first().click();
+    const again = await openAbility(player, 'Palavra de Autoridade');
+    await expect(again.getByRole('button', { name: 'Usar', exact: true })).toBeDisabled();
   });
 
   test('fora do turno a Ação é recusada, mas a Reação vale: Retribuição Divina amedronta o agressor', async ({
@@ -128,21 +131,19 @@ test.describe('efeito de Habilidade', () => {
       Rute: 20,
     });
 
-    await abilityCard(player, 'Palavra de Autoridade')
-      .getByRole('button', { name: 'Usar' })
-      .click();
-    await expect(player.getByText('Não é o seu turno')).toBeVisible();
-    await usePanel(player).getByLabel('Alvo').selectOption({ label: FILISTEU });
-    await expect(player.getByRole('button', { name: 'Usar Habilidade' })).toBeDisabled();
-    await player.getByRole('button', { name: 'Fechar' }).click();
+    const blocked = await openAbility(player, 'Palavra de Autoridade');
+    await expect(blocked.getByText('Não é o seu turno')).toBeVisible();
+    await expect(blocked.getByRole('button', { name: 'Usar', exact: true })).toBeDisabled();
+    await blocked.getByRole('button', { name: 'Fechar' }).click();
 
-    await abilityCard(player, 'Retribuição Divina').getByRole('button', { name: 'Usar' }).click();
+    const reaction = await openAbility(player, 'Retribuição Divina', 'Reação');
+    await reaction.getByRole('button', { name: 'Usar', exact: true }).click();
     await expect(player.getByText('O app aplica: Amedrontado até ser removido')).toBeVisible();
     await usePanel(player).getByLabel('Alvo').selectOption({ label: FILISTEU });
     await usePanel(player).getByRole('button', { name: 'Usar Habilidade' }).click();
 
     await expect(player.getByText('Filisteu: Amedrontado')).toBeVisible();
-    await expect(player.getByLabel('Reação')).toBeChecked();
+    await expect(player.getByRole('checkbox', { name: 'Reação' })).toBeChecked();
     expect(await conditionsOf(filisteu)).toEqual(['amedrontado']);
   });
   test('Tática do Cântaro Quebrado fica pendente: o Mestre lança o TR e só quem falha fica Amedrontado', async ({
@@ -166,9 +167,8 @@ test.describe('efeito de Habilidade', () => {
     );
 
     await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
-    await abilityCard(player, 'Tática do Cântaro Quebrado')
-      .getByRole('button', { name: 'Usar' })
-      .click();
+    const tactic = await openAbility(player, 'Tática do Cântaro Quebrado', 'Ação Bônus');
+    await tactic.getByRole('button', { name: 'Usar', exact: true }).click();
     // CD da Habilidade: 8 + Proficiência +4 (nível 12) + FOR +3 (Guerreiro) = 15.
     await expect(
       player.getByText('TR de Sabedoria dos alvos (CD 15): a Condição só entra em quem falhar.', {
@@ -204,7 +204,7 @@ test.describe('efeito de Habilidade', () => {
     await expect(pending).toBeHidden();
     expect(await conditionsOf(filisteu)).toEqual(['amedrontado']);
     expect(await conditionsOf(bandido!)).toEqual([]);
-    await expect(player.getByLabel('Ação Bônus')).toBeChecked();
+    await expect(player.getByRole('checkbox', { name: 'Ação Bônus' })).toBeChecked();
   });
 
   test('Purificação tira a Condição escolhida do aliado e deixa as outras', async ({
@@ -216,7 +216,8 @@ test.describe('efeito de Habilidade', () => {
     await addCondition(master, 'Rute', 'Cego', 0);
 
     await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
-    await abilityCard(player, 'Purificação').getByRole('button', { name: 'Usar' }).click();
+    const purify = await openAbility(player, 'Purificação');
+    await purify.getByRole('button', { name: 'Usar', exact: true }).click();
     await expect(
       player.getByText('O app tira: Amedrontado, Atordoado ou Envenenado do aliado', {
         exact: true,
@@ -239,10 +240,10 @@ test.describe('efeito de Habilidade', () => {
     });
     expect(await conditionsOf(rute)).toEqual(['cego']);
     // Ação gasta e Habilidade sem usos até o próximo Descanso Curto.
-    await expect(player.getByLabel('Ação Principal')).toBeChecked();
-    await expect(
-      abilityCard(player, 'Purificação').getByRole('button', { name: 'Usar' }),
-    ).toBeDisabled();
+    await expect(player.getByRole('checkbox', { name: 'Ação Principal' })).toBeChecked();
+    await usePanel(player).getByRole('button', { name: 'Fechar' }).first().click();
+    const again = await openAbility(player, 'Purificação');
+    await expect(again.getByRole('button', { name: 'Usar', exact: true })).toBeDisabled();
   });
 
   test('Presença Aterradora: o TR chega ao celular dos jogadores e a Condição entra só em quem falhou', async ({
