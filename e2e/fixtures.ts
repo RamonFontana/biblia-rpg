@@ -31,10 +31,19 @@ export type SignIn = (user: UserKey) => Promise<Page>;
 
 export const test = base.extend<{ seed: Seed; signIn: SignIn }>({
   // Abre outro navegador isolado já logado como o usuário, para testes com mais de uma pessoa.
-  signIn: async ({ browser, baseURL, locale }, provide) => {
+  // Os jogadores herdam o aparelho do projeto (o `mobile` simula um Pixel 7).
+  signIn: async (
+    { browser, baseURL, locale, viewport, userAgent, isMobile, hasTouch, deviceScaleFactor },
+    provide,
+  ) => {
     const contexts: { close(): Promise<void> }[] = [];
     await provide(async (user) => {
-      const context = await browser.newContext({ baseURL, locale });
+      // O Mestre fica sempre no desktop: a tela dele no celular é o ticket 11 da Onda 6.
+      const device =
+        user === 'master'
+          ? { viewport: { width: 1280, height: 720 } }
+          : { viewport, userAgent, isMobile, hasTouch, deviceScaleFactor };
+      const context = await browser.newContext({ baseURL, locale, ...device });
       contexts.push(context);
       const page = await context.newPage();
       await loginAs(page, user);

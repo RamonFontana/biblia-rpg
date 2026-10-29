@@ -12,13 +12,21 @@ interface InspirationPanelProps {
   day: number;
   /** Avisa a tela do dia gravado, para o painel e o cartão do Mestre mudarem já. */
   onUsed: (patch: { inspiration_used_day: number; inspiration_session_id: string }) => void;
+  /** Substitui a largura do aviso (a Barra de Status o usa mais enxuto). */
+  className?: string;
 }
 
 /**
  * A Inspiração do Inabalável (uma por dia da sessão). O botão "Usei a Inspiração" a marca para uma
  * rolagem fora dos Testes do app; no Teste do app ela é gasta pelo próprio diálogo.
  */
-export function InspirationPanel({ character, sessionId, day, onUsed }: InspirationPanelProps) {
+export function InspirationPanel({
+  character,
+  sessionId,
+  day,
+  onUsed,
+  className = 'w-full max-w-md',
+}: InspirationPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [isMarking, setIsMarking] = useState(false);
 
@@ -46,7 +54,9 @@ export function InspirationPanel({ character, sessionId, day, onUsed }: Inspirat
   };
 
   return (
-    <div className="flex w-full max-w-md items-center justify-between gap-3 rounded-md border border-green-700/50 bg-green-900/30 px-3 py-2 text-sm text-green-400">
+    <div
+      className={`flex ${className} items-center justify-between gap-3 rounded-md border border-green-700/50 bg-green-900/30 px-3 py-2 text-sm text-green-400`}
+    >
       <span className="flex items-center gap-2">
         <Sparkles className="h-4 w-4" aria-hidden="true" />
         {status === 'disponivel' ? 'Inspiração disponível' : 'Inspiração usada hoje'}

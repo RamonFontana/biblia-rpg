@@ -15,16 +15,16 @@ Spec: `.scratch/layout-da-sessao/spec.md`, que se apoia nos ADRs 0008 e 0009.
 
 **Status:** ready-for-agent
 
-- [ ] Dependência `motion` (aprovada no ADR 0008); a configuração global respeita o "reduzir movimento" do usuário
-- [ ] Painel em `ui/` sobre o Dialog do Radix, com os pontos de quebra de cima:
+- [x] Dependência `motion` (aprovada no ADR 0008); a configuração global respeita o "reduzir movimento" do usuário
+- [x] Painel em `ui/` sobre o Dialog do Radix, com os pontos de quebra de cima:
   - [ ] dois pontos de parada (meia altura e tela cheia);
   - [ ] fecha por arrasto, botão, toque fora e Esc;
   - [ ] abrir outro Painel troca o conteúdo;
   - [ ] abre com uma mola curta.
-- [ ] Trilho como `nav` "Painéis", com ícones de 48 px de nome acessível; a barra de baixo respeita `env(safe-area-inset-bottom)`
-- [ ] Teste curto do Painel, como os outros de `ui/`: abre, fecha por botão e Esc, tem nome acessível e troca de conteúdo
-- [ ] O teste da página da sessão cobre o trilho do jogador, o Painel que cada ícone abre e os avisos fora dos Painéis
-- [ ] Ajudante `openPanel(page, nome)` no suporte de UI dos E2E; as suítes de hoje passam com os mesmos nomes acessíveis
-- [ ] Projeto Playwright `mobile` (`devices['Pixel 7']`) rodando `session`, `ability` e `combat`
-- [ ] `DESIGN.md` ganha a seção da tela da sessão (moldura, trilho, Painel); `check:palette` passa
+- [x] Trilho como `nav` "Painéis", com ícones de 48 px de nome acessível; a barra de baixo respeita `env(safe-area-inset-bottom)`
+- [x] Teste curto do Painel, como os outros de `ui/`: abre, fecha por botão e Esc, tem nome acessível e troca de conteúdo
+- [x] O teste da página da sessão cobre o trilho do jogador, o Painel que cada ícone abre e os avisos fora dos Painéis
+- [x] Ajudante `openPanel(page, nome)` no suporte de UI dos E2E; as suítes de hoje passam com os mesmos nomes acessíveis
+- [x] Projeto Playwright `mobile` (`devices['Pixel 7']`) rodando `session`, `ability` e `combat`
+- [x] `DESIGN.md` ganha a seção da tela da sessão (moldura, trilho, Painel); `check:palette` passa
 - [ ] O autor testa o arrasto do bottom sheet num iPhone pelo preview da Vercel. Se falhar, a decisão do ADR 0008 reabre

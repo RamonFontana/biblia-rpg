@@ -15,9 +15,9 @@ No celular a barra tem duas linhas, e tocar na área do personagem abre o Painel
 
 **Status:** ready-for-agent
 
-- [ ] Barra de Status com tudo o que está listado acima, com os valores de hoje (nenhuma regra muda)
-- [ ] Tocar no personagem abre o Painel Ficha
-- [ ] Motion no dano e na cura; com "reduzir movimento", só opacidade e o número troca sem contar (testado pelo resultado)
-- [ ] Alvos de toque de no mínimo 44 px; só cores da paleta
-- [ ] Teste de componente da Barra de Status (Condições com rodadas, Estado de Fé, Inspiração e selo de turno)
-- [ ] E2E (`faith` e `session`) acha PV, Fé e Condições na Barra de Status no desktop e no `mobile`
+- [x] Barra de Status com tudo o que está listado acima, com os valores de hoje (nenhuma regra muda)
+- [x] Tocar no personagem abre o Painel Ficha
+- [x] Motion no dano e na cura; com "reduzir movimento", só opacidade e o número troca sem contar (testado pelo resultado)
+- [x] Alvos de toque de no mínimo 44 px; só cores da paleta
+- [x] Teste de componente da Barra de Status (Condições com rodadas, Estado de Fé, Inspiração e selo de turno)
+- [x] E2E (`faith` e `session`) acha PV, Fé e Condições na Barra de Status no desktop e no `mobile`

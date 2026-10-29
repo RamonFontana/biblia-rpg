@@ -1,6 +1,6 @@
 import { adminClient } from './support/admin';
 import { test, expect } from './fixtures';
-import { nextPaint } from './support/ui';
+import { nextPaint, openPanel } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 
@@ -96,7 +96,12 @@ test.describe('entrar na sessão', () => {
     await player.getByRole('link', { name: `Entrar: ${SESSION_NAME}` }).click();
 
     await expect(player.getByRole('heading', { name: SESSION_NAME })).toBeVisible();
-    await expect(player.getByText('Visão do Jogador')).toBeVisible();
+    await expect(player.getByRole('main', { name: 'Palco' })).toBeVisible();
+    // PV e Fé ficam sempre à vista na Barra de Status, sem abrir nada.
+    const statusBar = player.getByRole('region', { name: 'Barra de Status' });
+    await expect(statusBar.getByRole('progressbar', { name: 'PV' })).toBeVisible();
+    await expect(statusBar.getByText(/^Fé \d+$/)).toBeVisible();
+    await openPanel(player, 'Ficha');
     await expect(player.getByText('Vocação: Guerreiro')).toBeVisible();
     await expect(player.getByText('Visão do Mestre')).toHaveCount(0);
   });
@@ -150,7 +155,9 @@ test.describe('mesa em tempo real', () => {
     await expect(player.getByText('🌅 Manhã')).toBeVisible();
 
     await expect(master.getByText('Participantes Online (2)')).toBeVisible();
-    await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
+    // `toBeAttached`: no celular a lista do Mestre ainda colapsa a largura do nome (`truncate`); a
+    // tela do Mestre no celular é o ticket 11 da Onda 6.
+    await expect(master.getByText('Eliabe (Nível 1)')).toBeAttached();
 
     await master.getByRole('button', { name: /Avançar/ }).click();
 

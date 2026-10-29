@@ -3,7 +3,7 @@
 // tempo, as trocas, o fim da sessão e os avisos. Decisões: ROADMAP.md, Onda 4, passo 5b.
 // Termos: CONTEXT.md (Mestre, Sessão).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   user: null as null | {
@@ -16,6 +16,9 @@ const h = vi.hoisted(() => ({
   unsubscribeSession: vi.fn(),
   combat: {
     activeCombat: null as null | object,
+    currentTurnParticipant: null as null | { entity_id: string },
+    attacks: [] as unknown[],
+    abilityUses: [] as unknown[],
     initSubscriptions: vi.fn(),
     cleanupSubscriptions: vi.fn(),
   },
@@ -127,6 +130,12 @@ vi.mock('@/components/combat/CombatDashboard', async () => ({
 vi.mock('@/components/combat/PlayerCombatView', async () => ({
   PlayerCombatView: (await import('@/test/stubs')).makeStub('PlayerCombatView'),
 }));
+vi.mock('@/components/session/active-session/PlayerStatusBar', async () => ({
+  PlayerStatusBar: (await import('@/test/stubs')).makeStub('PlayerStatusBar'),
+}));
+vi.mock('@/components/combat/AttackLog', async () => ({
+  AttackLog: (await import('@/test/stubs')).makeStub('AttackLog'),
+}));
 vi.mock('@/components/combat/DeathSavesModal', async () => ({
   DeathSavesModal: (await import('@/test/stubs')).makeStub('DeathSavesModal'),
 }));
@@ -184,6 +193,7 @@ beforeEach(() => {
   h.session = { ...baseSession };
   h.sessionListener = undefined;
   h.combat.activeCombat = null;
+  h.combat.currentTurnParticipant = null;
   h.tests = { activeTests: [], testResults: {} };
   h.roster.playerCharacters = [
     { user_id: 'u1', character: character('c1') },
@@ -225,6 +235,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -538,22 +549,164 @@ describe('visão do Mestre', () => {
   });
 });
 
-describe('visão do jogador e do espectador', () => {
-  it('jogador: avisos, ficha, e lista com só os NPCs visíveis', async () => {
+/** Abre um Painel pelo trilho "Painéis". */
+const openPanel = (name: string) =>
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Painéis' })).getByRole('button', { name }),
+  );
+
+describe('moldura do jogador (Palco, trilho e Painéis)', () => {
+  it('o trilho tem Ficha, Inventário, Grupo, Histórico e Descanso, nesta ordem', async () => {
     await renderPage();
-    expect(screen.getByText('Visão do Jogador')).toBeInTheDocument();
-    expect(prop('PlayerRestIndicator', 'sessionData')).toBeTruthy();
-    expect(props('ShortRestCard')).toMatchObject({ role: 'player', sessionId: 's1' });
+    const rail = screen.getByRole('navigation', { name: 'Painéis' });
+    expect(
+      within(rail)
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual(['Ficha', 'Inventário', 'Grupo', 'Histórico', 'Descanso']);
+  });
+
+  it('nenhum Painel abre sozinho: a ficha e o grupo só montam quando se toca no ícone', async () => {
+    await renderPage();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(hasStub('CharacterSheetView')).toBe(false);
+    expect(hasStub('SessionParticipantList')).toBe(false);
+  });
+
+  it('Ficha e Inventário abrem a ficha do jogador num Painel', async () => {
+    await renderPage();
+    openPanel('Ficha');
+    expect(screen.getByRole('dialog', { name: 'Ficha' })).toBeInTheDocument();
     expect(props('CharacterSheetView')).toMatchObject({ userId: 'u1', sessionId: 's1' });
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    openPanel('Inventário');
+    expect(screen.getByRole('dialog', { name: 'Inventário' })).toBeInTheDocument();
+    expect(hasStub('CharacterSheetView')).toBe(true);
+  });
+
+  it('Grupo abre a lista com só os NPCs visíveis', async () => {
+    await renderPage();
+    openPanel('Grupo');
+    expect(screen.getByRole('dialog', { name: 'Grupo' })).toBeInTheDocument();
     expect(prop('SessionParticipantList', 'isGM')).toBe(false);
     expect(pluck(prop('SessionParticipantList', 'npcs'), 'id')).toEqual(['n1']);
     expect(pluck(prop('SessionParticipantList', 'playerCharacters'), 'character', 'id')).toEqual([
       'c1',
       'c2',
     ]);
+  });
+
+  it('Descanso abre o cartão do Descanso Curto e o aviso do Descanso Longo', async () => {
+    await renderPage();
+    openPanel('Descanso');
+    expect(screen.getByRole('dialog', { name: 'Descanso' })).toBeInTheDocument();
+    expect(props('ShortRestCard')).toMatchObject({ role: 'player', sessionId: 's1' });
+    expect(prop('PlayerRestIndicator', 'sessionData')).toBeTruthy();
     expect(hasStub('SessionRestControls')).toBe(false);
   });
 
+  it('Histórico abre o histórico do combate', async () => {
+    await renderPage();
+    openPanel('Histórico');
+    expect(screen.getByRole('dialog', { name: 'Histórico' })).toBeInTheDocument();
+    expect(hasStub('AttackLog')).toBe(true);
+  });
+
+  it('abrir outro ícone troca o Painel, sem empilhar (Painel ao lado, a partir de lg)', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    await renderPage();
+    openPanel('Ficha');
+    openPanel('Grupo');
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Grupo' })).toBeInTheDocument();
+  });
+
+  it('um selo marca o Descanso quando há descanso aberto, e o Grupo quando há troca pendente', async () => {
+    h.session = { ...baseSession, short_rest_id: 'r1', short_rest_opened_by: 'master' };
+    h.trades.activeTrades = [{ id: 't1', status: 'pending', initiator_user_id: 'u2' }];
+    await renderPage();
+    const rail = screen.getByRole('navigation', { name: 'Painéis' });
+    expect(within(rail).getByRole('button', { name: 'Descanso' })).toHaveAttribute(
+      'data-attention',
+    );
+    expect(within(rail).getByRole('button', { name: 'Grupo' })).toHaveAttribute('data-attention');
+    expect(within(rail).getByRole('button', { name: 'Ficha' })).not.toHaveAttribute(
+      'data-attention',
+    );
+  });
+
+  it('o pedido recusado também marca o Descanso', async () => {
+    h.session = { ...baseSession, short_rest_refused_at: '2026-10-29T10:00:00Z' };
+    await renderPage();
+    const rail = screen.getByRole('navigation', { name: 'Painéis' });
+    expect(within(rail).getByRole('button', { name: 'Descanso' })).toHaveAttribute(
+      'data-attention',
+    );
+  });
+
+  it('os Testes de Morte ficam por cima de tudo, fora dos Painéis', async () => {
+    h.roster.playerCharacters = [
+      { user_id: 'u1', character: character('c1', { stats: { pv: 10, current_pv: 0 } }) },
+    ];
+    await renderPage();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(prop('DeathSavesModal', 'character')).toMatchObject({ id: 'c1' });
+  });
+
+  it('a Barra de Status recebe a ficha do jogador, o dia e o período, sem turno fora do combate', async () => {
+    await renderPage();
+    expect(prop('PlayerStatusBar', 'character')).toMatchObject({ id: 'c1' });
+    expect(props('PlayerStatusBar')).toMatchObject({
+      sessionId: 's1',
+      day: 2,
+      period: 'Manhã',
+      turn: null,
+    });
+  });
+
+  it('no combate, a Barra de Status diz de quem é o turno', async () => {
+    h.combat.activeCombat = { id: 'cb1' };
+    h.combat.currentTurnParticipant = { entity_id: 'e1' };
+    await renderPage();
+    expect(prop('PlayerStatusBar', 'turn')).toEqual({ isMine: false, name: 'Filisteu' });
+  });
+
+  it('no combate, quando o turno é do personagem do jogador, o selo é "o meu"', async () => {
+    h.combat.activeCombat = { id: 'cb1' };
+    h.combat.currentTurnParticipant = { entity_id: 'c1' };
+    await renderPage();
+    expect(prop('PlayerStatusBar', 'turn')).toMatchObject({ isMine: true });
+  });
+
+  it('tocar na Barra de Status abre o Painel Ficha', async () => {
+    await renderPage();
+    act(() => {
+      call('PlayerStatusBar', 'onOpenSheet');
+    });
+    expect(screen.getByRole('dialog', { name: 'Ficha' })).toBeInTheDocument();
+  });
+
+  it('a Inspiração usada na Barra de Status chega à ficha da tela', async () => {
+    await renderPage();
+    act(() => {
+      call('PlayerStatusBar', 'onInspirationUsed', { inspiration_used_day: 2 });
+    });
+    expect(h.roster.updateLocal).toHaveBeenCalledWith('player', 'c1', { inspiration_used_day: 2 });
+  });
+
+  it('a Inspiração mora na Barra de Status, não no Palco', async () => {
+    await renderPage();
+    expect(hasStub('InspirationPanel')).toBe(false);
+  });
+});
+
+describe('visão do jogador e do espectador', () => {
   it('PV zero fora de combate e vivo: mostra os Testes de Morte', async () => {
     h.roster.playerCharacters = [
       { user_id: 'u1', character: character('c1', { stats: { pv: 10, current_pv: 0 } }) },
@@ -737,6 +890,7 @@ describe('trocas', () => {
   describe('negociar com outro jogador', () => {
     it('cria uma troca pendente entre as duas fichas', async () => {
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onNegotiate', 'u2');
       });
@@ -754,6 +908,7 @@ describe('trocas', () => {
     it('não cria se alguém já está em troca ou se falta uma ficha', async () => {
       h.trades.trading = new Set(['c2']);
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onNegotiate', 'u2');
         await call('SessionParticipantList', 'onNegotiate', 'desconhecido');
@@ -770,6 +925,7 @@ describe('trocas', () => {
     it('erro ao criar é só registrado e não atualiza a lista', async () => {
       h.createTrade.mockRejectedValue(new Error('falhou'));
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onNegotiate', 'u2');
       });
@@ -819,6 +975,7 @@ describe('trocas', () => {
   describe('negociar com NPC', () => {
     it('NPC jogável vira troca com a ficha; NPC simples, com o NPC da sessão', async () => {
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onNPCNegotiate', { id: 'n2', is_playable: true });
         await call('SessionParticipantList', 'onNPCNegotiate', { id: 'n1', is_playable: false });
@@ -844,6 +1001,7 @@ describe('trocas', () => {
     it('erro é registrado com a mensagem da negociação com NPC', async () => {
       h.createTrade.mockRejectedValue(new Error('falhou'));
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onNPCNegotiate', { id: 'n1' });
       });
@@ -856,6 +1014,7 @@ describe('trocas', () => {
     it('não cria se o jogador já está em troca ou não tem ficha', async () => {
       h.trades.trading = new Set(['c1']);
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onNPCNegotiate', { id: 'n1' });
       });
@@ -876,6 +1035,7 @@ describe('trocas', () => {
   describe('aceitar e recusar', () => {
     it('aceitar e recusar chamam a camada de dados e atualizam as trocas', async () => {
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onAcceptTrade', 'tr1');
         await call('SessionParticipantList', 'onRejectTrade', 'tr2');
@@ -889,6 +1049,7 @@ describe('trocas', () => {
       h.acceptTrade.mockRejectedValue(new Error('x'));
       h.cancelTrade.mockRejectedValue(new Error('y'));
       await renderPage();
+      openPanel('Grupo');
       await act(async () => {
         await call('SessionParticipantList', 'onAcceptTrade', 'tr1');
         await call('SessionParticipantList', 'onRejectTrade', 'tr2');

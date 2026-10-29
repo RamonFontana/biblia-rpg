@@ -16,3 +16,17 @@ export async function nextPaint(page: Page) {
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
   );
 }
+
+/**
+ * Abre um Painel da tela da sessão pelo trilho (Ficha, Inventário, Grupo, Histórico, Descanso).
+ * O que mora num Painel só existe na página depois disto. Fecha com `closePanel`.
+ */
+export async function openPanel(page: Page, name: string) {
+  await page.getByRole('navigation', { name: 'Painéis' }).getByRole('button', { name }).click();
+  await expect(page.getByRole('dialog', { name })).toBeVisible();
+}
+
+export async function closePanel(page: Page) {
+  await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+}
