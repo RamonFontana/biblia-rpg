@@ -10,7 +10,8 @@ import type { ConsumableInventoryItem, InventoryItem } from '@/types/inventory';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
 import { CONDITIONS } from '@/content/conditions';
-import { resolveHealing } from '@/domain/consumables';
+import { normalizeHealingEffects } from '@/domain/consumables';
+import { isAmmunitionItem } from '@/domain/ammo';
 import { formatItemArmorClass } from '@/domain/armorClass';
 import { getEquipSlot } from '@/domain/equipment';
 import { getItemConditionResistances } from '@/domain/armorResistance';
@@ -160,21 +161,13 @@ export function InventoryList({
                   }
                 }
 
-                const normalizedEffects = { ...itemEffects, slot: itemSlot };
-
                 // Fallback and scaling logic for healing
                 const level = item.level || 1;
-                const healing = resolveHealing(
-                  normalizedEffects.heal_dice,
-                  normalizedEffects.heal,
+                const normalizedEffects = normalizeHealingEffects(
+                  { ...itemEffects, slot: itemSlot },
                   dbItem?.description,
                   level,
                 );
-                if (healing.healDice) {
-                  normalizedEffects.heal_dice = healing.healDice;
-                } else if (healing.heal) {
-                  normalizedEffects.heal = healing.heal;
-                }
 
                 const isEquipped2h =
                   equipment?.mainHand === item.id && equipment?.offHand === item.id;
@@ -494,8 +487,7 @@ export function InventoryList({
                             Consumível
                           </span>
 
-                          {item.items?.name?.includes('Flecha') ||
-                          item.items?.name?.includes('Pedra') ? (
+                          {isAmmunitionItem(item.items?.name) ? (
                             <>
                               <button
                                 onClick={() => onConsumeAmmunition && onConsumeAmmunition(item.id)}

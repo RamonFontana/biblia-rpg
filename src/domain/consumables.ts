@@ -103,3 +103,22 @@ export function applyConsumableEffects<T extends ConsumableStats>(
 
   return { stats: newStats, hasChanges };
 }
+
+/**
+ * Os efeitos de um consumível com a cura resolvida: o dado ou o valor fixo gravado, ou o da
+ * descrição do catálogo, já com a Qualidade. É o que o Inventário e a Hotbar entregam ao consumir.
+ */
+export function normalizeHealingEffects<T extends object>(
+  effects: T | null | undefined,
+  catalogDescription: string | undefined,
+  level: number,
+): T & { heal?: number; heal_dice?: string } {
+  const normalized = { ...(effects ?? {}) } as T & { heal?: number; heal_dice?: string };
+  const healing = resolveHealing(normalized.heal_dice, normalized.heal, catalogDescription, level);
+  if (healing.healDice) {
+    normalized.heal_dice = healing.healDice;
+  } else if (healing.heal) {
+    normalized.heal = healing.heal;
+  }
+  return normalized;
+}

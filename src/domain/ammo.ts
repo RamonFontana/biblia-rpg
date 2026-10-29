@@ -27,3 +27,8 @@ export function calculateRecoveredQuantity(
 export function canConsumeAmmo(currentQuantity: number, amount: number): boolean {
   return currentQuantity >= amount;
 }
+
+/** O item de catálogo é munição (Flechas, Pedras de Funda): ele se gasta ao atacar, não se "usa". */
+export function isAmmunitionItem(name: string | null | undefined): boolean {
+  return !!name && (name.includes('Flecha') || name.includes('Pedra'));
+}

@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Aba Itens só com os consumíveis usáveis, cada um com a quantidade; ela some quando não há nada
-- [ ] Cartão do consumível com Usar, que consome pelo mesmo caminho do Inventário (nenhuma regra muda)
-- [ ] Contador de munição da arma equipada, com nome acessível ("Flechas: 12")
-- [ ] O teste da Hotbar cobre a aba Itens, o uso de um consumível e a munição
-- [ ] E2E: o jogador usa um consumível pela Hotbar
+- [x] Aba Itens só com os consumíveis usáveis, cada um com a quantidade; ela some quando não há nada
+- [x] Cartão do consumível com Usar, que consome pelo mesmo caminho do Inventário (nenhuma regra muda)
+- [x] Contador de munição da arma equipada, com nome acessível ("Flechas: 12")
+- [x] O teste da Hotbar cobre a aba Itens, o uso de um consumível e a munição
+- [x] E2E: o jogador usa um consumível pela Hotbar
