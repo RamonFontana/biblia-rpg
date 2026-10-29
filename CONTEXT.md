@@ -224,3 +224,32 @@ _Avoid_: comida, provisões (como termo de regra)
 
 **Ração**:
 Consumível de Sustento, usado só no Descanso Longo.
+
+## Tela da sessão
+
+**Palco**:
+O centro da tela da sessão, onde está a cena; depois o mapa ocupa o mesmo lugar.
+_Avoid_: mesa (que é a mesa presencial), tabuleiro, centro
+
+**Retrato**:
+Um personagem ou inimigo presente no Palco. No mapa, é o pin dele. Tocar nele abre o cartão do personagem.
+_Avoid_: token, avatar, ficha (que é a entidade Personagem)
+
+**Hotbar**:
+As Habilidades e os consumíveis de quem age, sempre à mão embaixo da tela, em abas por espaço do turno (Ação, Ação Bônus, Reação, Livre), mais Itens e Passivas. As passivas só se leem; não se usam.
+_Avoid_: barra de skills, barra de atalhos
+
+**Barra de Status**:
+O que o jogador precisa ver o tempo todo: PV, Fé Atual e Estado de Fé, Condições, Inspiração e de quem é o turno.
+_Avoid_: HUD (para a barra; HUD é só o apelido do conjunto da tela)
+
+**Painel**:
+O que abre quando se toca num ícone do trilho (o dock, na borda do Palco): ficha, inventário, grupo, histórico, descanso. Sobe do rodapé no celular e abre ao lado na web.
+_Avoid_: gaveta, drawer, modal, sheet
+
+**Cartão de Habilidade**:
+O detalhe de uma Habilidade (tipo, espaço do turno, custo de Fé, usos, CD e texto), de onde ela é usada. Sobe logo acima da Hotbar, sem esconder o Palco. Vale também para os consumíveis da Hotbar.
+_Avoid_: tooltip, popup
+
+**Barra do Mestre**:
+Os comandos do Mestre (Solicitar Teste, combate, avançar o tempo, descanso, dados) e a Hotbar do NPC jogável que ele conduz.
