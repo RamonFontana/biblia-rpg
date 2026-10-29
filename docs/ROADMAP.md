@@ -636,7 +636,7 @@ Nenhuma regra de jogo muda. Antes de refatorar, leia os ADRs 0008 (motion e bott
 
 **E2E.** Os nomes acessíveis continuam os mesmos. O ajudante `openPanel(page, nome)` em `e2e/support/ui.ts` abre o Painel antes de procurar o que passou a morar nele; um projeto Playwright `mobile` (`devices['Pixel 7']`) roda `session`, `ability` e `combat`. Os testes de componente não mudam.
 
-**Protótipo (2026-10-29, branch `prototype/session-layout`, commit `6ee68b5`).** Três variantes da Hotbar e do dock. Veredito do autor: as Habilidades como na B (abas por espaço do turno, peças com nome, Cartão acima da Hotbar) e o dock como na C (trilho na borda do Palco); o resto como no grill. Falta testar à mão o arrasto do bottom sheet num iPhone. **Próximo passo:** `/to-tickets` a partir de `.scratch/layout-da-sessao/spec.md`.
+**Protótipo (2026-10-29, branch `prototype/session-layout`, commit `6ee68b5`).** Três variantes da Hotbar e do dock. Veredito do autor: as Habilidades como na B (abas por espaço do turno, peças com nome, Cartão acima da Hotbar) e o dock como na C (trilho na borda do Palco); o resto como no grill. Falta testar à mão o arrasto do bottom sheet num iPhone. **Próximo passo:** `/tdd` pelos tickets em `.scratch/layout-da-sessao/issues/` (01 e 07 começam já).
 
 **Para depois:** slots da Hotbar fixados pelo jogador (hoje é automática); troca automática de aba no combate (Reação fora do turno); arte de ícone por Habilidade; o Sustento no Descanso Longo e os presets de inimigo com Habilidade entram na tela nova, como já decidido.
 
