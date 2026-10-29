@@ -82,7 +82,7 @@ Decisões já tomadas (perguntas desta sessão):
 - Seeds desatualizados: `seed_items*.sql` têm 32 itens; `seed_items.sql` insere slug em coluna UUID; os preços são arredondados para inteiro.
 - Itens também são criados em runtime (`syncInventory.ts:118`), com significado diferente para `category`.
 - Efeitos são `jsonb` livre: o código lê chaves fora do tipo `ItemEffects` (`combat.ts:43`).
-- `heal_dice` nunca é rolado: Bálsamo e Ração curam 0.
+- `heal_dice` nunca é rolado: Bálsamo e Ração curam 0. **Decisão do autor (2026-10-29):** o Bálsamo continua um item e cura 1d4 PV, mas só **dentro do Descanso Curto** (como diz o `docs/itens/consumiveis.md`), com o jogador digitando o d4 rolado na mesa (ADR 0001); a cura em Descanso por escolha de dados continua sendo dos Dados de Vida. Falta especificar e implementar (e a aba Itens da Hotbar passa a mostrá-lo bloqueado fora do Descanso Curto); a Ração e o Odre seguem como Sustento, sem cura.
 - Elmos caem no slot `body` (`syncInventory.ts:62`).
 - Kits iniciais divergem entre `KITS_DB`, `VOCATION_KIT_ITEMS` e o doc.
 - Proficiências de vocação divergem do doc (`itemsDb.ts:87-93`).
