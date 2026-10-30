@@ -113,3 +113,34 @@ describe('Retratos: o delta de PV', () => {
     expect(screen.getByRole('button', { name: 'Eliabe, 7 de 18 PV' })).toBeInTheDocument();
   });
 });
+
+describe('Retratos: o turno', () => {
+  it('só o Retrato de quem age agora ganha o anel do turno', () => {
+    show([retrato('c1', { name: 'Eliabe' }), retrato('c2', { name: 'Rute' })]);
+    expect(screen.queryByTestId('anel-do-turno')).toBeNull();
+    cleanup();
+    render(
+      <MotionConfig reducedMotion="always">
+        <Retratos
+          retratos={[retrato('c1', { name: 'Eliabe' }), retrato('c2', { name: 'Rute' })]}
+          onOpen={onOpen}
+          turnId="c1"
+        />
+      </MotionConfig>,
+    );
+    expect(screen.getByRole('button', { name: /Eliabe/ })).toHaveAttribute('data-turn', 'true');
+    expect(screen.getByRole('button', { name: /Rute/ })).not.toHaveAttribute('data-turn');
+    expect(screen.getAllByTestId('anel-do-turno')).toHaveLength(1);
+  });
+
+  it('o anel pulsa só em opacidade, sem mover nada (reduced-motion)', () => {
+    render(
+      <MotionConfig reducedMotion="always">
+        <Retratos retratos={[retrato('c1')]} onOpen={onOpen} turnId="c1" />
+      </MotionConfig>,
+    );
+    const ring = screen.getByTestId('anel-do-turno');
+    expect(ring.style.transform).toBe('');
+    expect(ring).toHaveAttribute('aria-hidden', 'true');
+  });
+});

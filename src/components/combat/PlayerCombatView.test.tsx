@@ -169,6 +169,13 @@ describe('PlayerCombatView: o combate', () => {
     expect(screen.getByText('É O SEU TURNO!')).toBeInTheDocument();
   });
 
+  it('a faixa do turno entra só com opacidade e posição, sem escala nem loop', () => {
+    startCombat([participant()]);
+    view();
+    const band = screen.getByTestId('faixa-do-turno');
+    expect(band.className).not.toMatch(/zoom|animate-(pulse|bounce|spin|ping)/);
+  });
+
   it('no turno de outro, não avisa', () => {
     startCombat([participant({ id: 'p2', entity_id: 'outro' }), participant()], 0);
     view();

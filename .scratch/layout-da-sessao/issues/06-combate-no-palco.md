@@ -10,8 +10,8 @@ Quando chega o turno do jogador, a faixa "É o seu turno" entra, a Hotbar acende
 
 **Status:** ready-for-agent
 
-- [ ] Faixa de iniciativa com quem age agora marcado
-- [ ] Feed com os 3 últimos eventos (ataques e usos de Habilidade); tocar abre o Histórico
-- [ ] Motion do turno: a faixa, a Hotbar acendendo e o anel que pulsa duas vezes e para. Nada em loop e nenhuma transição acima de cerca de 300 ms segura o toque
-- [ ] O reduced-motion é testado
-- [ ] E2E `combat`: a iniciativa e o feed aparecem e o turno chega ao jogador, no desktop e no `mobile`
+- [x] Faixa de iniciativa com quem age agora marcado
+- [x] Feed com os 3 últimos eventos (ataques e usos de Habilidade); tocar abre o Histórico
+- [x] Motion do turno: a faixa, a Hotbar acendendo e o anel que pulsa duas vezes e para. Nada em loop e nenhuma transição acima de cerca de 300 ms segura o toque
+- [x] O reduced-motion é testado
+- [x] E2E `combat`: a iniciativa e o feed aparecem e o turno chega ao jogador, no desktop e no `mobile`

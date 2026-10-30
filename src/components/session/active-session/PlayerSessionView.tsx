@@ -14,6 +14,8 @@ import { DockPanel } from '@/components/ui/dock-panel';
 import { TradeNotices } from '@/components/session/TradeNotices';
 import { pendingTradesOf } from '@/lib/pendingTrades';
 import { Retratos } from '@/components/session/palco/Retratos';
+import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
+import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard, type RetratoAttack } from '@/components/session/palco/RetratoCard';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { DockRail, type DockItem } from './DockRail';
@@ -109,7 +111,8 @@ export function PlayerSessionView({
   const [retratoId, setRetratoId] = useState<string | null>(null);
   // O participante que o jogador escolheu atacar pelo cartão do Retrato.
   const [attackTargetId, setAttackTargetId] = useState<string | undefined>(undefined);
-  const { attacks, abilityUses, currentTurnParticipant, participants } = useCombatStore();
+  const { activeCombat, attacks, abilityUses, currentTurnParticipant, participants } =
+    useCombatStore();
   const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
   const turn =
     hasActiveCombat && currentTurnParticipant
@@ -129,6 +132,16 @@ export function PlayerSessionView({
   });
   const openRetrato = retratos.find((r) => r.id === retratoId);
   const me = retratos.find((r) => r.isMe);
+  const initiative = participants.map((p) => {
+    const retrato = retratos.find((r) => r.id === p.entity_id);
+    return {
+      id: p.entity_id,
+      name: entities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
+      imageUrl: retrato?.imageUrl,
+      isMe: p.entity_id === myCharacter?.id,
+      down: p.hp_current <= 0,
+    };
+  });
 
   // Um Teste pendente do jogador bloqueia a troca com ele (como na lista de participantes).
   const isBusyWithTest = (userId: string | undefined) =>
@@ -213,7 +226,26 @@ export function PlayerSessionView({
             !myCharacter.is_dead &&
             !hasActiveCombat && <DeathSavesModal character={myCharacter} />}
 
+          {hasActiveCombat && (
+            <>
+              <InitiativeStrip
+                entries={initiative}
+                currentId={currentTurnParticipant?.entity_id}
+                round={activeCombat?.round_number ?? 1}
+              />
+              <CombatFeed
+                attacks={attacks}
+                abilityUses={abilityUses}
+                onOpen={() => {
+                  setRetratoId(null);
+                  setPanel('historico');
+                }}
+              />
+            </>
+          )}
+
           <Retratos
+            turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
             retratos={retratos}
             onOpen={(retrato) => {
               setPanel(null);

@@ -134,6 +134,12 @@ vi.mock('@/components/combat/PlayerCombatView', async () => ({
 vi.mock('@/components/session/palco/Retratos', async () => ({
   Retratos: (await import('@/test/stubs')).makeStub('Retratos'),
 }));
+vi.mock('@/components/session/palco/InitiativeStrip', async () => ({
+  InitiativeStrip: (await import('@/test/stubs')).makeStub('InitiativeStrip'),
+}));
+vi.mock('@/components/session/palco/CombatFeed', async () => ({
+  CombatFeed: (await import('@/test/stubs')).makeStub('CombatFeed'),
+}));
 vi.mock('@/components/session/palco/RetratoCard', async () => ({
   RetratoCard: (await import('@/test/stubs')).makeStub('RetratoCard'),
 }));
@@ -691,6 +697,35 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
     it('o Palco mostra o grupo, o jogador primeiro, e só os NPCs visíveis', async () => {
       await renderPage();
       expect(retratoIds()).toEqual(['c1', 'c2', 'n1']);
+    });
+
+    it('fora do combate não há faixa de iniciativa nem feed', async () => {
+      await renderPage();
+      expect(hasStub('InitiativeStrip')).toBe(false);
+      expect(hasStub('CombatFeed')).toBe(false);
+    });
+
+    it('em combate, a faixa de iniciativa traz a ordem, a rodada e quem age agora', async () => {
+      inCombat('e1');
+      h.combat.activeCombat = { id: 'cb1', round_number: 2 };
+      await renderPage();
+      expect(prop('InitiativeStrip', 'currentId')).toBe('e1');
+      expect(prop('InitiativeStrip', 'round')).toBe(2);
+      expect(pluck(prop('InitiativeStrip', 'entries'), 'id')).toEqual(['c1', 'c2', 'e1']);
+      expect(prop('InitiativeStrip', 'entries')).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: 'c1', isMe: true, down: false })]),
+      );
+      expect(prop('Retratos', 'turnId')).toBe('e1');
+    });
+
+    it('tocar no feed abre o Painel Histórico', async () => {
+      inCombat();
+      await renderPage();
+      act(() => {
+        call('CombatFeed', 'onOpen');
+      });
+      expect(screen.getByRole('dialog', { name: 'Histórico' })).toBeInTheDocument();
+      expect(hasStub('AttackLog')).toBe(true);
     });
 
     it('o inimigo só aparece em combate', async () => {

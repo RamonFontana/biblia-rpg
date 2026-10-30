@@ -2,6 +2,7 @@ import { useCombatStore } from '../../store/combatStore';
 // import { Button } from '../ui/button';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { DeathSavesModal } from './DeathSavesModal';
 import { EnemyCombatList } from './EnemyCombatList';
 import { AttackPanel } from './AttackPanel';
@@ -114,14 +115,20 @@ export function PlayerCombatView({
           {isDying && <DeathSavesModal character={character} participantId={participant.id} />}
 
           {isMyTurn && !isDying && (
-            <div className="bg-primary/20 border-2 border-primary rounded-lg p-6 text-center animate-in fade-in zoom-in flex flex-col items-center gap-4">
+            <motion.div
+              data-testid="faixa-do-turno"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="bg-primary/20 border-2 border-primary rounded-lg p-6 text-center flex flex-col items-center gap-4"
+            >
               <div>
                 <h2 className="text-3xl font-extrabold text-primary uppercase tracking-widest">
                   É O SEU TURNO!
                 </h2>
                 <p className="text-muted-foreground mt-2">Escolha suas ações com sabedoria.</p>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {isMyTurn && !isDying && character && participant && (

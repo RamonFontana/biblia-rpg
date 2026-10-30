@@ -9,12 +9,14 @@ import type { Retrato } from '@/lib/retratos';
 interface RetratosProps {
   retratos: Retrato[];
   onOpen: (retrato: Retrato) => void;
+  /** Quem age agora no combate: o Retrato ganha o anel, que pulsa duas vezes ao chegar o turno. */
+  turnId?: string;
 }
 
 const KIND_LABEL = { player: '', npc: 'NPC', enemy: 'Inimigo' } as const;
 const DELTA_MS = 1200;
 
-export function Retratos({ retratos, onOpen }: RetratosProps) {
+export function Retratos({ retratos, onOpen, turnId }: RetratosProps) {
   return (
     <section
       aria-label="Retratos"
@@ -33,7 +35,7 @@ export function Retratos({ retratos, onOpen }: RetratosProps) {
         <ul className="relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {retratos.map((retrato) => (
             <li key={retrato.id}>
-              <RetratoTile retrato={retrato} onOpen={onOpen} />
+              <RetratoTile retrato={retrato} onOpen={onOpen} turn={retrato.id === turnId} />
             </li>
           ))}
         </ul>
@@ -42,7 +44,15 @@ export function Retratos({ retratos, onOpen }: RetratosProps) {
   );
 }
 
-function RetratoTile({ retrato, onOpen }: { retrato: Retrato; onOpen: (r: Retrato) => void }) {
+function RetratoTile({
+  retrato,
+  onOpen,
+  turn,
+}: {
+  retrato: Retrato;
+  onOpen: (r: Retrato) => void;
+  turn: boolean;
+}) {
   // O delta é o que o PV mudou desde o desenho anterior (estado derivado, sem efeito).
   const [prevPv, setPrevPv] = useState(retrato.pv);
   const [hit, setHit] = useState<{ delta: number; key: number } | null>(null);
@@ -66,11 +76,23 @@ function RetratoTile({ retrato, onOpen }: { retrato: Retrato; onOpen: (r: Retrat
     <button
       type="button"
       aria-label={label}
+      data-turn={turn ? 'true' : undefined}
       onClick={() => onOpen(retrato)}
       className={`relative flex min-h-[88px] w-full flex-col items-center gap-1.5 rounded-lg border bg-stone-900 p-2 text-center transition-colors hover:border-amber-500/60 ${
-        retrato.isMe ? 'border-amber-500/50' : 'border-stone-700'
+        turn ? 'border-amber-500' : retrato.isMe ? 'border-amber-500/50' : 'border-stone-700'
       } ${retrato.down ? 'opacity-60' : ''}`}
     >
+      {turn && (
+        // O anel pulsa duas vezes e para (só opacidade, sem loop); a borda âmbar fica.
+        <motion.span
+          aria-hidden="true"
+          data-testid="anel-do-turno"
+          className="pointer-events-none absolute -inset-0.5 rounded-lg ring-2 ring-amber-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0, 1, 0] }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
+        />
+      )}
       <CharacterAvatar
         imageUrl={retrato.imageUrl}
         name={retrato.name}

@@ -1,6 +1,6 @@
 import { adminClient } from './support/admin';
 import { addCondition, participantCard, startCombat } from './support/combat';
-import { openRetrato } from './support/ui';
+import { closePanel, openRetrato } from './support/ui';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
 const FILISTEU = 'Filisteu';
@@ -101,6 +101,12 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('6 de dano.')).toBeVisible(); // 4 + 2
     await expect(player.getByText(/contra CA/)).toHaveCount(0);
+    // O feed do Palco mostra o ataque, e tocar nele abre o Histórico.
+    const feed = player.getByRole('button', { name: 'Abrir o Histórico do combate' });
+    await expect(feed).toContainText('Eliabe acertou Filisteu: 6 de dano');
+    await feed.click();
+    await expect(player.getByRole('dialog', { name: 'Histórico' })).toBeVisible();
+    await closePanel(player);
     await expect(participantCard(master, FILISTEU)).toContainText('14', { timeout: 15_000 });
     await expect(master.getByText('Últimos ataques')).toBeVisible();
     await expect(master.getByText(/Eliabe → Filisteu/)).toBeVisible();

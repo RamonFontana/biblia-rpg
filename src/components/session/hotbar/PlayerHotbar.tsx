@@ -3,6 +3,7 @@
 // painel de alvos das Habilidades com efeito de combate (ADR 0007) dentro do Cartão. A faixa dos
 // espaços do turno fica acima das abas, só no combate. Termos: CONTEXT.md (Hotbar, Habilidade).
 import { useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import { updateCharacter } from '@/data-access/characters';
 import { AbilityUsePanel } from '@/components/combat/AbilityUsePanel';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -229,7 +230,21 @@ export function PlayerHotbar({
   };
 
   return (
-    <div>
+    <div
+      data-my-turn={isMyTurn && !isDying ? 'true' : undefined}
+      className={`relative ${isMyTurn && !isDying ? 'border-t-2 border-amber-500' : ''}`}
+    >
+      {isMyTurn && !isDying && (
+        // A Hotbar acende uma vez quando o turno chega (só opacidade; a borda âmbar fica).
+        <motion.span
+          aria-hidden="true"
+          data-testid="brilho-do-turno"
+          className="pointer-events-none absolute inset-0 z-10 bg-amber-400/20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        />
+      )}
       {activeCombat && !isDying && (
         <div
           role="group"
