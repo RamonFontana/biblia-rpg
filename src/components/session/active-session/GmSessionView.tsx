@@ -237,7 +237,7 @@ export function GmSessionView({
       {wide && (
         <aside
           aria-label="Coluna do Mestre"
-          className="w-96 shrink-0 space-y-4 border-l border-stone-800 px-4"
+          className="w-[26rem] shrink-0 space-y-4 border-l border-stone-800 px-4"
         >
           {hasActiveCombat ? (
             <>

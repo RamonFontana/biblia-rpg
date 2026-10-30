@@ -146,7 +146,9 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Atacar' }).click();
 
     await expect(player.getByText('Errou')).toBeVisible();
+    await openPanel(master, 'Histórico');
     await expect(master.getByText('Eliabe errou Filisteu.')).toBeVisible();
+    await closePanel(master);
     await focusParticipant(master, FILISTEU);
     await expect(participantCard(master, FILISTEU)).toContainText('20', { timeout: 15_000 });
   });
