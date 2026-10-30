@@ -1,9 +1,8 @@
 // CARACTERIZAÇÃO: linhas de `characters` criadas ao preparar uma sessão (NPC jogável e inimigo),
 // extraídas de sessionService.createGameSession sem alteração.
-// Decisões: ROADMAP.md, Onda 2 (bloco B): o NPC jogável passa a usar as mesmas chaves das fichas.
-// Problema conhecido: o NPC jogável é gravado com chaves em inglês (strength, dexterity…) e
-// stats.armor_class, mas todo leitor espera for/des/… e stats.ca, então o NPC fica com
-// modificadores 0 e CA 10. Fortaleza e Tentação são fixas ('Coragem', 'Ganância').
+// Decisões: ROADMAP.md, Onda 2 (bloco B): o NPC jogável usa as mesmas chaves das fichas
+// (for/des/con/int/sab/car) e a CA vem do equipamento, não de `stats`.
+// Fortaleza e Tentação são fixas ('Coragem', 'Ganância').
 import type { SessionEnemyDraft, SessionNPCDraft } from '../store/createSessionStore';
 
 export function buildPlayableNpcRow(npc: SessionNPCDraft, userId: string) {
@@ -15,16 +14,15 @@ export function buildPlayableNpcRow(npc: SessionNPCDraft, userId: string) {
     tribe: data.tribo || '',
     vocation: data.classe || '',
     attributes: {
-      strength: data.for || 10,
-      dexterity: data.des || 10,
-      constitution: data.con || 10,
-      intelligence: data.int || 10,
-      wisdom: data.sab || 10,
-      charisma: data.car || 10,
+      for: data.for || 10,
+      des: data.des || 10,
+      con: data.con || 10,
+      int: data.int || 10,
+      sab: data.sab || 10,
+      car: data.car || 10,
     },
     stats: {
       level: data.level || 1,
-      armor_class: data.ca || 10,
       pv: 10,
       current_pv: 10,
       current_faith: 100,
