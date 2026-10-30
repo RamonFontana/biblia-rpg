@@ -469,6 +469,14 @@ test.describe('finalizar o combate', () => {
     await expect(master.getByText(/Painel de Combate/)).toHaveCount(0);
 
     await expect(player.getByText(/não está mais entre os vivos/)).toBeVisible();
+    // A moldura do espectador é só de leitura: Palco com Retratos, trilho com Ficha e Grupo, sem Hotbar.
+    await expect(player.getByRole('region', { name: 'Retratos' })).toBeVisible();
+    const rail = player.getByRole('navigation', { name: 'Painéis' });
+    await expect(rail.getByRole('button')).toHaveCount(2);
+    await expect(rail.getByRole('button', { name: 'Ficha' })).toBeVisible();
+    await expect(rail.getByRole('button', { name: 'Grupo' })).toBeVisible();
+    await expect(player.getByRole('tablist', { name: 'Grupos da Hotbar' })).toHaveCount(0);
+    await expect(player.getByRole('button', { name: 'Dados' })).toHaveCount(0);
     const { data } = await adminClient()
       .from('characters')
       .select('is_deleted, is_dead, stats')

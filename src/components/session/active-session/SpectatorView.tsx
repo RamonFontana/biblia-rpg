@@ -1,22 +1,166 @@
+import { useState } from 'react';
+import { BookOpen, Users } from 'lucide-react';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
+import { SessionParticipantList } from '@/components/session/SessionParticipantList';
+import { Retratos } from '@/components/session/palco/Retratos';
+import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
+import { CombatFeed } from '@/components/session/palco/CombatFeed';
+import { RetratoCard } from '@/components/session/palco/RetratoCard';
+import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
+import { buildRetratos } from '@/lib/retratos';
+import { buildCombatEntities } from '@/lib/combatEntities';
+import { useCombatStore } from '@/store/combatStore';
+import { DockRail, type DockItem } from './DockRail';
+import type { PresenceState } from '@/data-access/realtime';
+import type {
+  GameSession,
+  SessionCharacter,
+  SessionNpc,
+  SessionPlayer,
+} from '@/data-access/sessions';
+import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests';
+import type { TradeWithItems } from '@/types/trade';
 
-/** Quem teve a ficha excluída só acompanha a sessão, com a ficha apagada e sem controles. */
-export function SpectatorView({ userId, sessionId }: { userId: string; sessionId: string }) {
+type SpectatorPanel = 'ficha' | 'grupo';
+
+interface SpectatorViewProps {
+  userId: string;
+  sessionId: string;
+  sessionData: GameSession;
+  playerCharacters: SessionPlayer[];
+  npcs: SessionNpc[];
+  enemies: SessionCharacter[];
+  hasActiveCombat: boolean;
+  onlineUsers: PresenceState[];
+  activeTrades: TradeWithItems[];
+  activeTests: SessionTest[];
+  testResults: Record<string, SessionTestResult[]>;
+}
+
+/**
+ * Quem teve a ficha excluída só acompanha a sessão, na mesma moldura (ADR 0009) e só para leitura:
+ * o Palco com os Retratos, a iniciativa e o feed no combate, e um trilho com a Ficha apagada e o
+ * Grupo. Não há Hotbar nem ação nenhuma.
+ */
+export function SpectatorView({
+  userId,
+  sessionId,
+  sessionData,
+  playerCharacters,
+  npcs,
+  enemies,
+  hasActiveCombat,
+  onlineUsers,
+  activeTrades,
+  activeTests,
+  testResults,
+}: SpectatorViewProps) {
+  const [panel, setPanel] = useState<SpectatorPanel | null>(null);
+  const [retratoId, setRetratoId] = useState<string | null>(null);
+  const { activeCombat, attacks, abilityUses, currentTurnParticipant, participants } =
+    useCombatStore();
+
+  const retratos = buildRetratos({
+    playerCharacters,
+    npcs,
+    enemies,
+    myCharacterId: undefined,
+    hasActiveCombat,
+    participants,
+  });
+  const openRetrato = retratos.find((r) => r.id === retratoId);
+  const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
+  const initiative = participants.map((p) => ({
+    id: p.entity_id,
+    name: entities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
+    imageUrl: retratos.find((r) => r.id === p.entity_id)?.imageUrl,
+    isMe: false,
+    down: p.hp_current <= 0,
+  }));
+
+  const dock: DockItem<SpectatorPanel>[] = [
+    { id: 'ficha', label: 'Ficha', icon: <BookOpen className="h-6 w-6" /> },
+    { id: 'grupo', label: 'Grupo', icon: <Users className="h-6 w-6" /> },
+  ];
+  const title = openRetrato ? openRetrato.name : (dock.find((d) => d.id === panel)?.label ?? '');
+
   return (
-    <div className="flex flex-col items-center justify-center h-full">
-      <div className="p-3 md:p-4 bg-stone-800/50 border border-stone-700 rounded-md mb-4 md:mb-6 max-w-md w-full text-center">
-        <h2 className="text-stone-300 font-bold flex items-center justify-center gap-2 text-xl">
-          <span>👻</span> Modo Espectador
-        </h2>
-        <p className="text-stone-400 text-sm mt-2">
-          Seu personagem não está mais entre os vivos nesta jornada. Você ainda pode acompanhar a
-          sessão e as rolagens no chat ou na tela da sala.
-        </p>
-      </div>
+    <div
+      data-testid="moldura-da-sessao"
+      className={`relative flex min-h-[70vh] flex-col md:flex-row ${panel !== null || !!openRetrato ? DOCK_PANEL_GAP : ''}`}
+    >
+      <main aria-label="Palco" className="flex min-w-0 flex-1 flex-col gap-4 pr-16 md:pr-0">
+        <div className="mx-auto w-full max-w-md rounded-md border border-stone-700 bg-stone-800/50 p-3 text-center">
+          <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-stone-300">
+            <span>👻</span> Modo Espectador
+          </h2>
+          <p className="mt-2 text-sm text-stone-400">
+            Seu personagem não está mais entre os vivos nesta jornada. Você ainda pode acompanhar a
+            sessão e as rolagens no chat ou na tela da sala.
+          </p>
+        </div>
 
-      <div className="w-full max-w-4xl opacity-70 pointer-events-none grayscale">
-        <CharacterSheetView userId={userId} sessionId={sessionId} />
-      </div>
+        {hasActiveCombat && (
+          <>
+            <InitiativeStrip
+              entries={initiative}
+              currentId={currentTurnParticipant?.entity_id}
+              round={activeCombat?.round_number ?? 1}
+            />
+            <CombatFeed attacks={attacks} abilityUses={abilityUses} />
+          </>
+        )}
+
+        <Retratos
+          turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
+          retratos={retratos}
+          onOpen={(retrato) => {
+            setPanel(null);
+            setRetratoId(retrato.id);
+          }}
+        />
+      </main>
+
+      <DockRail
+        items={dock}
+        onOpen={(id) => {
+          setRetratoId(null);
+          setPanel(id);
+        }}
+      />
+
+      <DockPanel
+        open={panel !== null || !!openRetrato}
+        onOpenChange={(open) => {
+          if (open) return;
+          setPanel(null);
+          setRetratoId(null);
+        }}
+        title={title}
+      >
+        {openRetrato && <RetratoCard retrato={openRetrato} />}
+        {panel === 'ficha' && (
+          <div className="pointer-events-none opacity-70 grayscale">
+            <CharacterSheetView userId={userId} sessionId={sessionId} />
+          </div>
+        )}
+        {panel === 'grupo' && (
+          <SessionParticipantList
+            onlineUsers={onlineUsers}
+            isGM={false}
+            showTradeNotices={false}
+            sessionId={sessionId}
+            gmId={sessionData.gm_id}
+            playerCharacters={playerCharacters.filter(
+              (pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
+            )}
+            npcs={npcs.filter((n) => n.is_visible)}
+            activeTrades={activeTrades}
+            activeTests={activeTests}
+            testResults={testResults}
+          />
+        )}
+      </DockPanel>
     </div>
   );
 }

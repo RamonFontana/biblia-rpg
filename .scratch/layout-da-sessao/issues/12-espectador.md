@@ -11,7 +11,7 @@ Não há Hotbar nem ação nenhuma.
 
 **Status:** ready-for-agent
 
-- [ ] Moldura do espectador com Palco, iniciativa e feed
-- [ ] Trilho só com Ficha (apagada) e Grupo
-- [ ] Sem Hotbar, sem Barra do Mestre e sem nenhum botão que mude o jogo
-- [ ] O teste da página da sessão cobre o espectador sem ações
+- [x] Moldura do espectador com Palco, iniciativa e feed
+- [x] Trilho só com Ficha (apagada) e Grupo
+- [x] Sem Hotbar, sem Barra do Mestre e sem nenhum botão que mude o jogo
+- [x] O teste da página da sessão cobre o espectador sem ações
