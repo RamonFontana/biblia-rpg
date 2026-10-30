@@ -11,6 +11,11 @@ import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
 import { AttackLog } from '@/components/combat/AttackLog';
 import { DockPanel } from '@/components/ui/dock-panel';
+import { TradeNotices } from '@/components/session/TradeNotices';
+import { pendingTradesOf } from '@/lib/pendingTrades';
+import { Retratos } from '@/components/session/palco/Retratos';
+import { RetratoCard, type RetratoAttack } from '@/components/session/palco/RetratoCard';
+import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { DockRail, type DockItem } from './DockRail';
 import { useCombatStore } from '@/store/combatStore';
 import { getShortRestState } from '@/domain/shortRest';
@@ -100,7 +105,11 @@ export function PlayerSessionView({
   );
 
   const [panel, setPanel] = useState<PlayerPanel | null>(null);
-  const { attacks, abilityUses, currentTurnParticipant } = useCombatStore();
+  // O Retrato aberto ocupa o Painel no lugar dos ícones do trilho.
+  const [retratoId, setRetratoId] = useState<string | null>(null);
+  // O participante que o jogador escolheu atacar pelo cartão do Retrato.
+  const [attackTargetId, setAttackTargetId] = useState<string | undefined>(undefined);
+  const { attacks, abilityUses, currentTurnParticipant, participants } = useCombatStore();
   const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
   const turn =
     hasActiveCombat && currentTurnParticipant
@@ -109,6 +118,62 @@ export function PlayerSessionView({
           name: entities.find((e) => e.id === currentTurnParticipant.entity_id)?.name ?? 'Inimigo',
         }
       : null;
+
+  const retratos = buildRetratos({
+    playerCharacters,
+    npcs,
+    enemies,
+    myCharacterId: myCharacter?.id,
+    hasActiveCombat,
+    participants,
+  });
+  const openRetrato = retratos.find((r) => r.id === retratoId);
+  const me = retratos.find((r) => r.isMe);
+
+  // Um Teste pendente do jogador bloqueia a troca com ele (como na lista de participantes).
+  const isBusyWithTest = (userId: string | undefined) =>
+    !!userId &&
+    activeTests.some(
+      (test) =>
+        test.status === 'active' &&
+        testResults[test.id]?.some((r) => r.player_id === userId && r.status === 'pending'),
+    );
+
+  const negotiate = (retrato: Retrato) => {
+    setRetratoId(null);
+    if (retrato.kind === 'player' && retrato.userId) onNegotiate(retrato.userId);
+    else if (retrato.kind === 'npc' && retrato.npc) onNPCNegotiate(retrato.npc);
+  };
+
+  const attackFor = (retrato: Retrato): RetratoAttack | null => {
+    if (!hasActiveCombat || !retrato.participantId) return null;
+    if (me?.down) return { enabled: false, reason: 'Você está caído' };
+    if (!turn?.isMine) return { enabled: false, reason: 'Não é o seu turno' };
+    return { enabled: true };
+  };
+
+  const attack = (retrato: Retrato) => {
+    setRetratoId(null);
+    setAttackTargetId(retrato.participantId);
+    // O painel de ataque fica no Palco; leva o jogador até ele.
+    window.requestAnimationFrame(() =>
+      document.getElementById('painel-de-ataque')?.scrollIntoView?.({ behavior: 'smooth' }),
+    );
+  };
+
+  const pendingTrades = pendingTradesOf({
+    activeTrades,
+    playerCharacters,
+    userId,
+    isGM: false,
+  });
+  const nameOfTradeNpc = (trade: TradeWithItems) =>
+    npcs.find((n) => n.id === (trade.target_npc_id ?? trade.target_character_id))?.name;
+  const nameOfTradeTarget = (trade: TradeWithItems) =>
+    trade.type === 'npc_trade'
+      ? nameOfTradeNpc(trade)
+      : playerCharacters.find((pc) => pc.character.id === trade.target_character_id)?.character
+          .name;
 
   const restState = getShortRestState(sessionData, hasActiveCombat);
   const dock: DockItem<PlayerPanel>[] = [
@@ -128,7 +193,7 @@ export function PlayerSessionView({
       attention: restState.isOpen || restState.refused,
     },
   ];
-  const title = dock.find((d) => d.id === panel)?.label ?? '';
+  const title = openRetrato ? openRetrato.name : (dock.find((d) => d.id === panel)?.label ?? '');
 
   return (
     <div className="relative flex min-h-[70vh] flex-col md:flex-row">
@@ -148,13 +213,25 @@ export function PlayerSessionView({
             !myCharacter.is_dead &&
             !hasActiveCombat && <DeathSavesModal character={myCharacter} />}
 
+          <Retratos
+            retratos={retratos}
+            onOpen={(retrato) => {
+              setPanel(null);
+              setRetratoId(retrato.id);
+            }}
+          />
+
           {hasActiveCombat && (
-            <div className="w-full p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
+            <div
+              id="painel-de-ataque"
+              className="w-full p-4 border border-red-500/50 bg-red-950/20 rounded-lg"
+            >
               <PlayerCombatView
                 character={myCharacter}
                 enemies={enemies}
                 isLoading={isCharactersLoading}
                 entities={entities}
+                preselectedTargetId={attackTargetId}
                 inspirationContext={{ sessionId, day: sessionData.current_day || 1 }}
                 onInspirationUsed={
                   myCharacter ? (patch) => updateLocal('player', myCharacter.id, patch) : undefined
@@ -171,13 +248,46 @@ export function PlayerSessionView({
         />
       </div>
 
-      <DockRail items={dock} onOpen={setPanel} />
+      <TradeNotices
+        forUser={pendingTrades.forUser}
+        fromUser={pendingTrades.fromUser}
+        playerCharacters={playerCharacters}
+        npcName={nameOfTradeNpc}
+        targetName={nameOfTradeTarget}
+        onAccept={onAcceptTrade}
+        onReject={onRejectTrade}
+      />
+
+      <DockRail
+        items={dock}
+        onOpen={(id) => {
+          setRetratoId(null);
+          setPanel(id);
+        }}
+      />
 
       <DockPanel
-        open={panel !== null}
-        onOpenChange={(open) => !open && setPanel(null)}
+        open={panel !== null || !!openRetrato}
+        onOpenChange={(open) => {
+          if (open) return;
+          setPanel(null);
+          setRetratoId(null);
+        }}
         title={title}
       >
+        {openRetrato && (
+          <RetratoCard
+            retrato={openRetrato}
+            onNegotiate={
+              (openRetrato.kind === 'player' && isBusyWithTest(openRetrato.userId)) ||
+              (openRetrato.kind === 'npc' && !openRetrato.npc)
+                ? undefined
+                : negotiate
+            }
+            attack={attackFor(openRetrato)}
+            onAttack={attack}
+          />
+        )}
         {(panel === 'ficha' || panel === 'inventario') && (
           <CharacterSheetView userId={userId} sessionId={sessionId} />
         )}
@@ -185,6 +295,7 @@ export function PlayerSessionView({
           <SessionParticipantList
             onlineUsers={onlineUsers}
             isGM={false}
+            showTradeNotices={false}
             sessionId={sessionId}
             gmId={sessionData.gm_id}
             playerCharacters={playerCharacters.filter(

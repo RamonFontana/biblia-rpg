@@ -1,5 +1,6 @@
 import { adminClient } from './support/admin';
 import { addCondition, participantCard, startCombat } from './support/combat';
+import { openRetrato } from './support/ui';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
 const FILISTEU = 'Filisteu';
@@ -82,7 +83,14 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
     await expect(player.getByText(/Arma:/)).toContainText('Espada Curta');
-    await player.getByLabel('Alvo').selectOption({ label: FILISTEU });
+    // O alvo vem do cartão do Retrato: Atacar fecha o Painel e deixa o Filisteu escolhido.
+    await openRetrato(player, FILISTEU);
+    await player
+      .getByRole('dialog', { name: FILISTEU })
+      .getByRole('button', { name: 'Atacar' })
+      .click();
+    await expect(player.getByRole('dialog')).toHaveCount(0);
+    await expect(player.getByLabel('Alvo')).not.toHaveValue('');
     await player.getByLabel('d20 natural').fill('10'); // 10 + 2 (FOR) + 2 (Proficiência) = 14 ≥ CA 12
     await player.getByRole('button', { name: 'Atacar' }).click();
 
@@ -147,7 +155,7 @@ test.describe('ataque físico', () => {
     await player.getByLabel('Dano rolado').fill('7');
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
 
-    await expect(player.getByText('9 de dano.')).toBeVisible(); // 7 + 2, o modificador uma vez só
+    await expect(player.getByText('9 de dano.', { exact: true })).toBeVisible(); // 7 + 2, o modificador uma vez só
     await expect(participantCard(master, 'Rute')).toContainText('2', { timeout: 15_000 }); // 11 - 9
   });
 
@@ -239,7 +247,7 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Atacar' }).click();
     await player.getByLabel('Dano rolado').fill('3');
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
-    await expect(player.getByText('4 de dano.')).toBeVisible(); // 3 + 1 (DES)
+    await expect(player.getByText('4 de dano.', { exact: true })).toBeVisible(); // 3 + 1 (DES)
 
     const quiver = await adminClient()
       .from('character_items')
@@ -298,7 +306,7 @@ test.describe('ataque físico', () => {
     await player.getByLabel('Dano rolado').fill('2');
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
 
-    await expect(player.getByText('4 de dano.')).toBeVisible();
+    await expect(player.getByText('4 de dano.', { exact: true })).toBeVisible();
     await expect(player.getByText('Efeito de arma ativado!')).toHaveCount(0);
     await expect(participantCard(master, FILISTEU)).not.toContainText('Sangrando', {
       timeout: 15_000,

@@ -17,6 +17,7 @@ const h = vi.hoisted(() => ({
   combat: {
     activeCombat: null as null | object,
     currentTurnParticipant: null as null | { entity_id: string },
+    participants: [] as unknown[],
     attacks: [] as unknown[],
     abilityUses: [] as unknown[],
     initSubscriptions: vi.fn(),
@@ -130,6 +131,12 @@ vi.mock('@/components/combat/CombatDashboard', async () => ({
 vi.mock('@/components/combat/PlayerCombatView', async () => ({
   PlayerCombatView: (await import('@/test/stubs')).makeStub('PlayerCombatView'),
 }));
+vi.mock('@/components/session/palco/Retratos', async () => ({
+  Retratos: (await import('@/test/stubs')).makeStub('Retratos'),
+}));
+vi.mock('@/components/session/palco/RetratoCard', async () => ({
+  RetratoCard: (await import('@/test/stubs')).makeStub('RetratoCard'),
+}));
 vi.mock('@/components/session/hotbar/PlayerHotbar', async () => ({
   PlayerHotbar: (await import('@/test/stubs')).makeStub('PlayerHotbar'),
 }));
@@ -197,6 +204,7 @@ beforeEach(() => {
   h.sessionListener = undefined;
   h.combat.activeCombat = null;
   h.combat.currentTurnParticipant = null;
+  h.combat.participants = [];
   h.tests = { activeTests: [], testResults: {} };
   h.roster.playerCharacters = [
     { user_id: 'u1', character: character('c1') },
@@ -660,6 +668,187 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
     await renderPage();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(prop('DeathSavesModal', 'character')).toMatchObject({ id: 'c1' });
+  });
+
+  describe('o Palco: Retratos e o cartão do Retrato', () => {
+    const inCombat = (turnEntity = 'c1') => {
+      h.combat.activeCombat = { id: 'cb1' };
+      h.combat.currentTurnParticipant = { entity_id: turnEntity };
+      h.combat.participants = [
+        { id: 'p-c1', entity_id: 'c1', hp_current: 9, conditions: [] },
+        { id: 'p-c2', entity_id: 'c2', hp_current: 9, conditions: [] },
+        { id: 'p-e1', entity_id: 'e1', hp_current: 9, conditions: [] },
+      ];
+    };
+    const retratoIds = () => pluck(prop('Retratos', 'retratos'), 'id');
+    const retratoOf = (id: string) =>
+      (prop('Retratos', 'retratos') as { id: string }[]).find((r) => r.id === id);
+    const openRetrato = (id: string) =>
+      act(() => {
+        call('Retratos', 'onOpen', retratoOf(id));
+      });
+
+    it('o Palco mostra o grupo, o jogador primeiro, e só os NPCs visíveis', async () => {
+      await renderPage();
+      expect(retratoIds()).toEqual(['c1', 'c2', 'n1']);
+    });
+
+    it('o inimigo só aparece em combate', async () => {
+      inCombat();
+      await renderPage();
+      expect(retratoIds()).toEqual(['c1', 'c2', 'n1', 'e1']);
+    });
+
+    it('tocar num Retrato abre o cartão dele num Painel com o nome do Retrato', async () => {
+      await renderPage();
+      openRetrato('c2');
+      expect(screen.getByRole('dialog', { name: 'Personagem c2' })).toBeInTheDocument();
+      expect(prop('RetratoCard', 'retrato')).toMatchObject({ id: 'c2' });
+    });
+
+    it('Negociar com outro jogador cria a troca pelo fluxo de hoje e fecha o Painel', async () => {
+      await renderPage();
+      openRetrato('c2');
+      await act(async () => {
+        await call('RetratoCard', 'onNegotiate', retratoOf('c2'));
+      });
+      expect(h.createTrade).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'player_trade', initiatorUserId: 'u1' }),
+      );
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    it('Negociar com o NPC usa o fluxo de NPC', async () => {
+      await renderPage();
+      openRetrato('n1');
+      await act(async () => {
+        await call('RetratoCard', 'onNegotiate', retratoOf('n1'));
+      });
+      expect(h.createTrade).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'npc_trade', targetNpcId: 'n1' }),
+      );
+    });
+
+    it('quem está com um Teste pendente não tem Negociar', async () => {
+      h.tests = {
+        activeTests: [{ id: 't1', status: 'active' }],
+        testResults: { t1: [{ player_id: 'u2', status: 'pending' }] },
+      };
+      await renderPage();
+      openRetrato('c2');
+      expect(prop('RetratoCard', 'onNegotiate')).toBeUndefined();
+    });
+
+    it('fora do combate, não há Atacar', async () => {
+      await renderPage();
+      openRetrato('c2');
+      expect(prop('RetratoCard', 'attack')).toBeNull();
+    });
+
+    it('no meu turno, Atacar está liberado para quem está no combate', async () => {
+      inCombat('c1');
+      await renderPage();
+      openRetrato('e1');
+      expect(prop('RetratoCard', 'attack')).toEqual({ enabled: true });
+    });
+
+    it('fora do meu turno, Atacar fica bloqueado com o motivo', async () => {
+      inCombat('e1');
+      await renderPage();
+      openRetrato('e1');
+      expect(prop('RetratoCard', 'attack')).toEqual({
+        enabled: false,
+        reason: 'Não é o seu turno',
+      });
+    });
+
+    it('caído (0 PV), o jogador não ataca', async () => {
+      inCombat('c1');
+      h.combat.participants = [
+        { id: 'p-c1', entity_id: 'c1', hp_current: 0, conditions: [] },
+        { id: 'p-e1', entity_id: 'e1', hp_current: 9, conditions: [] },
+      ];
+      await renderPage();
+      openRetrato('e1');
+      expect(prop('RetratoCard', 'attack')).toEqual({
+        enabled: false,
+        reason: 'Você está caído',
+      });
+    });
+
+    it('Atacar fecha o Painel e deixa o alvo escolhido no painel de ataque', async () => {
+      inCombat('c1');
+      await renderPage();
+      expect(prop('PlayerCombatView', 'preselectedTargetId')).toBeUndefined();
+      openRetrato('e1');
+      act(() => {
+        call('RetratoCard', 'onAttack', retratoOf('e1'));
+      });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      expect(prop('PlayerCombatView', 'preselectedTargetId')).toBe('p-e1');
+    });
+
+    describe('os avisos de troca ficam por cima de tudo, sem abrir o Grupo', () => {
+      const pending = (over: Obj = {}) => ({
+        id: 'tr1',
+        status: 'pending',
+        type: 'player_trade',
+        initiator_user_id: 'u2',
+        initiator_character_id: 'c2',
+        target_character_id: 'c1',
+        target_npc_id: null,
+        ...over,
+      });
+
+      it('o pedido que chega a mim aparece, e Aceitar e Recusar usam o fluxo de hoje', async () => {
+        h.trades.activeTrades = [pending()];
+        await renderPage();
+        expect(screen.getByText('Solicitação de Troca')).toBeInTheDocument();
+        await act(async () => {
+          fireEvent.click(screen.getByRole('button', { name: 'Aceitar' }));
+        });
+        expect(h.acceptTrade).toHaveBeenCalledWith('tr1');
+        await act(async () => {
+          fireEvent.click(screen.getByRole('button', { name: 'Recusar' }));
+        });
+        expect(h.cancelTrade).toHaveBeenCalledWith('tr1');
+      });
+
+      it('o pedido que eu fiz aparece com Cancelar pedido', async () => {
+        h.trades.activeTrades = [
+          pending({
+            initiator_user_id: 'u1',
+            initiator_character_id: 'c1',
+            target_character_id: 'c2',
+          }),
+        ];
+        await renderPage();
+        expect(screen.getByText('Pedido de Troca enviado')).toBeInTheDocument();
+        await act(async () => {
+          fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));
+        });
+        expect(h.cancelTrade).toHaveBeenCalledWith('tr1');
+      });
+
+      it('com o Grupo aberto, o aviso não duplica', async () => {
+        h.trades.activeTrades = [pending()];
+        await renderPage();
+        openPanel('Grupo');
+        expect(screen.getAllByText('Solicitação de Troca')).toHaveLength(1);
+        expect(prop('SessionParticipantList', 'showTradeNotices')).toBe(false);
+      });
+
+      it('sem pedido pendente, não há aviso', async () => {
+        await renderPage();
+        expect(screen.queryByText('Solicitação de Troca')).not.toBeInTheDocument();
+      });
+    });
+
+    it('o Grupo segue no trilho, com as trocas pendentes e a presença', async () => {
+      await renderPage();
+      openPanel('Grupo');
+      expect(hasStub('SessionParticipantList')).toBe(true);
+    });
   });
 
   it('a Barra de Status recebe a ficha do jogador, o dia e o período, sem turno fora do combate', async () => {

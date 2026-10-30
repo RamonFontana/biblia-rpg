@@ -20,6 +20,8 @@ interface PlayerCombatViewProps {
   isLoading: boolean;
   /** Quem está na sessão, com nome e CA: os alvos possíveis do ataque. */
   entities?: { id: string; name: string; totalAc: number }[];
+  /** O participante que o jogador escolheu atacar pelo cartão do Retrato. */
+  preselectedTargetId?: string;
   /** A sessão e o dia de agora: a Inspiração gasta no ataque é do dia. */
   inspirationContext?: { sessionId: string; day: number };
   /** Avisa a tela do dia gravado quando o ataque gastou a Inspiração. */
@@ -34,6 +36,7 @@ export function PlayerCombatView({
   enemies,
   isLoading,
   entities = [],
+  preselectedTargetId,
   inspirationContext,
   onInspirationUsed,
 }: PlayerCombatViewProps) {
@@ -123,6 +126,8 @@ export function PlayerCombatView({
 
           {isMyTurn && !isDying && character && participant && (
             <AttackPanel
+              key={preselectedTargetId ?? 'sem-alvo'}
+              initialTargetId={preselectedTargetId}
               character={character}
               characterId={character.id}
               attackerParticipantId={participant.id}

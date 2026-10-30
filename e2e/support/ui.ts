@@ -30,3 +30,19 @@ export async function closePanel(page: Page) {
   await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
+
+/** Abre o cartão de um Retrato do Palco (o nome é o do personagem, do NPC ou do inimigo). */
+export async function openRetrato(page: Page, name: string) {
+  await page
+    .getByRole('region', { name: 'Retratos' })
+    .getByRole('button', { name: new RegExp(`^${name},`) })
+    .click();
+  await expect(page.getByRole('dialog', { name })).toBeVisible();
+}
+
+/** Pede uma troca pelo cartão do Retrato; o Painel fecha sozinho. */
+export async function negotiateWith(page: Page, name: string) {
+  await openRetrato(page, name);
+  await page.getByRole('dialog', { name }).getByRole('button', { name: 'Negociar' }).click();
+  await expect(page.getByRole('dialog', { name })).toHaveCount(0);
+}
