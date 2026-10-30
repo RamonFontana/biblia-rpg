@@ -1,8 +1,9 @@
-// CARACTERIZAÇÃO: fixa o comportamento ATUAL das linhas criadas para NPC jogável e inimigo.
+// Fixa as linhas criadas para NPC jogável e inimigo.
 // Decisões: ROADMAP.md, Onda 2 (bloco B): o NPC jogável usa as mesmas chaves das fichas.
 // Termos: CONTEXT.md (Personagem, Fé Inicial, PV).
 import { describe, expect, it } from 'vitest';
 import { getCombatStats } from './equipmentUtils';
+import { abilityCd } from '@/domain/abilitySave';
 import { calculateModifier } from '@/domain/attributes';
 import { buildEnemyRow, buildPlayableNpcRow } from './sessionEntities';
 
@@ -32,8 +33,8 @@ describe('buildPlayableNpcRow', () => {
 
   it('atributo ausente ou 0 vira 10', () => {
     const empty = buildPlayableNpcRow(npc({ for: 0 }), 'u');
-    expect(empty.attributes.strength).toBe(10);
-    expect(empty.attributes.charisma).toBe(10);
+    expect(empty.attributes.for).toBe(10);
+    expect(empty.attributes.car).toBe(10);
   });
 
   it('PV é sempre 10, Fé sempre 100 e Fortaleza/Tentação são fixas', () => {
@@ -42,27 +43,30 @@ describe('buildPlayableNpcRow', () => {
     expect(row.temptation).toBe('Ganância');
   });
 
-  it('BUG conhecido: os atributos usam chaves em inglês que nenhum leitor entende', () => {
-    // A ficha lê for/des/con/int/sab/car; o NPC grava strength/dexterity/...
-    expect(Object.keys(row.attributes)).toEqual([
-      'strength',
-      'dexterity',
-      'constitution',
-      'intelligence',
-      'wisdom',
-      'charisma',
-    ]);
-    const asSheetSees = row.attributes as Record<string, number>;
-    expect(calculateModifier(asSheetSees['for'])).toBe(0);
+  it('os atributos usam as chaves da ficha e dão os modificadores certos', () => {
+    expect(row.attributes).toEqual({ for: 16, des: 14, con: 12, int: 10, sab: 10, car: 10 });
+    expect(calculateModifier(row.attributes.for)).toBe(3);
+    expect(calculateModifier(row.attributes.des)).toBe(2);
   });
 
-  it('BUG conhecido: a CA vai em stats.armor_class e a ficha lê stats.ca (resulta em CA 10)', () => {
-    expect(row.stats.armor_class).toBe(15);
+  it('a CA não é gravada em stats: vem do equipamento (10 sem armadura)', () => {
+    expect(row.stats).not.toHaveProperty('armor_class');
+    expect(row.stats).not.toHaveProperty('ca');
     const sheet = getCombatStats({ stats: row.stats, equipment: {}, character_items: [] });
     expect(sheet.totalAc).toBe(10);
   });
 
-  it('BUG conhecido: a Fé máxima fica em max_faith e a Fé Inicial (faith) não é gravada', () => {
+  it('a CD da Habilidade usa o modificador do atributo certo', () => {
+    const cd = abilityCd({
+      vocation: 'Guerreiro',
+      level: 3,
+      attributes: row.attributes as unknown as Record<string, number>,
+    });
+    const wrong = abilityCd({ vocation: 'Guerreiro', level: 3, attributes: {} });
+    expect(cd).toBeGreaterThan(wrong);
+  });
+
+  it('a Fé máxima fica em max_faith e a Fé Inicial (faith) não é gravada', () => {
     expect(row.stats).not.toHaveProperty('faith');
   });
 
@@ -70,7 +74,6 @@ describe('buildPlayableNpcRow', () => {
     const bare = buildPlayableNpcRow(npc(undefined), 'u');
     expect(bare).toMatchObject({ tribe: '', vocation: '' });
     expect(bare.stats.level).toBe(1);
-    expect(bare.stats.armor_class).toBe(10);
   });
 });
 

@@ -75,7 +75,7 @@ Decisões já tomadas (perguntas desta sessão):
   - Máximo de Fé com 4 valores diferentes (100 / `stats.faith||100` / `||0` / `max_faith`).
   - `current_faith ?? faith ?? 0` repetido 16× em 10 arquivos.
 - **Aleatoriedade:** `Math.random` inline em 7 pontos de regra (`AttributeGeneration:48`, `DeathSavesModal:52`, `DiceRollerDialog:50`, `SessionRestControls:109`, `sessionTestService:112`, `PlayerTestDialog:260-304`, `useAmmunition:49`). Nada é injetável.
-- **NPC jogável:** gravado com `strength/dexterity` e `stats.armor_class` (`sessionService.ts:31-42`), mas todos os leitores esperam `for/des` e `stats.ca`. Resultado: modificadores 0 e CA 10.
+- **NPC jogável:** corrigido na Onda 6 (ticket 07): a criação da sessão grava `for/des/…` sem `stats.armor_class` (a CA vem do equipamento), e a migration `convert_playable_npc_keys` converte as fichas existentes. A migration ainda precisa ser aplicada na produção, com a confirmação do autor.
 
 **Itens**
 - A fonte real é `src/data/itemsDb.ts` (35 itens).

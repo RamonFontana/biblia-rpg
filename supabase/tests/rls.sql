@@ -556,6 +556,26 @@ select pg_temp.t('record_ability_use remove: lista que não é array é recusada
 select pg_temp.t('record_ability_use remove: ainda exige o dono do personagem', pg_temp.after_as((select bob from who), array[$q$select public.record_ability_use('aaaaaaaa-0000-0000-0000-000000000001','vocation-sacerdote-6-purificacao','Purificação','reaction','[{"participantId":"aaaaaaaa-0000-0000-0000-000000000003","conditions":[],"remove":["envenenado"]}]'::jsonb)$q$], $q$select conditions::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000003'$q$), 'error=42501');
 select pg_temp.t('record_ability_use remove: a Ação fora do turno continua recusada', pg_temp.after_as((select bob from who), array[$q$select public.record_ability_use('aaaaaaaa-0000-0000-0000-000000000002','vocation-sacerdote-6-purificacao','Purificação','action','[{"participantId":"aaaaaaaa-0000-0000-0000-000000000003","conditions":[],"remove":["envenenado"]}]'::jsonb)$q$], $q$select conditions::text from public.combat_participants where id='aaaaaaaa-0000-0000-0000-000000000003'$q$), 'error=42501');
 
+-- ======= convert_playable_npc_keys: NPC jogável com chaves em inglês =======
+create or replace function pg_temp.npc_keys_after(legacy_attrs jsonb, legacy_stats jsonb, probe text) returns text language plpgsql as $$
+declare v text;
+begin
+  begin
+    update public.characters set attributes = legacy_attrs, stats = legacy_stats
+      where id = '33333333-0000-0000-0000-000000000004';
+    perform public.convert_playable_npc_keys();
+    execute probe into v;
+    raise exception 'rolled_back';
+  exception when others then
+    if sqlerrm = 'rolled_back' then return v; end if;
+    return 'error=' || sqlstate;
+  end;
+end $$;
+select pg_temp.t('convert_playable_npc_keys: renomeia os atributos', pg_temp.npc_keys_after('{"strength":16,"dexterity":14,"constitution":12,"intelligence":8,"wisdom":10,"charisma":9}', '{"armor_class":15,"pv":10}', $q$select attributes::text from public.characters where id='33333333-0000-0000-0000-000000000004'$q$), '{"car": 9, "con": 12, "des": 14, "for": 16, "int": 8, "sab": 10}');
+select pg_temp.t('convert_playable_npc_keys: tira stats.armor_class e mantém o resto', pg_temp.npc_keys_after('{"strength":16}', '{"armor_class":15,"pv":10}', $q$select stats::text from public.characters where id='33333333-0000-0000-0000-000000000004'$q$), '{"pv": 10}');
+select pg_temp.t('convert_playable_npc_keys: ficha já no formato certo não muda', pg_temp.npc_keys_after('{"for":16,"des":14,"con":12,"int":8,"sab":10,"car":9}', '{"ca":12}', $q$select (select count(*) from public.characters where attributes ? 'strength')::text$q$), '0');
+select pg_temp.t('convert_playable_npc_keys: ninguém além do dono do banco executa', pg_temp.run_as((select gm from who), 'select public.convert_playable_npc_keys()'), 'error=42501');
+
 -- ============================ resultado ============================
 do $$
 declare bad text; total int; ok int;
