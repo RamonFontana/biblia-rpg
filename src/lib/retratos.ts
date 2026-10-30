@@ -26,6 +26,8 @@ export interface Retrato {
   npc?: SessionNpc;
   /** Só em combate: o participante dele. */
   participantId?: string;
+  /** Só do Mestre: o NPC que os jogadores ainda não veem. */
+  hidden?: boolean;
 }
 
 interface CombatSlice {
@@ -42,6 +44,8 @@ interface BuildInput {
   myCharacterId: string | undefined;
   hasActiveCombat: boolean;
   participants: CombatSlice[];
+  /** O Mestre vê os NPCs escondidos também. */
+  includeHiddenNpcs?: boolean;
 }
 
 const asConditions = (value: unknown): ConditionEntry[] =>
@@ -54,6 +58,7 @@ export function buildRetratos({
   myCharacterId,
   hasActiveCombat,
   participants,
+  includeHiddenNpcs = false,
 }: BuildInput): Retrato[] {
   const participantOf = (entityId: string) =>
     hasActiveCombat ? participants.find((p) => p.entity_id === entityId) : undefined;
@@ -87,8 +92,10 @@ export function buildRetratos({
     .sort((a, b) => Number(b.isMe) - Number(a.isMe));
 
   const visibleNpcs = npcs
-    .filter((npc) => !npc.is_deleted && npc.is_visible)
-    .map((npc) => make(npc, 'npc', 'NPC', { npc }));
+    .filter((npc) => !npc.is_deleted && (npc.is_visible || includeHiddenNpcs))
+    .map((npc) =>
+      make(npc, 'npc', 'NPC', { npc, hidden: includeHiddenNpcs ? !npc.is_visible : undefined }),
+    );
 
   const inCombat = hasActiveCombat
     ? enemies

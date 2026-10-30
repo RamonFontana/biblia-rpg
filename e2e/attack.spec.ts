@@ -1,6 +1,6 @@
 import { adminClient } from './support/admin';
-import { addCondition, participantCard, startCombat } from './support/combat';
-import { closePanel, openRetrato, watchPlayers } from './support/ui';
+import { addCondition, focusParticipant, participantCard, startCombat } from './support/combat';
+import { closePanel, openPanel, openRetrato, watchPlayers } from './support/ui';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
 const FILISTEU = 'Filisteu';
@@ -107,11 +107,15 @@ test.describe('ataque físico', () => {
     await feed.click();
     await expect(player.getByRole('dialog', { name: 'Histórico' })).toBeVisible();
     await closePanel(player);
+    await focusParticipant(master, FILISTEU);
     await expect(participantCard(master, FILISTEU)).toContainText('14', { timeout: 15_000 });
+    // O registro do Mestre mora no Painel Histórico.
+    await openPanel(master, 'Histórico');
     await expect(master.getByText('Últimos ataques')).toBeVisible();
     await expect(master.getByText(/Eliabe → Filisteu/)).toBeVisible();
     await expect(master.getByText(/contra CA 12/)).toBeVisible();
     await expect(master.getByText('Eliabe acertou Filisteu: 6 de dano.')).toBeVisible();
+    await closePanel(master);
 
     const { data } = await adminClient()
       .from('combat_attacks')
@@ -142,7 +146,10 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Atacar' }).click();
 
     await expect(player.getByText('Errou')).toBeVisible();
+    await openPanel(master, 'Histórico');
     await expect(master.getByText('Eliabe errou Filisteu.')).toBeVisible();
+    await closePanel(master);
+    await focusParticipant(master, FILISTEU);
     await expect(participantCard(master, FILISTEU)).toContainText('20', { timeout: 15_000 });
   });
 
@@ -162,6 +169,7 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
 
     await expect(player.getByText('9 de dano.', { exact: true })).toBeVisible(); // 7 + 2, o modificador uma vez só
+    await focusParticipant(master, 'Rute');
     await expect(participantCard(master, 'Rute')).toContainText('2', { timeout: 15_000 }); // 11 - 9
   });
 
@@ -225,7 +233,9 @@ test.describe('ataque físico', () => {
     await expect(player.getByText('6 de dano.')).toBeVisible();
 
     await expect(player.getByText('Inspiração usada hoje').first()).toBeVisible();
+    await openPanel(master, 'Histórico');
     await expect(master.getByText(/com Vantagem · Inspiração/)).toBeVisible();
+    await closePanel(master);
     const { data } = await adminClient()
       .from('combat_attacks')
       .select('applied_mode, inspiration_used');
@@ -290,11 +300,14 @@ test.describe('ataque físico', () => {
     await player.getByRole('button', { name: 'Aplicar dano' }).click();
 
     await expect(player.getByText('Efeito de arma ativado!')).toBeVisible();
+    await focusParticipant(master, FILISTEU);
     await expect(participantCard(master, FILISTEU)).toContainText('Sangrando', { timeout: 15_000 });
+    await openPanel(master, 'Histórico');
     await expect(
       master.getByRole('listitem').filter({ hasText: /Efeito de arma: Sangrando/ }),
     ).toBeVisible();
     await expect(master.getByText(/dano\. Efeito de arma: Sangrando\./)).toBeVisible();
+    await closePanel(master);
     const { data } = await adminClient()
       .from('combat_participants')
       .select('conditions')
@@ -314,6 +327,7 @@ test.describe('ataque físico', () => {
 
     await expect(player.getByText('4 de dano.', { exact: true })).toBeVisible();
     await expect(player.getByText('Efeito de arma ativado!')).toHaveCount(0);
+    await focusParticipant(master, FILISTEU);
     await expect(participantCard(master, FILISTEU)).not.toContainText('Sangrando', {
       timeout: 15_000,
     });

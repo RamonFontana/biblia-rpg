@@ -5,6 +5,18 @@ export function participantCard(master: Page, name: string): Locator {
   return master.getByTitle(name).locator('xpath=ancestor::div[contains(@class, "bg-card")][1]');
 }
 
+/**
+ * Põe o participante em foco na coluna do Mestre (tocando no Retrato dele no Palco). O cartão do
+ * participante só existe na página enquanto ele está em foco; o do turno atual já vem em foco.
+ */
+export async function focusParticipant(master: Page, name: string) {
+  await master
+    .getByRole('region', { name: 'Retratos' })
+    .getByRole('button', { name: new RegExp(`^${name},`) })
+    .click();
+  await expect(master.getByTitle(name)).toBeVisible();
+}
+
 /** Abre o setup, dá a iniciativa de cada participante e inicia o combate. */
 export async function startCombat(
   master: Page,
@@ -28,6 +40,7 @@ export async function modifyHealth(
   type: 'Dano' | 'Cura',
   amount: number,
 ) {
+  await focusParticipant(master, name);
   await participantCard(master, name).getByRole('button', { name: 'Modificar Vida' }).click();
   const modal = master.getByRole('dialog');
   if (type === 'Cura') {
@@ -41,6 +54,7 @@ export async function modifyHealth(
 
 /** Aplica uma Condição pelo botão "Adicionar Efeito"; duração 0 é "até ser curada". */
 export async function addCondition(master: Page, name: string, condition: string, turns: number) {
+  await focusParticipant(master, name);
   await participantCard(master, name).getByRole('button', { name: 'Adicionar Efeito' }).click();
   const modal = master.getByRole('dialog');
   await modal.getByRole('combobox', { name: 'Condição' }).click();

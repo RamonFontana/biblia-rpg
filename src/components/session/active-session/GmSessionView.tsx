@@ -7,11 +7,16 @@ import { SessionRestControls } from '@/components/session/SessionRestControls';
 import { ShortRestCard } from '@/components/session/ShortRestCard';
 import { useShortRestRecharge } from '@/hooks/useShortRestRecharge';
 import { RuptureAlert } from '@/components/session/RuptureAlert';
+import { DyingAlert } from '@/components/session/DyingAlert';
+import { Retratos } from '@/components/session/palco/Retratos';
+import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import { AttackLog } from '@/components/combat/AttackLog';
 import { Button } from '@/components/ui/button';
 import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { useCombatStore } from '@/store/combatStore';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { getShortRestState } from '@/domain/shortRest';
 import { DockRail, type DockItem } from './DockRail';
 import { MasterBar } from './MasterBar';
@@ -103,15 +108,84 @@ export function GmSessionView({
   );
 
   const [panel, setPanel] = useState<GmPanel | null>(null);
-  const { attacks, abilityUses } = useCombatStore();
+  const { activeCombat, attacks, abilityUses, currentTurnParticipant, participants } =
+    useCombatStore();
+  // A coluna fixa do Mestre só cabe a partir de `lg`; abaixo disso o combate fica no Palco.
+  const wide = useMediaQuery('(min-width: 1024px)');
+
+  const retratos = buildRetratos({
+    playerCharacters,
+    npcs,
+    enemies,
+    myCharacterId: undefined,
+    hasActiveCombat,
+    participants,
+    includeHiddenNpcs: true,
+  });
+  const dying = retratos
+    .filter((r) => r.kind === 'player' && r.down)
+    .filter((r) => !playerCharacters.find((pc) => pc.character.id === r.id)?.character.is_dead)
+    .map((r) => r.name);
+  const initiative = participants.map((p) => {
+    const retrato = retratos.find((r) => r.id === p.entity_id);
+    return {
+      id: p.entity_id,
+      name: availableEntities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
+      imageUrl: retrato?.imageUrl,
+      isMe: false,
+      down: p.hp_current <= 0,
+    };
+  });
+
+  // O participante em foco acompanha o turno; escolher um Retrato o fixa até o turno mudar.
+  const [focus, setFocus] = useState<{ id: string; turn: string | undefined } | null>(null);
+  const turnId = currentTurnParticipant?.id;
+  const focusId = focus && focus.turn === turnId ? focus.id : (turnId ?? participants[0]?.id);
+
+  const openRetrato = (retrato: Retrato) => {
+    if (wide && hasActiveCombat && retrato.participantId) {
+      setFocus({ id: retrato.participantId, turn: turnId });
+    } else {
+      setPanel(
+        retrato.kind === 'player' ? 'jogadores' : retrato.kind === 'npc' ? 'npcs' : 'inimigos',
+      );
+    }
+  };
+
+  // Fora do combate, a coluna já mostra os cartões dos jogadores: o Painel repetiria a lista.
+  const columnShowsPlayers = wide && !hasActiveCombat;
 
   const restState = getShortRestState(sessionData, hasActiveCombat);
   const activeTest = activeTests.find((t) => t.status === 'active');
   const hasAnswers =
     !!activeTest && (testResults[activeTest.id] ?? []).some((r) => r.status === 'submitted');
 
+  const participantList = (
+    <SessionParticipantList
+      onlineUsers={onlineUsers}
+      isGM
+      sessionId={sessionId}
+      currentDay={sessionData.current_day || 1}
+      gmId={sessionData.gm_id}
+      playerCharacters={playerCharacters.filter(
+        (pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
+      )}
+      tradeNpcs={npcs}
+      activeTrades={activeTrades}
+      onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
+      onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
+      onShop={onShop}
+      onAcceptTrade={onAcceptTrade}
+      onRejectTrade={onRejectTrade}
+      activeTests={activeTests}
+      testResults={testResults}
+    />
+  );
+
   const dock: DockItem<GmPanel | 'testes'>[] = [
-    { id: 'jogadores', label: 'Jogadores', icon: <Users className="h-6 w-6" /> },
+    ...(columnShowsPlayers
+      ? []
+      : [{ id: 'jogadores' as const, label: 'Jogadores', icon: <Users className="h-6 w-6" /> }]),
     { id: 'inimigos', label: 'Inimigos', icon: <Skull className="h-6 w-6" /> },
     { id: 'npcs', label: 'NPCs', icon: <Sparkles className="h-6 w-6" /> },
     // O Teste já tem a janela própria do Mestre; o ícone abre essa janela.
@@ -135,15 +209,18 @@ export function GmSessionView({
       <div className="flex min-w-0 flex-1 flex-col">
         <main aria-label="Palco" className="flex min-w-0 flex-1 flex-col gap-4 pr-16 md:pr-0">
           <RuptureAlert players={playerCharacters} />
+          <DyingAlert names={dying} />
 
-          {hasActiveCombat ? (
+          <Retratos
+            turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
+            retratos={retratos}
+            onOpen={openRetrato}
+          />
+
+          {hasActiveCombat && !wide && (
             <div className="p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
               <CombatDashboard availableEntities={availableEntities} />
             </div>
-          ) : (
-            <p className="py-8 text-center text-sm text-stone-500">
-              Abra um Painel no trilho para gerenciar a mesa.
-            </p>
           )}
         </main>
         {sessionData.status === 'active' && (
@@ -156,6 +233,28 @@ export function GmSessionView({
           />
         )}
       </div>
+
+      {wide && (
+        <aside
+          aria-label="Coluna do Mestre"
+          className="w-[26rem] shrink-0 space-y-4 border-l border-stone-800 px-4"
+        >
+          {hasActiveCombat ? (
+            <>
+              <InitiativeStrip
+                entries={initiative}
+                currentId={currentTurnParticipant?.entity_id}
+                round={activeCombat?.round_number ?? 1}
+              />
+              <div className="rounded-lg border border-red-500/50 bg-red-950/20 p-4">
+                <CombatDashboard availableEntities={availableEntities} focusId={focusId} />
+              </div>
+            </>
+          ) : (
+            participantList
+          )}
+        </aside>
+      )}
 
       <DockRail
         items={dock}
@@ -170,27 +269,7 @@ export function GmSessionView({
         onOpenChange={(open) => !open && setPanel(null)}
         title={title}
       >
-        {panel === 'jogadores' && (
-          <SessionParticipantList
-            onlineUsers={onlineUsers}
-            isGM
-            sessionId={sessionId}
-            currentDay={sessionData.current_day || 1}
-            gmId={sessionData.gm_id}
-            playerCharacters={playerCharacters.filter(
-              (pc) => !pc.character.is_deleted && !pc.character.is_npc && !pc.character.is_enemy,
-            )}
-            tradeNpcs={npcs}
-            activeTrades={activeTrades}
-            onUpdatePlayerData={(characterId, patch) => updateLocal('player', characterId, patch)}
-            onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
-            onShop={onShop}
-            onAcceptTrade={onAcceptTrade}
-            onRejectTrade={onRejectTrade}
-            activeTests={activeTests}
-            testResults={testResults}
-          />
-        )}
+        {panel === 'jogadores' && !columnShowsPlayers && participantList}
         {panel === 'inimigos' && (
           <SessionEnemyList
             sessionId={sessionId}

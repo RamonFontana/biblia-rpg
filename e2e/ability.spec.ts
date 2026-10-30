@@ -2,7 +2,7 @@ import { adminClient } from './support/admin';
 import { addCondition, startCombat } from './support/combat';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect, type Seed, type SignIn } from './fixtures';
-import { watchPlayers } from './support/ui';
+import { closePanel, openPanel, watchPlayers } from './support/ui';
 
 const FILISTEU = 'Filisteu';
 
@@ -100,9 +100,12 @@ test.describe('efeito de Habilidade', () => {
     await usePanel(player).getByRole('button', { name: 'Usar Habilidade' }).click();
 
     await expect(player.getByText('Filisteu: Paralisado')).toBeVisible();
+    // O registro do Mestre mora no Painel Histórico.
+    await openPanel(master, 'Histórico');
     await expect(master.getByText('Filisteu: Paralisado')).toBeVisible({ timeout: 15_000 });
     await expect(master.getByText(/Eliabe usou Palavra de Autoridade/).first()).toBeVisible();
     await expect(master.getByText('Últimos ataques e Habilidades')).toBeVisible();
+    await closePanel(master);
 
     expect(await conditionsOf(filisteu)).toEqual(['paralisado']);
     const { data, error } = await adminClient()
@@ -412,9 +415,11 @@ test.describe('efeito de Habilidade', () => {
     };
     expect(await faithOf(eliabe)).toBe(77);
     expect(await faithOf(rute)).toBe(50);
+    await openPanel(master, 'Histórico');
     await expect(
       master.getByText(/Eliabe: d20 2 .* · falhou · perdeu 3 de Fé/).first(),
     ).toBeVisible();
+    await closePanel(master);
 
     // A Habilidade entrou em Recarga: não dá para usar de novo.
     await expect(

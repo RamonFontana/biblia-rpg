@@ -69,7 +69,7 @@ function RetratoTile({
 
   const percent =
     retrato.pvMax > 0 ? Math.min(100, Math.max(0, (retrato.pv / retrato.pvMax) * 100)) : 0;
-  const label = `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}`;
+  const label = `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}${retrato.hidden ? ', escondido' : ''}`;
   const kind = KIND_LABEL[retrato.kind];
 
   return (
@@ -80,7 +80,7 @@ function RetratoTile({
       onClick={() => onOpen(retrato)}
       className={`relative flex min-h-[88px] w-full flex-col items-center gap-1.5 rounded-lg border bg-stone-900 p-2 text-center transition-colors hover:border-amber-500/60 ${
         turn ? 'border-amber-500' : retrato.isMe ? 'border-amber-500/50' : 'border-stone-700'
-      } ${retrato.down ? 'opacity-60' : ''}`}
+      } ${retrato.down ? 'opacity-60' : ''} ${retrato.hidden ? 'border-dashed' : ''}`}
     >
       {turn && (
         // O anel pulsa duas vezes e para (só opacidade, sem loop); a borda âmbar fica.
@@ -100,6 +100,9 @@ function RetratoTile({
       />
       <span className="w-full truncate text-sm text-stone-100">{retrato.name}</span>
       {kind && <span className="text-[10px] tracking-wide text-stone-500 uppercase">{kind}</span>}
+      {retrato.hidden && (
+        <span className="text-[10px] tracking-wide text-amber-500 uppercase">Escondido</span>
+      )}
       <span
         role="progressbar"
         aria-label={`PV de ${retrato.name}`}

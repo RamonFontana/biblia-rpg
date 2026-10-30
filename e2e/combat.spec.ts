@@ -2,6 +2,7 @@ import { adminClient } from './support/admin';
 import {
   addCondition,
   modifyHealth,
+  focusParticipant,
   participantCard,
   sheetPv,
   startCombat,
@@ -31,10 +32,14 @@ test.describe('iniciar o combate', () => {
 
     await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
 
-    const cards = master.getByTitle(/^(Eliabe|Guarda de Jericó)$/);
-    await expect(cards).toHaveText([GUARD, 'Eliabe']);
+    // A coluna do Mestre traz a iniciativa, e o participante do turno já vem em foco.
+    const column = master.getByRole('complementary', { name: 'Coluna do Mestre' });
+    await expect(
+      column.getByRole('list', { name: 'Ordem de iniciativa' }).getByRole('listitem'),
+    ).toContainText([GUARD, 'Eliabe']);
     await expect(participantCard(master, GUARD)).toContainText('Inimigo • Init: 15');
     await expect(participantCard(master, GUARD)).toContainText('Turno Atual');
+    await focusParticipant(master, 'Eliabe');
     await expect(participantCard(master, 'Eliabe')).toContainText('Personagem • Init: 10');
     await expect(participantCard(master, 'Eliabe')).not.toContainText('Turno Atual');
 
@@ -107,8 +112,9 @@ test.describe('turnos e rodadas', () => {
 
     await master.getByRole('button', { name: 'Próximo Turno' }).click();
 
+    // O foco acompanha o turno: o cartão de Eliabe aparece, e o do Guarda sai da coluna.
     await expect(participantCard(master, 'Eliabe')).toContainText('Turno Atual');
-    await expect(participantCard(master, GUARD)).not.toContainText('Turno Atual');
+    await expect(master.getByTitle(GUARD)).toHaveCount(0);
     await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
     // A faixa gira: Eliabe passa a agir agora, e o anel do Retrato aparece.
     const order = player.getByRole('list', { name: 'Ordem de iniciativa' }).getByRole('listitem');
@@ -227,9 +233,12 @@ test.describe('vida', () => {
       name: 'Modificar Vida',
     });
     await expect(guardButton).toBeDisabled();
+    // O cooldown é do participante: trocar o foco para Eliabe mostra o botão dele livre.
+    await focusParticipant(master, 'Eliabe');
     await expect(
       participantCard(master, 'Eliabe').getByRole('button', { name: 'Modificar Vida' }),
     ).toBeEnabled();
+    await focusParticipant(master, GUARD);
     await expect(guardButton).toBeEnabled();
     await expect(participantCard(master, GUARD)).toContainText('HP Atual:9');
   });

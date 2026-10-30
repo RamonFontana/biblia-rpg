@@ -290,10 +290,16 @@ test.describe('negociação com NPC', () => {
     await player.goto(`/session/${sessionId}`);
     await watchPlayers(master, 2);
     await expect(player.getByText('Raabe')).toHaveCount(0);
+    // O Palco do Mestre mostra o NPC escondido, marcado como tal.
+    const raabeAtMaster = master
+      .getByRole('region', { name: 'Retratos' })
+      .getByRole('button', { name: /^Raabe,.*escondido$/ });
+    await expect(raabeAtMaster).toContainText('Escondido');
 
     await openPanel(master, 'NPCs');
     await master.getByRole('button', { name: 'Alternar visibilidade' }).click();
     await expect(master.getByText('VISÍVEL')).toBeVisible();
+    await expect(raabeAtMaster).toHaveCount(0);
     await expect(player.getByText('Raabe')).toBeVisible();
 
     await negotiateWith(player, 'Raabe');

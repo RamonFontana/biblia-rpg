@@ -16,7 +16,7 @@ const h = vi.hoisted(() => ({
   unsubscribeSession: vi.fn(),
   combat: {
     activeCombat: null as null | object,
-    currentTurnParticipant: null as null | { entity_id: string },
+    currentTurnParticipant: null as null | { entity_id: string; id?: string },
     participants: [] as unknown[],
     attacks: [] as unknown[],
     abilityUses: [] as unknown[],
@@ -564,6 +564,120 @@ describe('visão do Mestre', () => {
     await renderPage();
     openPanel('Histórico');
     expect(hasStub('AttackLog')).toBe(true);
+  });
+
+  describe('o Palco do Mestre e a coluna', () => {
+    const wideScreen = () =>
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: true,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+    const inCombat = (turnEntity = 'c1') => {
+      h.combat.activeCombat = { id: 'cb1', round_number: 2 };
+      h.combat.currentTurnParticipant = { id: `p-${turnEntity}`, entity_id: turnEntity };
+      h.combat.participants = [
+        { id: 'p-c1', entity_id: 'c1', hp_current: 9, conditions: [] },
+        { id: 'p-c2', entity_id: 'c2', hp_current: 9, conditions: [] },
+        { id: 'p-e1', entity_id: 'e1', hp_current: 9, conditions: [] },
+      ];
+    };
+    const retratos = () => prop('Retratos', 'retratos') as { id: string; hidden?: boolean }[];
+
+    it('o Palco mostra todos os Retratos, com o NPC escondido marcado', async () => {
+      h.roster.npcs = [
+        character('n1', { is_visible: true }),
+        character('n2', { is_visible: false }),
+      ];
+      await renderPage();
+      expect(retratos().map((r) => [r.id, r.hidden])).toEqual([
+        ['c1', undefined],
+        ['c2', undefined],
+        ['n1', false],
+        ['n2', true],
+      ]);
+    });
+
+    it('quem está a 0 PV e vivo aparece no alerta Morrendo, no topo do Palco', async () => {
+      h.roster.playerCharacters = [
+        {
+          user_id: 'u1',
+          character: character('c1', { name: 'Eliabe', stats: { pv: 10, current_pv: 0 } }),
+        },
+        {
+          user_id: 'u2',
+          character: character('c2', {
+            name: 'Noemi',
+            stats: { pv: 10, current_pv: 0 },
+            is_dead: true,
+          }),
+        },
+      ];
+      await renderPage();
+      const alert = screen.getByText('Morrendo:').closest('[role="alert"]');
+      expect(alert).toHaveTextContent('Morrendo: Eliabe.');
+      expect(screen.getByRole('main', { name: 'Palco' })).toContainElement(alert as HTMLElement);
+    });
+
+    it('a partir de lg, o combate mora na coluna: iniciativa e o participante do turno em foco', async () => {
+      wideScreen();
+      inCombat('e1');
+      await renderPage();
+      const column = screen.getByRole('complementary', { name: 'Coluna do Mestre' });
+      expect(column).toBeInTheDocument();
+      expect(prop('InitiativeStrip', 'currentId')).toBe('e1');
+      expect(prop('InitiativeStrip', 'round')).toBe(2);
+      expect(prop('CombatDashboard', 'focusId')).toBe('p-e1');
+      // O Palco não repete o painel de combate.
+      expect(
+        screen.getByRole('main', { name: 'Palco' }).querySelector('[data-stub="CombatDashboard"]'),
+      ).toBeNull();
+    });
+
+    it('tocar num Retrato põe o participante em foco', async () => {
+      wideScreen();
+      inCombat('e1');
+      await renderPage();
+      act(() => {
+        call(
+          'Retratos',
+          'onOpen',
+          retratos().find((r) => r.id === 'c2'),
+        );
+      });
+      expect(prop('CombatDashboard', 'focusId')).toBe('p-c2');
+    });
+
+    it('fora do combate, a coluna mostra os cartões dos jogadores e o trilho perde Jogadores', async () => {
+      wideScreen();
+      await renderPage();
+      const column = screen.getByRole('complementary', { name: 'Coluna do Mestre' });
+      expect(column.querySelector('[data-stub="SessionParticipantList"]')).not.toBeNull();
+      const rail = screen.getByRole('navigation', { name: 'Painéis' });
+      expect(within(rail).queryByRole('button', { name: 'Jogadores' })).toBeNull();
+    });
+
+    it('abaixo de lg não há coluna: o combate fica no Palco e Jogadores segue no trilho', async () => {
+      inCombat();
+      await renderPage();
+      expect(screen.queryByRole('complementary', { name: 'Coluna do Mestre' })).toBeNull();
+      expect(prop('CombatDashboard', 'focusId')).toBeUndefined();
+      const rail = screen.getByRole('navigation', { name: 'Painéis' });
+      expect(within(rail).getByRole('button', { name: 'Jogadores' })).toBeInTheDocument();
+    });
+
+    it('abaixo de lg, tocar num Retrato abre o Painel do tipo dele', async () => {
+      await renderPage();
+      act(() => {
+        call(
+          'Retratos',
+          'onOpen',
+          retratos().find((r) => r.id === 'c2'),
+        );
+      });
+      expect(screen.getByRole('dialog', { name: 'Jogadores' })).toBeInTheDocument();
+    });
   });
 
   it('Testes abre a janela de Teste do Mestre, e o ícone ganha o selo com respostas', async () => {

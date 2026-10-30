@@ -20,6 +20,11 @@ import type { ConditionEntry } from '../../types/combat';
 const HEALTH_COOLDOWN_MS = 1500;
 
 interface CombatDashboardProps {
+  /**
+   * O id do participante em foco (coluna do Mestre, ADR 0009): só o cartão dele aparece, e o
+   * histórico fica com o Painel. Sem foco, todos aparecem.
+   */
+  focusId?: string;
   availableEntities?: {
     id: string;
     name: string;
@@ -31,7 +36,7 @@ interface CombatDashboardProps {
   }[];
 }
 
-export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps) {
+export function CombatDashboard({ availableEntities = [], focusId }: CombatDashboardProps) {
   const { activeCombat, participants, attacks, abilityUses, currentTurnParticipant } =
     useCombatStore();
 
@@ -99,129 +104,135 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
         </h2>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {participants.map((participant) => {
-          const isCurrentTurn = currentTurnParticipant?.id === participant.id;
-          const entityDetails = availableEntities.find((e) => e.id === participant.entity_id);
-          const displayName = entityDetails
-            ? entityDetails.name
-            : `${participant.entity_type} (Init: ${participant.initiative})`;
-          const displayType = entityDetails ? entityDetails.type : participant.entity_type;
+      <div className={focusId ? 'grid gap-4' : 'grid gap-4 md:grid-cols-2 lg:grid-cols-3'}>
+        {participants
+          .filter((participant) => focusId === undefined || participant.id === focusId)
+          .map((participant) => {
+            const isCurrentTurn = currentTurnParticipant?.id === participant.id;
+            const entityDetails = availableEntities.find((e) => e.id === participant.entity_id);
+            const displayName = entityDetails
+              ? entityDetails.name
+              : `${participant.entity_type} (Init: ${participant.initiative})`;
+            const displayType = entityDetails ? entityDetails.type : participant.entity_type;
 
-          return (
-            <Card
-              key={participant.id}
-              className={isCurrentTurn ? 'border-primary ring-2 ring-primary ring-offset-2' : ''}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="flex justify-between items-start text-lg gap-2">
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="truncate" title={displayName}>
-                      {displayName}
-                    </span>
-                    <span className="text-xs text-muted-foreground capitalize mt-1 font-normal truncate">
-                      {displayType === 'player'
-                        ? 'Personagem'
-                        : displayType === 'enemy'
-                          ? 'Inimigo'
-                          : 'NPC'}{' '}
-                      • Init: {participant.initiative}
-                    </span>
-                  </div>
-                  {isCurrentTurn && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full whitespace-nowrap ml-2">
-                      Turno Atual
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">HP Atual:</span>
-                    <span className="font-bold text-lg">{participant.hp_current}</span>
-                  </div>
-
-                  {entityDetails?.totalAc !== undefined && (
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-sm text-muted-foreground">CA Total:</span>
-                      <span className="font-bold">{entityDetails.totalAc}</span>
+            return (
+              <Card
+                key={participant.id}
+                className={isCurrentTurn ? 'border-primary ring-2 ring-primary ring-offset-2' : ''}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex justify-between items-start text-lg gap-2">
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="truncate" title={displayName}>
+                        {displayName}
+                      </span>
+                      <span className="text-xs text-muted-foreground capitalize mt-1 font-normal truncate">
+                        {displayType === 'player'
+                          ? 'Personagem'
+                          : displayType === 'enemy'
+                            ? 'Inimigo'
+                            : 'NPC'}{' '}
+                        • Init: {participant.initiative}
+                      </span>
                     </div>
-                  )}
-
-                  {displayType === 'enemy' && entityDetails?.weapon && (
-                    <div className="flex justify-between items-center mt-2 p-2 bg-stone-900 rounded border border-stone-800">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Arma:</span>
-                        <span className="text-sm font-semibold text-amber-500">
-                          {entityDetails.weapon.name}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-xs text-muted-foreground">Dano:</span>
-                        <span className="text-sm font-bold">{entityDetails.weapon.damageDie}</span>
-                      </div>
+                    {isCurrentTurn && (
+                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                        Turno Atual
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">HP Atual:</span>
+                      <span className="font-bold text-lg">{participant.hp_current}</span>
                     </div>
-                  )}
 
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {Array.isArray(participant.conditions) &&
-                      (participant.conditions as unknown as ConditionEntry[]).map((condObj, i) => (
-                        <ConditionBadge
-                          key={i}
-                          conditionId={condObj.conditionId}
-                          duration={condObj.duration || undefined}
-                          onRemove={async (conditionId) => {
-                            const newConditions = removeCondition(
-                              participant.conditions as unknown as ConditionEntry[],
-                              conditionId,
-                            );
-                            await useCombatStore
-                              .getState()
-                              .updateConditions(participant.id, newConditions);
-                          }}
-                        />
-                      ))}
-                    <ConditionSelector
-                      resistanceLevels={entityDetails?.conditionResistanceLevels}
-                      onAddCondition={async (conditionId, duration) => {
-                        const newCond: ConditionEntry = {
-                          conditionId,
-                          duration: duration > 0 ? duration : null,
-                        };
-                        const current =
-                          (participant.conditions as unknown as ConditionEntry[] | null) || [];
-                        const newConditions = mergeCondition(current, newCond);
-                        await useCombatStore
-                          .getState()
-                          .updateConditions(participant.id, newConditions);
-                      }}
-                    />
+                    {entityDetails?.totalAc !== undefined && (
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm text-muted-foreground">CA Total:</span>
+                        <span className="font-bold">{entityDetails.totalAc}</span>
+                      </div>
+                    )}
+
+                    {displayType === 'enemy' && entityDetails?.weapon && (
+                      <div className="flex justify-between items-center mt-2 p-2 bg-stone-900 rounded border border-stone-800">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground">Arma:</span>
+                          <span className="text-sm font-semibold text-amber-500">
+                            {entityDetails.weapon.name}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-xs text-muted-foreground">Dano:</span>
+                          <span className="text-sm font-bold">
+                            {entityDetails.weapon.damageDie}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {Array.isArray(participant.conditions) &&
+                        (participant.conditions as unknown as ConditionEntry[]).map(
+                          (condObj, i) => (
+                            <ConditionBadge
+                              key={i}
+                              conditionId={condObj.conditionId}
+                              duration={condObj.duration || undefined}
+                              onRemove={async (conditionId) => {
+                                const newConditions = removeCondition(
+                                  participant.conditions as unknown as ConditionEntry[],
+                                  conditionId,
+                                );
+                                await useCombatStore
+                                  .getState()
+                                  .updateConditions(participant.id, newConditions);
+                              }}
+                            />
+                          ),
+                        )}
+                      <ConditionSelector
+                        resistanceLevels={entityDetails?.conditionResistanceLevels}
+                        onAddCondition={async (conditionId, duration) => {
+                          const newCond: ConditionEntry = {
+                            conditionId,
+                            duration: duration > 0 ? duration : null,
+                          };
+                          const current =
+                            (participant.conditions as unknown as ConditionEntry[] | null) || [];
+                          const newConditions = mergeCondition(current, newCond);
+                          await useCombatStore
+                            .getState()
+                            .updateConditions(participant.id, newConditions);
+                        }}
+                      />
+                    </div>
+
+                    <div className="pt-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full min-h-[44px]"
+                        disabled={cooling.has(participant.id)}
+                        onClick={() => handleApplyDamage(participant.id, displayName)}
+                      >
+                        Modificar Vida
+                      </Button>
+                    </div>
+
+                    {displayType === 'player' && participant.hp_current <= 0 && (
+                      <MasterDeathControls
+                        characterId={participant.entity_id}
+                        participantId={participant.id}
+                      />
+                    )}
                   </div>
-
-                  <div className="pt-4 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full min-h-[44px]"
-                      disabled={cooling.has(participant.id)}
-                      onClick={() => handleApplyDamage(participant.id, displayName)}
-                    >
-                      Modificar Vida
-                    </Button>
-                  </div>
-
-                  {displayType === 'player' && participant.hp_current <= 0 && (
-                    <MasterDeathControls
-                      characterId={participant.entity_id}
-                      participantId={participant.id}
-                    />
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            );
+          })}
       </div>
 
       {dyingNotices.map((notice) => (
@@ -264,7 +275,7 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
 
       <AbilityPendingPanel uses={abilityUses} participants={participants} />
 
-      <AttackLog attacks={attacks} abilityUses={abilityUses} />
+      {focusId === undefined && <AttackLog attacks={attacks} abilityUses={abilityUses} />}
 
       {selectedParticipant && (
         <HealthModificationModal

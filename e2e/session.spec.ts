@@ -35,8 +35,9 @@ test.describe('criar a sessão', () => {
     await expect(master.getByRole('heading', { name: SESSION_NAME })).toBeVisible();
     await expect(master.getByRole('region', { name: 'Barra do Mestre' })).toBeVisible();
     await openPanel(master, 'NPCs');
-    await expect(master.getByText('Raabe')).toBeVisible();
-    await expect(master.getByText('OCULTO')).toBeVisible();
+    const npcs = master.getByRole('dialog', { name: 'NPCs' });
+    await expect(npcs.getByText('Raabe')).toBeVisible();
+    await expect(npcs.getByText('OCULTO')).toBeVisible();
 
     const admin = adminClient();
     const { data: session } = await admin

@@ -22,13 +22,22 @@ export async function nextPaint(page: Page) {
  * O que mora num Painel só existe na página depois disto. Fecha com `closePanel`.
  */
 export async function openPanel(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Painéis' }).getByRole('button', { name }).click();
+  const item = page.getByRole('navigation', { name: 'Painéis' }).getByRole('button', { name });
+  // O Mestre em tela larga, fora do combate, vê os jogadores na coluna: o trilho não tem o ícone.
+  if (name === 'Jogadores' && (await item.count()) === 0) {
+    await closePanel(page);
+    await expect(page.getByRole('complementary', { name: 'Coluna do Mestre' })).toBeVisible();
+    return;
+  }
+  await item.click();
   await expect(page.getByRole('dialog', { name })).toBeVisible();
 }
 
 export async function closePanel(page: Page) {
-  await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const dialog = page.getByRole('dialog');
+  if ((await dialog.count()) === 0) return;
+  await dialog.getByRole('button', { name: 'Fechar' }).click();
+  await expect(dialog).toHaveCount(0);
 }
 
 /** O Mestre espera `count` pessoas online (o contador mora no Painel Jogadores) e fecha o Painel. */

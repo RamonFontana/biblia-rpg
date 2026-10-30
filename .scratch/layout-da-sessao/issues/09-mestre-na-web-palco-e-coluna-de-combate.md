@@ -14,9 +14,9 @@ Fora do combate, a coluna mostra os cartões dos jogadores. Nada anima nas lista
 
 **Status:** ready-for-agent
 
-- [ ] Palco do Mestre com todos os Retratos e o NPC escondido marcado
-- [ ] Alertas de Ruptura e Morrendo no topo do Palco
-- [ ] Coluna de combate com os componentes de hoje (iniciativa, participante em foco, pendentes, Habilidades de inimigo)
-- [ ] Cartões dos jogadores na coluna fora do combate
-- [ ] Sem animação nas listas do Mestre
-- [ ] E2E `combat`, `ability` e `attack` passam do lado do Mestre
+- [x] Palco do Mestre com todos os Retratos e o NPC escondido marcado
+- [x] Alertas de Ruptura e Morrendo no topo do Palco
+- [x] Coluna de combate com os componentes de hoje (iniciativa, participante em foco, pendentes, Habilidades de inimigo)
+- [x] Cartões dos jogadores na coluna fora do combate
+- [x] Sem animação nas listas do Mestre
+- [x] E2E `combat`, `ability` e `attack` passam do lado do Mestre

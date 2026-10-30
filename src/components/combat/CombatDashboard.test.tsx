@@ -116,6 +116,58 @@ describe('CombatDashboard: o combate', () => {
   });
 });
 
+const anAttack = {
+  id: 'a1',
+  combat_id: 'combat-1',
+  attacker_participant_id: 'p1',
+  target_participant_id: 'p1',
+  attacker_name: 'Eliabe',
+  target_name: 'Filisteu',
+  natural_roll: 14,
+  total: 19,
+  target_ac: 15,
+  hit: true,
+  critical: false,
+  fumble: false,
+  damage: 7,
+  target_hp_before: 12,
+  target_hp_after: 5,
+  applied_mode: 'normal',
+  rolls: null,
+  inspiration_used: false,
+  weapon_effect_triggered: false,
+  weapon_effect_conditions: [],
+  created_at: '',
+} as never;
+
+describe('CombatDashboard: o participante em foco (coluna do Mestre)', () => {
+  it('mostra só o participante em foco, com a rodada, sem o histórico', () => {
+    startCombat([participant('p1'), participant('p2', { hp_current: 4 })]);
+    useCombatStore.setState({ attacks: [anAttack] });
+    render(<CombatDashboard focusId="p2" />);
+    expect(screen.getByText('Painel de Combate (Rodada 3)')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Modificar Vida' })).toHaveLength(1);
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.queryByText('Últimos ataques')).toBeNull();
+  });
+
+  it('os controles de morte e as Habilidades de inimigo seguem na coluna', () => {
+    startCombat([participant('p1', { hp_current: 0 })]);
+    render(<CombatDashboard focusId="p1" />);
+    expect(stubProps('MasterDeathControls')).toMatchObject({ participantId: 'p1' });
+    expect(stubProps('EnemyAbilityPanel')).toBeDefined();
+    expect(stubProps('AbilityPendingPanel')).toBeDefined();
+  });
+
+  it('sem foco, mostra todos os participantes e o histórico', () => {
+    startCombat([participant('p1'), participant('p2')]);
+    useCombatStore.setState({ attacks: [anAttack] });
+    render(<CombatDashboard />);
+    expect(screen.getAllByRole('button', { name: 'Modificar Vida' })).toHaveLength(2);
+    expect(screen.getByText('Últimos ataques')).toBeInTheDocument();
+  });
+});
+
 describe('CombatDashboard: cada participante', () => {
   it('sem dados da entidade, mostra o tipo e a iniciativa', () => {
     startCombat([participant('p1', { entity_type: 'enemy', initiative: 7 })]);
