@@ -20,6 +20,7 @@ import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { getShortRestState } from '@/domain/shortRest';
 import { DockRail, type DockItem } from './DockRail';
 import { MasterBar } from './MasterBar';
+import { PlayerHotbar } from '@/components/session/hotbar/PlayerHotbar';
 import type { PresenceState } from '@/data-access/realtime';
 import type {
   GameSession,
@@ -108,6 +109,8 @@ export function GmSessionView({
   );
 
   const [panel, setPanel] = useState<GmPanel | null>(null);
+  // O NPC jogável que o Mestre conduz pela Hotbar da Barra: o do turno, ou o do seletor.
+  const [actAs, setActAs] = useState<string | undefined>(undefined);
   const { activeCombat, attacks, abilityUses, currentTurnParticipant, participants } =
     useCombatStore();
   // A coluna fixa do Mestre só cabe a partir de `lg`; abaixo disso o combate fica no Palco.
@@ -141,6 +144,11 @@ export function GmSessionView({
   const [focus, setFocus] = useState<{ id: string; turn: string | undefined } | null>(null);
   const turnId = currentTurnParticipant?.id;
   const focusId = focus && focus.turn === turnId ? focus.id : (turnId ?? participants[0]?.id);
+
+  const turnNpc = hasActiveCombat
+    ? playableNpcs.find((n) => n.id === currentTurnParticipant?.entity_id)
+    : undefined;
+  const actingNpc = turnNpc ?? playableNpcs.find((n) => n.id === actAs && !n.is_deleted);
 
   const openRetrato = (retrato: Retrato) => {
     if (wide && hasActiveCombat && retrato.participantId) {
@@ -224,13 +232,34 @@ export function GmSessionView({
           )}
         </main>
         {sessionData.status === 'active' && (
-          <MasterBar
-            onOpenTest={onOpenTest}
-            onOpenCombat={onOpenCombat}
-            onAdvanceTime={onAdvanceTime}
-            onOpenRest={() => setPanel('descanso')}
-            onOpenDice={onOpenDice}
-          />
+          <div className="md:flex md:items-end">
+            {actingNpc && (
+              <div className="min-w-0 md:flex-1">
+                <p className="px-3 pt-1 text-xs text-stone-400">Agindo como {actingNpc.name}</p>
+                <PlayerHotbar
+                  character={actingNpc}
+                  entities={availableEntities}
+                  onCharacterPatch={(patch) => updateLocal('npc', actingNpc.id, patch)}
+                  onOpenDice={onOpenDice}
+                />
+              </div>
+            )}
+            <div className={actingNpc ? 'md:w-[26rem] md:shrink-0' : 'w-full'}>
+              <MasterBar
+                onOpenTest={onOpenTest}
+                onOpenCombat={onOpenCombat}
+                onAdvanceTime={onAdvanceTime}
+                onOpenRest={() => setPanel('descanso')}
+                onOpenDice={onOpenDice}
+                npcs={playableNpcs
+                  .filter((n) => !n.is_deleted)
+                  .map((n) => ({ id: n.id, name: n.name || 'NPC' }))}
+                actingAs={actingNpc?.id}
+                actAsLocked={!!turnNpc}
+                onActAs={setActAs}
+              />
+            </div>
+          </div>
         )}
       </div>
 

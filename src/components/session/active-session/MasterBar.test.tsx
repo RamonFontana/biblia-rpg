@@ -152,3 +152,33 @@ describe('MasterBar: enquanto grava', () => {
     expect(button('Finalizar Combate').disabled).toBe(false);
   });
 });
+
+describe('MasterBar: Agir como', () => {
+  const npcs = [
+    { id: 'n1', name: 'Raabe' },
+    { id: 'n2', name: 'Calebe' },
+  ];
+
+  it('sem NPC jogável, não há seletor', () => {
+    render(<MasterBar {...handlers} />);
+    expect(screen.queryByLabelText('Agir como')).toBeNull();
+  });
+
+  it('o seletor lista os NPCs jogáveis e avisa a escolha', () => {
+    const onActAs = vi.fn();
+    render(<MasterBar {...handlers} npcs={npcs} actingAs={undefined} onActAs={onActAs} />);
+    const select = screen.getByLabelText('Agir como') as HTMLSelectElement;
+    expect(Array.from(select.options).map((o) => o.text)).toEqual(['Ninguém', 'Raabe', 'Calebe']);
+    fireEvent.change(select, { target: { value: 'n2' } });
+    expect(onActAs).toHaveBeenCalledWith('n2');
+    fireEvent.change(select, { target: { value: '' } });
+    expect(onActAs).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('no turno do NPC o seletor mostra quem age e fica travado', () => {
+    render(<MasterBar {...handlers} npcs={npcs} actingAs="n1" actAsLocked onActAs={() => {}} />);
+    const select = screen.getByLabelText('Agir como') as HTMLSelectElement;
+    expect(select.value).toBe('n1');
+    expect(select.disabled).toBe(true);
+  });
+});

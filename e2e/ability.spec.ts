@@ -125,6 +125,65 @@ test.describe('efeito de Habilidade', () => {
     await expect(again.getByRole('button', { name: 'Usar', exact: true })).toBeDisabled();
   });
 
+  test('o Mestre usa uma Habilidade do NPC jogável no turno dele, pela Hotbar da Barra', async ({
+    seed,
+    signIn,
+  }) => {
+    const eleazar = await seed.createCharacter('master', {
+      name: 'Eleazar',
+      is_npc: true,
+      tribe: 'Levi',
+      vocation: 'Sacerdote',
+      level: 16,
+      attributes: { for: 10, des: 10, con: 10, int: 10, sab: 16, car: 12 },
+      skills: { path_choices: { tribe: { 16: 'A' } }, ability_uses: {} },
+      stats: { pv: 40, current_pv: 40, ca: 11, faith: 80, current_faith: 80 },
+    });
+    const filisteu = await seed.createEnemy(FILISTEU, { pv: 20, ca: 12 }, { sab: 10 });
+    const sessionId = await seed.createSession({ characters: [eleazar, filisteu] });
+
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    // A mesa só inicia o combate com o elenco carregado.
+    await openPanel(master, 'Inimigos');
+    await expect(master.getByText(FILISTEU)).toBeVisible();
+    await closePanel(master);
+    await startCombat(master, { Eleazar: 20, [FILISTEU]: 10 });
+
+    // No turno do NPC, a Hotbar dele aparece sozinha na Barra do Mestre.
+    const bar = master.getByRole('region', { name: 'Barra do Mestre' });
+    await expect(master.getByText('Agindo como Eleazar')).toBeVisible();
+    await expect(bar.getByLabel('Agir como')).toHaveValue(eleazar);
+    const card = await openAbility(master, 'Palavra de Autoridade');
+    await card.getByRole('button', { name: 'Usar', exact: true }).click();
+    await usePanel(master).getByLabel('Alvo').selectOption({ label: FILISTEU });
+    await usePanel(master).getByRole('button', { name: 'Usar Habilidade' }).click();
+
+    await usePanel(master).getByRole('button', { name: 'Fechar' }).first().click();
+    await openPanel(master, 'Histórico');
+    await expect(
+      master.getByText('Eleazar usou Palavra de Autoridade · Filisteu: Paralisado'),
+    ).toBeVisible({ timeout: 15_000 });
+    await closePanel(master);
+    expect(await conditionsOf(filisteu)).toEqual(['paralisado']);
+    const { data, error } = await adminClient()
+      .from('characters')
+      .select('skills')
+      .eq('id', eleazar)
+      .single();
+    if (error) throw error;
+    expect((data.skills as { ability_uses: Record<string, number> }).ability_uses).toEqual({
+      'tribe-levi-16-palavra-de-auto': 1,
+    });
+
+    // Passa o turno: a Hotbar some, e o seletor traz o NPC de volta para uma Reação.
+    await master.getByRole('button', { name: 'Próximo Turno' }).click();
+    await expect(master.getByText('Agindo como Eleazar')).toHaveCount(0);
+    await bar.getByLabel('Agir como').selectOption({ label: 'Eleazar' });
+    await expect(master.getByText('Agindo como Eleazar')).toBeVisible();
+    await expect(master.getByRole('tab', { name: TAB['Reação'] })).toBeVisible();
+  });
+
   test('fora do turno a Ação é recusada, mas a Reação vale: Retribuição Divina amedronta o agressor', async ({
     seed,
     signIn,

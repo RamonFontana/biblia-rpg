@@ -680,6 +680,58 @@ describe('visão do Mestre', () => {
     });
   });
 
+  describe('a Hotbar do NPC jogável na Barra do Mestre', () => {
+    it('sem combate nem escolha, não há Hotbar do NPC, mas o seletor lista o NPC jogável', async () => {
+      await renderPage();
+      expect(hasStub('PlayerHotbar')).toBe(false);
+      const bar = screen.getByRole('region', { name: 'Barra do Mestre' });
+      const select = within(bar).getByLabelText('Agir como') as HTMLSelectElement;
+      expect(Array.from(select.options).map((o) => o.text)).toEqual(['Ninguém', 'Guarda']);
+    });
+
+    it('escolher o NPC no seletor abre a Hotbar dele, com a ficha e os alvos', async () => {
+      await renderPage();
+      fireEvent.change(screen.getByLabelText('Agir como'), { target: { value: 'n2' } });
+      expect(prop('PlayerHotbar', 'character')).toMatchObject({ id: 'n2', name: 'Guarda' });
+      expect(pluck(prop('PlayerHotbar', 'entities'), 'id')).toContain('c1');
+      fireEvent.change(screen.getByLabelText('Agir como'), { target: { value: '' } });
+      expect(hasStub('PlayerHotbar')).toBe(false);
+    });
+
+    it('o que a Hotbar grava na ficha do NPC chega à tela', async () => {
+      await renderPage();
+      fireEvent.change(screen.getByLabelText('Agir como'), { target: { value: 'n2' } });
+      act(() => {
+        call('PlayerHotbar', 'onCharacterPatch', { skills: { x: 1 } });
+      });
+      expect(h.roster.updateLocal).toHaveBeenCalledWith('npc', 'n2', { skills: { x: 1 } });
+    });
+
+    it('no turno do NPC a Hotbar dele aparece sozinha e o seletor trava nele', async () => {
+      h.combat.activeCombat = { id: 'cb1' };
+      h.combat.currentTurnParticipant = { id: 'p-n2', entity_id: 'n2' };
+      h.combat.participants = [{ id: 'p-n2', entity_id: 'n2', hp_current: 8, conditions: [] }];
+      await renderPage();
+      expect(prop('PlayerHotbar', 'character')).toMatchObject({ id: 'n2' });
+      const select = screen.getByLabelText('Agir como') as HTMLSelectElement;
+      expect(select.value).toBe('n2');
+      expect(select.disabled).toBe(true);
+    });
+
+    it('no turno de outro, vale a escolha do seletor (Reação)', async () => {
+      h.combat.activeCombat = { id: 'cb1' };
+      h.combat.currentTurnParticipant = { id: 'p-c1', entity_id: 'c1' };
+      h.combat.participants = [
+        { id: 'p-c1', entity_id: 'c1', hp_current: 9, conditions: [] },
+        { id: 'p-n2', entity_id: 'n2', hp_current: 8, conditions: [] },
+      ];
+      await renderPage();
+      expect(hasStub('PlayerHotbar')).toBe(false);
+      fireEvent.change(screen.getByLabelText('Agir como'), { target: { value: 'n2' } });
+      expect(prop('PlayerHotbar', 'character')).toMatchObject({ id: 'n2' });
+    });
+  });
+
   it('Testes abre a janela de Teste do Mestre, e o ícone ganha o selo com respostas', async () => {
     h.tests = {
       activeTests: [{ id: 't1', status: 'active' }],
