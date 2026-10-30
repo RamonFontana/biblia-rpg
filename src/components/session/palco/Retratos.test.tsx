@@ -43,6 +43,14 @@ describe('Retratos', () => {
     expect(screen.getByRole('button', { name: 'Mercador, 12 de 18 PV' })).toBeInTheDocument();
   });
 
+  it('o NPC escondido é marcado como tal, no nome acessível e na tela', () => {
+    show([retrato('n2', { kind: 'npc', name: 'Espião', hidden: true })]);
+    expect(
+      screen.getByRole('button', { name: 'Espião, 12 de 18 PV, escondido' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Escondido')).toBeInTheDocument();
+  });
+
   it('quem está a 0 PV diz "caído"', () => {
     show([retrato('c1', { name: 'Eliabe', pv: 0, down: true })]);
     expect(screen.getByRole('button', { name: 'Eliabe, 0 de 18 PV, caído' })).toBeInTheDocument();

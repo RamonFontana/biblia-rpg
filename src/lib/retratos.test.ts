@@ -71,6 +71,22 @@ describe('buildRetratos: quem está na cena', () => {
     expect(r.filter((x) => x.kind === 'enemy').map((x) => x.id)).toEqual(['e1']);
   });
 
+  it('o Mestre vê também o NPC escondido, marcado como tal', () => {
+    const r = build({
+      includeHiddenNpcs: true,
+      npcs: [
+        ch('n1', { is_visible: true }),
+        ch('n2', { is_visible: false }),
+        ch('n3', { is_visible: false, is_deleted: true }),
+      ],
+    });
+    const npcs = r.filter((x) => x.kind === 'npc');
+    expect(npcs.map((x) => [x.id, x.hidden])).toEqual([
+      ['n1', false],
+      ['n2', true],
+    ]);
+  });
+
   it('a ordem é grupo, NPCs, inimigos', () => {
     const r = build({
       npcs: [ch('n1', { is_visible: true })],
