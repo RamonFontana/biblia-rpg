@@ -10,11 +10,28 @@ export function participantCard(master: Page, name: string): Locator {
  * participante só existe na página enquanto ele está em foco; o do turno atual já vem em foco.
  */
 export async function focusParticipant(master: Page, name: string) {
+  // No celular o Palco é a lista de iniciativa: a linha do participante abre o cartão dele.
+  const row = master.getByRole('list', { name: 'Ordem de iniciativa' }).getByRole('button', {
+    name: new RegExp(`^${name},`),
+  });
+  if ((await row.count()) > 0) {
+    if ((await row.getAttribute('aria-expanded')) === 'false') await row.click();
+    await expect(master.getByTitle(name)).toBeVisible();
+    return;
+  }
   await master
     .getByRole('region', { name: 'Retratos' })
     .getByRole('button', { name: new RegExp(`^${name},`) })
     .click();
   await expect(master.getByTitle(name)).toBeVisible();
+}
+
+/** No celular os comandos do Mestre ficam atrás de "Comandos": abre a barra, se estiver fechada. */
+export async function openCommands(master: Page) {
+  const toggle = master.getByRole('button', { name: 'Comandos', exact: true });
+  if ((await toggle.count()) > 0 && (await toggle.getAttribute('aria-expanded')) === 'false') {
+    await toggle.click();
+  }
 }
 
 /** Abre o setup, dá a iniciativa de cada participante e inicia o combate. */
@@ -23,6 +40,7 @@ export async function startCombat(
   initiative: Record<string, number>,
   { timeout }: { timeout?: number } = {},
 ) {
+  await openCommands(master);
   await master.getByRole('button', { name: 'Iniciar Combate' }).click();
   const setup = master.getByRole('dialog');
   for (const [name, value] of Object.entries(initiative)) {

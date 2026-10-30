@@ -182,3 +182,35 @@ describe('MasterBar: Agir como', () => {
     expect(select.disabled).toBe(true);
   });
 });
+
+describe('MasterBar: Comandos no celular', () => {
+  it('recolhida, só o botão Comandos aparece; abrir mostra os comandos de sempre', () => {
+    render(<MasterBar {...handlers} collapsible />);
+    const toggle = button('Comandos');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: 'Solicitar Teste' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dados' })).toBeNull();
+    fireEvent.click(toggle);
+    expect(button('Comandos').getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(button('Solicitar Teste'));
+    expect(handlers.onOpenTest).toHaveBeenCalled();
+    expect(button('Dados')).toBeTruthy();
+  });
+
+  it('o seletor Agir como fica à vista com os comandos recolhidos', () => {
+    render(
+      <MasterBar
+        {...handlers}
+        collapsible
+        npcs={[{ id: 'n1', name: 'Raabe' }]}
+        onActAs={() => {}}
+      />,
+    );
+    expect(screen.getByLabelText('Agir como')).toBeTruthy();
+  });
+
+  it('sem `collapsible`, não há botão Comandos', () => {
+    render(<MasterBar {...handlers} />);
+    expect(screen.queryByRole('button', { name: 'Comandos' })).toBeNull();
+  });
+});

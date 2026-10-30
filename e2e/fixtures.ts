@@ -27,7 +27,8 @@ export interface Seed {
   createSession(options?: SessionOptions): Promise<string>;
 }
 
-export type SignIn = (user: UserKey) => Promise<Page>;
+/** `phone`: o Mestre também usa o aparelho do projeto (no `mobile`, o Pixel 7), em vez do desktop. */
+export type SignIn = (user: UserKey, options?: { phone?: boolean }) => Promise<Page>;
 
 export const test = base.extend<{ seed: Seed; signIn: SignIn }>({
   // Abre outro navegador isolado já logado como o usuário, para testes com mais de uma pessoa.
@@ -37,10 +38,10 @@ export const test = base.extend<{ seed: Seed; signIn: SignIn }>({
     provide,
   ) => {
     const contexts: { close(): Promise<void> }[] = [];
-    await provide(async (user) => {
-      // O Mestre fica sempre no desktop: a tela dele no celular é o ticket 11 da Onda 6.
+    await provide(async (user, options) => {
+      // O Mestre fica no desktop, a menos que o teste peça o celular dele.
       const device =
-        user === 'master'
+        user === 'master' && !options?.phone
           ? { viewport: { width: 1280, height: 720 } }
           : { viewport, userAgent, isMobile, hasTouch, deviceScaleFactor };
       const context = await browser.newContext({ baseURL, locale, ...device });

@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Abaixo de `md`, no combate, o Palco é a lista de iniciativa com linhas que expandem
-- [ ] O botão "Cena" alterna entre a lista e os Retratos
-- [ ] "Comandos" abre os comandos do Mestre, com os mesmos nomes acessíveis
-- [ ] Alvos de toque de no mínimo 44 px
-- [ ] E2E `combat` do lado do Mestre no projeto `mobile`
+- [x] Abaixo de `md`, no combate, o Palco é a lista de iniciativa com linhas que expandem
+- [x] O botão "Cena" alterna entre a lista e os Retratos
+- [x] "Comandos" abre os comandos do Mestre, com os mesmos nomes acessíveis
+- [x] Alvos de toque de no mínimo 44 px
+- [x] E2E `combat` do lado do Mestre no projeto `mobile`

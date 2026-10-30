@@ -3,6 +3,7 @@ import {
   addCondition,
   modifyHealth,
   focusParticipant,
+  openCommands,
   participantCard,
   sheetPv,
   startCombat,
@@ -492,5 +493,54 @@ test.describe('finalizar o combate', () => {
       .single();
     expect(data?.is_dead).toBe(false);
     expect(data?.stats).toMatchObject({ current_pv: 0, status: 'Morrendo' });
+  });
+});
+
+test.describe('o Mestre no celular', () => {
+  test.skip(({ isMobile }) => !isMobile, 'o celular do Mestre só existe no projeto mobile');
+
+  test('o Palco é a lista de iniciativa, as linhas expandem e Cena mostra os Retratos', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const guard = await seed.createEnemy(GUARD);
+    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const master = await signIn('master', { phone: true });
+    await master.goto(`/session/${sessionId}`);
+    await expect(
+      master.getByRole('region', { name: 'Retratos' }).getByRole('button', { name: /^Eliabe,/ }),
+    ).toBeVisible();
+
+    // Os comandos moram atrás de "Comandos"; abrir mostra os mesmos nomes de sempre.
+    await expect(master.getByRole('button', { name: 'Solicitar Teste' })).toHaveCount(0);
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+
+    const list = master.getByRole('list', { name: 'Ordem de iniciativa' });
+    const guardRow = list.getByRole('button', { name: /^Guarda de Jericó,.*turno atual$/ });
+    const eliabeRow = list.getByRole('button', { name: /^Eliabe,/ });
+    await expect(list.getByRole('button', { name: /iniciativa \d+/ })).toHaveCount(2);
+    await expect(guardRow).toHaveAttribute('aria-expanded', 'true');
+    await expect(participantCard(master, GUARD)).toContainText('Turno Atual');
+    expect((await eliabeRow.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+
+    // Tocar noutra linha a abre; tocar de novo fecha.
+    await eliabeRow.click();
+    await expect(participantCard(master, 'Eliabe')).toContainText('HP Atual:11');
+    await eliabeRow.click();
+    await expect(master.getByTitle('Eliabe')).toHaveCount(0);
+
+    // "Cena" mostra os Retratos, "Iniciativa" volta à lista.
+    await master.getByRole('button', { name: 'Cena' }).click();
+    await expect(master.getByRole('region', { name: 'Retratos' })).toBeVisible();
+    await expect(list).toHaveCount(0);
+    await master.getByRole('button', { name: 'Iniciativa' }).click();
+    await expect(list).toBeVisible();
+
+    // Próximo Turno (dentro de Comandos) passa a vez a Eliabe, e a linha dele abre sozinha.
+    await openCommands(master);
+    await master.getByRole('button', { name: 'Próximo Turno' }).click();
+    await expect(eliabeRow).toHaveAttribute('aria-expanded', 'true');
+    await expect(participantCard(master, 'Eliabe')).toContainText('Turno Atual');
   });
 });

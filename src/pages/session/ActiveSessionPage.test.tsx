@@ -134,6 +134,9 @@ vi.mock('@/components/combat/PlayerCombatView', async () => ({
 vi.mock('@/components/session/palco/Retratos', async () => ({
   Retratos: (await import('@/test/stubs')).makeStub('Retratos'),
 }));
+vi.mock('@/components/session/palco/InitiativeList', async () => ({
+  InitiativeList: (await import('@/test/stubs')).makeStub('InitiativeList'),
+}));
 vi.mock('@/components/session/palco/InitiativeStrip', async () => ({
   InitiativeStrip: (await import('@/test/stubs')).makeStub('InitiativeStrip'),
 }));
@@ -569,7 +572,7 @@ describe('visão do Mestre', () => {
   describe('o Palco do Mestre e a coluna', () => {
     const wideScreen = () =>
       vi.stubGlobal('matchMedia', (query: string) => ({
-        matches: true,
+        matches: query.includes('min-width'),
         media: query,
         addEventListener: () => {},
         removeEventListener: () => {},
@@ -677,6 +680,84 @@ describe('visão do Mestre', () => {
         );
       });
       expect(screen.getByRole('dialog', { name: 'Jogadores' })).toBeInTheDocument();
+    });
+  });
+
+  describe('o Mestre no celular', () => {
+    const phone = () =>
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: query.includes('max-width'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+    const inCombat = (turnEntity = 'c1') => {
+      h.combat.activeCombat = { id: 'cb1', round_number: 2 };
+      h.combat.currentTurnParticipant = { id: `p-${turnEntity}`, entity_id: turnEntity };
+      h.combat.participants = [
+        { id: 'p-c1', entity_id: 'c1', hp_current: 9, initiative: 20, conditions: [] },
+        { id: 'p-c2', entity_id: 'c2', hp_current: 9, initiative: 12, conditions: [] },
+      ];
+    };
+
+    it('no combate, o Palco é a lista de iniciativa, com o participante do turno aberto', async () => {
+      phone();
+      inCombat('c2');
+      await renderPage();
+      expect(prop('InitiativeList', 'currentId')).toBe('p-c2');
+      expect(prop('InitiativeList', 'expandedId')).toBe('p-c2');
+      expect(prop('InitiativeList', 'round')).toBe(2);
+      expect(pluck(prop('InitiativeList', 'rows'), 'id')).toEqual(['p-c1', 'p-c2']);
+      expect(hasStub('Retratos')).toBe(false);
+      expect(screen.queryByRole('complementary', { name: 'Coluna do Mestre' })).toBeNull();
+    });
+
+    it('tocar numa linha a abre e fecha', async () => {
+      phone();
+      inCombat('c2');
+      await renderPage();
+      act(() => {
+        call('InitiativeList', 'onToggle', 'p-c1');
+      });
+      expect(prop('InitiativeList', 'expandedId')).toBe('p-c1');
+      act(() => {
+        call('InitiativeList', 'onToggle', 'p-c1');
+      });
+      expect(prop('InitiativeList', 'expandedId')).toBeUndefined();
+    });
+
+    it('o botão Cena alterna para os Retratos, e Iniciativa volta', async () => {
+      phone();
+      inCombat();
+      await renderPage();
+      fireEvent.click(screen.getByRole('button', { name: 'Cena' }));
+      expect(hasStub('Retratos')).toBe(true);
+      expect(screen.queryByRole('button', { name: 'Cena' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Iniciativa' }));
+      expect(screen.getByRole('button', { name: 'Cena' })).toBeInTheDocument();
+    });
+
+    it('fora do combate o Palco são os Retratos, sem o botão Cena', async () => {
+      phone();
+      await renderPage();
+      expect(hasStub('Retratos')).toBe(true);
+      expect(screen.queryByRole('button', { name: 'Cena' })).toBeNull();
+    });
+
+    it('os comandos ficam atrás de Comandos', async () => {
+      phone();
+      await renderPage();
+      const bar = screen.getByRole('region', { name: 'Barra do Mestre' });
+      expect(within(bar).queryByRole('button', { name: 'Solicitar Teste' })).toBeNull();
+      fireEvent.click(within(bar).getByRole('button', { name: 'Comandos' }));
+      expect(within(bar).getByRole('button', { name: 'Solicitar Teste' })).toBeInTheDocument();
+    });
+
+    it('em tela larga, os comandos ficam à vista e não há botão Comandos', async () => {
+      await renderPage();
+      const bar = screen.getByRole('region', { name: 'Barra do Mestre' });
+      expect(within(bar).queryByRole('button', { name: 'Comandos' })).toBeNull();
+      expect(within(bar).getByRole('button', { name: 'Solicitar Teste' })).toBeInTheDocument();
     });
   });
 
