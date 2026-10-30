@@ -10,6 +10,7 @@ import { RuptureAlert } from '@/components/session/RuptureAlert';
 import { DyingAlert } from '@/components/session/DyingAlert';
 import { Retratos } from '@/components/session/palco/Retratos';
 import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
+import { InitiativeList } from '@/components/session/palco/InitiativeList';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
 import { AttackLog } from '@/components/combat/AttackLog';
 import { Button } from '@/components/ui/button';
@@ -115,6 +116,12 @@ export function GmSessionView({
     useCombatStore();
   // A coluna fixa do Mestre só cabe a partir de `lg`; abaixo disso o combate fica no Palco.
   const wide = useMediaQuery('(min-width: 1024px)');
+  // No celular, o combate vira a lista de iniciativa; o botão Cena alterna para os Retratos.
+  const phone = useMediaQuery('(max-width: 767px)');
+  const [scene, setScene] = useState(false);
+  const [expanded, setExpanded] = useState<{ id: string | null; turn: string | undefined } | null>(
+    null,
+  );
 
   const retratos = buildRetratos({
     playerCharacters,
@@ -150,8 +157,30 @@ export function GmSessionView({
     : undefined;
   const actingNpc = turnNpc ?? playableNpcs.find((n) => n.id === actAs && !n.is_deleted);
 
+  // A linha aberta acompanha o turno; tocar numa linha a abre ou fecha até o turno mudar.
+  const expandedId =
+    expanded && expanded.turn === turnId ? (expanded.id ?? undefined) : (turnId ?? undefined);
+  const toggleRow = (id: string) =>
+    setExpanded({ id: expandedId === id ? null : id, turn: turnId });
+  const rows = participants.map((p) => {
+    const retrato = retratos.find((r) => r.id === p.entity_id);
+    return {
+      id: p.id,
+      name: availableEntities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
+      kind: retrato?.kind ?? 'enemy',
+      initiative: p.initiative,
+      pv: p.hp_current,
+      imageUrl: retrato?.imageUrl,
+      down: p.hp_current <= 0,
+    };
+  });
+  const combatList = phone && hasActiveCombat && !scene;
+
   const openRetrato = (retrato: Retrato) => {
-    if (wide && hasActiveCombat && retrato.participantId) {
+    if (phone && hasActiveCombat && retrato.participantId) {
+      setExpanded({ id: retrato.participantId, turn: turnId });
+      setScene(false);
+    } else if (wide && hasActiveCombat && retrato.participantId) {
       setFocus({ id: retrato.participantId, turn: turnId });
     } else {
       setPanel(
@@ -219,13 +248,36 @@ export function GmSessionView({
           <RuptureAlert players={playerCharacters} />
           <DyingAlert names={dying} />
 
-          <Retratos
-            turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
-            retratos={retratos}
-            onOpen={openRetrato}
-          />
+          {phone && hasActiveCombat && (
+            <Button
+              variant="outline"
+              className="min-h-11 self-start"
+              onClick={() => setScene((value) => !value)}
+            >
+              {scene ? 'Iniciativa' : 'Cena'}
+            </Button>
+          )}
 
-          {hasActiveCombat && !wide && (
+          {combatList ? (
+            <InitiativeList
+              rows={rows}
+              round={activeCombat?.round_number ?? 1}
+              currentId={turnId}
+              expandedId={expandedId}
+              onToggle={toggleRow}
+              renderExpanded={(id) => (
+                <CombatDashboard availableEntities={availableEntities} focusId={id} />
+              )}
+            />
+          ) : (
+            <Retratos
+              turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
+              retratos={retratos}
+              onOpen={openRetrato}
+            />
+          )}
+
+          {hasActiveCombat && !wide && !phone && (
             <div className="p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
               <CombatDashboard availableEntities={availableEntities} />
             </div>
@@ -257,6 +309,7 @@ export function GmSessionView({
                 actingAs={actingNpc?.id}
                 actAsLocked={!!turnNpc}
                 onActAs={setActAs}
+                collapsible={phone}
               />
             </div>
           </div>
