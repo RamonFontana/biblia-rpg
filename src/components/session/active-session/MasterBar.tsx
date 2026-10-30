@@ -10,6 +10,13 @@ interface MasterBarProps {
   onAdvanceTime: () => void;
   onOpenRest: () => void;
   onOpenDice: () => void;
+  /** Os NPCs jogáveis que o Mestre conduz; sem eles, não há seletor. */
+  npcs?: { id: string; name: string }[];
+  /** Quem a Hotbar da Barra mostra. */
+  actingAs?: string;
+  /** É o turno do NPC: a Hotbar dele aparece sozinha e o seletor não troca. */
+  actAsLocked?: boolean;
+  onActAs?: (npcId: string | undefined) => void;
 }
 
 export function MasterBar({
@@ -18,6 +25,10 @@ export function MasterBar({
   onAdvanceTime,
   onOpenRest,
   onOpenDice,
+  npcs = [],
+  actingAs,
+  actAsLocked = false,
+  onActAs,
 }: MasterBarProps) {
   const { activeCombat, nextTurn, endCombat } = useCombatStore();
 
@@ -78,6 +89,24 @@ export function MasterBar({
       <Button variant="outline" className={plain} onClick={onOpenRest}>
         Descanso
       </Button>
+      {npcs.length > 0 && (
+        <label className="flex items-center gap-2 text-sm text-stone-300">
+          Agir como
+          <select
+            value={actingAs ?? ''}
+            disabled={actAsLocked}
+            onChange={(e) => onActAs?.(e.target.value || undefined)}
+            className="min-h-11 rounded-md border border-stone-600 bg-stone-900 px-2 text-sm text-stone-100 disabled:opacity-60"
+          >
+            <option value="">Ninguém</option>
+            {npcs.map((npc) => (
+              <option key={npc.id} value={npc.id}>
+                {npc.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <Button variant="outline" className={`${plain} ml-auto`} onClick={onOpenDice}>
         <span aria-hidden="true">🎲</span> Dados
       </Button>

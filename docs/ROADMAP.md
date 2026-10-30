@@ -620,7 +620,7 @@ Nenhuma regra de jogo muda. Antes de refatorar, leia os ADRs 0008 (motion e bott
 - **Palco:** Retratos de quem está na cena, que viram os pins do mapa; o cartão do Retrato absorve o `SessionParticipantList` e o `TokenContextMenu`. No combate, faixa de iniciativa e feed dos últimos 3 eventos.
 - **Dock do jogador:** Ficha, Inventário, Grupo, Histórico, Descanso, com selo de atenção.
 - **Mestre:** mesma moldura; trilho com Jogadores, Inimigos, NPCs, Testes, Descanso, Histórico e Sessão; coluna fixa de combate na web; Barra do Mestre com os comandos de hoje (mesmos nomes acessíveis). No celular, o Palco vira a lista de iniciativa durante o combate, com o botão "Cena".
-- **Hotbar do NPC jogável (capacidade nova):** aparece no turno dele e pelo seletor "Agir como". Não pede migration: `record_ability_use` já aceita o Mestre como dono do NPC.
+- **Hotbar do NPC jogável (capacidade nova):** aparece no turno dele e pelo seletor "Agir como". Pede uma migration (ticket 10): `record_ability_use` só aceitava o dono de um participante `player`, e o NPC jogável é `npc`; a migration `npc_ability_use_by_gm` deixa o Mestre da sessão gravar o uso dele (a suposição anterior, de que já aceitava, estava errada). A migration ainda precisa ser aplicada na produção, com a confirmação do autor.
 - **Espectador:** a mesma moldura só para leitura (Palco, iniciativa, feed; dock com Ficha e Grupo).
 - **Motion:** só `motion`, sem `vaul` (ADR 0008). Painel, dano e cura, turno, uso de Habilidade e entrada da Hotbar; nada em loop; `prefers-reduced-motion` deixa só opacidade.
 
