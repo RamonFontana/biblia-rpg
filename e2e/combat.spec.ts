@@ -8,7 +8,7 @@ import {
 } from './support/combat';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
-import { openPanel } from './support/ui';
+import { openPanel, watchPlayers } from './support/ui';
 const GUARD = 'Guarda de Jericó';
 
 /** Uma mesa com Eliabe (jogador 1, 11 PV) e um Guarda (inimigo, 12 PV), os dois já online. */
@@ -21,7 +21,7 @@ async function openTable(seed: Seed, signIn: SignIn) {
   await master.goto(`/session/${sessionId}`);
   const player = await signIn('player1');
   await player.goto(`/session/${sessionId}`);
-  await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+  await watchPlayers(master, 2);
   return { master, player, eliabe, guard };
 }
 
@@ -182,7 +182,7 @@ test.describe('vida', () => {
     await master.goto(`/session/${sessionId}`);
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await watchPlayers(master, 2);
     await startCombat(master, { Eliabe: 10, [GUARD]: 5 });
 
     await player.getByRole('heading', { name: GUARD }).click();
@@ -397,8 +397,10 @@ test.describe('finalizar o combate', () => {
 
     // A lista de inimigos do Mestre mostra o inimigo morto na hora, sem recarregar, e ele
     // continua listado como Morto.
+    await openPanel(master, 'Inimigos');
     await expect(master.getByText('Morto', { exact: true })).toBeVisible();
     await master.reload();
+    await openPanel(master, 'Inimigos');
     await expect(master.getByText('Morto', { exact: true })).toBeVisible();
 
     const admin = adminClient();

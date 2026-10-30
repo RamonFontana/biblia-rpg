@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { adminClient } from './support/admin';
 import { expect, test } from './fixtures';
+import { openPanel } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 
@@ -25,6 +26,7 @@ test.describe('Estado de Fé', () => {
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
 
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
     await expect(master.getByText('Abalado')).toBeVisible();
     await expect(player.getByText('Abalado').first()).toBeVisible();
@@ -82,7 +84,7 @@ const faithOf = async (characterId: string) => {
 /** O Mestre pede um Teste de Fé de Clamor (Pequena Providência, Punição 0) ao personagem. */
 async function askClamor(master: Page, characterName: string, selfish: boolean) {
   await master.getByRole('button', { name: /Solicitar Teste/ }).click();
-  const dialog = master.locator('div.fixed');
+  const dialog = master.locator('div.fixed.inset-0');
   await dialog.getByRole('combobox').first().selectOption('Fé');
   await dialog.getByRole('radio', { name: 'Clamor' }).click();
   await dialog.getByRole('button', { name: /Pequena Providência/ }).click();
@@ -100,6 +102,7 @@ test.describe('Teste de Fé: Clamor', () => {
     await player.goto(`/session/${sessionId}`);
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
 
     await askClamor(master, 'Eliabe', true);
@@ -129,6 +132,7 @@ test.describe('Teste de Fé: Clamor', () => {
     await player.goto(`/session/${sessionId}`);
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
 
     await askClamor(master, 'Eliabe', false);
@@ -160,6 +164,7 @@ test.describe('Fortaleza', () => {
     await player.goto(`/session/${sessionId}`);
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
 
     const giveFortitude = async (die: string) => {
@@ -209,10 +214,11 @@ test.describe('Vantagem e Desvantagem', () => {
     await player.goto(`/session/${sessionId}`);
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
 
     await master.getByRole('button', { name: /Solicitar Teste/ }).click();
-    const dialog = master.locator('div.fixed');
+    const dialog = master.locator('div.fixed.inset-0');
     await dialog.getByRole('combobox').first().selectOption('Fé');
     await dialog.getByText('Eliabe').click();
     await dialog.getByRole('radio', { name: 'Vantagem (Eliabe)', exact: true }).click();
@@ -243,10 +249,11 @@ test.describe('Vantagem e Desvantagem', () => {
     await player.goto(`/session/${sessionId}`);
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
 
     await master.getByRole('button', { name: /Solicitar Teste/ }).click();
-    const dialog = master.locator('div.fixed');
+    const dialog = master.locator('div.fixed.inset-0');
     await dialog.getByRole('combobox').first().selectOption('Resistência (Sabedoria)');
     await dialog.getByText('Eliabe').click();
     await dialog.getByRole('button', { name: 'Solicitar Teste' }).click();
@@ -279,13 +286,14 @@ test.describe('Inspiração', () => {
     await player.goto(`/session/${sessionId}`);
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeVisible();
 
     await expect(player.getByText('Inspiração disponível')).toBeVisible();
     await expect(master.getByText('Inspiração disponível')).toBeVisible();
 
     await master.getByRole('button', { name: /Solicitar Teste/ }).click();
-    const dialog = master.locator('div.fixed');
+    const dialog = master.locator('div.fixed.inset-0');
     await dialog.getByRole('combobox').first().selectOption('Força');
     await dialog.getByText('Eliabe').click();
     await dialog.getByRole('button', { name: 'Solicitar Teste' }).click();

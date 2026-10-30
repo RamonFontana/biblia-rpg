@@ -1,6 +1,7 @@
 import { ABILITIES } from '../src/content/abilities';
 import { adminClient } from './support/admin';
 import { expect, test } from './fixtures';
+import { watchPlayers, openPanel } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 const longRestAbility = ABILITIES.find((a) => a.usageType === 'long_rest')!.id;
@@ -25,14 +26,17 @@ test.describe('Dados de Vida: Descanso Longo e sessão nova', () => {
     await master.goto(`/session/${sessionId}`);
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await watchPlayers(master, 2);
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Dados de Vida 2/5 (d10)')).toBeVisible();
+    await openPanel(master, 'Descanso');
 
     await master.getByRole('button', { name: /Descanso Longo/ }).click();
     await master.getByRole('spinbutton').fill('2');
     await master.getByRole('button', { name: /Confirmar/ }).click();
 
     // 3 gastos: devolve 2 (metade, para cima) e sobra 1 gasto, então 4 de 5 na reserva.
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Dados de Vida 4/5 (d10)')).toBeVisible();
     await expect
       .poll(async () => {

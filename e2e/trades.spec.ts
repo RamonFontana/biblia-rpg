@@ -1,6 +1,6 @@
 import { adminClient } from './support/admin';
 import { offerCoins, offerItem, readyButton, tradeSide } from './support/trade';
-import { closePanel, negotiateWith, openPanel } from './support/ui';
+import { closePanel, negotiateWith, openPanel, watchPlayers } from './support/ui';
 import type { Page } from '@playwright/test';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
@@ -245,8 +245,9 @@ test.describe('Lojinha do Mestre', () => {
     await master.goto(`/session/${sessionId}`);
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await watchPlayers(master, 2);
 
+    await openPanel(master, 'Jogadores');
     await master.getByRole('button', { name: 'Lojinha' }).click();
 
     const masterDialog = master.getByRole('dialog');
@@ -263,7 +264,8 @@ test.describe('Lojinha do Mestre', () => {
     await expect(tradeSide(masterDialog, 'Eliabe').getByText('✓ Pronto')).toBeVisible();
     await readyButton(shelf).click();
 
-    await expect(masterDialog).toHaveCount(0);
+    // O Painel Jogadores segue aberto no desktop: o que fecha é a janela da troca.
+    await expect(masterDialog.getByRole('button', { name: 'Cancelar' })).toHaveCount(0);
     await expect(playerDialog).toHaveCount(0);
     expect(await inventoryOf(eliabe)).toEqual([{ slug: 'adaga', quantity: 1 }]);
     expect(await coinsOf(eliabe)).toBe(48);
@@ -286,14 +288,16 @@ test.describe('negociação com NPC', () => {
     await master.goto(`/session/${sessionId}`);
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await watchPlayers(master, 2);
     await expect(player.getByText('Raabe')).toHaveCount(0);
 
+    await openPanel(master, 'NPCs');
     await master.getByRole('button', { name: 'Alternar visibilidade' }).click();
     await expect(master.getByText('VISÍVEL')).toBeVisible();
     await expect(player.getByText('Raabe')).toBeVisible();
 
     await negotiateWith(player, 'Raabe');
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe quer negociar com Raabe')).toBeVisible();
     await expect(player.getByText(/Aguardando o Mestre aceitar a troca com\s*Raabe/)).toBeVisible();
     await master.getByRole('button', { name: 'Aceitar' }).click();
@@ -311,7 +315,8 @@ test.describe('negociação com NPC', () => {
     await expect(tradeSide(masterDialog, 'Eliabe').getByText('✓ Pronto')).toBeVisible();
     await readyButton(npcSide).click();
 
-    await expect(masterDialog).toHaveCount(0);
+    // O Painel Jogadores segue aberto no desktop: o que fecha é a janela da troca.
+    await expect(masterDialog.getByRole('button', { name: 'Cancelar' })).toHaveCount(0);
     await expect(playerDialog).toHaveCount(0);
     expect(await inventoryOf(eliabe)).toEqual([{ slug: 'adaga', quantity: 1 }]);
     expect(await coinsOf(eliabe)).toBe(48);

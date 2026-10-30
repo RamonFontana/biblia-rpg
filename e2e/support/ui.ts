@@ -31,6 +31,13 @@ export async function closePanel(page: Page) {
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
 
+/** O Mestre espera `count` pessoas online (o contador mora no Painel Jogadores) e fecha o Painel. */
+export async function watchPlayers(master: Page, count: number) {
+  await openPanel(master, 'Jogadores');
+  await expect(master.getByText(`Participantes Online (${count})`)).toBeVisible();
+  await closePanel(master);
+}
+
 /** Abre o cartão de um Retrato do Palco (o nome é o do personagem, do NPC ou do inimigo). */
 export async function openRetrato(page: Page, name: string) {
   await page

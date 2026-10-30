@@ -2,6 +2,7 @@ import { adminClient } from './support/admin';
 import { addCondition, startCombat } from './support/combat';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect, type Seed, type SignIn } from './fixtures';
+import { watchPlayers } from './support/ui';
 
 const FILISTEU = 'Filisteu';
 
@@ -43,7 +44,7 @@ async function openFight(
   await player.goto(`/session/${sessionId}`);
   const ally = await signIn('player2');
   await ally.goto(`/session/${sessionId}`);
-  await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+  await watchPlayers(master, 3);
 
   await startCombat(master, initiative);
   // Os jogadores recebem o combate pelo tempo real: cada teste só começa com a tela de combate no ar.
@@ -282,7 +283,7 @@ test.describe('efeito de Habilidade', () => {
     await player.goto(`/session/${sessionId}`);
     const ally = await signIn('player2');
     await ally.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    await watchPlayers(master, 3);
     await startCombat(master, { Anakim: 20, Eliabe: 10, Rute: 5 });
     await expect(player.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
     await expect(ally.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });
@@ -357,7 +358,7 @@ test.describe('efeito de Habilidade', () => {
     await player.goto(`/session/${sessionId}`);
     const ally = await signIn('player2');
     await ally.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    await watchPlayers(master, 3);
     // O Endemoniado age primeiro: é o turno dele quando a Recarga for lançada.
     await startCombat(master, { Endemoniado: 20, Eliabe: 10, Rute: 5 });
     await expect(player.getByText('Inimigos na Cena')).toBeVisible({ timeout: 20_000 });

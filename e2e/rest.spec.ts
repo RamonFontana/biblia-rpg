@@ -2,6 +2,7 @@ import { ABILITIES } from '../src/content/abilities';
 import { adminClient } from './support/admin';
 import { startCombat } from './support/combat';
 import { expect, test, type Seed, type SignIn } from './fixtures';
+import { openPanel, watchPlayers } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 const GUARD = 'Guarda de Jericó';
@@ -23,7 +24,9 @@ async function openTable(seed: Seed, signIn: SignIn, withEnemy = false) {
   await master.goto(`/session/${sessionId}`);
   const player = await signIn('player1');
   await player.goto(`/session/${sessionId}`);
-  await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+  await openPanel(player, 'Descanso');
+  await watchPlayers(master, 2);
+  await openPanel(master, 'Descanso');
   return { master, player, eliabe, sessionId };
 }
 
@@ -120,7 +123,9 @@ test.describe('Descanso Curto', () => {
     await master.goto(`/session/${sessionId}`);
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await openPanel(player, 'Descanso');
+    await watchPlayers(master, 2);
+    await openPanel(master, 'Descanso');
 
     // Com o descanso fechado não há onde gastar.
     await expect(player.getByLabel('Resultado do d10')).toHaveCount(0);
@@ -132,6 +137,7 @@ test.describe('Descanso Curto', () => {
     await player.getByLabel('Resultado do d10').fill('6');
     await player.getByRole('button', { name: 'Gastar dado' }).click();
     await expect(player.getByText(/Curou 8 PV \(10 → 18\)/)).toBeVisible();
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Dados de Vida 2/3 (d10)')).toBeVisible({ timeout: 15_000 });
 
     // O segundo dado, pela Rolagem Virtual: cura entre 3 e 12 PV.
@@ -156,6 +162,7 @@ test.describe('Descanso Curto', () => {
     await expect(master.getByText('Dados de Vida 1/3 (d10)')).toBeVisible({ timeout: 15_000 });
 
     // Fechado o descanso, o gasto some.
+    await openPanel(master, 'Descanso');
     await master.getByRole('button', { name: 'Encerrar descanso' }).click();
     await expect(player.getByLabel('Resultado do d10')).toHaveCount(0);
   });
@@ -187,9 +194,12 @@ test.describe('Descanso Curto', () => {
     await master.goto(`/session/${sessionId}`);
     const eliabe = await signIn('player1');
     await eliabe.goto(`/session/${sessionId}`);
+    await openPanel(eliabe, 'Descanso');
     const rute = await signIn('player2');
     await rute.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    await openPanel(rute, 'Descanso');
+    await watchPlayers(master, 3);
+    await openPanel(master, 'Descanso');
 
     await master.getByRole('button', { name: 'Abrir Descanso Curto' }).click();
 
@@ -233,9 +243,12 @@ test.describe('Descanso Curto', () => {
     await master.goto(`/session/${sessionId}`);
     const pEliabe = await signIn('player1');
     await pEliabe.goto(`/session/${sessionId}`);
+    await openPanel(pEliabe, 'Descanso');
     const pRute = await signIn('player2');
     await pRute.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    await openPanel(pRute, 'Descanso');
+    await watchPlayers(master, 3);
+    await openPanel(master, 'Descanso');
 
     await expect(master.getByText('0 de 2 pediram')).toBeVisible();
 
@@ -282,9 +295,12 @@ test.describe('Descanso Curto', () => {
     await master.goto(`/session/${sessionId}`);
     const pEliabe = await signIn('player1');
     await pEliabe.goto(`/session/${sessionId}`);
+    await openPanel(pEliabe, 'Descanso');
     const pRute = await signIn('player2');
     await pRute.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+    await openPanel(pRute, 'Descanso');
+    await watchPlayers(master, 3);
+    await openPanel(master, 'Descanso');
 
     await pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
     await expect(master.getByText('1 de 2 pediram (Eliabe)')).toBeVisible({ timeout: 15_000 });

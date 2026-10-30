@@ -11,8 +11,11 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 /** A mola curta de abrir e fechar (no "reduzir movimento", o `MotionConfig` deixa só a opacidade). */
 const SPRING = { type: 'spring', stiffness: 520, damping: 42, mass: 0.8 } as const;
 
-/** Largura do Painel lateral; a moldura usa a mesma medida para encolher o Palco no `lg`. */
+/** Largura do Painel lateral. */
 export const DOCK_PANEL_WIDTH = 'w-[26rem]';
+/** A folga que a moldura abre à direita no `lg`, enquanto o Painel está aberto: o Palco encolhe e o
+ * trilho fica ao lado do Painel, sem ficar coberto. (A classe é literal para o Tailwind a achar.) */
+export const DOCK_PANEL_GAP = 'lg:pr-[26rem]';
 
 interface DockPanelProps {
   open: boolean;

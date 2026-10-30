@@ -1,6 +1,6 @@
 import { adminClient } from './support/admin';
 import { test, expect } from './fixtures';
-import { nextPaint, openPanel } from './support/ui';
+import { nextPaint, openPanel, watchPlayers } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 
@@ -33,7 +33,8 @@ test.describe('criar a sessão', () => {
 
     await expect(master).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
     await expect(master.getByRole('heading', { name: SESSION_NAME })).toBeVisible();
-    await expect(master.getByText('Visão do Mestre')).toBeVisible();
+    await expect(master.getByRole('region', { name: 'Barra do Mestre' })).toBeVisible();
+    await openPanel(master, 'NPCs');
     await expect(master.getByText('Raabe')).toBeVisible();
     await expect(master.getByText('OCULTO')).toBeVisible();
 
@@ -172,16 +173,17 @@ test.describe('mesa em tempo real', () => {
 
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
-    await expect(master.getByText('Participantes Online (1)')).toBeVisible();
+    await watchPlayers(master, 1);
     await expect(master.getByText('🌅 Manhã')).toBeVisible();
 
     const player = await signIn('player1');
     await player.goto(`/session/${sessionId}`);
     await expect(player.getByText('🌅 Manhã')).toBeVisible();
 
-    await expect(master.getByText('Participantes Online (2)')).toBeVisible();
+    await watchPlayers(master, 2);
     // `toBeAttached`: no celular a lista do Mestre ainda colapsa a largura do nome (`truncate`); a
     // tela do Mestre no celular é o ticket 11 da Onda 6.
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 1)')).toBeAttached();
 
     await master.getByRole('button', { name: /Avançar/ }).click();

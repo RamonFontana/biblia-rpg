@@ -1,11 +1,4 @@
-import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type { GameSession } from '@/data-access/sessions';
 import { getPeriodIcon } from '@/domain/sessionTime';
 
@@ -14,23 +7,10 @@ interface SessionHeaderProps {
   isGM: boolean;
   isSpectator: boolean;
   onOpenDice: () => void;
-  onAdvanceTime: () => void;
-  onOpenTest: () => void;
-  onOpenCombat: () => void;
-  onOpenEndSession: () => void;
 }
 
-/** Nome da sessão, dia e período, estado e os botões do Mestre (menu no celular). */
-export function SessionHeader({
-  sessionData,
-  isGM,
-  isSpectator,
-  onOpenDice,
-  onAdvanceTime,
-  onOpenTest,
-  onOpenCombat,
-  onOpenEndSession,
-}: SessionHeaderProps) {
+/** Nome da sessão, dia e período e estado. Os comandos do Mestre moram na Barra do Mestre. */
+export function SessionHeader({ sessionData, isGM, isSpectator, onOpenDice }: SessionHeaderProps) {
   return (
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 md:mb-6 border-b border-stone-800 pb-4">
       <div className="w-full lg:w-auto">
@@ -60,7 +40,7 @@ export function SessionHeader({
         >
           {sessionData.status === 'active' ? 'Ativa' : 'Finalizada'}
         </div>
-        {sessionData.status === 'active' && !isSpectator && (
+        {sessionData.status === 'active' && !isSpectator && !isGM && (
           <Button
             onClick={onOpenDice}
             variant="outline"
@@ -68,78 +48,6 @@ export function SessionHeader({
           >
             <span>🎲</span> <span className="hidden md:inline">Dados</span>
           </Button>
-        )}
-        {isGM && sessionData.status === 'active' && (
-          <>
-            <div className="hidden lg:flex items-center gap-2">
-              <Button
-                onClick={onAdvanceTime}
-                variant="outline"
-                className="border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-stone-100 flex items-center gap-2"
-                title="Avançar Tempo"
-              >
-                <span>⏳</span> Avançar
-              </Button>
-              <Button
-                onClick={onOpenTest}
-                variant="outline"
-                className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-stone-100"
-              >
-                Solicitar Teste
-              </Button>
-              <Button
-                onClick={onOpenCombat}
-                variant="outline"
-                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-stone-100 flex items-center gap-2"
-              >
-                <span>⚔️</span> Iniciar Combate
-              </Button>
-              <Button variant="destructive" onClick={onOpenEndSession}>
-                Finalizar Sessão
-              </Button>
-            </div>
-            <div className="lg:hidden ml-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-stone-600 bg-stone-800 h-8 px-2 md:h-10 md:px-4"
-                  >
-                    <Menu className="h-4 w-4 md:h-5 md:w-5 text-stone-300" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 bg-stone-900 border-stone-800 text-stone-300"
-                >
-                  <DropdownMenuItem
-                    onClick={onAdvanceTime}
-                    className="hover:bg-stone-800 cursor-pointer"
-                  >
-                    <span className="mr-2">⏳</span> Avançar Tempo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onOpenTest}
-                    className="hover:bg-stone-800 cursor-pointer"
-                  >
-                    <span className="mr-2">🎲</span> Solicitar Teste
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onOpenCombat}
-                    className="hover:bg-stone-800 cursor-pointer text-red-400"
-                  >
-                    <span className="mr-2">⚔️</span> Iniciar Combate
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onOpenEndSession}
-                    className="hover:bg-red-900/50 cursor-pointer text-red-500 mt-2 font-medium"
-                  >
-                    Finalizar Sessão
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </>
         )}
       </div>
     </div>
