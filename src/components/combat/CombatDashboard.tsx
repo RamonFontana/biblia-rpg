@@ -32,15 +32,8 @@ interface CombatDashboardProps {
 }
 
 export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps) {
-  const {
-    activeCombat,
-    participants,
-    attacks,
-    abilityUses,
-    currentTurnParticipant,
-    nextTurn,
-    endCombat,
-  } = useCombatStore();
+  const { activeCombat, participants, attacks, abilityUses, currentTurnParticipant } =
+    useCombatStore();
 
   // O golpe que atinge quem já estava Morrendo: o Mestre marca a falha no Teste de Morte, então o
   // aviso fica até ele dispensar. O inimigo a 0 PV não faz Teste de Morte.
@@ -83,21 +76,6 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
     cooldownTimers.current.add(timer);
   };
 
-  // O avanço e o fim leem o banco e gravam: enquanto um não termina, os dois botões esperam. Um
-  // segundo clique partiria do mesmo turno (ou finalizaria o combate duas vezes).
-  const [saving, setSaving] = useState(false);
-  const runOnce = async (action: () => Promise<void>, failure: string) => {
-    if (saving) return;
-    setSaving(true);
-    try {
-      await action();
-    } catch (error) {
-      console.error(failure, error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (!activeCombat) {
     return (
       <div className="p-4 border rounded-md text-center bg-muted/50">
@@ -119,23 +97,6 @@ export function CombatDashboard({ availableEntities = [] }: CombatDashboardProps
         <h2 className="text-2xl font-bold tracking-tight truncate">
           Painel de Combate (Rodada {activeCombat.round_number})
         </h2>
-        <div className="flex flex-wrap sm:flex-nowrap gap-2">
-          <Button
-            variant="destructive"
-            disabled={saving}
-            onClick={() => runOnce(endCombat, 'Erro ao finalizar o combate:')}
-            className="flex-1 sm:flex-none"
-          >
-            Finalizar Combate
-          </Button>
-          <Button
-            disabled={saving}
-            onClick={() => runOnce(nextTurn, 'Erro ao avançar o turno:')}
-            className="flex-1 sm:flex-none"
-          >
-            Próximo Turno
-          </Button>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

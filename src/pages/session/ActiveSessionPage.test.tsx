@@ -340,6 +340,7 @@ describe('cabeçalho', () => {
     expect(screen.getByText('Finalizada')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Dados/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Solicitar Teste/ })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Barra do Mestre' })).toBeNull();
   });
 
   it('jogador vê o botão de dados; o espectador não', async () => {
@@ -358,9 +359,14 @@ describe('cabeçalho', () => {
     cleanup();
     asGm();
     await renderPage();
-    for (const name of [/Avançar/, /Solicitar Teste/, /Iniciar Combate/, /Finalizar Sessão/]) {
-      expect(screen.getByRole('button', { name })).toBeInTheDocument();
+    const bar = within(screen.getByRole('region', { name: 'Barra do Mestre' }));
+    for (const name of [/Avançar/, /Solicitar Teste/, /Iniciar Combate/, /Descanso/, /Dados/]) {
+      expect(bar.getByRole('button', { name })).toBeInTheDocument();
     }
+    // O cabeçalho não tem mais os botões do Mestre.
+    expect(screen.queryByRole('button', { name: /Finalizar Sessão/ })).toBeNull();
+    openPanel('Sessão');
+    expect(screen.getByRole('button', { name: /Finalizar Sessão/ })).toBeInTheDocument();
   });
 });
 
@@ -377,6 +383,7 @@ describe('os botões abrem os diálogos', () => {
     fireEvent.click(screen.getByRole('button', { name: /Dados/ }));
     fireEvent.click(screen.getByRole('button', { name: /Solicitar Teste/ }));
     fireEvent.click(screen.getByRole('button', { name: /Iniciar Combate/ }));
+    openPanel('Sessão');
     fireEvent.click(screen.getByRole('button', { name: /Finalizar Sessão/ }));
 
     expect(prop('DiceRollerDialog', 'isOpen')).toBe(true);
@@ -481,20 +488,22 @@ describe('avançar o tempo', () => {
 describe('visão do Mestre', () => {
   beforeEach(asGm);
 
-  it('mostra o painel do Mestre com descanso, jogadores, inimigos e NPCs', async () => {
+  it('o trilho tem Jogadores, Inimigos, NPCs, Testes, Descanso, Histórico e Sessão', async () => {
     await renderPage();
-    expect(screen.getByText('Visão do Mestre')).toBeInTheDocument();
-    expect(props('SessionRestControls')).toMatchObject({
-      sessionId: 's1',
-      sessionData: h.session,
-      playerCharacters: h.roster.playerCharacters,
-      npcs: h.roster.npcs,
-    });
-    expect(props('ShortRestCard')).toMatchObject({
-      role: 'master',
-      sessionId: 's1',
-      session: h.session,
-    });
+    const rail = screen.getByRole('navigation', { name: 'Painéis' });
+    expect(
+      within(rail)
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual(['Jogadores', 'Inimigos', 'NPCs', 'Testes', 'Descanso', 'Histórico', 'Sessão']);
+    expect(screen.getByRole('main', { name: 'Palco' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('Jogadores abre a lista de participantes do Mestre', async () => {
+    await renderPage();
+    openPanel('Jogadores');
+    expect(screen.getByRole('dialog', { name: 'Jogadores' })).toBeInTheDocument();
     expect(props('SessionParticipantList')).toMatchObject({
       isGM: true,
       sessionId: 's1',
@@ -508,10 +517,77 @@ describe('visão do Mestre', () => {
     expect(prop('SessionParticipantList', 'onlineUsers')).toEqual([
       { user_id: 'u9', name: 'Online' },
     ]);
+  });
+
+  it('Inimigos e NPCs abrem as listas de hoje', async () => {
+    await renderPage();
+    openPanel('Inimigos');
     expect(props('SessionEnemyList')).toMatchObject({ sessionId: 's1', isLoading: false });
+    await closePanel();
+    openPanel('NPCs');
     expect(prop('SessionNPCList', 'npcs')).toBe(h.roster.npcs);
-    expect(hasStub('CharacterSheetView')).toBe(false);
-    expect(hasStub('CombatDashboard')).toBe(false);
+  });
+
+  it('Descanso abre o Descanso Curto e o Longo; a Barra do Mestre abre o mesmo Painel', async () => {
+    await renderPage();
+    openPanel('Descanso');
+    expect(props('SessionRestControls')).toMatchObject({
+      sessionId: 's1',
+      sessionData: h.session,
+      playerCharacters: h.roster.playerCharacters,
+      npcs: h.roster.npcs,
+    });
+    expect(props('ShortRestCard')).toMatchObject({
+      role: 'master',
+      sessionId: 's1',
+      session: h.session,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Barra do Mestre' })).getByRole('button', {
+        name: 'Descanso',
+      }),
+    );
+    expect(screen.getByRole('dialog', { name: 'Descanso' })).toBeInTheDocument();
+  });
+
+  it('com o Painel aberto, a moldura abre folga à direita no desktop (o Palco encolhe)', async () => {
+    await renderPage();
+    const frame = screen.getByTestId('moldura-da-sessao');
+    expect(frame.className).not.toContain('lg:pr-[26rem]');
+    openPanel('Jogadores');
+    expect(frame.className).toContain('lg:pr-[26rem]');
+  });
+
+  it('Histórico abre o registro do combate', async () => {
+    await renderPage();
+    openPanel('Histórico');
+    expect(hasStub('AttackLog')).toBe(true);
+  });
+
+  it('Testes abre a janela de Teste do Mestre, e o ícone ganha o selo com respostas', async () => {
+    h.tests = {
+      activeTests: [{ id: 't1', status: 'active' }],
+      testResults: { t1: [{ player_id: 'u1', status: 'submitted' }] },
+    };
+    await renderPage();
+    const testes = within(screen.getByRole('navigation', { name: 'Painéis' })).getByRole('button', {
+      name: 'Testes',
+    });
+    expect(testes).toHaveAttribute('data-attention');
+    fireEvent.click(testes);
+    expect(prop('MasterTestDialog', 'isOpen')).toBe(true);
+  });
+
+  it('Descanso ganha o selo enquanto há um Descanso Curto aberto', async () => {
+    h.session = { ...baseSession, short_rest_id: 'sr1', short_rest_opened_by: 'master' };
+    await renderPage();
+    const descanso = within(screen.getByRole('navigation', { name: 'Painéis' })).getByRole(
+      'button',
+      { name: 'Descanso' },
+    );
+    expect(descanso).toHaveAttribute('data-attention');
   });
 
   it('com combate ativo, mostra o painel de combate com as entidades da mesa', async () => {
@@ -553,9 +629,14 @@ describe('visão do Mestre', () => {
 
   it('encaixa as atualizações locais por tipo', async () => {
     await renderPage();
+    openPanel('Jogadores');
     call('SessionParticipantList', 'onUpdatePlayerData', 'c1', { a: 1 });
     call('SessionParticipantList', 'onUpdateNPCData', 'n1', { b: 2 });
+    await closePanel();
+    openPanel('Inimigos');
     call('SessionEnemyList', 'updateLocalEnemy', 'e1', { c: 3 });
+    await closePanel();
+    openPanel('NPCs');
     call('SessionNPCList', 'onUpdateNPCData', 'n2', { d: 4 });
     expect(h.roster.updateLocal.mock.calls).toEqual([
       ['player', 'c1', { a: 1 }],
@@ -571,6 +652,12 @@ const openPanel = (name: string) =>
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Painéis' })).getByRole('button', { name }),
   );
+
+/** Fecha o Painel aberto (o Painel modal esconde o trilho enquanto está aberto). */
+const closePanel = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+};
 
 describe('moldura do jogador (Palco, trilho e Painéis)', () => {
   it('o trilho tem Ficha, Inventário, Grupo, Histórico e Descanso, nesta ordem', async () => {
@@ -1200,6 +1287,7 @@ describe('trocas', () => {
 
     it('abre uma troca já ativa, sem ficha do lado do Mestre', async () => {
       await renderPage();
+      openPanel('Jogadores');
       await act(async () => {
         await call('SessionParticipantList', 'onShop', 'u2');
       });
@@ -1216,6 +1304,7 @@ describe('trocas', () => {
     it('não abre para quem já está em troca ou não existe', async () => {
       h.trades.trading = new Set(['c2']);
       await renderPage();
+      openPanel('Jogadores');
       await act(async () => {
         await call('SessionParticipantList', 'onShop', 'u2');
         await call('SessionParticipantList', 'onShop', 'desconhecido');
@@ -1226,6 +1315,7 @@ describe('trocas', () => {
     it('erro é registrado com a mensagem da lojinha', async () => {
       h.createTrade.mockRejectedValue(new Error('falhou'));
       await renderPage();
+      openPanel('Jogadores');
       await act(async () => {
         await call('SessionParticipantList', 'onShop', 'u2');
       });
@@ -1286,6 +1376,7 @@ describe('trocas', () => {
       asGm();
       h.roster.playerCharacters = [{ user_id: 'gm', character: character('cg') }];
       await renderPage();
+      openPanel('NPCs');
       await act(async () => {
         await call('SessionNPCList', 'onNPCNegotiate', { id: 'n1' });
       });

@@ -1,6 +1,6 @@
 import { adminClient } from './support/admin';
 import { addCondition, participantCard, startCombat } from './support/combat';
-import { closePanel, openRetrato } from './support/ui';
+import { closePanel, openRetrato, watchPlayers } from './support/ui';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 
 const FILISTEU = 'Filisteu';
@@ -65,7 +65,7 @@ async function openFight(
   await player.goto(`/session/${sessionId}`);
   const ally = await signIn('player2');
   await ally.goto(`/session/${sessionId}`);
-  await expect(master.getByText('Participantes Online (3)')).toBeVisible();
+  await watchPlayers(master, 3);
 
   await startCombat(master, { Eliabe: 20, [FILISTEU]: 10, Rute: 5 });
   // Os jogadores recebem o combate pelo tempo real: cada teste só começa com a tela de combate no ar.

@@ -154,10 +154,6 @@ export function ActiveSessionPage() {
         isGM={isGM}
         isSpectator={!!isSpectator}
         onOpenDice={() => setIsDiceRollerOpen(true)}
-        onAdvanceTime={advanceTime}
-        onOpenTest={() => setIsTestDialogOpen(true)}
-        onOpenCombat={() => setIsCombatSetupOpen(true)}
-        onOpenEndSession={() => setIsEndSessionDialogOpen(true)}
       />
 
       <div className="bg-stone-900 border border-stone-800 rounded-lg p-2 sm:p-3 md:p-6 min-h-[60vh]">
@@ -180,6 +176,11 @@ export function ActiveSessionPage() {
             onAcceptTrade={handleAcceptTrade}
             onRejectTrade={handleRejectTrade}
             onNPCNegotiate={handleNPCNegotiate}
+            onOpenTest={() => setIsTestDialogOpen(true)}
+            onOpenCombat={() => setIsCombatSetupOpen(true)}
+            onAdvanceTime={advanceTime}
+            onOpenDice={() => setIsDiceRollerOpen(true)}
+            onOpenEndSession={() => setIsEndSessionDialogOpen(true)}
           />
         ) : isSpectator ? (
           <SpectatorView userId={user.id} sessionId={id} />

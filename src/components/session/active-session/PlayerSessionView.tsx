@@ -10,7 +10,7 @@ import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { DeathSavesModal } from '@/components/combat/DeathSavesModal';
 import { AttackLog } from '@/components/combat/AttackLog';
-import { DockPanel } from '@/components/ui/dock-panel';
+import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { TradeNotices } from '@/components/session/TradeNotices';
 import { pendingTradesOf } from '@/lib/pendingTrades';
 import { Retratos } from '@/components/session/palco/Retratos';
@@ -209,7 +209,10 @@ export function PlayerSessionView({
   const title = openRetrato ? openRetrato.name : (dock.find((d) => d.id === panel)?.label ?? '');
 
   return (
-    <div className="relative flex min-h-[70vh] flex-col md:flex-row">
+    <div
+      data-testid="moldura-da-sessao"
+      className={`relative flex min-h-[70vh] flex-col md:flex-row ${panel !== null || !!openRetrato ? DOCK_PANEL_GAP : ''}`}
+    >
       <div className="flex min-w-0 flex-1 flex-col">
         <PlayerStatusBar
           character={myCharacter}

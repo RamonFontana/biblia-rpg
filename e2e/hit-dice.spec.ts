@@ -1,5 +1,6 @@
 import { adminClient } from './support/admin';
 import { expect, test } from './fixtures';
+import { openPanel } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 
@@ -32,6 +33,7 @@ test.describe('Dados de Vida', () => {
     const rutePage = await signIn('player2');
     await rutePage.goto(`/session/${sessionId}`);
 
+    await openPanel(master, 'Jogadores');
     await expect(master.getByText('Eliabe (Nível 5)')).toBeVisible();
     await expect(master.getByText('Dados de Vida 3/5 (d10)')).toBeVisible();
     await expect(master.getByText('Dados de Vida 1/1 (d8)')).toBeVisible();
