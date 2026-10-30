@@ -360,6 +360,19 @@ describe('PlayerHotbar: Habilidade com efeito de combate', () => {
     expect(within(card()).getByRole('button', { name: 'Usar' })).toBeEnabled();
   });
 
+  it('quando o turno chega, a Hotbar acende; fora do turno, não', () => {
+    startCombat(parts, 0);
+    const { container, unmount } = view();
+    expect(container.querySelector('[data-my-turn="true"]')).not.toBeNull();
+    expect(screen.getByTestId('brilho-do-turno')).toHaveAttribute('aria-hidden', 'true');
+    unmount();
+
+    startCombat(parts, 1);
+    const outside = view();
+    expect(outside.container.querySelector('[data-my-turn]')).toBeNull();
+    expect(screen.queryByTestId('brilho-do-turno')).toBeNull();
+  });
+
   it('fora do turno, a Ação fica bloqueada com o motivo', () => {
     startCombat(parts, 1);
     view();

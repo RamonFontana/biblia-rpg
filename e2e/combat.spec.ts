@@ -42,6 +42,13 @@ test.describe('iniciar o combate', () => {
     await expect(player.getByText('Inimigos na Cena')).toBeVisible();
     await expect(player.getByText('É O SEU TURNO!')).toHaveCount(0);
 
+    // A faixa de iniciativa no Palco: o Guarda age agora, Eliabe vem depois.
+    const order = player.getByRole('list', { name: 'Ordem de iniciativa' }).getByRole('listitem');
+    await expect(order).toHaveCount(2);
+    await expect(order.nth(0)).toContainText(GUARD);
+    await expect(order.nth(1)).toContainText('Eliabe (você)');
+    await expect(order.first()).toHaveAttribute('aria-current', 'true');
+
     const { data: combats } = await adminClient()
       .from('combats')
       .select('status, round_number, current_turn_index');
@@ -103,6 +110,14 @@ test.describe('turnos e rodadas', () => {
     await expect(participantCard(master, 'Eliabe')).toContainText('Turno Atual');
     await expect(participantCard(master, GUARD)).not.toContainText('Turno Atual');
     await expect(player.getByText('É O SEU TURNO!')).toBeVisible();
+    // A faixa gira: Eliabe passa a agir agora, e o anel do Retrato aparece.
+    const order = player.getByRole('list', { name: 'Ordem de iniciativa' }).getByRole('listitem');
+    await expect(order.first()).toContainText('Eliabe');
+    await expect(order.first()).toHaveAttribute('aria-current', 'true');
+    await expect(player.getByRole('button', { name: /^Eliabe,/ })).toHaveAttribute(
+      'data-turn',
+      'true',
+    );
 
     await master.getByRole('button', { name: 'Próximo Turno' }).click();
 
