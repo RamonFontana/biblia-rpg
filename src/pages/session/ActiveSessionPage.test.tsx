@@ -1337,13 +1337,84 @@ describe('visão do jogador e do espectador', () => {
     expect(prop('PlayerCombatView', 'enemies')).toBe(h.roster.enemies);
   });
 
-  it('espectador (ficha excluída) vê a ficha apagada e nenhum controle', async () => {
-    h.user = { id: 'u3' };
-    await renderPage();
-    expect(screen.getByText('Modo Espectador', { selector: 'h2 *, h2' })).toBeInTheDocument();
-    expect(props('CharacterSheetView')).toMatchObject({ userId: 'u3', sessionId: 's1' });
-    expect(hasStub('SessionParticipantList')).toBe(false);
-    expect(hasStub('PlayerRestIndicator')).toBe(false);
+  describe('o espectador (ficha excluída): moldura só de leitura', () => {
+    beforeEach(() => {
+      h.user = { id: 'u3' };
+    });
+    const inCombat = () => {
+      h.combat.activeCombat = { id: 'cb1', round_number: 2 };
+      h.combat.currentTurnParticipant = { id: 'p-e1', entity_id: 'e1' };
+      h.combat.participants = [
+        { id: 'p-c1', entity_id: 'c1', hp_current: 9, conditions: [] },
+        { id: 'p-e1', entity_id: 'e1', hp_current: 9, conditions: [] },
+      ];
+    };
+
+    it('o Palco mostra o aviso e os Retratos, e o trilho só tem Ficha e Grupo', async () => {
+      await renderPage();
+      expect(screen.getByText('Modo Espectador', { selector: 'h2 *, h2' })).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: 'Palco' })).toBeInTheDocument();
+      expect(pluck(prop('Retratos', 'retratos'), 'id')).toEqual(['c1', 'c2', 'n1']);
+      const rail = screen.getByRole('navigation', { name: 'Painéis' });
+      expect(
+        within(rail)
+          .getAllByRole('button')
+          .map((b) => b.getAttribute('aria-label')),
+      ).toEqual(['Ficha', 'Grupo']);
+    });
+
+    it('em combate, vê a iniciativa e o feed, sem poder abrir o histórico', async () => {
+      inCombat();
+      await renderPage();
+      expect(prop('InitiativeStrip', 'currentId')).toBe('e1');
+      expect(prop('InitiativeStrip', 'round')).toBe(2);
+      expect(pluck(prop('InitiativeStrip', 'entries'), 'id')).toEqual(['c1', 'e1']);
+      expect(props('CombatFeed')).toBeDefined();
+      expect(prop('CombatFeed', 'onOpen')).toBeUndefined();
+    });
+
+    it('fora do combate não há iniciativa nem feed', async () => {
+      await renderPage();
+      expect(hasStub('InitiativeStrip')).toBe(false);
+      expect(hasStub('CombatFeed')).toBe(false);
+    });
+
+    it('a Ficha abre apagada, e o Grupo abre sem ações', async () => {
+      await renderPage();
+      openPanel('Ficha');
+      expect(props('CharacterSheetView')).toMatchObject({ userId: 'u3', sessionId: 's1' });
+      const dialog = screen.getByRole('dialog', { name: 'Ficha' });
+      expect(dialog.querySelector('.pointer-events-none')).not.toBeNull();
+      await closePanel();
+      openPanel('Grupo');
+      expect(props('SessionParticipantList')).toMatchObject({ isGM: false, sessionId: 's1' });
+      expect(prop('SessionParticipantList', 'onNegotiate')).toBeUndefined();
+      expect(prop('SessionParticipantList', 'onNPCNegotiate')).toBeUndefined();
+      expect(prop('SessionParticipantList', 'onShop')).toBeUndefined();
+    });
+
+    it('tocar num Retrato abre o cartão dele sem Negociar nem Atacar', async () => {
+      inCombat();
+      await renderPage();
+      act(() => {
+        call(
+          'Retratos',
+          'onOpen',
+          (prop('Retratos', 'retratos') as { id: string }[]).find((r) => r.id === 'c2'),
+        );
+      });
+      expect(prop('RetratoCard', 'retrato')).toMatchObject({ id: 'c2' });
+      expect(prop('RetratoCard', 'onNegotiate')).toBeUndefined();
+      expect(prop('RetratoCard', 'attack')).toBeUndefined();
+    });
+
+    it('não há Hotbar, Barra do Mestre, Dados nem descanso', async () => {
+      await renderPage();
+      expect(hasStub('PlayerHotbar')).toBe(false);
+      expect(screen.queryByRole('region', { name: 'Barra do Mestre' })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Dados/ })).toBeNull();
+      expect(hasStub('PlayerRestIndicator')).toBe(false);
+    });
   });
 });
 

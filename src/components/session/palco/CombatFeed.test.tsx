@@ -40,4 +40,12 @@ describe('CombatFeed', () => {
     fireEvent.click(button);
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
+
+  it('sem onOpen, o feed só lê: os eventos aparecem e não há botão', () => {
+    render(<CombatFeed attacks={[attack('a1', '2026-01-01T10:00:01Z')]} abilityUses={[]} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Últimos eventos do combate' })).toHaveTextContent(
+      'Guarda acertou Eliabe: 5 de dano',
+    );
+  });
 });

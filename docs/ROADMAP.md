@@ -12,7 +12,7 @@
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
 | 5 — Features novas | **concluída em 2026-10-28**: Fé na mesa (PR #60), ataque físico (#61), Dados de Vida (#62) e efeitos de Habilidade (#63), todas com migrations aplicadas na produção. Resta o que cada feature registrou como decisão do autor. Próximo: refatorar o layout da sessão (Onda 6) e então o mapa |
-| 6 — Layout da sessão | **grill e protótipo feitos em 2026-10-29; spec em `.scratch/layout-da-sessao/spec.md`** (ADRs 0008 e 0009, termos em `CONTEXT.md`); próximo: protótipo descartável no celular, depois `/to-spec`. Detalhe em "Onda 6" |
+| 6 — Layout da sessão | **passo 1 concluído em 2026-10-31**: os 12 tickets de `.scratch/layout-da-sessao/` estão entregues (moldura, Barra de Status, Hotbar, Palco, Mestre na web e no celular, Hotbar do NPC jogável e espectador; ADRs 0008 e 0009). Pendente: aplicar na produção as migrations `convert_playable_npc_keys` e `npc_ability_use_by_gm` (confirmação do autor), testar o arrasto e o toque longo num iPhone real e a mudança do Bálsamo. Próximo: o mapa. Detalhe em "Onda 6" |
 
 
 ## Contexto

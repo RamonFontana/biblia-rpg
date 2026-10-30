@@ -183,7 +183,19 @@ export function ActiveSessionPage() {
             onOpenEndSession={() => setIsEndSessionDialogOpen(true)}
           />
         ) : isSpectator ? (
-          <SpectatorView userId={user.id} sessionId={id} />
+          <SpectatorView
+            userId={user.id}
+            sessionId={id}
+            sessionData={sessionData}
+            playerCharacters={playerCharacters}
+            npcs={npcs}
+            enemies={enemies}
+            hasActiveCombat={!!activeCombat}
+            onlineUsers={onlineUsers}
+            activeTrades={activeTrades}
+            activeTests={activeTests}
+            testResults={testResults}
+          />
         ) : (
           <PlayerSessionView
             userId={user.id}
