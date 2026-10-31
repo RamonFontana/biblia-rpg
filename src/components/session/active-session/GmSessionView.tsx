@@ -165,6 +165,7 @@ export function GmSessionView({
     participants,
     pins,
     viewer: 'gm',
+    turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });
   const dying = retratos
     .filter((r) => r.kind === 'player' && r.down)

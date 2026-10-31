@@ -46,3 +46,8 @@ export function clampGridSide(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_GRID.columns;
   return Math.min(MAX_GRID_SIDE, Math.max(MIN_GRID_SIDE, Math.round(value)));
 }
+
+/** Metros para a tela, com vírgula: 9 m, 4,5 m. */
+export function formatMeters(meters: number): string {
+  return `${String(meters).replace('.', ',')} m`;
+}

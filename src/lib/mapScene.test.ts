@@ -1,7 +1,7 @@
 // A cena do mapa: onde cada Retrato está no mapa, o que fica na Bandeja e o que cada pessoa vê.
 // Termos: CONTEXT.md (Mapa, Bandeja, Retrato, pin).
 import { describe, expect, it } from 'vitest';
-import { buildMapScene, pinTargetOf, type PinRow } from './mapScene';
+import { buildMapScene, distancesFrom, pinTargetOf, type PinRow } from './mapScene';
 
 const ch = (id: string, over: Record<string, unknown> = {}) => ({
   id,
@@ -133,5 +133,51 @@ describe('pinTargetOf', () => {
       e1: 'character',
       e2: 'character',
     });
+  });
+});
+
+describe('buildMapScene: o turno', () => {
+  const pins = [
+    pin({ character_id: 'c1', col: 1, row: 1 }),
+    pin({ character_id: 'c2', col: 2, row: 2 }),
+  ];
+
+  it('marca o pin de quem age agora', () => {
+    const s = scene({ viewer: 'player', pins, turnEntityId: 'c2' });
+    expect(s.pins.map((p) => [p.retrato.id, p.turn])).toEqual([
+      ['c1', false],
+      ['c2', true],
+    ]);
+  });
+
+  it('sem combate, ninguém está de turno', () => {
+    const s = scene({ viewer: 'player', pins });
+    expect(s.pins.every((p) => p.turn === false)).toBe(true);
+  });
+});
+
+describe('distancesFrom: a distância até cada pin', () => {
+  const pins = [
+    pin({ character_id: 'c1', col: 2, row: 2 }),
+    pin({ character_id: 'e1', col: 8, row: 2 }),
+    pin({ character_id: 'c2', col: 5, row: 5 }),
+  ];
+
+  it('mede em metros a partir do pin de quem pergunta, com a diagonal valendo um Quadrado', () => {
+    const s = scene({ viewer: 'player', pins });
+    expect(distancesFrom(s, 'c1')).toEqual({ e1: 9, c2: 4.5 });
+  });
+
+  it('não inclui o próprio pin', () => {
+    expect(distancesFrom(scene({ viewer: 'player', pins }), 'c1')).not.toHaveProperty('c1');
+  });
+
+  it('sem pin de quem pergunta, não há distância nenhuma', () => {
+    expect(distancesFrom(scene({ viewer: 'player', pins }), 'c-fora')).toEqual({});
+  });
+
+  it('quem não tem pin fica sem distância', () => {
+    const s = scene({ viewer: 'player', pins: [pins[0]!] });
+    expect(distancesFrom(s, 'c1')).toEqual({});
   });
 });

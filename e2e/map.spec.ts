@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { adminClient } from './support/admin';
 import { test, expect, type Seed, type SignIn } from './fixtures';
+import { startCombat } from './support/combat';
 import { closePanel, openPanel, watchPlayers } from './support/ui';
 
 /** Uma mesa com Eliabe (jogador 1), os dois já online. */
@@ -118,11 +119,13 @@ test.describe('Mapa atual', () => {
   });
 });
 
+const GUARD = 'Guarda de Jericó';
+
 test.describe('Pins', () => {
   /** Uma mesa com Eliabe e um Guarda, o terreno já mostrado e o Palco do Mestre livre dos Painéis. */
   async function tableWithMap(seed: Seed, signIn: SignIn) {
     const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
-    const guard = await seed.createEnemy('Guarda de Jericó');
+    const guard = await seed.createEnemy(GUARD);
     const sessionId = await seed.createSession({ characters: [eliabe, guard] });
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
@@ -228,5 +231,55 @@ test.describe('Pins', () => {
     );
     await expect(guardOnPlayer).toHaveCount(0);
     await expect(tray.getByRole('button', { name: /^Guarda de Jericó, / })).toBeVisible();
+  });
+
+  test('no combate, o pin do turno fica destacado e o Ataque mostra a distância até o alvo', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await tableWithMap(seed, signIn);
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+
+    // Eliabe no meio do mapa e o Guarda quatro Quadrados à direita dele (6 m).
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: /^Eliabe, / }).boundingBox())!),
+      center((await area.boundingBox())!),
+    );
+    const eliabePin = master.getByRole('button', { name: /^Eliabe, \d+ de \d+ PV$/ });
+    await expect(eliabePin).toBeVisible();
+    const transform = await master
+      .getByTestId('camada-do-mapa')
+      .evaluate((el) => (el as HTMLElement).style.transform);
+    const squarePx = 48 * Number(/scale\(([\d.]+)\)/.exec(transform)?.[1]);
+    const eliabeAt = center((await eliabePin.boundingBox())!);
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: new RegExp(`^${GUARD}, `) }).boundingBox())!),
+      { x: eliabeAt.x + 4 * squarePx, y: eliabeAt.y },
+    );
+    const guardOnPlayer = player.getByRole('button', {
+      name: new RegExp(`^${GUARD}, \\d+ de \\d+ PV$`),
+    });
+    await expect(guardOnPlayer).toBeVisible();
+
+    // O Guarda age primeiro: o pin dele é o destacado.
+    await startCombat(master, { Eliabe: 10, [GUARD]: 15 });
+    await expect(guardOnPlayer).toHaveAttribute('data-turn', 'true');
+    await expect(
+      player.getByRole('button', { name: /^Eliabe, \d+ de \d+ PV$/ }),
+    ).not.toHaveAttribute('data-turn');
+    await expect(player.getByRole('list', { name: 'Ordem de iniciativa' })).toBeVisible();
+
+    // Chega a vez de Eliabe: o Ataque mostra a distância, sem travar nada.
+    await master.getByRole('button', { name: 'Próximo Turno' }).click();
+    await expect(player.getByRole('button', { name: /^Eliabe, \d+ de \d+ PV$/ })).toHaveAttribute(
+      'data-turn',
+      'true',
+    );
+    await player.getByRole('combobox', { name: /^Alvo/ }).selectOption({ label: GUARD });
+    await expect(player.getByLabel('Distância até o alvo', { exact: true })).toHaveText('a 6 m');
+    await expect(player.getByRole('button', { name: 'Atacar' })).toBeEnabled();
   });
 });

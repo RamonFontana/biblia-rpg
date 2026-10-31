@@ -85,6 +85,7 @@ export function SpectatorView({
     participants,
     pins,
     viewer: 'spectator',
+    turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });
   const openRetrato =
     retratos.find((r) => r.id === retratoId) ??

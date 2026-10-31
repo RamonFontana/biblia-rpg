@@ -1,6 +1,6 @@
 // A cena do mapa (CONTEXT.md: Mapa, pin, Bandeja): onde cada Retrato está no mapa e quem espera na
 // Bandeja. Parte dos Retratos de `buildRetratos`, mas deixa o inimigo com pin aparecer fora do combate.
-import type { Cell } from '@/domain/map/grid';
+import { distanceInMeters, type Cell } from '@/domain/map/grid';
 import type { PinTarget } from '@/data-access/mapPins';
 import { buildRetratos, type BuildInput, type Retrato } from './retratos';
 
@@ -19,6 +19,8 @@ export type Viewer = 'gm' | 'player' | 'spectator';
 export interface ScenePin {
   retrato: Retrato;
   cell: Cell;
+  /** É quem age agora no combate. */
+  turn: boolean;
 }
 
 export interface MapScene {
@@ -44,9 +46,11 @@ export const pinTargetOf = (retrato: Retrato): PinTarget =>
 interface SceneInput extends Omit<BuildInput, 'extraEnemies' | 'includeHiddenNpcs'> {
   pins: PinRow[];
   viewer: Viewer;
+  /** Quem age agora no combate (o `entity_id` do participante do turno). */
+  turnEntityId?: string;
 }
 
-export function buildMapScene({ pins, viewer, ...input }: SceneInput): MapScene {
+export function buildMapScene({ pins, viewer, turnEntityId, ...input }: SceneInput): MapScene {
   const placed = new Set(pins.map(pinRetratoId).filter((id): id is string => id !== null));
   const gm = viewer === 'gm';
   const retratos = buildRetratos({
@@ -60,8 +64,23 @@ export function buildMapScene({ pins, viewer, ...input }: SceneInput): MapScene 
   const tray: Retrato[] = [];
   for (const retrato of retratos) {
     const cell = cells.get(retrato.id);
-    if (cell) placedPins.push({ retrato, cell });
+    if (cell) placedPins.push({ retrato, cell, turn: retrato.id === turnEntityId });
     else if (gm) tray.push(retrato);
   }
   return { pins: placedPins, tray };
+}
+
+/**
+ * A distância em metros do pin de `fromId` até cada um dos outros pins (a diagonal vale um Quadrado).
+ * Quem não tem pin neste mapa fica de fora; sem o pin de `fromId`, não há distância nenhuma. O
+ * Ataque a mostra ao jogador e nunca o trava por ela.
+ */
+export function distancesFrom(scene: MapScene, fromId: string): Record<string, number> {
+  const from = scene.pins.find((pin) => pin.retrato.id === fromId);
+  if (!from) return {};
+  return Object.fromEntries(
+    scene.pins
+      .filter((pin) => pin.retrato.id !== fromId)
+      .map((pin) => [pin.retrato.id, distanceInMeters(from.cell, pin.cell)]),
+  );
 }

@@ -11,6 +11,7 @@ import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import {
   distanceInMeters,
   distanceInSquares,
+  formatMeters,
   isInsideGrid,
   snapToCell,
   type Cell,
@@ -46,8 +47,6 @@ interface Drag {
 }
 
 const EMPTY_SCENE: MapScene = { pins: [], tray: [] };
-
-const formatMeters = (meters: number) => `${String(meters).replace('.', ',')} m`;
 
 export function MapaDoPalco({
   map,
@@ -255,13 +254,14 @@ export function MapaDoPalco({
             />
           )}
         </svg>
-        {scene.pins.map(({ retrato, cell }) => (
+        {scene.pins.map(({ retrato, cell, turn }) => (
           <PinToken
             key={retrato.id}
             retrato={retrato}
             col={cell.col}
             row={cell.row}
             size={CELL}
+            turn={turn}
             lifted={drag?.retrato.id === retrato.id}
             draggable={isGm}
             handlers={handlersFor(retrato, cell)}

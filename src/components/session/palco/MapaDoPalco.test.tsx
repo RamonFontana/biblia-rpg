@@ -97,7 +97,7 @@ function renderScene(scene: MapScene, over: { isGm?: boolean } = {}) {
 const eliabe = retrato('c1', { isMe: true });
 const guarda = retrato('e1', { kind: 'enemy', pv: 12, pvMax: 12 });
 const sceneWith = (over: Partial<MapScene> = {}): MapScene => ({
-  pins: [{ retrato: eliabe, cell: { col: 4, row: 2 } }],
+  pins: [{ retrato: eliabe, cell: { col: 4, row: 2 }, turn: false }],
   tray: [],
   ...over,
 });
@@ -243,7 +243,9 @@ describe('MapaDoPalco: a Bandeja', () => {
 
 describe('MapaDoPalco: centralizar no personagem', () => {
   it('fica desabilitado, com o motivo, quando o jogador não tem pin', () => {
-    renderScene(sceneWith({ pins: [{ retrato: retrato('c2'), cell: { col: 1, row: 1 } }] }));
+    renderScene(
+      sceneWith({ pins: [{ retrato: retrato('c2'), cell: { col: 1, row: 1 }, turn: false }] }),
+    );
     const button = screen.getByRole('button', { name: /Centralizar no meu personagem/ });
     expect(button).toBeDisabled();
     expect(button).toHaveAccessibleName(/não está no mapa/);
@@ -262,5 +264,37 @@ describe('MapaDoPalco: centralizar no personagem', () => {
   it('o Mestre não tem personagem para centralizar', () => {
     renderScene(sceneWith(), { isGm: true });
     expect(screen.queryByRole('button', { name: /Centralizar/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('MapaDoPalco: combate', () => {
+  it('destaca o pin de quem age agora, e só ele', () => {
+    renderScene(
+      sceneWith({
+        pins: [
+          { retrato: eliabe, cell: { col: 4, row: 2 }, turn: false },
+          { retrato: guarda, cell: { col: 8, row: 5 }, turn: true },
+        ],
+      }),
+    );
+    expect(screen.getByRole('button', { name: 'E1, 12 de 12 PV' })).toHaveAttribute(
+      'data-turn',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'C1, 8 de 10 PV' })).not.toHaveAttribute('data-turn');
+    expect(screen.getAllByTestId('anel-do-turno')).toHaveLength(1);
+  });
+
+  it('o inimigo a 0 PV fica no mapa, apagado, e o nome diz que está caído', () => {
+    const caido = retrato('e1', { kind: 'enemy', pv: 0, pvMax: 12, down: true });
+    renderScene(sceneWith({ pins: [{ retrato: caido, cell: { col: 3, row: 3 }, turn: false }] }));
+    const pin = screen.getByRole('button', { name: 'E1, 0 de 12 PV, caído' });
+    expect(pin).toHaveAttribute('data-down', 'true');
+    expect(pin.className).toContain('grayscale');
+  });
+
+  it('quem está de pé não vem apagado', () => {
+    renderScene(sceneWith());
+    expect(screen.getByRole('button', { name: 'C1, 8 de 10 PV' })).not.toHaveAttribute('data-down');
   });
 });

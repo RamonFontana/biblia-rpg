@@ -20,7 +20,7 @@ import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard, type RetratoAttack } from '@/components/session/palco/RetratoCard';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
-import { buildMapScene } from '@/lib/mapScene';
+import { buildMapScene, distancesFrom } from '@/lib/mapScene';
 import { useMapPins } from '@/hooks/useMapPins';
 import { DockRail, type DockItem } from './DockRail';
 import { useCombatStore } from '@/store/combatStore';
@@ -148,7 +148,9 @@ export function PlayerSessionView({
     participants,
     pins,
     viewer: 'player',
+    turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });
+  const distances = myCharacter ? distancesFrom(scene, myCharacter.id) : {};
   const openRetrato =
     retratos.find((r) => r.id === retratoId) ??
     scene.pins.find((pin) => pin.retrato.id === retratoId)?.retrato;
@@ -298,6 +300,7 @@ export function PlayerSessionView({
                 enemies={enemies}
                 isLoading={isCharactersLoading}
                 entities={entities}
+                distances={distances}
                 preselectedTargetId={attackTargetId}
                 inspirationContext={{ sessionId, day: sessionData.current_day || 1 }}
                 onInspirationUsed={

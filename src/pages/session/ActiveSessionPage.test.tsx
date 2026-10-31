@@ -1441,6 +1441,76 @@ describe('o Mapa atual no Palco', () => {
       expect(screen.getByRole('button', { name: 'Filisteu, 9 de 12 PV' })).toBeInTheDocument();
     });
 
+    describe('em combate', () => {
+      const inCombat = (turnEntity: string) => {
+        h.combat.activeCombat = { id: 'cb1', round_number: 2 };
+        h.combat.currentTurnParticipant = { id: `p-${turnEntity}`, entity_id: turnEntity };
+        h.combat.participants = [
+          { id: 'p-c1', entity_id: 'c1', hp_current: 9, conditions: [] },
+          { id: 'p-c2', entity_id: 'c2', hp_current: 9, conditions: [] },
+          { id: 'p-e1', entity_id: 'e1', hp_current: 9, conditions: [] },
+        ];
+      };
+
+      it('o pin de quem age agora fica destacado, e só ele', async () => {
+        inCombat('e1');
+        h.pins = [
+          pinOf({ character_id: 'c1', col: 2, row: 2 }),
+          pinOf({ character_id: 'e1', col: 8, row: 2 }),
+        ];
+        await renderPage();
+        expect(screen.getByRole('button', { name: /^Filisteu, / })).toHaveAttribute(
+          'data-turn',
+          'true',
+        );
+        expect(screen.getByRole('button', { name: /^Personagem c1, / })).not.toHaveAttribute(
+          'data-turn',
+        );
+      });
+
+      it('o painel de Ataque recebe a distância em metros até quem tem pin, com a diagonal valendo um Quadrado', async () => {
+        inCombat('c1');
+        h.pins = [
+          pinOf({ character_id: 'c1', col: 2, row: 2 }),
+          pinOf({ character_id: 'e1', col: 8, row: 5 }),
+        ];
+        await renderPage();
+        expect(prop('PlayerCombatView', 'distances')).toEqual({ e1: 9 });
+      });
+
+      it('sem pin do jogador ou sem mapa mostrado, não há distância', async () => {
+        inCombat('c1');
+        h.pins = [pinOf({ character_id: 'e1', col: 8, row: 5 })];
+        await renderPage();
+        expect(prop('PlayerCombatView', 'distances')).toEqual({});
+      });
+
+      it('a faixa de iniciativa continua sobre o mapa', async () => {
+        inCombat('c1');
+        h.pins = [pinOf({ character_id: 'c1', col: 2, row: 2 })];
+        await renderPage();
+        expect(hasStub('InitiativeStrip')).toBe(true);
+        expect(screen.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeInTheDocument();
+      });
+
+      it('o Mestre no celular alterna da iniciativa para o mapa com o botão Cena', async () => {
+        asGm();
+        vi.stubGlobal('matchMedia', (query: string) => ({
+          matches: query.includes('max-width'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }));
+        inCombat('c1');
+        await renderPage();
+        expect(hasStub('InitiativeList')).toBe(true);
+        expect(screen.queryByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Cena' }));
+        expect(screen.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeInTheDocument();
+        expect(hasStub('Retratos')).toBe(false);
+      });
+    });
+
     it('o Mestre vê a Bandeja com quem ainda não tem pin e arrasta pelo mapa', async () => {
       asGm();
       h.pins = [pinOf({ character_id: 'c1', col: 3, row: 2 })];

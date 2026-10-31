@@ -649,3 +649,39 @@ describe('AttackPanel: a conta e a arma na tela', () => {
     expect(screen.queryByLabelText('Dados rolados')).toBeNull();
   });
 });
+
+describe('AttackPanel: a distância no mapa', () => {
+  const withDistance = targets.map((t) =>
+    t.name === 'Filisteu' ? { ...t, distanceMeters: 4.5 } : t,
+  );
+
+  it('mostra a distância até o alvo escolhido, em metros', () => {
+    show({ targets: withDistance });
+    pick('Filisteu');
+    expect(screen.getByLabelText('Distância até o alvo')).toHaveTextContent('a 4,5 m');
+  });
+
+  it('muda com o alvo e some quando o alvo não tem pin', () => {
+    show({ targets: withDistance });
+    pick('Filisteu');
+    expect(screen.getByLabelText('Distância até o alvo')).toBeInTheDocument();
+    pick('Rute');
+    expect(screen.queryByLabelText('Distância até o alvo')).not.toBeInTheDocument();
+  });
+
+  it('sem alvo escolhido, não mostra distância', () => {
+    show({ targets: withDistance });
+    expect(screen.queryByLabelText('Distância até o alvo')).not.toBeInTheDocument();
+  });
+
+  it('nunca trava o ataque, por mais longe que esteja', async () => {
+    const far = targets.map((t) => (t.name === 'Filisteu' ? { ...t, distanceMeters: 300 } : t));
+    show({ targets: far });
+    pick('Filisteu');
+    expect(screen.getByLabelText('Distância até o alvo')).toHaveTextContent('a 300 m');
+    roll('15');
+    expect(screen.getByRole('button', { name: 'Atacar' })).toBeEnabled();
+    attack();
+    expect(await screen.findByText(/Acertou/)).toBeInTheDocument();
+  });
+});

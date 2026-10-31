@@ -12,6 +12,8 @@ interface PinTokenProps {
   row: number;
   /** Pixels de um Quadrado sem zoom. */
   size: number;
+  /** Age agora no combate: o pin ganha o anel âmbar. */
+  turn: boolean;
   /** Está sendo arrastado: o pin fica apagado no lugar de origem. */
   lifted: boolean;
   /** Só o Mestre arrasta. */
@@ -22,7 +24,16 @@ interface PinTokenProps {
   >;
 }
 
-export function PinToken({ retrato, col, row, size, lifted, draggable, handlers }: PinTokenProps) {
+export function PinToken({
+  retrato,
+  col,
+  row,
+  size,
+  turn,
+  lifted,
+  draggable,
+  handlers,
+}: PinTokenProps) {
   return (
     <motion.div
       className="absolute top-0 left-0 p-[3px]"
@@ -36,10 +47,12 @@ export function PinToken({ retrato, col, row, size, lifted, draggable, handlers 
         aria-label={pinLabel(retrato)}
         data-col={col}
         data-row={row}
+        data-turn={turn ? 'true' : undefined}
+        data-down={retrato.down ? 'true' : undefined}
         {...handlers}
         className={`block h-full w-full touch-none rounded-full border-2 bg-stone-900 shadow-md ${
           draggable ? 'cursor-grab' : 'cursor-pointer'
-        } ${retrato.isMe ? 'border-amber-500' : retrato.kind === 'enemy' ? 'border-red-700' : 'border-stone-200'} ${
+        } ${turn ? 'border-amber-400' : retrato.isMe ? 'border-amber-500' : retrato.kind === 'enemy' ? 'border-red-700' : 'border-stone-200'} ${
           retrato.hidden ? 'border-dashed opacity-60' : ''
         } ${retrato.down ? 'opacity-60 grayscale' : ''} ${lifted ? 'opacity-30' : ''}`}
       >
@@ -49,6 +62,17 @@ export function PinToken({ retrato, col, row, size, lifted, draggable, handlers 
           className="h-full w-full text-[10px]"
         />
       </button>
+      {turn && (
+        // O anel pulsa duas vezes e para (só opacidade, sem loop); a borda âmbar do pin fica.
+        <motion.span
+          aria-hidden="true"
+          data-testid="anel-do-turno"
+          className="pointer-events-none absolute inset-0 rounded-full ring-4 ring-amber-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0, 1, 0.9] }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
+        />
+      )}
     </motion.div>
   );
 }
