@@ -55,6 +55,7 @@ vi.mock('@/store/authStore', () => ({ useAuthStore: () => ({ user: h.user }) }))
 vi.mock('@/store/combatStore', () => ({ useCombatStore: () => h.combat }));
 vi.mock('@/hooks/useMapPins', () => ({ useMapPins: () => ({ pins: h.pins, move: h.movePin }) }));
 vi.mock('@/hooks/useSessionMaps', () => ({ useSessionMaps: () => h.maps }));
+vi.mock('@/data-access/masterMaps', () => ({ getMasterMapImage: vi.fn() }));
 vi.mock('@/components/session/maps/MasterMapLibrary', () => ({
   MasterMapLibrary: () => null,
 }));

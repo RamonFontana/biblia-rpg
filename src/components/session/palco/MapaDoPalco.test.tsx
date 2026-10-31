@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MapScene } from '@/lib/mapScene';
 import type { Retrato } from '@/lib/retratos';
 import type { SessionMap } from '@/data-access/maps';
+vi.mock('@/data-access/masterMaps', () => ({ getMasterMapImage: vi.fn() }));
+
 import { MapaDoPalco } from './MapaDoPalco';
 
 const map: SessionMap = {

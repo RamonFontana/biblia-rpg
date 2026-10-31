@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration: mapas do Mestre (dono, nome, colunas, linhas, linhas do grid) e a imagem numa tabela própria fora do Realtime (ADR 0010), apagada em cascata; o mapa da sessão passa a poder apontar para um mapa do Mestre (exatamente uma origem); RLS: só o dono escreve, participantes de sessão que usa o mapa leem, estranho não lê; bloqueio de apagar mapa usado por sessão ativa; `gen:types`; `rls.sql` por papel.
-- [ ] Editor de recorte reaproveita a transformação de vista do ticket 03 e a compressão do ticket 01; sempre devolve colunas e linhas inteiras (teste de componente).
-- [ ] A imagem é lida à parte, por id, com cache imutável; a troca do Mapa atual não carrega a imagem pelo Realtime.
-- [ ] "Meus mapas" no seletor do Painel e do assistente; renomear e apagar.
-- [ ] Recusa arquivo acima de 20 MB e que não seja imagem, com o motivo.
-- [ ] E2E (web): enviar uma imagem pequena, recortar, somar à sessão e mostrar.
+- [x] Migration: mapas do Mestre (dono, nome, colunas, linhas, linhas do grid) e a imagem numa tabela própria fora do Realtime (ADR 0010), apagada em cascata; o mapa da sessão passa a poder apontar para um mapa do Mestre (exatamente uma origem); RLS: só o dono escreve, participantes de sessão que usa o mapa leem, estranho não lê; bloqueio de apagar mapa usado por sessão ativa; `gen:types`; `rls.sql` por papel.
+- [x] Editor de recorte reaproveita a transformação de vista do ticket 03 e a compressão do ticket 01; sempre devolve colunas e linhas inteiras (teste de componente).
+- [x] A imagem é lida à parte, por id, com cache imutável; a troca do Mapa atual não carrega a imagem pelo Realtime.
+- [x] "Meus mapas" no seletor do Painel e do assistente; renomear e apagar.
+- [x] Recusa arquivo acima de 20 MB e que não seja imagem, com o motivo.
+- [x] E2E (web): enviar uma imagem pequena, recortar, somar à sessão e mostrar.

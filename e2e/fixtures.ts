@@ -66,6 +66,9 @@ export const test = base.extend<{ seed: Seed; signIn: SignIn }>({
       const owners = Object.values(users);
       const sessions = await admin.from('game_sessions').delete().eq('gm_id', users.master);
       if (sessions.error) throw sessions.error;
+      // Os mapas do Mestre ficam depois das sessões: o banco recusa apagar mapa de sessão ativa.
+      const maps = await admin.from('master_maps').delete().in('owner_id', owners);
+      if (maps.error) throw maps.error;
       const characters = await admin.from('characters').delete().in('user_id', owners);
       if (characters.error) throw characters.error;
     };
