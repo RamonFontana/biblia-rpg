@@ -10,32 +10,11 @@ import {
   type LightSource,
 } from '@/domain/map/light';
 import { TORCH_LIGHT } from '@/domain/torch';
-import type { PinTarget } from '@/data-access/mapPins';
+import type { LightRow } from '@/data-access/mapLights';
+import type { PinRow, PinTarget } from '@/data-access/mapPins';
+
+export type { LightRow, PinRow };
 import { buildRetratos, type BuildInput, type Retrato } from './retratos';
-
-/** Uma linha de `session_map_pins`: o Retrato é o personagem ou o NPC simples (um dos dois). */
-export interface PinRow {
-  id: string;
-  map_id: string;
-  character_id: string | null;
-  npc_id: string | null;
-  col: number;
-  row: number;
-  /** A luz no pin (de um inimigo ou NPC): raio de Luz plena e faixa de Penumbra, em metros. */
-  light_bright_m?: number | null;
-  light_dim_m?: number | null;
-}
-
-/** Uma linha de `session_map_lights`: uma Fonte de luz fixa no mapa. */
-export interface LightRow {
-  id: string;
-  map_id: string;
-  col: number;
-  row: number;
-  bright_m: number;
-  dim_m: number;
-  label: string;
-}
 
 export type Viewer = 'gm' | 'player' | 'spectator';
 

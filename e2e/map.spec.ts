@@ -460,6 +460,44 @@ test.describe('Pins', () => {
     expect(off?.torch_lit).toBe(false);
   });
 
+  test('sem mapa na tela, o Mestre oculta e revela um inimigo pelo Painel Inimigos', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const guard = await seed.createEnemy(GUARD);
+    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+
+    await openPanel(master, 'Inimigos');
+    await master.getByRole('button', { name: `Ocultar ${GUARD}` }).click();
+    await expect(master.getByText('Oculto', { exact: true })).toBeVisible();
+    await expect
+      .poll(async () => {
+        const { data } = await adminClient()
+          .from('characters')
+          .select('is_visible')
+          .eq('id', guard)
+          .single();
+        return data?.is_visible;
+      })
+      .toBe(false);
+
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
+    await expect(master.getByRole('button', { name: `Ocultar ${GUARD}` })).toBeVisible();
+    await expect
+      .poll(async () => {
+        const { data } = await adminClient()
+          .from('characters')
+          .select('is_visible')
+          .eq('id', guard)
+          .single();
+        return data?.is_visible;
+      })
+      .toBe(true);
+  });
+
   test('no combate, o pin do turno fica destacado e o Ataque mostra a distância até o alvo', async ({
     seed,
     signIn,

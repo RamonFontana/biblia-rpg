@@ -1,8 +1,20 @@
 // Pins do mapa (CONTEXT.md: Mapa, Bandeja). As funções lançam o erro do Supabase.
 import { uniqueChannelName } from '@/lib/channelName';
 import { supabase } from '@/lib/supabase';
-import type { PinRow } from '@/lib/mapScene';
-import { subscribeToTables, type ChangePayload, type SubscribeOptions } from './realtime';
+import { subscribeToScopedRows, type ChangePayload, type SubscribeOptions } from './realtime';
+
+/** Uma linha de `session_map_pins`: o Retrato é o personagem ou o NPC simples (um dos dois). */
+export interface PinRow {
+  id: string;
+  map_id: string;
+  character_id: string | null;
+  npc_id: string | null;
+  col: number;
+  row: number;
+  /** A luz no pin (de um inimigo ou NPC): raio de Luz plena e faixa de Penumbra, em metros. */
+  light_bright_m?: number | null;
+  light_dim_m?: number | null;
+}
 
 /** O Retrato de um pin: uma ficha (jogador, NPC jogável ou inimigo) ou um NPC simples. */
 export interface PinTarget {
@@ -81,13 +93,11 @@ export function subscribeToMapPins(
   onChange: (payload: ChangePayload) => void,
   options?: SubscribeOptions,
 ): () => void {
-  return subscribeToTables(
+  return subscribeToScopedRows(
     uniqueChannelName(`map-pins-${mapId}`),
-    [
-      { table: 'session_map_pins', event: 'INSERT', filter: `map_id=eq.${mapId}`, onChange },
-      { table: 'session_map_pins', event: 'UPDATE', filter: `map_id=eq.${mapId}`, onChange },
-      { table: 'session_map_pins', event: 'DELETE', onChange },
-    ],
+    'session_map_pins',
+    { column: 'map_id', value: mapId },
+    onChange,
     options,
   );
 }

@@ -5,7 +5,7 @@ import type { FakeCall, FakeResult } from '../test/fakeSupabase';
 const state = vi.hoisted(() => ({
   calls: [] as FakeCall[],
   respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
-  subscriptions: [] as { subscriptions: { table: string; event?: string; filter?: string }[] }[],
+  subscriptions: [] as { table: string; scope: { column: string; value: string } }[],
 }));
 
 vi.mock('@/lib/supabase', async () => {
@@ -19,11 +19,12 @@ vi.mock('@/lib/supabase', async () => {
 });
 
 vi.mock('./realtime', () => ({
-  subscribeToTables: (
+  subscribeToScopedRows: (
     _name: string,
-    subscriptions: { table: string; event?: string; filter?: string }[],
+    table: string,
+    scope: { column: string; value: string },
   ) => {
-    state.subscriptions.push({ subscriptions });
+    state.subscriptions.push({ table, scope });
     return () => {};
   },
 }));
@@ -108,22 +109,11 @@ describe('addMapLight, updateMapLight e removeMapLight', () => {
 });
 
 describe('subscribeToMapLights', () => {
-  it('assina inserir e alterar filtrados pelo mapa, e apagar sem filtro (o Realtime não filtra DELETE)', () => {
+  it('assina a tabela filtrada pelo escopo (o apagar vem de uma assinatura sem filtro, no helper)', () => {
     subscribeToMapLights('m1', () => {});
-    const subs = state.subscriptions[0]?.subscriptions;
-    expect(subs).toEqual([
-      expect.objectContaining({
-        table: 'session_map_lights',
-        event: 'INSERT',
-        filter: 'map_id=eq.m1',
-      }),
-      expect.objectContaining({
-        table: 'session_map_lights',
-        event: 'UPDATE',
-        filter: 'map_id=eq.m1',
-      }),
-      expect.objectContaining({ table: 'session_map_lights', event: 'DELETE' }),
-    ]);
-    expect(subs?.[2]).not.toHaveProperty('filter');
+    expect(state.subscriptions[0]).toEqual({
+      table: 'session_map_lights',
+      scope: { column: 'map_id', value: 'm1' },
+    });
   });
 });

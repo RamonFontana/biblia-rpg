@@ -50,13 +50,33 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { joinSessionPresence, subscribeToTables, uniquePresenceUsers } from './realtime';
+import {
+  joinSessionPresence,
+  subscribeToScopedRows,
+  subscribeToTables,
+  uniquePresenceUsers,
+} from './realtime';
 
 const channels = () => state.channels as FakeChannel[];
 
 beforeEach(() => {
   state.channels.length = 0;
   state.removed.length = 0;
+});
+
+describe('subscribeToScopedRows', () => {
+  it('filtra inserir e atualizar pelo escopo, e escuta o apagar sem filtro', () => {
+    const onChange = vi.fn();
+    subscribeToScopedRows('canal', 'session_map_pins', { column: 'map_id', value: 'm1' }, onChange);
+    const { listeners } = channels()[0];
+    expect(listeners.map((l) => l.filter)).toEqual([
+      { event: 'INSERT', schema: 'public', table: 'session_map_pins', filter: 'map_id=eq.m1' },
+      { event: 'UPDATE', schema: 'public', table: 'session_map_pins', filter: 'map_id=eq.m1' },
+      { event: 'DELETE', schema: 'public', table: 'session_map_pins' },
+    ]);
+    listeners[2].callback({ old: { id: 'p1' } });
+    expect(onChange).toHaveBeenCalledWith({ old: { id: 'p1' } });
+  });
 });
 
 describe('subscribeToTables', () => {

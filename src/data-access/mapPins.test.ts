@@ -5,7 +5,7 @@ import type { FakeCall, FakeResult } from '../test/fakeSupabase';
 const state = vi.hoisted(() => ({
   calls: [] as FakeCall[],
   respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
-  subscriptions: [] as { subscriptions: { table: string; filter?: string }[] }[],
+  subscriptions: [] as { table: string; scope: { column: string; value: string } }[],
 }));
 
 vi.mock('@/lib/supabase', async () => {
@@ -19,8 +19,12 @@ vi.mock('@/lib/supabase', async () => {
 });
 
 vi.mock('./realtime', () => ({
-  subscribeToTables: (_name: string, subscriptions: { table: string; filter?: string }[]) => {
-    state.subscriptions.push({ subscriptions });
+  subscribeToScopedRows: (
+    _name: string,
+    table: string,
+    scope: { column: string; value: string },
+  ) => {
+    state.subscriptions.push({ table, scope });
     return () => {};
   },
 }));
@@ -125,21 +129,11 @@ describe('removePin', () => {
 });
 
 describe('subscribeToMapPins', () => {
-  it('assina inserir e alterar filtrados pelo mapa, e apagar sem filtro (o Realtime não filtra DELETE)', () => {
+  it('assina a tabela filtrada pelo escopo (o apagar vem de uma assinatura sem filtro, no helper)', () => {
     subscribeToMapPins('m1', () => {});
-    expect(state.subscriptions[0]?.subscriptions).toEqual([
-      expect.objectContaining({
-        table: 'session_map_pins',
-        event: 'INSERT',
-        filter: 'map_id=eq.m1',
-      }),
-      expect.objectContaining({
-        table: 'session_map_pins',
-        event: 'UPDATE',
-        filter: 'map_id=eq.m1',
-      }),
-      expect.objectContaining({ table: 'session_map_pins', event: 'DELETE' }),
-    ]);
-    expect(state.subscriptions[0]?.subscriptions[2]).not.toHaveProperty('filter');
+    expect(state.subscriptions[0]).toEqual({
+      table: 'session_map_pins',
+      scope: { column: 'map_id', value: 'm1' },
+    });
   });
 });

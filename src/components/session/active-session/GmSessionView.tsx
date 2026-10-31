@@ -32,6 +32,8 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { extinguishTorch, lightTorch } from '@/data-access/torch';
 import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
+import { TORCH_LIGHT } from '@/domain/torch';
+import type { PinTarget } from '@/data-access/mapPins';
 import { setRetratoHidden } from '@/services/visibilityService';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useMapLights } from '@/hooks/useMapLights';
@@ -180,17 +182,17 @@ export function GmSessionView({
   });
   const viewingAs = retratos.find((r) => r.kind === 'player' && r.id === viewAs);
   // Oculta ou revela: a tela muda na hora e a marca é gravada; se falhar, volta ao que era.
-  const toggleHidden = async (retrato: Retrato) => {
-    const hide = !retrato.hidden;
-    const kind = retrato.kind === 'enemy' ? 'enemy' : 'npc';
-    updateLocal(kind, retrato.id, { is_visible: !hide });
+  const setHidden = async (kind: 'enemy' | 'npc', target: PinTarget, hide: boolean) => {
+    updateLocal(kind, target.id, { is_visible: !hide });
     try {
-      await setRetratoHidden(pinTargetOf(retrato), hide);
+      await setRetratoHidden(target, hide);
     } catch (error) {
       console.error('Erro ao ocultar ou revelar o Retrato:', error);
-      updateLocal(kind, retrato.id, { is_visible: hide });
+      updateLocal(kind, target.id, { is_visible: hide });
     }
   };
+  const toggleHidden = (retrato: Retrato) =>
+    setHidden(retrato.kind === 'enemy' ? 'enemy' : 'npc', pinTargetOf(retrato), !retrato.hidden);
   const dying = retratos
     .filter((r) => r.kind === 'player' && r.down)
     .filter((r) => !playerCharacters.find((pc) => pc.character.id === r.id)?.character.is_dead)
@@ -392,8 +394,7 @@ export function GmSessionView({
                               lightsApi.add({
                                 col: Math.floor(stageMap.columns / 2),
                                 row: Math.floor(stageMap.rows / 2),
-                                brightM: 6,
-                                dimM: 6,
+                                ...TORCH_LIGHT,
                                 label: 'Luz',
                               }),
                             onMoveLight: (light, cell) =>
@@ -505,6 +506,9 @@ export function GmSessionView({
             enemies={enemies}
             isLoading={isCharactersLoading}
             updateLocalEnemy={(enemyId, patch) => updateLocal('enemy', enemyId, patch)}
+            onToggleHidden={(enemy) =>
+              setHidden('enemy', { kind: 'character', id: enemy.id }, enemy.is_visible !== false)
+            }
           />
         )}
         {panel === 'npcs' && (
