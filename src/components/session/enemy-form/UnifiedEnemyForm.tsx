@@ -6,6 +6,7 @@ import { EnemyAbilityEffectEditor } from './EnemyAbilityEffectEditor';
 import { MOCK_BESTIARY } from './bestiaryPresets';
 import { ENEMY_ABILITIES, findEnemyAbility } from '@/content/enemyAbilities';
 import { describeEnemyEffect } from '@/domain/enemyAbility';
+import { compressImage, PORTRAIT_COMPRESSION } from '@/lib/imageCompression';
 import { Plus, Upload, Trash2 } from 'lucide-react';
 import {
   Select,
@@ -90,13 +91,10 @@ export function UnifiedEnemyForm({
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue('imageBase64', reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    compressImage(file, PORTRAIT_COMPRESSION)
+      .then((base64) => setValue('imageBase64', base64))
+      .catch(() => undefined);
   };
 
   const onValidSubmit = (data: EnemyFormValues) => {

@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Teste de caracterização da compressão atual do retrato do personagem antes de extraí-la (mesmas dimensões máximas e qualidade).
-- [ ] A compressão vira um utilitário único, com o tamanho máximo e a qualidade como parâmetros; o retrato do personagem continua igual.
-- [ ] O formulário de inimigo do assistente e o diálogo de criar inimigo gravam a imagem comprimida.
-- [ ] Imagens já gravadas não mudam.
-- [ ] Commit `fix:` separado; `npm run check` passa.
+- [x] Teste de caracterização da compressão atual do retrato do personagem antes de extraí-la (mesmas dimensões máximas e qualidade).
+- [x] A compressão vira um utilitário único, com o tamanho máximo e a qualidade como parâmetros; o retrato do personagem continua igual.
+- [x] O formulário de inimigo do assistente e o diálogo de criar inimigo gravam a imagem comprimida.
+- [x] Imagens já gravadas não mudam.
+- [x] Commit `fix:` separado; `npm run check` passa.
