@@ -1,7 +1,7 @@
 // A cena do mapa: onde cada Retrato está no mapa, o que fica na Bandeja e o que cada pessoa vê.
 // Termos: CONTEXT.md (Mapa, Bandeja, Retrato, pin).
 import { describe, expect, it } from 'vitest';
-import { buildMapScene, type PinRow } from './mapScene';
+import { buildMapScene, pinTargetOf, type PinRow } from './mapScene';
 
 const ch = (id: string, over: Record<string, unknown> = {}) => ({
   id,
@@ -118,5 +118,20 @@ describe('buildMapScene: posição e Bandeja', () => {
       pins: [pin({ character_id: 'e1' })],
     });
     expect(s.pins[0]?.retrato).toMatchObject({ pv: 3, participantId: 'p-e1' });
+  });
+});
+
+describe('pinTargetOf', () => {
+  it('o NPC simples liga pelo npc_id; ficha, NPC jogável e inimigo pelo character_id', () => {
+    const s = scene({ viewer: 'gm' });
+    const kinds = Object.fromEntries(s.tray.map((r) => [r.id, pinTargetOf(r).kind]));
+    expect(kinds).toEqual({
+      c1: 'character',
+      c2: 'character',
+      'n-simples': 'npc',
+      'n-jogavel': 'character',
+      e1: 'character',
+      e2: 'character',
+    });
   });
 });
