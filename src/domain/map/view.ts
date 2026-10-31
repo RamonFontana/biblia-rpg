@@ -48,6 +48,20 @@ export function fitView(viewport: Size, content: Size): View {
   return clampView({ scale, x: 0, y: 0 }, viewport, content);
 }
 
+/** A vista que cobre o Palco inteiro com o conteúdo (sem vazio), centrada: a do editor de recorte. */
+export function coverView(viewport: Size, content: Size): View {
+  const scale = Math.max(viewport.width / content.width, viewport.height / content.height);
+  return clampView(
+    {
+      scale,
+      x: (viewport.width - content.width * scale) / 2,
+      y: (viewport.height - content.height * scale) / 2,
+    },
+    viewport,
+    content,
+  );
+}
+
 /** Muda a escala por um fator, mantendo fixo o ponto do mapa que está sob `anchor` (em tela). */
 export function zoomAround(
   view: View,

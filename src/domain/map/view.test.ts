@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   centerOn,
   clampView,
+  coverView,
   fitView,
   mapToScreen,
   panBy,
@@ -109,5 +110,19 @@ describe('centerOn', () => {
     const next = centerOn({ scale: 1, x: -300, y: -300 }, { x: 5, y: 5 }, viewport, content);
     expect(next.x).toBe(0);
     expect(next.y).toBe(0);
+  });
+});
+
+describe('coverView', () => {
+  it('cobre o Palco inteiro com a imagem, centrada no eixo que sobra', () => {
+    const view = coverView({ width: 400, height: 300 }, { width: 1000, height: 500 });
+    // A altura manda: 300/500 = 0,6; a largura fica 600 e sobra 200 para os lados.
+    expect(view.scale).toBeCloseTo(0.6, 9);
+    expect(view.x).toBeCloseTo((400 - 600) / 2, 9);
+    expect(view.y).toBeCloseTo(0, 9);
+  });
+
+  it('amplia uma imagem pequena até cobrir', () => {
+    expect(coverView({ width: 400, height: 300 }, { width: 100, height: 100 }).scale).toBe(4);
   });
 });
