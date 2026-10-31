@@ -76,6 +76,7 @@ vi.mock('@/components/session/maps/MasterMapLibrary', () => ({
   MasterMapLibrary: () => null,
 }));
 vi.mock('@/services/visibilityService', () => ({ setRetratoHidden: h.setRetratoHidden }));
+vi.mock('@/data-access/torch', () => ({ lightTorch: vi.fn(), extinguishTorch: vi.fn() }));
 vi.mock('@/data-access/maps', () => ({
   addSessionMap: vi.fn(),
   updateSessionMap: h.updateSessionMap,

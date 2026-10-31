@@ -26,6 +26,8 @@ export interface Character extends Omit<DraftCharacter, 'equipment'> {
   hit_dice_spent?: number;
   /** A identidade do último Descanso Curto em que as Habilidades foram recarregadas. */
   last_short_rest_recharge?: string | null;
+  /** A Tocha do personagem está acesa (ilumina o pin dele no mapa). */
+  torch_lit?: boolean;
   death_saves_successes?: number;
   death_saves_failures?: number;
   created_at: string;

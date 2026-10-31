@@ -29,6 +29,12 @@ export interface HotbarItem {
   description: string;
   /** Por que o item não pode ser usado agora, ou `null` (o Bálsamo fora do Descanso Curto). */
   blockedReason?: string | null;
+  /** Usa-se como Ação Livre: o item aparece também na aba Livre (a Tocha). */
+  freeAction?: boolean;
+  /** O texto do botão do Cartão; padrão "Usar" (a Tocha diz "Acender"). */
+  actionLabel?: string;
+  /** Uma legenda no lugar da quantidade na peça ("Acesa"). */
+  status?: string;
 }
 
 /** A munição da arma equipada, só como contador (ela se gasta ao atacar). */
@@ -138,13 +144,15 @@ export function Hotbar({
   onCancelUse,
 }: HotbarProps) {
   const itemCount = items.length + (ammo ? 1 : 0);
+  const freeItems = items.filter((item) => item.freeAction);
   const groups = TAB_ORDER.map((id) => ({
     id,
     entries: entries.filter((e) => SLOT_OF[e.ability.actionType] === id),
     count:
       id === 'itens'
         ? itemCount
-        : entries.filter((e) => SLOT_OF[e.ability.actionType] === id).length,
+        : entries.filter((e) => SLOT_OF[e.ability.actionType] === id).length +
+          (id === 'free' ? freeItems.length : 0),
   })).filter((g) => g.count > 0);
 
   const [chosen, setChosen] = useState<Tab>('action');
@@ -292,6 +300,17 @@ export function Hotbar({
             )}
           </>
         )}
+        {current?.id === 'free' &&
+          freeItems.map((item) => (
+            <ItemTile
+              key={item.id}
+              item={item}
+              onOpen={(node) => {
+                returnFocus.current = node;
+                setOpen({ kind: 'item', id: item.id });
+              }}
+            />
+          ))}
         {current?.entries.map((entry) => (
           <Tile
             key={entry.ability.id}
@@ -412,7 +431,10 @@ function ItemTile({ item, onOpen }: { item: HotbarItem; onOpen: (node: HTMLEleme
     >
       <span className="min-w-0">
         <span className="line-clamp-2 block text-[11px] leading-tight">{item.name}</span>
-        <span className="block text-[10px] text-stone-500">×{item.quantity}</span>
+        <span className="block text-[10px] text-stone-500">
+          ×{item.quantity}
+          {item.status ? ` · ${item.status}` : ''}
+        </span>
       </span>
     </motion.button>
   );
@@ -431,6 +453,9 @@ function ItemCardBody({
     <div className="space-y-3">
       <ul className="flex flex-wrap gap-1.5 text-[11px]">
         <li className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-500">Consumível</li>
+        {item.freeAction && (
+          <li className="rounded border border-stone-700 px-2 py-0.5 text-stone-300">Ação Livre</li>
+        )}
         <li className="rounded border border-stone-700 px-2 py-0.5 text-stone-300">
           {unitsText(item.quantity)}
         </li>
@@ -442,7 +467,7 @@ function ItemCardBody({
         onClick={onUse}
         className="h-12 w-full rounded bg-amber-600 font-bold text-stone-900 transition-colors hover:bg-amber-500 disabled:opacity-50"
       >
-        Usar
+        {item.actionLabel ?? 'Usar'}
       </button>
       {item.blockedReason && (
         <p className="text-center text-xs font-medium text-red-400">{item.blockedReason}</p>

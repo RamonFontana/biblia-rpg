@@ -9,6 +9,7 @@ import {
   type LightLevel,
   type LightSource,
 } from '@/domain/map/light';
+import { TORCH_LIGHT } from '@/domain/torch';
 import type { PinTarget } from '@/data-access/mapPins';
 import { buildRetratos, type BuildInput, type Retrato } from './retratos';
 
@@ -47,6 +48,8 @@ export interface ScenePin {
   level: LightLevel;
   /** A luz que ele próprio carrega (pin de inimigo ou NPC), se houver. */
   light?: { brightM: number; dimM: number } | null;
+  /** A luz dele é uma Tocha acesa (do personagem, não gravada no pin). */
+  torch?: boolean;
 }
 
 export interface MapScene {
@@ -97,10 +100,12 @@ interface SceneInput extends Omit<BuildInput, 'extraEnemies' | 'includeHidden'> 
 const isBlind = (retrato: Retrato): boolean =>
   retrato.conditions.some((condition) => condition.conditionId === 'cego');
 
-const pinLight = (pin: PinRow | undefined) =>
-  pin?.light_bright_m != null && pin.light_dim_m != null
-    ? { brightM: pin.light_bright_m, dimM: pin.light_dim_m }
-    : null;
+const pinLight = (pin: PinRow | undefined, retrato: Retrato) =>
+  retrato.torchLit
+    ? { ...TORCH_LIGHT }
+    : pin?.light_bright_m != null && pin.light_dim_m != null
+      ? { brightM: pin.light_bright_m, dimM: pin.light_dim_m }
+      : null;
 
 export function buildMapScene({
   pins,
@@ -151,10 +156,8 @@ export function buildMapScene({
       dimM: l.dim_m,
     })),
     ...placedPins.flatMap(({ retrato, cell }) => {
-      const pin = cells.get(retrato.id);
-      return pin?.light_bright_m != null && pin.light_dim_m != null
-        ? [{ cell, brightM: pin.light_bright_m, dimM: pin.light_dim_m }]
-        : [];
+      const light = pinLight(cells.get(retrato.id), retrato);
+      return light ? [{ cell, ...light }] : [];
     }),
   ];
 
@@ -173,7 +176,8 @@ export function buildMapScene({
       cell,
       turn: retrato.id === turnEntityId,
       level: lightLevelAt(cell, ambient, sources),
-      light: pinLight(cells.get(retrato.id)),
+      light: pinLight(cells.get(retrato.id), retrato),
+      torch: retrato.torchLit === true,
     }))
     // O grupo aparece sempre; inimigos e NPCs, só em Luz plena ou Penumbra. O Mestre vê todos.
     .filter(({ retrato, level }) => gm || retrato.kind === 'player' || (sighted && isSeen(level)));

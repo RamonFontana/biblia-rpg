@@ -290,7 +290,8 @@ export const ITEMS_DB: ContentItem[] = [
     name: 'Tocha',
     type: 'Consumível',
     cost: 0.5,
-    description: 'Ilumina 6m. Queima por 1h',
+    description:
+      'Luz plena 6 m e mais 6 m de Penumbra. Acender é Ação Livre. Apaga no Descanso Curto ou Longo',
     category: 'Todas',
   },
   {

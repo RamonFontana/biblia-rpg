@@ -399,6 +399,67 @@ test.describe('Pins', () => {
     await expect(guardAtMaster).toBeVisible();
   });
 
+  test('o jogador acende a Tocha pela Hotbar: gasta uma, ilumina o inimigo perto, e o Mestre a apaga', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await tableWithMap(seed, signIn);
+    const { data: eliabe } = await adminClient()
+      .from('characters')
+      .select('id')
+      .eq('name', 'Eliabe')
+      .single();
+    await seed.giveItem(eliabe!.id, 'tocha', 2);
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+    const areaBox = (await area.boundingBox())!;
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: /^Eliabe, / }).boundingBox())!),
+      { x: areaBox.x + areaBox.width * 0.4, y: areaBox.y + areaBox.height * 0.5 },
+    );
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: new RegExp(`^${GUARD}, `) }).boundingBox())!),
+      { x: areaBox.x + areaBox.width * 0.46, y: areaBox.y + areaBox.height * 0.5 },
+    );
+    await master.getByRole('button', { name: new RegExp(`^${GUARD}, .*oculto$`) }).click();
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
+    await master.getByRole('button', { name: 'Fechar' }).click();
+    await master.getByLabel('Ambiente do mapa').selectOption('escuridao');
+    const guardOnPlayer = player.getByRole('button', { name: new RegExp(`^${GUARD}, `) });
+    await expect(guardOnPlayer).toHaveCount(0);
+
+    // Acender é Ação Livre: a Tocha está em Itens e em Livre.
+    await player.reload();
+    await player.getByRole('tab', { name: /^Livre/ }).click();
+    await player.getByRole('button', { name: 'Tocha, 2 unidades' }).click();
+    await player
+      .getByRole('dialog', { name: 'Tocha' })
+      .getByRole('button', { name: 'Acender' })
+      .click();
+    await expect(guardOnPlayer).toBeVisible();
+    await expect(player.getByRole('button', { name: 'Tocha, 1 unidade' })).toBeVisible();
+    const { data: after } = await adminClient()
+      .from('characters')
+      .select('torch_lit, character_items(quantity, items(slug))')
+      .eq('id', eliabe!.id)
+      .single();
+    expect(after?.torch_lit).toBe(true);
+    expect(after?.character_items.find((row) => row.items?.slug === 'tocha')?.quantity).toBe(1);
+
+    // O Mestre apaga pelo pin, e o inimigo volta ao escuro.
+    await master.getByRole('button', { name: /^Eliabe, / }).click();
+    await master.getByRole('button', { name: 'Apagar Tocha de Eliabe' }).click();
+    await expect(guardOnPlayer).toHaveCount(0);
+    const { data: off } = await adminClient()
+      .from('characters')
+      .select('torch_lit')
+      .eq('id', eliabe!.id)
+      .single();
+    expect(off?.torch_lit).toBe(false);
+  });
+
   test('no combate, o pin do turno fica destacado e o Ataque mostra a distância até o alvo', async ({
     seed,
     signIn,
