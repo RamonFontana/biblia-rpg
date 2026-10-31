@@ -127,6 +127,7 @@ export type Database = {
           skills?: Json | null
           stats: Json
           temptation?: string | null
+          torch_lit?: boolean
           tribe: string
           updated_at?: string
           user_id: string
@@ -1185,6 +1186,10 @@ export type Database = {
         }
         Returns: string
       }
+      can_handle_torch: {
+        Args: { p_character_id: string; p_gm_only: boolean }
+        Returns: boolean
+      }
       can_manage_character: {
         Args: { check_character_id: string }
         Returns: boolean
@@ -1193,22 +1198,8 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: undefined
       }
-      can_handle_torch: {
-        Args: { p_character_id: string; p_gm_only: boolean }
-        Returns: boolean
-      }
-      extinguish_torch: {
-        Args: { p_character_id: string }
-        Returns: undefined
-      }
-      light_torch: {
-        Args: { p_character_id: string }
-        Returns: undefined
-      }
-      close_short_rest: {
-        Args: { p_session_id: string }
-        Returns: undefined
-      }
+      close_short_rest: { Args: { p_session_id: string }; Returns: undefined }
+      convert_playable_npc_keys: { Args: never; Returns: number }
       create_game_session: {
         Args: {
           enemies: Json
@@ -1220,6 +1211,7 @@ export type Database = {
         Returns: string
       }
       execute_trade: { Args: { p_trade_id: string }; Returns: Json }
+      extinguish_torch: { Args: { p_character_id: string }; Returns: undefined }
       finish_short_rest: {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
@@ -1233,7 +1225,9 @@ export type Database = {
         Args: { check_trade_id: string }
         Returns: boolean
       }
+      light_torch: { Args: { p_character_id: string }; Returns: undefined }
       open_short_rest: { Args: { p_session_id: string }; Returns: string }
+      owns_master_map: { Args: { p_map_id: string }; Returns: boolean }
       owns_short_rest_player: {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
@@ -1261,7 +1255,10 @@ export type Database = {
         }
         Returns: string
       }
-      refuse_short_rest_requests: { Args: { p_session_id: string }; Returns: undefined }
+      refuse_short_rest_requests: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
       request_short_rest: {
         Args: { p_character_id: string; p_session_id: string }
         Returns: boolean
@@ -1270,7 +1267,10 @@ export type Database = {
         Args: { p_results: Json; p_use_id: string }
         Returns: string
       }
-      short_rest_player_ids: { Args: { p_session_id: string }; Returns: string[] }
+      short_rest_player_ids: {
+        Args: { p_session_id: string }
+        Returns: string[]
+      }
       use_consumable_item: {
         Args: { p_character_item_id: string; p_target_character_id?: string }
         Returns: boolean
