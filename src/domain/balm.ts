@@ -1,8 +1,18 @@
 // Bálsamo: item que cura o resultado do dado do item, só no Descanso Curto (CONTEXT.md, Bálsamo).
 // Sem modificador de CON e sem teto por Descanso; o dado físico digitado vale (ADR 0001).
 import { rollDice } from '@/domain/dice';
+import { ITEMS_DB } from '@/content/items';
 import type { Rng } from '@/domain/rng';
 import { resolveHealing } from '@/domain/consumables';
+
+/** Os itens que só valem no Descanso Curto (o Bálsamo), pelo slug do conteúdo. */
+const REST_ONLY_SLUGS = new Set(
+  ITEMS_DB.filter((item) => item.usableOnlyIn === 'short_rest').map((item) => item.id),
+);
+
+export function isRestOnlyItem(slug: string | null | undefined): boolean {
+  return !!slug && REST_ONLY_SLUGS.has(slug);
+}
 
 export type BalmUseBlock = 'closed' | 'dead' | 'dying' | 'none' | 'full';
 

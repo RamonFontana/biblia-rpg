@@ -27,6 +27,8 @@ export interface HotbarItem {
   name: string;
   quantity: number;
   description: string;
+  /** Por que o item não pode ser usado agora, ou `null` (o Bálsamo fora do Descanso Curto). */
+  blockedReason?: string | null;
 }
 
 /** A munição da arma equipada, só como contador (ela se gasta ao atacar). */
@@ -436,12 +438,15 @@ function ItemCardBody({
       <p className="text-sm text-stone-400">{item.description}</p>
       <button
         type="button"
-        disabled={busy}
+        disabled={busy || !!item.blockedReason}
         onClick={onUse}
         className="h-12 w-full rounded bg-amber-600 font-bold text-stone-900 transition-colors hover:bg-amber-500 disabled:opacity-50"
       >
         Usar
       </button>
+      {item.blockedReason && (
+        <p className="text-center text-xs font-medium text-red-400">{item.blockedReason}</p>
+      )}
     </div>
   );
 }

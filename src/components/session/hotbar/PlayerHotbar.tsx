@@ -18,6 +18,9 @@ import { submitAbilityUse } from '@/services/abilityService';
 import { useCombatStore } from '@/store/combatStore';
 import { abilitySkills, getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { isAmmunitionItem } from '@/domain/ammo';
+import { balmUseBlockMessage, getBalmUseBlock, isRestOnlyItem } from '@/domain/balm';
+import { isDying as isCharacterDying } from '@/domain/deathSaves';
+import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { applyConsumableEffects, normalizeHealingEffects } from '@/domain/consumables';
 import { resolveAmmunition, resolveMainHandWeapon } from '@/lib/attackSetup';
 import { useUpdateNPCInventory } from '@/hooks/useUpdateNPCInventory';
@@ -31,6 +34,10 @@ interface PlayerHotbarProps {
   /** Avisa a tela do que foi gravado na ficha, para a Hotbar mudar já. */
   onCharacterPatch?: (patch: Record<string, unknown>) => void;
   onOpenDice: () => void;
+  /** O Descanso Curto da sessão está aberto (o Bálsamo só vale nele). */
+  restOpen?: boolean;
+  /** Abre o Painel Descanso, onde o Bálsamo é usado. */
+  onOpenRest?: () => void;
 }
 
 export function PlayerHotbar({
@@ -38,6 +45,8 @@ export function PlayerHotbar({
   entities,
   onCharacterPatch,
   onOpenDice,
+  restOpen = false,
+  onOpenRest,
 }: PlayerHotbarProps) {
   const {
     activeCombat,
@@ -124,11 +133,25 @@ export function PlayerHotbar({
     const catalog = catalogOf(owned);
     return !!catalog?.is_consumable && !isAmmunitionItem(catalog.name) && (owned.quantity ?? 0) > 0;
   });
+  const balmBlock = (owned: CombatInventoryItem): string | null => {
+    if (!isRestOnlyItem(catalogOf(owned)?.slug)) return null;
+    const maxPv = getMaxPv(character.stats ?? {});
+    const block = getBalmUseBlock({
+      restOpen,
+      isDead: Boolean(character.is_dead),
+      isDying: isCharacterDying(character),
+      quantity: owned.quantity ?? 0,
+      currentPv: getCurrentPv(character.stats ?? {}, maxPv),
+      maxPv,
+    });
+    return block ? balmUseBlockMessage(block) : null;
+  };
   const items: HotbarItem[] = usable.map((owned) => ({
     id: owned.id ?? '',
     name: catalogOf(owned)?.name ?? 'Item',
     quantity: owned.quantity ?? 0,
     description: catalogOf(owned)?.description ?? '',
+    blockedReason: balmBlock(owned),
   }));
   const ammunition = resolveAmmunition(
     { character_items: ownedItems },
@@ -142,6 +165,11 @@ export function PlayerHotbar({
   const useItem = async (item: HotbarItem) => {
     const owned = ownedItems.find((o) => o.id === item.id);
     if (!owned || isConsuming) return;
+    // O Bálsamo se usa no Painel Descanso (cura rolada na mesa); aqui só leva até lá.
+    if (isRestOnlyItem(catalogOf(owned)?.slug)) {
+      onOpenRest?.();
+      return;
+    }
     const catalog = catalogOf(owned);
     const effects = normalizeHealingEffects(
       (catalog?.effects ?? {}) as { heal?: number; heal_dice?: string; restore_faith?: number },

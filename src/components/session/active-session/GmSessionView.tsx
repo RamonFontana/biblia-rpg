@@ -293,6 +293,8 @@ export function GmSessionView({
                   entities={availableEntities}
                   onCharacterPatch={(patch) => updateLocal('npc', actingNpc.id, patch)}
                   onOpenDice={onOpenDice}
+                  restOpen={!!sessionData.short_rest_id}
+                  onOpenRest={() => setPanel('descanso')}
                 />
               </div>
             )}
