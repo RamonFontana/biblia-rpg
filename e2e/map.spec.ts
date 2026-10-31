@@ -354,6 +354,51 @@ test.describe('Pins', () => {
     await expect(player.getByTestId('escuridao-do-mapa')).toHaveCount(0);
   });
 
+  test('o personagem Cego não vê o inimigo no mapa, e o Mestre confere por "Ver como"', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await tableWithMap(seed, signIn);
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+    const areaBox = (await area.boundingBox())!;
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: /^Eliabe, / }).boundingBox())!),
+      { x: areaBox.x + areaBox.width * 0.25, y: areaBox.y + areaBox.height * 0.5 },
+    );
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: new RegExp(`^${GUARD}, `) }).boundingBox())!),
+      { x: areaBox.x + areaBox.width * 0.75, y: areaBox.y + areaBox.height * 0.5 },
+    );
+    await master.getByRole('button', { name: new RegExp(`^${GUARD}, .*oculto$`) }).click();
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
+    await master.getByRole('button', { name: 'Fechar' }).click();
+    const guardOnPlayer = player.getByRole('button', { name: new RegExp(`^${GUARD}, `) });
+    await expect(guardOnPlayer).toBeVisible();
+
+    // Eliabe fica Cego: o inimigo some do mapa dele; o Mestre continua vendo.
+    const { error } = await adminClient()
+      .from('characters')
+      .update({ conditions: [{ conditionId: 'cego', duration: null }] })
+      .eq('name', 'Eliabe');
+    if (error) throw error;
+    await player.reload();
+    await expect(player.getByRole('button', { name: /^Eliabe, / })).toBeVisible();
+    await expect(guardOnPlayer).toHaveCount(0);
+    await master.reload();
+    const guardAtMaster = master.getByRole('button', { name: new RegExp(`^${GUARD}, `) });
+    await expect(guardAtMaster).toBeVisible();
+
+    // "Ver como Eliabe" mostra o mapa pela Visão dele; a saída devolve o Mestre à visão dele.
+    await master.getByLabel('Ver como').selectOption({ label: 'Eliabe' });
+    await expect(master.getByText('Vendo como Eliabe')).toBeVisible();
+    await expect(guardAtMaster).toHaveCount(0);
+    await master.getByRole('button', { name: 'Voltar à visão do Mestre' }).click();
+    await expect(guardAtMaster).toBeVisible();
+  });
+
   test('no combate, o pin do turno fica destacado e o Ataque mostra a distância até o alvo', async ({
     seed,
     signIn,

@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] A cena do mapa trata o Cego, o Mestre, o Mestre em "Ver como" e o espectador (soma da Visão do grupo); testes de unidade para cada um.
-- [ ] Escuridão mais leve no mapa do Mestre.
-- [ ] Seletor "Ver como" no Painel Mapas ou na Barra do Mestre, com saída clara.
-- [ ] Espectador vê o mapa com a Visão somada do grupo.
+- [x] A cena do mapa trata o Cego, o Mestre, o Mestre em "Ver como" e o espectador (soma da Visão do grupo); testes de unidade para cada um.
+- [x] Escuridão mais leve no mapa do Mestre.
+- [x] Seletor "Ver como" no Painel Mapas ou na Barra do Mestre, com saída clara.
+- [x] Espectador vê o mapa com a Visão somada do grupo.

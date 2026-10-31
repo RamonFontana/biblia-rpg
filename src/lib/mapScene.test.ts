@@ -364,3 +364,75 @@ describe('buildMapScene: a luz que o pin carrega', () => {
     expect(s.pins.find((p) => p.retrato.id === 'e2')?.light).toBeNull();
   });
 });
+
+describe('buildMapScene: a Visão', () => {
+  const blind = [{ conditionId: 'cego', duration: null }];
+  const pins = [
+    pin({ character_id: 'c1', col: 0, row: 0 }),
+    pin({ character_id: 'c2', col: 1, row: 0 }),
+    pin({ character_id: 'e1', col: 4, row: 0 }),
+    pin({ npc_id: 'n-simples', col: 5, row: 0 }),
+  ];
+  const withBlind = (...ids: string[]) =>
+    ({
+      playerCharacters: ['c1', 'c2'].map((id) => ({
+        user_id: `u-${id}`,
+        character: ch(id, { conditions: ids.includes(id) ? blind : [] }),
+      })),
+    }) as Record<string, unknown>;
+  const ids = (s: ReturnType<typeof scene>) => s.pins.map((p) => p.retrato.id).sort();
+
+  it('o jogador Cego não vê inimigos nem NPCs, mas vê os companheiros', () => {
+    const s = scene({ viewer: 'player', pins, ...withBlind('c1') });
+    expect(ids(s)).toEqual(['c1', 'c2']);
+  });
+
+  it('o Cego de outro jogador não muda o que este jogador vê', () => {
+    const s = scene({ viewer: 'player', pins, ...withBlind('c2') });
+    expect(ids(s)).toEqual(['c1', 'c2', 'e1', 'n-simples']);
+  });
+
+  it('o Mestre vê todos, mesmo com o grupo Cego', () => {
+    const s = scene({ viewer: 'gm', pins, ...withBlind('c1', 'c2') });
+    expect(ids(s)).toEqual(['c1', 'c2', 'e1', 'n-simples']);
+  });
+
+  it('"Ver como" mostra o mapa pela Visão do personagem: Cego não vê inimigos', () => {
+    expect(ids(scene({ viewer: 'gm', viewAs: 'c1', pins, ...withBlind('c1') }))).toEqual([
+      'c1',
+      'c2',
+    ]);
+    expect(ids(scene({ viewer: 'gm', viewAs: 'c2', pins, ...withBlind('c1') }))).toEqual([
+      'c1',
+      'c2',
+      'e1',
+      'n-simples',
+    ]);
+  });
+
+  it('"Ver como" respeita a luz e o Oculto, e não mostra a Bandeja', () => {
+    const s = scene({
+      viewer: 'gm',
+      viewAs: 'c1',
+      pins: [pin({ character_id: 'c1', col: 0, row: 0 }), pin({ character_id: 'e1', col: 30 })],
+      period: 'Noite',
+    });
+    expect(ids(s)).toEqual(['c1']);
+    expect(s.tray).toEqual([]);
+    const hidden = scene({
+      viewer: 'gm',
+      viewAs: 'c1',
+      pins,
+      enemies: [ch('e1', { is_enemy: true, is_visible: false }), ch('e2', { is_enemy: true })],
+    });
+    expect(ids(hidden)).not.toContain('e1');
+  });
+
+  it('o espectador vê pela soma do grupo: basta um companheiro enxergar', () => {
+    expect(ids(scene({ viewer: 'spectator', pins, ...withBlind('c1') }))).toContain('e1');
+    expect(ids(scene({ viewer: 'spectator', pins, ...withBlind('c1', 'c2') }))).toEqual([
+      'c1',
+      'c2',
+    ]);
+  });
+});

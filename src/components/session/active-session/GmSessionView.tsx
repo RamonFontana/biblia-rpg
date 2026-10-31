@@ -144,6 +144,8 @@ export function GmSessionView({
   // No celular, o combate vira a lista de iniciativa; o botão Cena alterna para os Retratos.
   const phone = useMediaQuery('(max-width: 767px)');
   const [scene, setScene] = useState(false);
+  // "Ver como": o Mestre olha o mapa pela Visão deste personagem; nulo é a visão dele.
+  const [viewAs, setViewAs] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{ id: string | null; turn: string | undefined } | null>(
     null,
   );
@@ -172,8 +174,10 @@ export function GmSessionView({
     ambient: stageMap?.ambient,
     period: sessionData.current_period,
     viewer: 'gm',
+    viewAs: retratos.some((r) => r.kind === 'player' && r.id === viewAs) ? viewAs : null,
     turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });
+  const viewingAs = retratos.find((r) => r.kind === 'player' && r.id === viewAs);
   // Oculta ou revela: a tela muda na hora e a marca é gravada; se falhar, volta ao que era.
   const toggleHidden = async (retrato: Retrato) => {
     const hide = !retrato.hidden;
@@ -337,29 +341,68 @@ export function GmSessionView({
                   <MapaDoPalco
                     map={stageMap}
                     scene={mapScene}
-                    isGm
+                    isGm={!viewingAs}
+                    visionControl={
+                      <>
+                        <label className="flex items-center gap-1">
+                          <span>Ver como</span>
+                          <select
+                            aria-label="Ver como"
+                            value={viewingAs?.id ?? ''}
+                            onChange={(event) => setViewAs(event.target.value || null)}
+                            className="h-9 rounded-md border border-stone-700 bg-stone-800 px-1 text-sm text-stone-100"
+                          >
+                            <option value="">Mestre (vê tudo)</option>
+                            {retratos
+                              .filter((r) => r.kind === 'player')
+                              .map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.name}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        {viewingAs && (
+                          <>
+                            <span className="text-amber-400">Vendo como {viewingAs.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setViewAs(null)}
+                              className="min-h-9 rounded-md border border-stone-700 px-2 text-stone-100 hover:border-amber-500/60"
+                            >
+                              Voltar à visão do Mestre
+                            </button>
+                          </>
+                        )}
+                      </>
+                    }
                     onOpenRetrato={openRetrato}
                     onToggleHidden={toggleHidden}
-                    gm={{
-                      onSetAmbient: (ambient) => {
-                        updateSessionMap(stageMap.id, { ambient }).catch((error) =>
-                          console.error('Erro ao fixar o Ambiente:', error),
-                        );
-                      },
-                      onAddLight: () =>
-                        lightsApi.add({
-                          col: Math.floor(stageMap.columns / 2),
-                          row: Math.floor(stageMap.rows / 2),
-                          brightM: 6,
-                          dimM: 6,
-                          label: 'Luz',
-                        }),
-                      onMoveLight: (light, cell) =>
-                        lightsApi.change(light.id, { col: cell.col, row: cell.row }),
-                      onChangeLight: lightsApi.change,
-                      onRemoveLight: lightsApi.remove,
-                      onSetPinLight: (retrato, light) => setPinLight(pinTargetOf(retrato), light),
-                    }}
+                    gm={
+                      viewingAs
+                        ? undefined
+                        : {
+                            onSetAmbient: (ambient) => {
+                              updateSessionMap(stageMap.id, { ambient }).catch((error) =>
+                                console.error('Erro ao fixar o Ambiente:', error),
+                              );
+                            },
+                            onAddLight: () =>
+                              lightsApi.add({
+                                col: Math.floor(stageMap.columns / 2),
+                                row: Math.floor(stageMap.rows / 2),
+                                brightM: 6,
+                                dimM: 6,
+                                label: 'Luz',
+                              }),
+                            onMoveLight: (light, cell) =>
+                              lightsApi.change(light.id, { col: cell.col, row: cell.row }),
+                            onChangeLight: lightsApi.change,
+                            onRemoveLight: lightsApi.remove,
+                            onSetPinLight: (retrato, light) =>
+                              setPinLight(pinTargetOf(retrato), light),
+                          }
+                    }
                     onMovePin={(retrato, cell) => movePin(pinTargetOf(retrato), cell)}
                   />
                 </>
