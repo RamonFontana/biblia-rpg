@@ -16,6 +16,7 @@ import {
   weaponIsRanged,
   type AttackResult,
 } from '@/domain/attack';
+import { formatMeters } from '@/domain/map/grid';
 import { pickCountingDie, rollTestDice, type TestMode } from '@/domain/testMode';
 import { systemRng } from '@/lib/systemRng';
 import { ModeBanner } from '../session/player-test/ModeBanner';
@@ -354,24 +355,34 @@ export function AttackPanel({
               <p className="text-sm text-muted-foreground">Nenhum alvo no combate.</p>
             ) : (
               <div className="grid grid-cols-2 gap-4">
-                <label className="text-sm text-stone-300">
-                  Alvo
-                  <select
-                    value={targetId}
-                    onChange={(e) => {
-                      setTargetId(e.target.value);
-                      setRolledDice(null);
-                    }}
-                    className="mt-1 w-full rounded border border-stone-700 bg-stone-800 px-3 py-2 text-stone-200"
-                  >
-                    <option value="">Escolha...</option>
-                    {targets.map((t) => (
-                      <option key={t.participantId} value={t.participantId}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div>
+                  <label className="text-sm text-stone-300">
+                    Alvo
+                    <select
+                      value={targetId}
+                      onChange={(e) => {
+                        setTargetId(e.target.value);
+                        setRolledDice(null);
+                      }}
+                      className="mt-1 w-full rounded border border-stone-700 bg-stone-800 px-3 py-2 text-stone-200"
+                    >
+                      <option value="">Escolha...</option>
+                      {targets.map((t) => (
+                        <option key={t.participantId} value={t.participantId}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {target?.distanceMeters !== undefined && (
+                    <span
+                      aria-label="Distância até o alvo"
+                      className="mt-1 block text-xs text-stone-400"
+                    >
+                      a {formatMeters(target.distanceMeters)}
+                    </span>
+                  )}
+                </div>
                 <label className="text-sm text-stone-300">
                   d20 natural
                   <input

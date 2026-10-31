@@ -21,6 +21,8 @@ interface PlayerCombatViewProps {
   isLoading: boolean;
   /** Quem está na sessão, com nome e CA: os alvos possíveis do ataque. */
   entities?: { id: string; name: string; totalAc: number }[];
+  /** A distância em metros até cada Retrato com pin no Mapa atual (a chave é o id do Retrato). */
+  distances?: Record<string, number>;
   /** O participante que o jogador escolheu atacar pelo cartão do Retrato. */
   preselectedTargetId?: string;
   /** A sessão e o dia de agora: a Inspiração gasta no ataque é do dia. */
@@ -37,6 +39,7 @@ export function PlayerCombatView({
   enemies,
   isLoading,
   entities = [],
+  distances = {},
   preselectedTargetId,
   inspirationContext,
   onInspirationUsed,
@@ -152,7 +155,11 @@ export function PlayerCombatView({
                 }
               }
               onInspirationUsed={onInspirationUsed}
-              targets={buildAttackTargets(participants, participant.id, entities)}
+              targets={buildAttackTargets(participants, participant.id, entities).map((target) =>
+                distances[target.entityId] === undefined
+                  ? target
+                  : { ...target, distanceMeters: distances[target.entityId] },
+              )}
               actionUsed={hasUsedAction}
               onActionUsed={() => {
                 if (!hasUsedAction) toggleAction();

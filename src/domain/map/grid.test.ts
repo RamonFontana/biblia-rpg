@@ -8,6 +8,7 @@ import {
   clampGridSide,
   distanceInMeters,
   distanceInSquares,
+  formatMeters,
   isInsideGrid,
   snapToCell,
 } from './grid';
@@ -92,6 +93,14 @@ describe('grid do mapa', () => {
       expect(clampGridSide(100)).toBe(60);
       expect(clampGridSide(12.6)).toBe(13);
       expect(clampGridSide(Number.NaN)).toBe(DEFAULT_GRID.columns);
+    });
+  });
+
+  describe('formatMeters', () => {
+    it('escreve com vírgula e o m', () => {
+      expect(formatMeters(9)).toBe('9 m');
+      expect(formatMeters(4.5)).toBe('4,5 m');
+      expect(formatMeters(0)).toBe('0 m');
     });
   });
 });

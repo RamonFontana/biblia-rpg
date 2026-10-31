@@ -69,6 +69,8 @@ export interface AttackTarget {
   ac: number;
   /** Os ids das Condições do alvo (Caído, Atordoado…), que mudam a modalidade do ataque. */
   conditionIds: string[];
+  /** A distância em metros até o alvo no mapa, quando os dois têm pin. Só informa; não trava. */
+  distanceMeters?: number;
 }
 
 /** Os ids das Condições gravadas num participante (`conditions` é `jsonb`). */
