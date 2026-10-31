@@ -15,6 +15,8 @@ interface SessionEnemyListProps {
   enemies: Character[];
   isLoading: boolean;
   updateLocalEnemy: (enemyId: string, updates: Partial<Character>) => void;
+  /** Oculta o inimigo visível ou revela o Oculto (CONTEXT.md: Oculto). */
+  onToggleHidden?: (enemy: Character) => void;
 }
 
 export function SessionEnemyList({
@@ -22,6 +24,7 @@ export function SessionEnemyList({
   enemies,
   isLoading,
   updateLocalEnemy,
+  onToggleHidden,
 }: SessionEnemyListProps) {
   const [selectedEnemy, setSelectedEnemy] = useState<Character | null>(null);
 
@@ -97,6 +100,11 @@ export function SessionEnemyList({
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="flex items-center gap-2 min-w-0 flex-wrap">
                           <p className="font-semibold text-stone-200 truncate">{enemy.name}</p>
+                          {enemy.is_visible === false && (
+                            <span className="shrink-0 rounded border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+                              Oculto
+                            </span>
+                          )}
                           {enemy.stats?.status === 'Morto' && (
                             <span className="shrink-0 px-2 py-0.5 bg-red-900/50 text-red-400 text-[10px] font-bold rounded uppercase border border-red-500/30">
                               Morto
@@ -106,6 +114,19 @@ export function SessionEnemyList({
                       </div>
                       {enemy.vocation && (
                         <p className="text-sm text-stone-400 line-clamp-1">{enemy.vocation}</p>
+                      )}
+                      {onToggleHidden && (
+                        <button
+                          type="button"
+                          aria-label={`${enemy.is_visible === false ? 'Revelar' : 'Ocultar'} ${enemy.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleHidden(enemy);
+                          }}
+                          className="mt-2 min-h-11 rounded-md border border-stone-700 px-3 text-sm text-stone-100 hover:border-amber-500/60"
+                        >
+                          {enemy.is_visible === false ? 'Revelar' : 'Ocultar'}
+                        </button>
                       )}
                     </div>
                   </div>

@@ -54,6 +54,30 @@ export function subscribeToTables(
   };
 }
 
+/**
+ * Avisa de cada linha de `table` que pertence ao escopo (`column=eq.value`). O Realtime não entrega
+ * `DELETE` por assinatura com filtro, então o apagar vem de uma assinatura à parte, sem filtro: quem
+ * escuta decide se a linha apagada é dele. Devolve a função que cancela.
+ */
+export function subscribeToScopedRows(
+  channelName: string,
+  table: string,
+  scope: { column: string; value: string },
+  onChange: (payload: ChangePayload) => void,
+  options?: SubscribeOptions,
+): () => void {
+  const filter = `${scope.column}=eq.${scope.value}`;
+  return subscribeToTables(
+    channelName,
+    [
+      { table, event: 'INSERT', filter, onChange },
+      { table, event: 'UPDATE', filter, onChange },
+      { table, event: 'DELETE', onChange },
+    ],
+    options,
+  );
+}
+
 export interface PresenceState {
   user_id: string;
   character_id?: string;

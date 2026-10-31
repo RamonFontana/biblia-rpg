@@ -2,8 +2,18 @@
 // uma faixa de Penumbra. As funções lançam o erro do Supabase.
 import { uniqueChannelName } from '@/lib/channelName';
 import { supabase } from '@/lib/supabase';
-import type { LightRow } from '@/lib/mapScene';
-import { subscribeToTables, type ChangePayload, type SubscribeOptions } from './realtime';
+import { subscribeToScopedRows, type ChangePayload, type SubscribeOptions } from './realtime';
+
+/** Uma linha de `session_map_lights`: uma Fonte de luz fixa no mapa. */
+export interface LightRow {
+  id: string;
+  map_id: string;
+  col: number;
+  row: number;
+  bright_m: number;
+  dim_m: number;
+  label: string;
+}
 
 export interface NewMapLight {
   mapId: string;
@@ -64,13 +74,11 @@ export function subscribeToMapLights(
   onChange: (payload: ChangePayload) => void,
   options?: SubscribeOptions,
 ): () => void {
-  return subscribeToTables(
+  return subscribeToScopedRows(
     uniqueChannelName(`map-lights-${mapId}`),
-    [
-      { table: 'session_map_lights', event: 'INSERT', filter: `map_id=eq.${mapId}`, onChange },
-      { table: 'session_map_lights', event: 'UPDATE', filter: `map_id=eq.${mapId}`, onChange },
-      { table: 'session_map_lights', event: 'DELETE', onChange },
-    ],
+    'session_map_lights',
+    { column: 'map_id', value: mapId },
+    onChange,
     options,
   );
 }

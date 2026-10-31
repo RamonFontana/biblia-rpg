@@ -28,6 +28,8 @@ export interface Character extends Omit<DraftCharacter, 'equipment'> {
   last_short_rest_recharge?: string | null;
   /** A Tocha do personagem está acesa (ilumina o pin dele no mapa). */
   torch_lit?: boolean;
+  /** Falso = Oculto: o Mestre tirou o Retrato da vista dos jogadores (inimigos e NPCs jogáveis). */
+  is_visible?: boolean;
   death_saves_successes?: number;
   death_saves_failures?: number;
   created_at: string;

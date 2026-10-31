@@ -2,7 +2,7 @@
 import { uniqueChannelName } from '@/lib/channelName';
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesUpdate } from '@/types/database.types';
-import { subscribeToTables, type SubscribeOptions } from './realtime';
+import { subscribeToScopedRows, type SubscribeOptions } from './realtime';
 import { updateGameSession } from './sessions';
 
 export type SessionMap = Tables<'session_maps'>;
@@ -94,13 +94,11 @@ export function subscribeToSessionMaps(
   onChange: () => void,
   options?: SubscribeOptions,
 ): () => void {
-  return subscribeToTables(
+  return subscribeToScopedRows(
     uniqueChannelName(`session-maps-${sessionId}`),
-    [
-      { table: 'session_maps', event: 'INSERT', filter: `session_id=eq.${sessionId}`, onChange },
-      { table: 'session_maps', event: 'UPDATE', filter: `session_id=eq.${sessionId}`, onChange },
-      { table: 'session_maps', event: 'DELETE', onChange },
-    ],
+    'session_maps',
+    { column: 'session_id', value: sessionId },
+    onChange,
     options,
   );
 }
