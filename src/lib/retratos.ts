@@ -26,7 +26,7 @@ export interface Retrato {
   npc?: SessionNpc;
   /** Só em combate: o participante dele. */
   participantId?: string;
-  /** Só do Mestre: o NPC que os jogadores ainda não veem. */
+  /** Só do Mestre: o Retrato Oculto, que os jogadores não veem. */
   hidden?: boolean;
 }
 
@@ -44,13 +44,28 @@ export interface BuildInput {
   myCharacterId: string | undefined;
   hasActiveCombat: boolean;
   participants: CombatSlice[];
-  /** O Mestre vê os NPCs escondidos também. */
-  includeHiddenNpcs?: boolean;
+  /** O Mestre vê também os Retratos Ocultos (NPCs e inimigos), marcados como tais. */
+  includeHidden?: boolean;
   /**
    * Inimigos que aparecem mesmo fora do combate (os que estão no mapa; no mapa do Mestre, todos).
    * Em combate, os que estão nele aparecem de qualquer jeito.
    */
   extraEnemies?: ReadonlySet<string> | 'all';
+}
+
+/** O Retrato Oculto tem `is_visible` falso; sem a coluna (jogador, inimigo antigo), ele aparece. */
+const isShown = (character: { id: string; is_visible?: boolean }): boolean =>
+  character.is_visible !== false;
+
+/**
+ * Os ids dos NPCs e inimigos Ocultos: o que os jogadores não veem em lugar nenhum (mapa, iniciativa,
+ * feed, alvos). O Mestre vê todos. Termos: CONTEXT.md (Oculto).
+ */
+export function hiddenEntityIds(
+  npcs: { id: string; is_visible?: boolean }[],
+  enemies: { id: string; is_visible?: boolean }[],
+): Set<string> {
+  return new Set([...npcs, ...enemies].filter((entity) => !isShown(entity)).map((e) => e.id));
 }
 
 const asConditions = (value: unknown): ConditionEntry[] =>
@@ -63,7 +78,7 @@ export function buildRetratos({
   myCharacterId,
   hasActiveCombat,
   participants,
-  includeHiddenNpcs = false,
+  includeHidden = false,
   extraEnemies,
 }: BuildInput): Retrato[] {
   const participantOf = (entityId: string) =>
@@ -98,16 +113,23 @@ export function buildRetratos({
     .sort((a, b) => Number(b.isMe) - Number(a.isMe));
 
   const visibleNpcs = npcs
-    .filter((npc) => !npc.is_deleted && (npc.is_visible || includeHiddenNpcs))
+    .filter((npc) => !npc.is_deleted && (npc.is_visible || includeHidden))
     .map((npc) =>
-      make(npc, 'npc', 'NPC', { npc, hidden: includeHiddenNpcs ? !npc.is_visible : undefined }),
+      make(npc, 'npc', 'NPC', { npc, hidden: includeHidden ? !npc.is_visible : undefined }),
     );
 
   const isExtra = (id: string) =>
     extraEnemies === 'all' || (extraEnemies !== undefined && extraEnemies.has(id));
   const inCombat = enemies
-    .filter((enemy) => !enemy.is_deleted && (participantOf(enemy.id) || isExtra(enemy.id)))
-    .map((enemy) => make(enemy, 'enemy', 'Inimigo'));
+    .filter(
+      (enemy) =>
+        !enemy.is_deleted &&
+        (participantOf(enemy.id) || isExtra(enemy.id)) &&
+        (isShown(enemy) || includeHidden),
+    )
+    .map((enemy) =>
+      make(enemy, 'enemy', 'Inimigo', { hidden: includeHidden ? !isShown(enemy) : undefined }),
+    );
 
   return [...group, ...visibleNpcs, ...inCombat];
 }

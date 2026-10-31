@@ -123,10 +123,10 @@ const GUARD = 'Guarda de Jericó';
 
 test.describe('Pins', () => {
   /** Uma mesa com Eliabe e um Guarda, o terreno já mostrado e o Palco do Mestre livre dos Painéis. */
-  async function tableWithMap(seed: Seed, signIn: SignIn) {
+  async function tableWithMap(seed: Seed, signIn: SignIn, npcs: string[] = []) {
     const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
     const guard = await seed.createEnemy(GUARD);
-    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const sessionId = await seed.createSession({ characters: [eliabe, guard], npcs });
     const master = await signIn('master');
     await master.goto(`/session/${sessionId}`);
     const player = await signIn('player1');
@@ -205,32 +205,76 @@ test.describe('Pins', () => {
     expect(data).toEqual([{ col: col + 3, row }]);
   });
 
-  test('o inimigo posto no mapa aparece para o jogador mesmo fora do combate, e volta à Bandeja', async ({
+  test('o inimigo posto no mapa entra Oculto: o jogador só o vê depois de revelado', async ({
     seed,
     signIn,
   }) => {
     const { master, player } = await tableWithMap(seed, signIn);
-    const guardOnPlayer = player.getByRole('button', { name: /^Guarda de Jericó, / });
-    await expect(guardOnPlayer).toHaveCount(0);
-
+    const guardOnPlayer = player.getByRole('button', { name: new RegExp(`^${GUARD}, `) });
     const tray = master.getByRole('region', { name: 'Bandeja' });
     const area = master.getByRole('group', { name: /^Área do mapa/ });
     await dragMouse(
       master,
-      center((await tray.getByRole('button', { name: /^Guarda de Jericó, / }).boundingBox())!),
+      center((await tray.getByRole('button', { name: new RegExp(`^${GUARD}, `) }).boundingBox())!),
       center((await area.boundingBox())!),
     );
+
+    // Entrou Oculto: o Mestre o vê marcado; o jogador não vê nada.
+    const hiddenPin = master.getByRole('button', {
+      name: new RegExp(`^${GUARD}, \\d+ de \\d+ PV, oculto$`),
+    });
+    await expect(hiddenPin).toBeVisible();
+    await expect(guardOnPlayer).toHaveCount(0);
+    const { data: before } = await adminClient()
+      .from('characters')
+      .select('is_visible')
+      .eq('name', GUARD)
+      .single();
+    expect(before?.is_visible).toBe(false);
+
+    // Revelado com um toque no pin: aparece para o jogador, fora do combate.
+    await hiddenPin.click();
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
     await expect(guardOnPlayer).toBeVisible();
 
-    // De volta à Bandeja: o pin some do mapa do jogador.
-    const pin = master.getByRole('button', { name: /^Guarda de Jericó, \d+ de \d+ PV$/ });
+    // Oculto de novo: some do mapa do jogador sem recarregar.
+    await master.getByRole('button', { name: `Ocultar ${GUARD}` }).click();
+    await expect(guardOnPlayer).toHaveCount(0);
+
+    // Revelado e devolvido à Bandeja: o pin sai do mapa do jogador.
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
+    await expect(guardOnPlayer).toBeVisible();
+    const pin = master.getByRole('button', { name: new RegExp(`^${GUARD}, \\d+ de \\d+ PV$`) });
     await dragMouse(
       master,
       center((await pin.boundingBox())!),
       center((await tray.boundingBox())!),
     );
     await expect(guardOnPlayer).toHaveCount(0);
-    await expect(tray.getByRole('button', { name: /^Guarda de Jericó, / })).toBeVisible();
+    await expect(tray.getByRole('button', { name: new RegExp(`^${GUARD}, `) })).toBeVisible();
+  });
+
+  test('o NPC ocultado some do mapa do jogador sem recarregar', async ({ seed, signIn }) => {
+    const { master, player } = await tableWithMap(seed, signIn, ['Raabe']);
+    const raabeOnPlayer = player.getByRole('button', { name: /^Raabe, / });
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+
+    // O NPC nasce Oculto; revelado na Bandeja, vai ao mapa e o jogador o vê.
+    const trayItem = tray.getByRole('button', { name: /^Raabe, .*oculto, na Bandeja$/ });
+    await trayItem.click();
+    await master.getByRole('button', { name: 'Revelar Raabe' }).click();
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: /^Raabe, / }).boundingBox())!),
+      center((await area.boundingBox())!),
+    );
+    await expect(raabeOnPlayer).toBeVisible();
+
+    // Oculto pela barra do pin: some da tela do jogador na hora, sem recarregar.
+    await master.getByRole('button', { name: /^Raabe, / }).click();
+    await master.getByRole('button', { name: 'Ocultar Raabe' }).click();
+    await expect(raabeOnPlayer).toHaveCount(0);
   });
 
   test('no combate, o pin do turno fica destacado e o Ataque mostra a distância até o alvo', async ({
@@ -262,6 +306,9 @@ test.describe('Pins', () => {
     const guardOnPlayer = player.getByRole('button', {
       name: new RegExp(`^${GUARD}, \\d+ de \\d+ PV$`),
     });
+    // O inimigo entra Oculto; o Mestre o revela antes do combate.
+    await master.getByRole('button', { name: new RegExp(`^${GUARD}, .*oculto$`) }).click();
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
     await expect(guardOnPlayer).toBeVisible();
 
     // O Guarda age primeiro: o pin dele é o destacado.

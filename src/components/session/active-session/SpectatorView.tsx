@@ -9,7 +9,8 @@ import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard } from '@/components/session/palco/RetratoCard';
 import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
-import { buildRetratos } from '@/lib/retratos';
+import { buildRetratos, hiddenEntityIds } from '@/lib/retratos';
+import { withoutHiddenLog } from '@/lib/oculto';
 import { buildMapScene } from '@/lib/mapScene';
 import { useMapPins } from '@/hooks/useMapPins';
 import { buildCombatEntities } from '@/lib/combatEntities';
@@ -90,14 +91,23 @@ export function SpectatorView({
   const openRetrato =
     retratos.find((r) => r.id === retratoId) ??
     scene.pins.find((pin) => pin.retrato.id === retratoId)?.retrato;
-  const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
-  const initiative = participants.map((p) => ({
-    id: p.entity_id,
-    name: entities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
-    imageUrl: retratos.find((r) => r.id === p.entity_id)?.imageUrl,
-    isMe: false,
-    down: p.hp_current <= 0,
-  }));
+  // O Oculto também some para o espectador (ADR 0011).
+  const hidden = hiddenEntityIds(npcs, enemies);
+  const entities = buildCombatEntities({
+    playerCharacters,
+    npcs: npcs.filter((npc) => !hidden.has(npc.id)),
+    enemies: enemies.filter((enemy) => !hidden.has(enemy.id)),
+  });
+  const log = withoutHiddenLog({ attacks, abilityUses, participants, hiddenEntityIds: hidden });
+  const initiative = participants
+    .filter((p) => !hidden.has(p.entity_id))
+    .map((p) => ({
+      id: p.entity_id,
+      name: entities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
+      imageUrl: retratos.find((r) => r.id === p.entity_id)?.imageUrl,
+      isMe: false,
+      down: p.hp_current <= 0,
+    }));
 
   const dock: DockItem<SpectatorPanel>[] = [
     { id: 'ficha', label: 'Ficha', icon: <BookOpen className="h-6 w-6" /> },
@@ -128,7 +138,7 @@ export function SpectatorView({
               currentId={currentTurnParticipant?.entity_id}
               round={activeCombat?.round_number ?? 1}
             />
-            <CombatFeed attacks={attacks} abilityUses={abilityUses} />
+            <CombatFeed attacks={log.attacks} abilityUses={log.abilityUses} />
           </>
         )}
 

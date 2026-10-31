@@ -82,6 +82,7 @@ afterEach(() => vi.restoreAllMocks());
 function renderScene(scene: MapScene, over: { isGm?: boolean } = {}) {
   const onOpenRetrato = vi.fn();
   const onMovePin = vi.fn();
+  const onToggleHidden = vi.fn();
   render(
     <MapaDoPalco
       map={map}
@@ -89,9 +90,10 @@ function renderScene(scene: MapScene, over: { isGm?: boolean } = {}) {
       isGm={over.isGm ?? false}
       onOpenRetrato={onOpenRetrato}
       onMovePin={onMovePin}
+      onToggleHidden={onToggleHidden}
     />,
   );
-  return { onOpenRetrato, onMovePin };
+  return { onOpenRetrato, onMovePin, onToggleHidden };
 }
 
 const eliabe = retrato('c1', { isMe: true });
@@ -163,7 +165,7 @@ describe('MapaDoPalco: o Mestre arrasta', () => {
     expect(screen.getByText('3 Quadrados · 4,5 m')).toBeInTheDocument();
   });
 
-  it('um toque curto não move: abre o cartão', () => {
+  it('um toque curto não move: seleciona o pin, e a barra abre o cartão', () => {
     const { onMovePin, onOpenRetrato } = renderScene(sceneWith(), { isGm: true });
     const pin = screen.getByRole('button', { name: 'C1, 8 de 10 PV' });
     fireEvent.pointerDown(pin, { pointerId: 1, ...at(4, 2) });
@@ -175,6 +177,8 @@ describe('MapaDoPalco: o Mestre arrasta', () => {
     fireEvent.pointerUp(pin, { pointerId: 1, ...at(4, 2) });
     fireEvent.click(pin);
     expect(onMovePin).not.toHaveBeenCalled();
+    expect(onOpenRetrato).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir o cartão de C1' }));
     expect(onOpenRetrato).toHaveBeenCalledWith(eliabe);
   });
 
@@ -234,9 +238,10 @@ describe('MapaDoPalco: a Bandeja', () => {
     expect(onMovePin).toHaveBeenCalledWith(guarda, { col: 10, row: 7 });
   });
 
-  it('tocar num item da Bandeja abre o cartão', () => {
+  it('tocar num item da Bandeja o seleciona, e a barra abre o cartão', () => {
     const { onOpenRetrato } = renderScene(sceneWith({ tray: [guarda] }), { isGm: true });
     fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV, na Bandeja' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir o cartão de E1' }));
     expect(onOpenRetrato).toHaveBeenCalledWith(guarda);
   });
 });
@@ -296,5 +301,73 @@ describe('MapaDoPalco: combate', () => {
   it('quem está de pé não vem apagado', () => {
     renderScene(sceneWith());
     expect(screen.getByRole('button', { name: 'C1, 8 de 10 PV' })).not.toHaveAttribute('data-down');
+  });
+});
+
+describe('MapaDoPalco: Oculto', () => {
+  const oculto = retrato('e1', { kind: 'enemy', pv: 12, pvMax: 12, hidden: true });
+  const withHidden = () =>
+    sceneWith({ pins: [{ retrato: oculto, cell: { col: 8, row: 5 }, turn: false }] });
+
+  it('o Mestre vê o pin Oculto marcado, e o nome acessível diz que está oculto', () => {
+    renderScene(withHidden(), { isGm: true });
+    const pin = screen.getByRole('button', { name: 'E1, 12 de 12 PV, oculto' });
+    expect(pin.className).toContain('opacity-60');
+    expect(pin.className).toContain('border-dashed');
+  });
+
+  it('tocar no pin do Mestre mostra a barra com o estado e o botão Revelar', () => {
+    const { onToggleHidden } = renderScene(withHidden(), { isGm: true });
+    fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV, oculto' }));
+    const bar = screen.getByRole('group', { name: 'Ações de E1' });
+    expect(bar).toHaveTextContent('Oculto');
+    fireEvent.click(screen.getByRole('button', { name: 'Revelar E1' }));
+    expect(onToggleHidden).toHaveBeenCalledWith(oculto);
+  });
+
+  it('quem está visível mostra o botão Ocultar', () => {
+    const { onToggleHidden } = renderScene(
+      sceneWith({ pins: [{ retrato: guarda, cell: { col: 1, row: 1 }, turn: false }] }),
+      { isGm: true },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV' }));
+    expect(screen.getByRole('group', { name: 'Ações de E1' })).toHaveTextContent('Visível');
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar E1' }));
+    expect(onToggleHidden).toHaveBeenCalledWith(guarda);
+  });
+
+  it('o item da Bandeja também se revela antes de ir para o mapa', () => {
+    const { onToggleHidden } = renderScene(sceneWith({ tray: [oculto] }), { isGm: true });
+    fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV, oculto, na Bandeja' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revelar E1' }));
+    expect(onToggleHidden).toHaveBeenCalledWith(oculto);
+  });
+
+  it('jogador do grupo não se oculta: a barra não oferece o botão', () => {
+    renderScene(sceneWith(), { isGm: true });
+    fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
+    expect(screen.getByRole('group', { name: 'Ações de C1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^(Revelar|Ocultar)/ })).not.toBeInTheDocument();
+  });
+
+  it('o jogador não tem a barra: tocar no pin abre o cartão direto', () => {
+    const { onOpenRetrato } = renderScene(sceneWith());
+    fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
+    expect(onOpenRetrato).toHaveBeenCalledWith(eliabe);
+    expect(screen.queryByRole('group', { name: /^Ações de/ })).not.toBeInTheDocument();
+  });
+
+  it('a barra some quando o Retrato sai da cena', () => {
+    const { rerender } = (() => {
+      const onToggleHidden = vi.fn();
+      const view = render(
+        <MapaDoPalco map={map} scene={sceneWith()} isGm onToggleHidden={onToggleHidden} />,
+      );
+      return { rerender: view.rerender };
+    })();
+    fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
+    expect(screen.getByRole('group', { name: 'Ações de C1' })).toBeInTheDocument();
+    rerender(<MapaDoPalco map={map} scene={sceneWith({ pins: [] })} isGm />);
+    expect(screen.queryByRole('group', { name: /^Ações de/ })).not.toBeInTheDocument();
   });
 });

@@ -1,7 +1,7 @@
 // Quem aparece como Retrato no Palco do jogador e com que PV e Condições. Termos: CONTEXT.md
 // (Palco, Retrato).
 import { describe, expect, it } from 'vitest';
-import { buildRetratos } from './retratos';
+import { buildRetratos, hiddenEntityIds } from './retratos';
 
 const ch = (id: string, over: Record<string, unknown> = {}) => ({
   id,
@@ -73,7 +73,7 @@ describe('buildRetratos: quem está na cena', () => {
 
   it('o Mestre vê também o NPC escondido, marcado como tal', () => {
     const r = build({
-      includeHiddenNpcs: true,
+      includeHidden: true,
       npcs: [
         ch('n1', { is_visible: true }),
         ch('n2', { is_visible: false }),
@@ -164,5 +164,53 @@ describe('buildRetratos: PV e Condições', () => {
       participants: [{ id: 'p', entity_id: 'e1', hp_current: 5, conditions: [] }],
     });
     expect(r.map((x) => x.name)).toEqual(['Jogador', 'NPC', 'Inimigo']);
+  });
+});
+
+describe('buildRetratos: o inimigo Oculto', () => {
+  const enemies = [ch('e1', { is_visible: false }), ch('e2', { is_visible: true }), ch('e3')];
+  const inCombat = {
+    hasActiveCombat: true,
+    participants: ['e1', 'e2', 'e3'].map((id) => ({
+      id: `p-${id}`,
+      entity_id: id,
+      hp_current: 5,
+      conditions: [],
+    })),
+  };
+
+  it('o jogador não vê o inimigo Oculto, mesmo em combate; sem a marca, ele aparece', () => {
+    const r = build({ ...inCombat, enemies });
+    expect(r.filter((x) => x.kind === 'enemy').map((x) => x.id)).toEqual(['e2', 'e3']);
+  });
+
+  it('o inimigo Oculto com pin também não aparece para o jogador', () => {
+    const r = build({ enemies, extraEnemies: new Set(['e1', 'e2']) });
+    expect(r.filter((x) => x.kind === 'enemy').map((x) => x.id)).toEqual(['e2']);
+  });
+
+  it('o Mestre vê todos, com o Oculto marcado', () => {
+    const r = build({ ...inCombat, enemies, includeHidden: true });
+    const byId = Object.fromEntries(r.filter((x) => x.kind === 'enemy').map((x) => [x.id, x]));
+    expect(byId.e1?.hidden).toBe(true);
+    expect(byId.e2?.hidden).toBe(false);
+    expect(byId.e3?.hidden).toBe(false);
+  });
+});
+
+describe('hiddenEntityIds', () => {
+  it('junta os NPCs e os inimigos com is_visible falso', () => {
+    const ids = hiddenEntityIds(
+      [
+        { id: 'n1', is_visible: true },
+        { id: 'n2', is_visible: false },
+      ],
+      [{ id: 'e1', is_visible: false }, { id: 'e2' }],
+    );
+    expect([...ids].sort()).toEqual(['e1', 'n2']);
+  });
+
+  it('sem nenhum Oculto, o conjunto é vazio', () => {
+    expect(hiddenEntityIds([{ id: 'n1' }], [{ id: 'e1' }]).size).toBe(0);
   });
 });
