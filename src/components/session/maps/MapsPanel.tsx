@@ -1,6 +1,6 @@
 // O Painel Mapas do Mestre (ADR 0009): soma terrenos da Biblioteca, prepara um mapa só para ele e o
 // mostra aos jogadores (o Mapa atual). Termos: CONTEXT.md (Mapa, Mapa atual, Biblioteca de mapas).
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MAP_LIBRARY, findMapLibraryEntry } from '@/content/maps';
@@ -33,6 +33,7 @@ export function MapsPanel({ sessionId, maps, shownMapId, preparedId, onPrepare }
   const [columns, setColumns] = useState(String(DEFAULT_GRID.columns));
   const [rows, setRows] = useState(String(DEFAULT_GRID.rows));
   const [error, setError] = useState<string | null>(null);
+  const terrainId = useId();
 
   const run = async (action: () => Promise<void>) => {
     setError(null);
@@ -71,9 +72,10 @@ export function MapsPanel({ sessionId, maps, shownMapId, preparedId, onPrepare }
 
       <section aria-label="Somar terreno" className="space-y-3">
         <h3 className="font-serif text-lg text-stone-100">Somar terreno</h3>
-        <label className="block space-y-1 text-sm text-stone-300">
-          <span>Terreno</span>
+        <div className="space-y-1 text-sm text-stone-300">
+          <label htmlFor={terrainId}>Terreno</label>
           <select
+            id={terrainId}
             value={libraryId}
             onChange={(e) => pickLibrary(e.target.value)}
             className={fieldClass}
@@ -84,7 +86,7 @@ export function MapsPanel({ sessionId, maps, shownMapId, preparedId, onPrepare }
               </option>
             ))}
           </select>
-        </label>
+        </div>
         <label className="block space-y-1 text-sm text-stone-300">
           <span>Nome do mapa</span>
           <Input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />

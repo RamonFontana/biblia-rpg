@@ -667,6 +667,10 @@ Antes de começar, leia a seção "Mapa" do `CONTEXT.md`, os ADRs 0009, 0010 e 0
 5. Iluminação: ambiente, luzes, Visão, "Ver como" e espectador.
 6. Tocha pela Hotbar, com a luz no pin e o apagar nos Descansos.
 
+**Andamento do passo 2 (mapa).** Spec e tickets em `.scratch/mapa-da-sessao/`.
+- **Ticket 01, imagem do inimigo comprimida:** feito (PR #84).
+- **Ticket 02, Mapa atual com terreno liso:** feito. Migration `20261101120000_session_maps` (tabela `session_maps` e `game_sessions.shown_map_id` com chave composta, que impede mostrar o mapa de outra sessão; apagar o mapa mostrado devolve o Palco de Retratos). Motor `src/domain/map/grid.ts`, Biblioteca em `src/content/maps.ts` (quatro terrenos lisos, no gate de dados), `src/data-access/maps.ts`, Painel Mapas (`MapsPanel`) e `MapaDoPalco` (SVG). **Falta aplicar a migration na produção** e rodar `gen:types` (os tipos de `session_maps` e `shown_map_id` foram editados à mão). Com o Mapa atual mostrado, o Palco não traz os Retratos até os pins (ticket 05).
+
 **Divergência doc × código (registrada):** `docs/itens/consumiveis.md` e `regras-base.md` 6.7 já trazem a Tocha nova; a descrição em `src/content/items.ts` ("Ilumina 6m. Queima por 1h") só muda na fatia 6, com `npm run gen:items-seed` e a migration do seed.
 
 **Observado, não mexi:** os tickets de `.scratch/layout-da-sessao/issues/` continuam com `Status: ready-for-agent`, embora entregues.
