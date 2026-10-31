@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Cartão por NPC jogável com Bálsamo, mesmos bloqueios
-- [ ] Teste de componente da visão do Mestre
-- [ ] ROADMAP: dívida do Médico de Judá e linha do `heal_dice` atualizada; doc dos consumíveis conferido
-- [ ] `npm run check` verde
+- [x] Cartão por NPC jogável com Bálsamo, mesmos bloqueios
+- [x] Teste de componente da visão do Mestre
+- [x] ROADMAP: dívida do Médico de Judá e linha do `heal_dice` atualizada; doc dos consumíveis conferido
+- [x] `npm run check` verde

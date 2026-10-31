@@ -222,6 +222,23 @@ describe('ShortRestCard: Bálsamo', () => {
     expect(screen.getByLabelText(/Resultado do d4/)).toBeInTheDocument();
   });
 
+  it('o Mestre vê o Bálsamo só dos NPCs jogáveis que têm o item', () => {
+    const semItem = { ...spender('c2', 'Rute'), character_items: [] };
+    render(
+      <ShortRestCard
+        role="master"
+        sessionId="s1"
+        session={open('master')}
+        hasActiveCombat={false}
+        spenders={[withBalm('c1'), semItem]}
+        onSpent={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByText('Bálsamo: 2')).toHaveLength(1);
+    expect(screen.getAllByLabelText(/Resultado do d10/)).toHaveLength(2);
+    expect(screen.queryByText('Sem Bálsamo no inventário.')).not.toBeInTheDocument();
+  });
+
   it('com o descanso fechado não mostra o Bálsamo', () => {
     renderWith(closed, [withBalm('c1')]);
     expect(screen.queryByText('Bálsamo: 2')).not.toBeInTheDocument();
