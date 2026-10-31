@@ -7,14 +7,22 @@ import { updateGameSession } from './sessions';
 
 export type SessionMap = Tables<'session_maps'>;
 
-export interface NewSessionMap {
+/** De onde vem o mapa da sessão: um terreno da Biblioteca ou um mapa do Mestre (exatamente um). */
+export type MapOrigin =
+  { libraryId: string; masterMapId?: undefined } | { masterMapId: string; libraryId?: undefined };
+
+export type NewSessionMap = MapOrigin & {
   sessionId: string;
-  libraryId: string;
   name: string;
   columns: number;
   rows: number;
   position: number;
-}
+};
+
+const originColumns = (origin: MapOrigin) => ({
+  library_id: origin.libraryId ?? null,
+  master_map_id: origin.masterMapId ?? null,
+});
 
 export async function listSessionMaps(sessionId: string): Promise<SessionMap[]> {
   const { data, error } = await supabase
@@ -30,7 +38,7 @@ export async function listSessionMaps(sessionId: string): Promise<SessionMap[]> 
 export async function addSessionMap(map: NewSessionMap): Promise<void> {
   const { error } = await supabase.from('session_maps').insert({
     session_id: map.sessionId,
-    library_id: map.libraryId,
+    ...originColumns(map),
     name: map.name,
     columns: map.columns,
     rows: map.rows,
@@ -42,13 +50,13 @@ export async function addSessionMap(map: NewSessionMap): Promise<void> {
 /** Soma vários terrenos de uma vez a uma sessão nova, na ordem dada. */
 export async function addSessionMaps(
   sessionId: string,
-  maps: Omit<NewSessionMap, 'sessionId' | 'position'>[],
+  maps: (MapOrigin & { name: string; columns: number; rows: number })[],
 ): Promise<void> {
   if (maps.length === 0) return;
   const { error } = await supabase.from('session_maps').insert(
     maps.map((map, position) => ({
       session_id: sessionId,
-      library_id: map.libraryId,
+      ...originColumns(map),
       name: map.name,
       columns: map.columns,
       rows: map.rows,

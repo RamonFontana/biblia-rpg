@@ -9,6 +9,7 @@ const map: SessionMap = {
   id: 'm1',
   session_id: 's1',
   library_id: 'terreno-areia',
+  master_map_id: null,
   name: 'Deserto de Zim',
   columns: 20,
   rows: 15,

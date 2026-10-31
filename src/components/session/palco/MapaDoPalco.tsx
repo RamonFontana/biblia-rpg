@@ -19,6 +19,7 @@ import {
 import type { MapScene } from '@/lib/mapScene';
 import type { Retrato } from '@/lib/retratos';
 import { Bandeja } from './Bandeja';
+import { MasterMapBackground } from './MasterMapBackground';
 import { PinToken } from './PinToken';
 
 // Pixels de um Quadrado sem zoom: o mapa inteiro é colunas × CELL por linhas × CELL.
@@ -58,7 +59,9 @@ export function MapaDoPalco({
   onToggleHidden,
   onMovePin,
 }: MapaDoPalcoProps) {
-  const entry = findMapLibraryEntry(map.library_id);
+  // O fundo vem da Biblioteca (terreno liso) ou da imagem de um mapa do Mestre.
+  const entry = map.library_id ? findMapLibraryEntry(map.library_id) : undefined;
+  const unavailable = map.library_id !== null && !entry;
   const label = `Mapa: ${map.name}`;
   const viewApi = useRef<ViewApi>(null);
   const press = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
@@ -67,7 +70,7 @@ export function MapaDoPalco({
   // O Retrato que o Mestre tocou: a barra de ações aparece embaixo do mapa.
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  if (!entry) {
+  if (unavailable) {
     return (
       <section
         aria-label={label}
@@ -211,15 +214,27 @@ export function MapaDoPalco({
           className="block"
           role="presentation"
         >
-          <defs>
-            <pattern id={patternId} width="2" height="2" patternUnits="userSpaceOnUse">
-              <circle cx="0.4" cy="0.5" r="0.06" fill={entry.speck} />
-              <circle cx="1.45" cy="1.2" r="0.05" fill={entry.speck} />
-              <circle cx="0.9" cy="1.7" r="0.04" fill={entry.speck} />
-            </pattern>
-          </defs>
-          <rect width={map.columns} height={map.rows} fill={entry.fill} />
-          <rect width={map.columns} height={map.rows} fill={`url(#${patternId})`} />
+          {entry ? (
+            <>
+              <defs>
+                <pattern id={patternId} width="2" height="2" patternUnits="userSpaceOnUse">
+                  <circle cx="0.4" cy="0.5" r="0.06" fill={entry.speck} />
+                  <circle cx="1.45" cy="1.2" r="0.05" fill={entry.speck} />
+                  <circle cx="0.9" cy="1.7" r="0.04" fill={entry.speck} />
+                </pattern>
+              </defs>
+              <rect width={map.columns} height={map.rows} fill={entry.fill} />
+              <rect width={map.columns} height={map.rows} fill={`url(#${patternId})`} />
+            </>
+          ) : (
+            map.master_map_id && (
+              <MasterMapBackground
+                mapId={map.master_map_id}
+                columns={map.columns}
+                rows={map.rows}
+              />
+            )
+          )}
           {map.grid_visible && (
             <g
               data-testid="grid-do-mapa"

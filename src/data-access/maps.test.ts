@@ -79,6 +79,7 @@ describe('addSessionMap', () => {
     expect(call.payload).toEqual({
       session_id: 's1',
       library_id: 'terreno-areia',
+      master_map_id: null,
       name: 'Deserto',
       columns: 20,
       rows: 15,
@@ -113,6 +114,7 @@ describe('addSessionMaps', () => {
       {
         session_id: 's1',
         library_id: 'terreno-areia',
+        master_map_id: null,
         name: 'Deserto',
         columns: 20,
         rows: 15,
@@ -121,6 +123,7 @@ describe('addSessionMaps', () => {
       {
         session_id: 's1',
         library_id: 'terreno-pedra',
+        master_map_id: null,
         name: 'Muralha',
         columns: 30,
         rows: 8,
@@ -139,6 +142,33 @@ describe('addSessionMaps', () => {
     await expect(
       addSessionMaps('s1', [{ libraryId: 'terreno-areia', name: 'x', columns: 20, rows: 15 }]),
     ).rejects.toBe(failure);
+  });
+});
+
+describe('mapa do Mestre na sessão', () => {
+  it('addSessionMap grava o mapa do Mestre com library_id nulo', async () => {
+    await addSessionMap({
+      sessionId: 's1',
+      masterMapId: 'mm1',
+      name: 'Cerco',
+      columns: 20,
+      rows: 15,
+      position: 0,
+    });
+    const [call] = callsOf(state.calls, 'session_maps', 'insert');
+    expect(call?.payload).toMatchObject({ library_id: null, master_map_id: 'mm1' });
+  });
+
+  it('addSessionMaps mistura as duas origens, cada linha com uma só', async () => {
+    await addSessionMaps('s1', [
+      { libraryId: 'terreno-areia', name: 'A', columns: 20, rows: 15 },
+      { masterMapId: 'mm1', name: 'B', columns: 10, rows: 8 },
+    ]);
+    const [call] = callsOf(state.calls, 'session_maps', 'insert');
+    expect(call?.payload).toEqual([
+      expect.objectContaining({ library_id: 'terreno-areia', master_map_id: null, position: 0 }),
+      expect.objectContaining({ library_id: null, master_map_id: 'mm1', position: 1 }),
+    ]);
   });
 });
 

@@ -662,6 +662,51 @@ select pg_temp.t('Oculto: mover o pin (upsert) não o oculta de novo', pg_temp.a
 ], $q$select is_visible::text from public.characters where id = '33333333-0000-0000-0000-000000000007'$q$), 'true');
 select pg_temp.t('Oculto: a função do gatilho não se chama direto', pg_temp.run_as((select gm from who), 'select public.hide_enemy_on_first_pin()'), 'error=0A000');
 
+-- ======================= master_maps e master_map_images =======================
+insert into public.master_maps (id, owner_id, name, columns, rows) values
+  ('f0f0f0f0-0000-0000-0000-000000000001', (select gm from who), 'Cerco de Jericó', 20, 15),
+  ('f0f0f0f0-0000-0000-0000-000000000002', (select gm from who), 'Sem uso', 10, 8),
+  ('f0f0f0f0-0000-0000-0000-000000000003', (select carol from who), 'Mapa da Carol', 10, 8);
+insert into public.master_map_images (map_id, image) values
+  ('f0f0f0f0-0000-0000-0000-000000000001', 'data:image/webp;base64,AAAA'),
+  ('f0f0f0f0-0000-0000-0000-000000000003', 'data:image/webp;base64,BBBB');
+-- A sessão S1 (ativa) usa o mapa 1; a S3 (ativa) é de outro uso.
+insert into public.session_maps (id, session_id, master_map_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-000000000010', '22222222-0000-0000-0000-000000000001', 'f0f0f0f0-0000-0000-0000-000000000001', 'Cerco', 20, 15);
+
+select pg_temp.t('master_maps: anon não lê',                 pg_temp.run_as(null, 'select * from public.master_maps'), 'error=42501');
+select pg_temp.t('master_maps: o dono lê só os dele',        pg_temp.run_as((select gm from who), 'select * from public.master_maps'), 'rows=2');
+select pg_temp.t('master_maps: estranho lê só o dele',       pg_temp.run_as((select carol from who), 'select * from public.master_maps'), 'rows=1');
+select pg_temp.t('master_maps: jogador lê só o mapa que a sessão dele usa', pg_temp.run_as((select alice from who), 'select * from public.master_maps'), 'rows=1');
+select pg_temp.t('master_maps: jogador de fora da sessão não lê', pg_temp.run_as((select dave from who), 'select * from public.master_maps'), 'rows=1');
+select pg_temp.t('master_maps: jogador não altera',          pg_temp.run_as((select alice from who), $q$update public.master_maps set name = 'X'$q$), 'rows=0');
+select pg_temp.t('master_maps: jogador não apaga',           pg_temp.run_as((select alice from who), $q$delete from public.master_maps$q$), 'rows=0');
+select pg_temp.t('master_maps: o dono é o usuário de quem cria (owner_id padrão)', pg_temp.val_as((select gm from who), $q$insert into public.master_maps (name, columns, rows) values ('Novo',12,9) returning (owner_id = auth.uid())::text$q$), 'true');
+select pg_temp.t('master_maps: ninguém cria mapa em nome de outro', pg_temp.run_as((select alice from who), $q$insert into public.master_maps (owner_id, name, columns, rows) values ((select gm from who),'Falso',12,9)$q$), 'error=42501');
+select pg_temp.t('master_maps: o dono renomeia',             pg_temp.run_as((select gm from who), $q$update public.master_maps set name = 'Jericó' where id = 'f0f0f0f0-0000-0000-0000-000000000002'$q$), 'rows=1');
+select pg_temp.t('master_maps: o banco recusa menos de 5 colunas', pg_temp.run_as((select gm from who), $q$insert into public.master_maps (name, columns, rows) values ('Pequeno',4,9)$q$), 'error=23514');
+select pg_temp.t('master_maps: o banco recusa nome vazio',   pg_temp.run_as((select gm from who), $q$insert into public.master_maps (name, columns, rows) values ('',12,9)$q$), 'error=23514');
+
+select pg_temp.t('imagens: anon não lê',                     pg_temp.run_as(null, 'select * from public.master_map_images'), 'error=42501');
+select pg_temp.t('imagens: o dono lê as dele',               pg_temp.run_as((select gm from who), 'select * from public.master_map_images'), 'rows=1');
+select pg_temp.t('imagens: estranho lê só a dele',           pg_temp.run_as((select carol from who), 'select * from public.master_map_images'), 'rows=1');
+select pg_temp.t('imagens: jogador da sessão que usa o mapa lê', pg_temp.val_as((select alice from who), $q$select image from public.master_map_images where map_id = 'f0f0f0f0-0000-0000-0000-000000000001'$q$), 'data:image/webp;base64,AAAA');
+select pg_temp.t('imagens: jogador não lê a imagem do mapa de outro', pg_temp.val_as((select alice from who), $q$select image from public.master_map_images where map_id = 'f0f0f0f0-0000-0000-0000-000000000003'$q$), 'NULL');
+select pg_temp.t('imagens: jogador não grava',               pg_temp.run_as((select alice from who), $q$insert into public.master_map_images (map_id, image) values ('f0f0f0f0-0000-0000-0000-000000000002','data:image/webp;base64,CCCC')$q$), 'error=42501');
+select pg_temp.t('imagens: o dono grava a imagem do mapa dele', pg_temp.run_as((select gm from who), $q$insert into public.master_map_images (map_id, image) values ('f0f0f0f0-0000-0000-0000-000000000002','data:image/webp;base64,CCCC')$q$), 'rows=1');
+select pg_temp.t('imagens: ninguém grava imagem em mapa de outro', pg_temp.run_as((select carol from who), $q$insert into public.master_map_images (map_id, image) values ('f0f0f0f0-0000-0000-0000-000000000002','data:image/webp;base64,CCCC')$q$), 'error=42501');
+select pg_temp.t('imagens: o banco recusa o que não é webp', pg_temp.run_as((select gm from who), $q$insert into public.master_map_images (map_id, image) values ('f0f0f0f0-0000-0000-0000-000000000002','data:image/png;base64,CCCC')$q$), 'error=23514');
+select pg_temp.t('imagens: apagar o mapa apaga a imagem',    pg_temp.after_as((select carol from who), array[$q$delete from public.master_maps where id = 'f0f0f0f0-0000-0000-0000-000000000003'$q$], $q$select count(*)::text from public.master_map_images$q$), '0');
+
+select pg_temp.t('apagar: o banco recusa apagar mapa usado por sessão ativa', pg_temp.run_as((select gm from who), $q$delete from public.master_maps where id = 'f0f0f0f0-0000-0000-0000-000000000001'$q$), 'error=23503');
+select pg_temp.t('apagar: mapa sem uso é apagado',           pg_temp.run_as((select gm from who), $q$delete from public.master_maps where id = 'f0f0f0f0-0000-0000-0000-000000000002'$q$), 'rows=1');
+select pg_temp.t('apagar: sessão encerrada não segura o mapa; a cópia dela sai junto', pg_temp.after_as((select gm from who), array[$q$update public.game_sessions set status = 'finished' where id = '22222222-0000-0000-0000-000000000001'$q$, $q$delete from public.master_maps where id = 'f0f0f0f0-0000-0000-0000-000000000001'$q$], $q$select count(*)::text from public.session_maps where master_map_id is not null$q$), '0');
+
+select pg_temp.t('session_maps: o mapa da sessão tem exatamente uma origem (nenhuma)', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','Sem origem',10,8)$q$), 'error=23514');
+select pg_temp.t('session_maps: o mapa da sessão tem exatamente uma origem (as duas)', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, library_id, master_map_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-areia','f0f0f0f0-0000-0000-0000-000000000001','Duas',10,8)$q$), 'error=23514');
+select pg_temp.t('session_maps: o Mestre soma um mapa dele à sessão', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, master_map_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','f0f0f0f0-0000-0000-0000-000000000002','Dele',10,8)$q$), 'rows=1');
+select pg_temp.t('session_maps: o Mestre não soma o mapa de outro Mestre', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, master_map_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','f0f0f0f0-0000-0000-0000-000000000003','De outro',10,8)$q$), 'error=42501');
+
 -- ============================ resultado ============================
 do $$
 declare bad text; total int; ok int;
