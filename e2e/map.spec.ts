@@ -61,4 +61,41 @@ test.describe('Mapa atual', () => {
     await expect(master.getByText('Em preparo: Casa de Raabe')).toBeVisible();
     await expect(player.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeVisible();
   });
+
+  test('o jogador amplia e arrasta o mapa, e o botão Ajustar volta ao mapa inteiro', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await openTable(seed, signIn);
+    await openPanel(master, 'Mapas');
+    await master.getByRole('button', { name: 'Somar terreno' }).click();
+    await master.getByRole('button', { name: /^Mostrar aos jogadores/ }).click();
+
+    const layer = player.getByTestId('camada-do-mapa');
+    await expect(layer).toBeVisible();
+    const scaleOf = async () => {
+      const transform = await layer.evaluate((el) => (el as HTMLElement).style.transform);
+      return Number(/scale\(([\d.]+)\)/.exec(transform)?.[1]);
+    };
+    const fitted = await scaleOf();
+    expect(fitted).toBeGreaterThan(0);
+
+    await player.getByRole('button', { name: 'Ampliar o mapa' }).click();
+    await player.getByRole('button', { name: 'Ampliar o mapa' }).click();
+    const zoomed = await scaleOf();
+    expect(zoomed).toBeGreaterThan(fitted);
+
+    // Arrastar com o mouse desloca o mapa ampliado.
+    const area = player.getByRole('group', { name: /^Área do mapa/ });
+    const box = (await area.boundingBox())!;
+    const before = await layer.evaluate((el) => (el as HTMLElement).style.transform);
+    await player.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await player.mouse.down();
+    await player.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2 - 40, { steps: 5 });
+    await player.mouse.up();
+    expect(await layer.evaluate((el) => (el as HTMLElement).style.transform)).not.toBe(before);
+
+    await player.getByRole('button', { name: 'Ajustar o mapa ao Palco' }).click();
+    expect(await scaleOf()).toBeCloseTo(fitted, 4);
+  });
 });
