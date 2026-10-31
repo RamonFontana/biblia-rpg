@@ -26,7 +26,7 @@ vi.mock('./realtime', () => ({
 }));
 
 import { callsOf, filterOf } from '../test/fakeSupabase';
-import { listMapPins, placePin, removePin, subscribeToMapPins } from './mapPins';
+import { listMapPins, placePin, removePin, setPinLight, subscribeToMapPins } from './mapPins';
 
 const failure = { message: 'falhou' };
 
@@ -81,6 +81,30 @@ describe('placePin', () => {
     state.respond = () => ({ error: failure });
     await expect(
       placePin({ mapId: 'm1', target: { kind: 'character', id: 'c1' }, col: 1, row: 1 }),
+    ).rejects.toBe(failure);
+  });
+});
+
+describe('setPinLight', () => {
+  it('acende a luz do pin da ficha, com os raios em metros', async () => {
+    await setPinLight('m1', { kind: 'character', id: 'e1' }, { brightM: 6, dimM: 6 });
+    const [call] = callsOf(state.calls, 'session_map_pins', 'update');
+    expect(call?.payload).toEqual({ light_bright_m: 6, light_dim_m: 6 });
+    expect(filterOf(call, 'eq', 'map_id')).toBe('m1');
+    expect(filterOf(call, 'eq', 'character_id')).toBe('e1');
+  });
+
+  it('nulo apaga a luz (os dois raios juntos)', async () => {
+    await setPinLight('m1', { kind: 'npc', id: 'n1' }, null);
+    const [call] = callsOf(state.calls, 'session_map_pins', 'update');
+    expect(call?.payload).toEqual({ light_bright_m: null, light_dim_m: null });
+    expect(filterOf(call, 'eq', 'npc_id')).toBe('n1');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(
+      setPinLight('m1', { kind: 'character', id: 'e1' }, { brightM: 1, dimM: 1 }),
     ).rejects.toBe(failure);
   });
 });

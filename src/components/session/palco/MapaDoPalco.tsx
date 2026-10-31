@@ -3,7 +3,7 @@
 // o cartão. As coordenadas do desenho estão em Quadrados (1 unidade = 1,5 m).
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Crosshair } from 'lucide-react';
+import { Crosshair, Flame, X } from 'lucide-react';
 import type { SessionMap } from '@/data-access/maps';
 import { findMapLibraryEntry } from '@/content/maps';
 import { PanZoomViewport, type ViewApi } from '@/components/map/PanZoomViewport';
@@ -16,9 +16,12 @@ import {
   snapToCell,
   type Cell,
 } from '@/domain/map/grid';
-import type { MapScene } from '@/lib/mapScene';
+import type { MapScene, LightRow } from '@/lib/mapScene';
 import type { Retrato } from '@/lib/retratos';
 import { Bandeja } from './Bandeja';
+import { DarknessLayer } from './DarknessLayer';
+import { LightToken } from './LightToken';
+import { RadiusField } from './RadiusField';
 import { MasterMapBackground } from './MasterMapBackground';
 import { PinToken } from './PinToken';
 
@@ -37,6 +40,31 @@ interface MapaDoPalcoProps {
   onToggleHidden?: (retrato: Retrato) => void;
   /** Põe o Retrato num Quadrado, ou o devolve à Bandeja com nulo. */
   onMovePin?: (retrato: Retrato, cell: Cell | null) => void;
+  /** O que só o Mestre faz com a luz: o Ambiente, as luzes fixas e a luz no pin. */
+  gm?: GmMapActions;
+}
+
+export interface GmMapActions {
+  /** Fixa o Ambiente do mapa; nulo volta a seguir o período. */
+  onSetAmbient: (ambient: 'claro' | 'penumbra' | 'escuridao' | null) => void;
+  onAddLight: () => void;
+  onMoveLight: (light: LightRow, cell: Cell) => void;
+  onChangeLight: (id: string, patch: { brightM?: number; dimM?: number; label?: string }) => void;
+  onRemoveLight: (id: string) => void;
+  /** Acende (ou muda) a luz no pin do Retrato; nulo apaga. */
+  onSetPinLight: (retrato: Retrato, light: { brightM: number; dimM: number } | null) => void;
+}
+
+/** A luz de uma tocha acesa em campo aberto: 6 m de Luz plena e mais 6 m de Penumbra. */
+const DEFAULT_PIN_LIGHT = { brightM: 6, dimM: 6 };
+
+const AMBIENT_NAME = { claro: 'Claro', penumbra: 'Penumbra', escuridao: 'Escuridão' } as const;
+
+interface LightDrag {
+  light: LightRow;
+  x: number;
+  y: number;
+  cell: Cell | null;
 }
 
 interface Drag {
@@ -49,7 +77,13 @@ interface Drag {
   overTray: boolean;
 }
 
-const EMPTY_SCENE: MapScene = { pins: [], tray: [] };
+const EMPTY_SCENE: MapScene = {
+  pins: [],
+  tray: [],
+  ambient: 'claro',
+  sources: [],
+  lights: [],
+};
 
 export function MapaDoPalco({
   map,
@@ -58,6 +92,7 @@ export function MapaDoPalco({
   onOpenRetrato,
   onToggleHidden,
   onMovePin,
+  gm,
 }: MapaDoPalcoProps) {
   // O fundo vem da Biblioteca (terreno liso) ou da imagem de um mapa do Mestre.
   const entry = map.library_id ? findMapLibraryEntry(map.library_id) : undefined;
@@ -69,6 +104,8 @@ export function MapaDoPalco({
   const [drag, setDrag] = useState<Drag | null>(null);
   // O Retrato que o Mestre tocou: a barra de ações aparece embaixo do mapa.
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedLightId, setSelectedLightId] = useState<string | null>(null);
+  const [lightDrag, setLightDrag] = useState<LightDrag | null>(null);
 
   if (unavailable) {
     return (
@@ -106,8 +143,10 @@ export function MapaDoPalco({
         suppressClick.current = false;
         return;
       }
-      if (isGm) setSelectedId(retrato.id);
-      else onOpenRetrato?.(retrato);
+      if (isGm) {
+        setSelectedId(retrato.id);
+        setSelectedLightId(null);
+      } else onOpenRetrato?.(retrato);
     };
     if (!isGm) return { onClick: open };
 
@@ -158,8 +197,62 @@ export function MapaDoPalco({
     };
   };
 
+  const lightHandlers = (light: LightRow) => ({
+    onClick: () => {
+      if (suppressClick.current) {
+        suppressClick.current = false;
+        return;
+      }
+      setSelectedLightId(light.id);
+      setSelectedId(null);
+    },
+    onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      suppressClick.current = false;
+      press.current = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    },
+    onPointerMove: (event: ReactPointerEvent<HTMLButtonElement>) => {
+      const start = press.current;
+      if (!start || start.id !== event.pointerId) return;
+      if (
+        !start.moved &&
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) < DRAG_THRESHOLD
+      ) {
+        return;
+      }
+      start.moved = true;
+      setLightDrag({
+        light,
+        x: event.clientX,
+        y: event.clientY,
+        cell: locate(event.clientX, event.clientY).cell,
+      });
+    },
+    onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => {
+      const start = press.current;
+      if (!start || start.id !== event.pointerId) return;
+      press.current = null;
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+      if (!start.moved) return;
+      suppressClick.current = true;
+      const target = locate(event.clientX, event.clientY);
+      setLightDrag(null);
+      if (target.cell) gm?.onMoveLight(light, target.cell);
+    },
+    onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (press.current?.id !== event.pointerId) return;
+      press.current = null;
+      setLightDrag(null);
+    },
+  });
+
+  const selectedLight = isGm ? scene.lights.find((l) => l.id === selectedLightId) : undefined;
   const selected = isGm
     ? [...scene.pins.map((pin) => pin.retrato), ...scene.tray].find((r) => r.id === selectedId)
+    : undefined;
+  const selectedPin = selected
+    ? scene.pins.find((pin) => pin.retrato.id === selected.id)
     : undefined;
   const me = isGm ? undefined : scene.pins.find((pin) => pin.retrato.isMe);
   const patternId = `textura-${map.id}`;
@@ -266,11 +359,19 @@ export function MapaDoPalco({
               ))}
             </g>
           )}
-          {drag?.cell && (
+          <DarknessLayer
+            mapId={map.id}
+            ambient={scene.ambient}
+            sources={scene.sources}
+            columns={map.columns}
+            rows={map.rows}
+            lighter={isGm}
+          />
+          {(drag?.cell ?? lightDrag?.cell) && (
             <rect
               data-testid="quadrado-de-destino"
-              x={drag.cell.col}
-              y={drag.cell.row}
+              x={(drag?.cell ?? lightDrag?.cell)!.col}
+              y={(drag?.cell ?? lightDrag?.cell)!.row}
               width={1}
               height={1}
               fill="none"
@@ -294,7 +395,98 @@ export function MapaDoPalco({
             handlers={handlersFor(retrato, cell)}
           />
         ))}
+        {isGm &&
+          scene.lights.map((light) => (
+            <LightToken
+              key={light.id}
+              light={light}
+              size={CELL}
+              selected={light.id === selectedLightId}
+              lifted={lightDrag?.light.id === light.id}
+              handlers={lightHandlers(light)}
+            />
+          ))}
       </PanZoomViewport>
+
+      {isGm && gm && (
+        <div className="absolute top-2 left-2 z-[5] flex flex-wrap items-center gap-2 rounded-lg border border-stone-700 bg-stone-900/90 p-1.5 text-xs text-stone-200">
+          <label className="flex items-center gap-1">
+            <span>Ambiente</span>
+            <select
+              aria-label="Ambiente do mapa"
+              value={map.ambient ?? ''}
+              onChange={(e) =>
+                gm.onSetAmbient(
+                  e.target.value === ''
+                    ? null
+                    : (e.target.value as 'claro' | 'penumbra' | 'escuridao'),
+                )
+              }
+              className="h-9 rounded-md border border-stone-700 bg-stone-800 px-1 text-sm text-stone-100"
+            >
+              <option value="">Segue o período</option>
+              <option value="claro">Claro</option>
+              <option value="penumbra">Penumbra</option>
+              <option value="escuridao">Escuridão</option>
+            </select>
+          </label>
+          <span>Agora: {AMBIENT_NAME[scene.ambient]}</span>
+          <button
+            type="button"
+            onClick={gm.onAddLight}
+            className="flex min-h-9 items-center gap-1 rounded-md border border-stone-700 px-2 text-stone-100 hover:border-amber-500/60"
+          >
+            <Flame className="h-4 w-4" aria-hidden="true" />
+            Somar luz
+          </button>
+        </div>
+      )}
+
+      {isGm && gm && selectedLight && (
+        <div
+          role="group"
+          aria-label={`Ajustes da luz ${selectedLight.label}`}
+          className="absolute top-2 right-2 left-2 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-stone-700 bg-stone-900/95 p-2 text-sm text-stone-200 shadow-lg"
+        >
+          <NameField
+            key={selectedLight.label}
+            value={selectedLight.label}
+            onCommit={(label) => gm.onChangeLight(selectedLight.id, { label })}
+          />
+          <RadiusField
+            key={`b${selectedLight.bright_m}`}
+            label="Luz plena (m)"
+            value={selectedLight.bright_m}
+            onCommit={(brightM) => gm.onChangeLight(selectedLight.id, { brightM })}
+          />
+          <RadiusField
+            key={`d${selectedLight.dim_m}`}
+            label="Penumbra (m)"
+            value={selectedLight.dim_m}
+            onCommit={(dimM) => gm.onChangeLight(selectedLight.id, { dimM })}
+          />
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                gm.onRemoveLight(selectedLight.id);
+                setSelectedLightId(null);
+              }}
+              className="min-h-11 rounded-md border border-red-900/70 px-3 text-red-300 hover:border-red-500/60"
+            >
+              Remover luz
+            </button>
+            <button
+              type="button"
+              aria-label="Fechar"
+              onClick={() => setSelectedLightId(null)}
+              className="min-h-11 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {isGm && selected && (
         <div
@@ -314,6 +506,13 @@ export function MapaDoPalco({
               {selected.hidden ? 'Oculto' : 'Visível'}
             </span>
           )}
+          {gm && selected.kind !== 'player' && selectedPin && (
+            <PinLightControls
+              retrato={selected}
+              light={selectedPin.light ?? null}
+              onChange={(light) => gm.onSetPinLight(selected, light)}
+            />
+          )}
           <div className="ml-auto flex gap-2">
             {selected.kind !== 'player' && onToggleHidden && (
               <button
@@ -332,6 +531,14 @@ export function MapaDoPalco({
               className="min-h-11 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
             >
               Abrir cartão
+            </button>
+            <button
+              type="button"
+              aria-label="Fechar"
+              onClick={() => setSelectedId(null)}
+              className="min-h-11 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -365,6 +572,88 @@ export function MapaDoPalco({
           </div>,
           document.body,
         )}
+
+      {lightDrag &&
+        createPortal(
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed z-50 flex h-12 w-12 items-center justify-center rounded-full border-2 border-amber-400 bg-stone-900/90 text-amber-400 shadow-lg"
+            style={{ left: lightDrag.x - 24, top: lightDrag.y - 24 }}
+          >
+            <Flame className="h-7 w-7" />
+          </div>,
+          document.body,
+        )}
     </section>
+  );
+}
+
+/** O nome de uma luz fixa: digita-se à vontade e grava ao sair do campo, se mudou e não ficou vazio. */
+function NameField({ value, onCommit }: { value: string; onCommit: (name: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  return (
+    <label className="flex items-center gap-1 text-xs text-stone-300">
+      <span>Nome da luz</span>
+      <input
+        value={draft}
+        maxLength={40}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          const next = draft.trim();
+          if (next && next !== value) onCommit(next);
+          else setDraft(value);
+        }}
+        className="h-9 w-32 rounded-md border border-stone-700 bg-stone-800 px-2 text-sm text-stone-100"
+      />
+    </label>
+  );
+}
+
+/** A luz que um inimigo ou NPC carrega no pin: acende com 6 m + 6 m, ajusta os raios e apaga. */
+function PinLightControls({
+  retrato,
+  light,
+  onChange,
+}: {
+  retrato: Retrato;
+  light: { brightM: number; dimM: number } | null;
+  onChange: (light: { brightM: number; dimM: number } | null) => void;
+}) {
+  if (!light) {
+    return (
+      <button
+        type="button"
+        aria-label={`Acender luz em ${retrato.name}`}
+        onClick={() => onChange(DEFAULT_PIN_LIGHT)}
+        className="flex min-h-11 items-center gap-1 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+      >
+        <Flame className="h-4 w-4" aria-hidden="true" />
+        Acender luz
+      </button>
+    );
+  }
+  return (
+    <>
+      <RadiusField
+        key={`b${light.brightM}`}
+        label="Luz plena (m)"
+        value={light.brightM}
+        onCommit={(brightM) => onChange({ ...light, brightM })}
+      />
+      <RadiusField
+        key={`d${light.dimM}`}
+        label="Penumbra (m)"
+        value={light.dimM}
+        onCommit={(dimM) => onChange({ ...light, dimM })}
+      />
+      <button
+        type="button"
+        aria-label={`Apagar luz de ${retrato.name}`}
+        onClick={() => onChange(null)}
+        className="min-h-11 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+      >
+        Apagar luz
+      </button>
+    </>
   );
 }

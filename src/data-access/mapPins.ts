@@ -13,7 +13,7 @@ export interface PinTarget {
 export async function listMapPins(mapId: string): Promise<PinRow[]> {
   const { data, error } = await supabase
     .from('session_map_pins')
-    .select('id, map_id, character_id, npc_id, col, row')
+    .select('id, map_id, character_id, npc_id, col, row, light_bright_m, light_dim_m')
     .eq('map_id', mapId);
   if (error) throw error;
   return data ?? [];
@@ -38,6 +38,26 @@ export async function placePin(input: {
     },
     { onConflict: `map_id,${columnOf(input.target)}` },
   );
+  if (error) throw error;
+}
+
+/** A luz no pin: raio de Luz plena e faixa de Penumbra, em metros. */
+export interface PinLight {
+  brightM: number;
+  dimM: number;
+}
+
+/** Acende (ou muda) a luz do pin do Retrato neste mapa; nulo apaga. O pin precisa existir. */
+export async function setPinLight(
+  mapId: string,
+  target: PinTarget,
+  light: PinLight | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('session_map_pins')
+    .update({ light_bright_m: light?.brightM ?? null, light_dim_m: light?.dimM ?? null })
+    .eq('map_id', mapId)
+    .eq(columnOf(target), target.id);
   if (error) throw error;
 }
 

@@ -3,7 +3,9 @@ import {
   listMapPins,
   placePin,
   removePin,
+  setPinLight,
   subscribeToMapPins,
+  type PinLight,
   type PinTarget,
 } from '@/data-access/mapPins';
 import { pinRetratoId, type PinRow } from '@/lib/mapScene';
@@ -97,5 +99,30 @@ export function useMapPins(mapId: string | undefined) {
     [mapId, update],
   );
 
-  return { pins, move };
+  /** Acende (ou muda) a luz do pin do Retrato; nulo apaga. A tela muda na hora. */
+  const setLight = useCallback(
+    async (target: PinTarget, light: PinLight | null) => {
+      if (!mapId) return;
+      update(mapId, (list) =>
+        list.map((p) =>
+          pinRetratoId(p) === target.id
+            ? { ...p, light_bright_m: light?.brightM ?? null, light_dim_m: light?.dimM ?? null }
+            : p,
+        ),
+      );
+      try {
+        await setPinLight(mapId, target, light);
+      } catch (error) {
+        console.error('Erro ao mudar a luz do pin:', error);
+        try {
+          setLoaded({ mapId, pins: await listMapPins(mapId) });
+        } catch (reloadError) {
+          console.error('Erro ao reler os pins do mapa:', reloadError);
+        }
+      }
+    },
+    [mapId, update],
+  );
+
+  return { pins, move, setLight };
 }

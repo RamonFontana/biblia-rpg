@@ -33,6 +33,8 @@ import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
 import { setRetratoHidden } from '@/services/visibilityService';
 import { useMapPins } from '@/hooks/useMapPins';
+import { useMapLights } from '@/hooks/useMapLights';
+import { updateSessionMap } from '@/data-access/maps';
 import { getShortRestState } from '@/domain/shortRest';
 import { DockRail, type DockItem } from './DockRail';
 import { MasterBar } from './MasterBar';
@@ -156,7 +158,8 @@ export function GmSessionView({
     includeHidden: true,
   });
   // O Mestre arruma os pins do mapa que está na tela dele (o preparado ou o mostrado).
-  const { pins, move: movePin } = useMapPins(stageMap?.id);
+  const { pins, move: movePin, setLight: setPinLight } = useMapPins(stageMap?.id);
+  const lightsApi = useMapLights(stageMap?.id);
   const mapScene = buildMapScene({
     playerCharacters,
     npcs,
@@ -165,6 +168,9 @@ export function GmSessionView({
     hasActiveCombat,
     participants,
     pins,
+    lights: lightsApi.lights,
+    ambient: stageMap?.ambient,
+    period: sessionData.current_period,
     viewer: 'gm',
     turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });
@@ -334,6 +340,26 @@ export function GmSessionView({
                     isGm
                     onOpenRetrato={openRetrato}
                     onToggleHidden={toggleHidden}
+                    gm={{
+                      onSetAmbient: (ambient) => {
+                        updateSessionMap(stageMap.id, { ambient }).catch((error) =>
+                          console.error('Erro ao fixar o Ambiente:', error),
+                        );
+                      },
+                      onAddLight: () =>
+                        lightsApi.add({
+                          col: Math.floor(stageMap.columns / 2),
+                          row: Math.floor(stageMap.rows / 2),
+                          brightM: 6,
+                          dimM: 6,
+                          label: 'Luz',
+                        }),
+                      onMoveLight: (light, cell) =>
+                        lightsApi.change(light.id, { col: cell.col, row: cell.row }),
+                      onChangeLight: lightsApi.change,
+                      onRemoveLight: lightsApi.remove,
+                      onSetPinLight: (retrato, light) => setPinLight(pinTargetOf(retrato), light),
+                    }}
                     onMovePin={(retrato, cell) => movePin(pinTargetOf(retrato), cell)}
                   />
                 </>

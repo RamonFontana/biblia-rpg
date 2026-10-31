@@ -13,6 +13,7 @@ import { buildRetratos, hiddenEntityIds } from '@/lib/retratos';
 import { withoutHiddenLog } from '@/lib/oculto';
 import { buildMapScene } from '@/lib/mapScene';
 import { useMapPins } from '@/hooks/useMapPins';
+import { useMapLights } from '@/hooks/useMapLights';
 import { buildCombatEntities } from '@/lib/combatEntities';
 import { useCombatStore } from '@/store/combatStore';
 import { DockRail, type DockItem } from './DockRail';
@@ -77,6 +78,7 @@ export function SpectatorView({
     participants,
   });
   const { pins } = useMapPins(shownMap?.id);
+  const { lights } = useMapLights(shownMap?.id);
   const scene = buildMapScene({
     playerCharacters,
     npcs,
@@ -85,6 +87,9 @@ export function SpectatorView({
     hasActiveCombat,
     participants,
     pins,
+    lights,
+    ambient: shownMap?.ambient,
+    period: sessionData.current_period,
     viewer: 'spectator',
     turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });

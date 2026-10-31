@@ -15,7 +15,13 @@ const h = vi.hoisted(() => ({
   maps: [] as unknown[],
   setRetratoHidden: vi.fn(),
   pins: [] as unknown[],
+  lights: [] as unknown[],
+  updateSessionMap: vi.fn(),
   movePin: vi.fn(),
+  setPinLight: vi.fn(),
+  addLight: vi.fn(),
+  changeLight: vi.fn(),
+  removeLight: vi.fn(),
   sessionListener: undefined as undefined | ((s: Record<string, unknown>) => void),
   unsubscribeSession: vi.fn(),
   combat: {
@@ -53,7 +59,17 @@ vi.mock('react-router-dom', () => ({
 }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: () => ({ user: h.user }) }));
 vi.mock('@/store/combatStore', () => ({ useCombatStore: () => h.combat }));
-vi.mock('@/hooks/useMapPins', () => ({ useMapPins: () => ({ pins: h.pins, move: h.movePin }) }));
+vi.mock('@/hooks/useMapPins', () => ({
+  useMapPins: () => ({ pins: h.pins, move: h.movePin, setLight: h.setPinLight }),
+}));
+vi.mock('@/hooks/useMapLights', () => ({
+  useMapLights: () => ({
+    lights: h.lights,
+    add: h.addLight,
+    change: h.changeLight,
+    remove: h.removeLight,
+  }),
+}));
 vi.mock('@/hooks/useSessionMaps', () => ({ useSessionMaps: () => h.maps }));
 vi.mock('@/data-access/masterMaps', () => ({ getMasterMapImage: vi.fn() }));
 vi.mock('@/components/session/maps/MasterMapLibrary', () => ({
@@ -62,7 +78,7 @@ vi.mock('@/components/session/maps/MasterMapLibrary', () => ({
 vi.mock('@/services/visibilityService', () => ({ setRetratoHidden: h.setRetratoHidden }));
 vi.mock('@/data-access/maps', () => ({
   addSessionMap: vi.fn(),
-  updateSessionMap: vi.fn(),
+  updateSessionMap: h.updateSessionMap,
   removeSessionMap: vi.fn(),
   showSessionMap: vi.fn(),
 }));
@@ -233,6 +249,7 @@ beforeEach(() => {
   h.combat.participants = [];
   h.maps = [];
   h.pins = [];
+  h.lights = [];
   h.tests = { activeTests: [], testResults: {} };
   h.roster.playerCharacters = [
     { user_id: 'u1', character: character('c1') },
@@ -1507,6 +1524,134 @@ describe('o Mapa atual no Palco', () => {
       h.pins = [pinOf({ character_id: 'e1', col: 6, row: 6 })];
       await renderPage();
       expect(screen.getByRole('button', { name: 'Filisteu, 9 de 12 PV' })).toBeInTheDocument();
+    });
+
+    describe('a luz', () => {
+      const night = () => {
+        h.session = { ...baseSession, shown_map_id: 'm1', current_period: 'Noite' };
+      };
+      const lamp = {
+        id: 'l1',
+        map_id: 'm1',
+        col: 8,
+        row: 2,
+        bright_m: 6,
+        dim_m: 6,
+        label: 'Fogueira',
+      };
+      beforeEach(() => {
+        h.pins = [
+          pinOf({ character_id: 'c1', col: 0, row: 0 }),
+          pinOf({ character_id: 'e1', col: 8, row: 2 }),
+        ];
+        h.roster.enemies = [
+          { id: 'e1', name: 'Filisteu', is_visible: true, stats: { pv: 12, current_pv: 9 } },
+        ];
+      });
+
+      it('de dia, o jogador vê o inimigo com pin e não há escuridão', async () => {
+        await renderPage();
+        expect(screen.getByRole('button', { name: /^Filisteu, / })).toBeInTheDocument();
+        expect(screen.queryByTestId('escuridao-do-mapa')).not.toBeInTheDocument();
+      });
+
+      it('à noite, o mapa do jogador escurece e o inimigo no escuro some; o grupo fica', async () => {
+        night();
+        await renderPage();
+        expect(screen.getByTestId('escuridao-do-mapa')).toHaveAttribute(
+          'data-ambient',
+          'escuridao',
+        );
+        expect(screen.queryByRole('button', { name: /^Filisteu, / })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Personagem c1, / })).toBeInTheDocument();
+      });
+
+      it('uma luz fixa perto do inimigo o revela, e abre um círculo na escuridão', async () => {
+        night();
+        h.lights = [lamp];
+        await renderPage();
+        expect(screen.getByRole('button', { name: /^Filisteu, / })).toBeInTheDocument();
+        expect(screen.getByTestId('escuridao-do-mapa')).toHaveAttribute('data-sources', '1');
+      });
+
+      it('o Ambiente que o Mestre fixou no mapa vale mais que o período', async () => {
+        h.maps = [{ ...deserto, ambient: 'claro' }];
+        night();
+        await renderPage();
+        expect(screen.queryByTestId('escuridao-do-mapa')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Filisteu, / })).toBeInTheDocument();
+      });
+
+      it('o espectador também só vê o iluminado', async () => {
+        h.user = { id: 'u3' };
+        night();
+        await renderPage();
+        expect(screen.getByTestId('escuridao-do-mapa')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /^Filisteu, / })).not.toBeInTheDocument();
+      });
+
+      describe('o Mestre', () => {
+        beforeEach(() => {
+          asGm();
+          h.updateSessionMap.mockReset().mockResolvedValue(undefined);
+          h.addLight.mockReset();
+          h.changeLight.mockReset();
+          h.removeLight.mockReset();
+          h.setPinLight.mockReset();
+        });
+
+        it('vê quem está no escuro, com a escuridão mais leve', async () => {
+          night();
+          await renderPage();
+          expect(screen.getByRole('button', { name: /^Filisteu, / })).toBeInTheDocument();
+          expect(
+            Number(screen.getByTestId('escuridao-do-mapa').getAttribute('data-opacity')),
+          ).toBeCloseTo(0.41, 2);
+        });
+
+        it('fixa o Ambiente do mapa que está na tela dele', async () => {
+          await renderPage();
+          fireEvent.change(screen.getByLabelText('Ambiente do mapa'), {
+            target: { value: 'escuridao' },
+          });
+          expect(h.updateSessionMap).toHaveBeenCalledWith('m1', { ambient: 'escuridao' });
+        });
+
+        it('soma uma luz de 6 m + 6 m no meio do mapa', async () => {
+          await renderPage();
+          fireEvent.click(screen.getByRole('button', { name: 'Somar luz' }));
+          expect(h.addLight).toHaveBeenCalledWith({
+            col: 10,
+            row: 7,
+            brightM: 6,
+            dimM: 6,
+            label: 'Luz',
+          });
+        });
+
+        it('move, ajusta e tira uma luz fixa', async () => {
+          h.lights = [lamp];
+          await renderPage();
+          fireEvent.click(screen.getByRole('button', { name: /^Luz Fogueira/ }));
+          const bar = screen.getByRole('group', { name: 'Ajustes da luz Fogueira' });
+          const bright = within(bar).getByLabelText('Luz plena (m)');
+          fireEvent.change(bright, { target: { value: '9' } });
+          fireEvent.blur(bright);
+          expect(h.changeLight).toHaveBeenCalledWith('l1', { brightM: 9 });
+          fireEvent.click(within(bar).getByRole('button', { name: 'Remover luz' }));
+          expect(h.removeLight).toHaveBeenCalledWith('l1');
+        });
+
+        it('acende a luz no pin de um inimigo', async () => {
+          await renderPage();
+          fireEvent.click(screen.getByRole('button', { name: /^Filisteu, / }));
+          fireEvent.click(screen.getByRole('button', { name: 'Acender luz em Filisteu' }));
+          expect(h.setPinLight).toHaveBeenCalledWith(
+            { kind: 'character', id: 'e1' },
+            { brightM: 6, dimM: 6 },
+          );
+        });
+      });
     });
 
     describe('em combate', () => {

@@ -685,12 +685,55 @@ export type Database = {
           },
         ]
       }
+      session_map_lights: {
+        Row: {
+          bright_m: number
+          col: number
+          created_at: string
+          dim_m: number
+          id: string
+          label: string
+          map_id: string
+          row: number
+        }
+        Insert: {
+          bright_m: number
+          col: number
+          created_at?: string
+          dim_m: number
+          id?: string
+          label?: string
+          map_id: string
+          row: number
+        }
+        Update: {
+          bright_m?: number
+          col?: number
+          created_at?: string
+          dim_m?: number
+          id?: string
+          label?: string
+          map_id?: string
+          row?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_map_lights_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "session_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_map_pins: {
         Row: {
           character_id: string | null
           col: number
           created_at: string
           id: string
+          light_bright_m: number | null
+          light_dim_m: number | null
           map_id: string
           npc_id: string | null
           row: number
@@ -700,6 +743,8 @@ export type Database = {
           col: number
           created_at?: string
           id?: string
+          light_bright_m?: number | null
+          light_dim_m?: number | null
           map_id: string
           npc_id?: string | null
           row: number
@@ -709,6 +754,8 @@ export type Database = {
           col?: number
           created_at?: string
           id?: string
+          light_bright_m?: number | null
+          light_dim_m?: number | null
           map_id?: string
           npc_id?: string | null
           row?: number

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MapScene } from '@/lib/mapScene';
 import type { Retrato } from '@/lib/retratos';
@@ -102,7 +102,10 @@ function renderScene(scene: MapScene, over: { isGm?: boolean } = {}) {
 const eliabe = retrato('c1', { isMe: true });
 const guarda = retrato('e1', { kind: 'enemy', pv: 12, pvMax: 12 });
 const sceneWith = (over: Partial<MapScene> = {}): MapScene => ({
-  pins: [{ retrato: eliabe, cell: { col: 4, row: 2 }, turn: false }],
+  ambient: 'claro',
+  sources: [],
+  lights: [],
+  pins: [{ retrato: eliabe, cell: { col: 4, row: 2 }, turn: false, level: 'plena' as const }],
   tray: [],
   ...over,
 });
@@ -252,7 +255,16 @@ describe('MapaDoPalco: a Bandeja', () => {
 describe('MapaDoPalco: centralizar no personagem', () => {
   it('fica desabilitado, com o motivo, quando o jogador não tem pin', () => {
     renderScene(
-      sceneWith({ pins: [{ retrato: retrato('c2'), cell: { col: 1, row: 1 }, turn: false }] }),
+      sceneWith({
+        pins: [
+          {
+            retrato: retrato('c2'),
+            cell: { col: 1, row: 1 },
+            turn: false,
+            level: 'plena' as const,
+          },
+        ],
+      }),
     );
     const button = screen.getByRole('button', { name: /Centralizar no meu personagem/ });
     expect(button).toBeDisabled();
@@ -280,8 +292,8 @@ describe('MapaDoPalco: combate', () => {
     renderScene(
       sceneWith({
         pins: [
-          { retrato: eliabe, cell: { col: 4, row: 2 }, turn: false },
-          { retrato: guarda, cell: { col: 8, row: 5 }, turn: true },
+          { retrato: eliabe, cell: { col: 4, row: 2 }, turn: false, level: 'plena' as const },
+          { retrato: guarda, cell: { col: 8, row: 5 }, turn: true, level: 'plena' as const },
         ],
       }),
     );
@@ -295,7 +307,11 @@ describe('MapaDoPalco: combate', () => {
 
   it('o inimigo a 0 PV fica no mapa, apagado, e o nome diz que está caído', () => {
     const caido = retrato('e1', { kind: 'enemy', pv: 0, pvMax: 12, down: true });
-    renderScene(sceneWith({ pins: [{ retrato: caido, cell: { col: 3, row: 3 }, turn: false }] }));
+    renderScene(
+      sceneWith({
+        pins: [{ retrato: caido, cell: { col: 3, row: 3 }, turn: false, level: 'plena' as const }],
+      }),
+    );
     const pin = screen.getByRole('button', { name: 'E1, 0 de 12 PV, caído' });
     expect(pin).toHaveAttribute('data-down', 'true');
     expect(pin.className).toContain('grayscale');
@@ -310,7 +326,9 @@ describe('MapaDoPalco: combate', () => {
 describe('MapaDoPalco: Oculto', () => {
   const oculto = retrato('e1', { kind: 'enemy', pv: 12, pvMax: 12, hidden: true });
   const withHidden = () =>
-    sceneWith({ pins: [{ retrato: oculto, cell: { col: 8, row: 5 }, turn: false }] });
+    sceneWith({
+      pins: [{ retrato: oculto, cell: { col: 8, row: 5 }, turn: false, level: 'plena' as const }],
+    });
 
   it('o Mestre vê o pin Oculto marcado, e o nome acessível diz que está oculto', () => {
     renderScene(withHidden(), { isGm: true });
@@ -330,7 +348,9 @@ describe('MapaDoPalco: Oculto', () => {
 
   it('quem está visível mostra o botão Ocultar', () => {
     const { onToggleHidden } = renderScene(
-      sceneWith({ pins: [{ retrato: guarda, cell: { col: 1, row: 1 }, turn: false }] }),
+      sceneWith({
+        pins: [{ retrato: guarda, cell: { col: 1, row: 1 }, turn: false, level: 'plena' as const }],
+      }),
       { isGm: true },
     );
     fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV' }));
@@ -372,5 +392,239 @@ describe('MapaDoPalco: Oculto', () => {
     expect(screen.getByRole('group', { name: 'Ações de C1' })).toBeInTheDocument();
     rerender(<MapaDoPalco map={map} scene={sceneWith({ pins: [] })} isGm />);
     expect(screen.queryByRole('group', { name: /^Ações de/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('MapaDoPalco: a escuridão', () => {
+  const lit = (over: Partial<MapScene> = {}) => sceneWith({ ...over });
+
+  it('em Ambiente claro não há máscara de escuridão', () => {
+    renderScene(lit());
+    expect(screen.queryByTestId('escuridao-do-mapa')).not.toBeInTheDocument();
+  });
+
+  it('à noite, o mapa do jogador escurece forte', () => {
+    renderScene(lit({ ambient: 'escuridao' }));
+    const dark = screen.getByTestId('escuridao-do-mapa');
+    expect(dark).toHaveAttribute('data-ambient', 'escuridao');
+    expect(Number(dark.getAttribute('data-opacity'))).toBeCloseTo(0.82, 2);
+  });
+
+  it('na Penumbra, escurece menos', () => {
+    renderScene(lit({ ambient: 'penumbra' }));
+    expect(
+      Number(screen.getByTestId('escuridao-do-mapa').getAttribute('data-opacity')),
+    ).toBeCloseTo(0.45, 2);
+  });
+
+  it('o Mestre vê o escuro mais leve que o jogador', () => {
+    renderScene(lit({ ambient: 'escuridao' }), { isGm: true });
+    expect(
+      Number(screen.getByTestId('escuridao-do-mapa').getAttribute('data-opacity')),
+    ).toBeCloseTo(0.41, 2);
+  });
+
+  it('cada Fonte de luz abre um círculo na máscara', () => {
+    renderScene(
+      lit({
+        ambient: 'escuridao',
+        sources: [
+          { cell: { col: 4, row: 4 }, brightM: 6, dimM: 6 },
+          { cell: { col: 9, row: 9 }, brightM: 3, dimM: 0 },
+        ],
+      }),
+    );
+    const dark = screen.getByTestId('escuridao-do-mapa');
+    expect(dark).toHaveAttribute('data-sources', '2');
+    expect(dark.querySelectorAll('mask circle')).toHaveLength(2);
+  });
+
+  it('o círculo vai do centro da fonte até o fim da Penumbra, em Quadrados', () => {
+    renderScene(
+      lit({ ambient: 'escuridao', sources: [{ cell: { col: 4, row: 4 }, brightM: 6, dimM: 6 }] }),
+    );
+    const circle = screen.getByTestId('escuridao-do-mapa').querySelector('mask circle')!;
+    expect(Number(circle.getAttribute('cx'))).toBeCloseTo(4.5, 3);
+    expect(Number(circle.getAttribute('cy'))).toBeCloseTo(4.5, 3);
+    // 12 m = 8 Quadrados (a Luz plena de 6 m são 4).
+    expect(Number(circle.getAttribute('r'))).toBeCloseTo(8, 3);
+  });
+});
+
+describe('MapaDoPalco: o Mestre controla o Ambiente e as luzes', () => {
+  const light = {
+    id: 'l1',
+    map_id: 'm1',
+    col: 6,
+    row: 4,
+    bright_m: 6,
+    dim_m: 6,
+    label: 'Fogueira',
+  };
+  const withLight = (over: Partial<MapScene> = {}) => sceneWith({ lights: [light], ...over });
+
+  function renderGm(scene: MapScene, over: Partial<{ ambient: string | null }> = {}) {
+    const gm = {
+      onSetAmbient: vi.fn(),
+      onAddLight: vi.fn(),
+      onMoveLight: vi.fn(),
+      onChangeLight: vi.fn(),
+      onRemoveLight: vi.fn(),
+      onSetPinLight: vi.fn(),
+    };
+    render(
+      <MapaDoPalco
+        map={{ ...map, ambient: over.ambient ?? null }}
+        scene={scene}
+        isGm
+        gm={gm}
+        onOpenRetrato={vi.fn()}
+        onMovePin={vi.fn()}
+        onToggleHidden={vi.fn()}
+      />,
+    );
+    return gm;
+  }
+
+  it('o jogador não tem controles de Ambiente nem de luz', () => {
+    renderScene(withLight());
+    expect(screen.queryByLabelText('Ambiente do mapa')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Somar luz' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Luz Fogueira/ })).not.toBeInTheDocument();
+  });
+
+  it('o Ambiente mostra o que o Mestre fixou, e "segue o período" quando não fixou', () => {
+    renderGm(sceneWith());
+    expect(screen.getByLabelText('Ambiente do mapa')).toHaveValue('');
+    cleanup();
+    renderGm(sceneWith(), { ambient: 'penumbra' });
+    expect(screen.getByLabelText('Ambiente do mapa')).toHaveValue('penumbra');
+  });
+
+  it('diz qual é o Ambiente de agora', () => {
+    renderGm(sceneWith({ ambient: 'escuridao' }));
+    expect(screen.getByText('Agora: Escuridão')).toBeInTheDocument();
+  });
+
+  it('fixar o Ambiente avisa quem chamou; "segue o período" manda nulo', () => {
+    const gm = renderGm(sceneWith());
+    fireEvent.change(screen.getByLabelText('Ambiente do mapa'), { target: { value: 'escuridao' } });
+    expect(gm.onSetAmbient).toHaveBeenCalledWith('escuridao');
+    fireEvent.change(screen.getByLabelText('Ambiente do mapa'), { target: { value: '' } });
+    expect(gm.onSetAmbient).toHaveBeenLastCalledWith(null);
+  });
+
+  it('Somar luz pede uma luz nova', () => {
+    const gm = renderGm(sceneWith());
+    fireEvent.click(screen.getByRole('button', { name: 'Somar luz' }));
+    expect(gm.onAddLight).toHaveBeenCalled();
+  });
+
+  it('cada luz fixa é um botão no Quadrado dela, com os raios no nome', () => {
+    renderGm(withLight());
+    const token = screen.getByRole('button', {
+      name: 'Luz Fogueira, 6 m de Luz plena e 6 m de Penumbra',
+    });
+    expect(token).toHaveAttribute('data-col', '6');
+    expect(token).toHaveAttribute('data-row', '4');
+  });
+
+  it('arrastar a luz para outro Quadrado a move', () => {
+    const gm = renderGm(withLight());
+    const token = screen.getByRole('button', { name: /^Luz Fogueira/ });
+    fireEvent.pointerDown(token, { pointerId: 1, ...at(6, 4) });
+    fireEvent.pointerMove(token, { pointerId: 1, ...at(9, 7) });
+    fireEvent.pointerUp(token, { pointerId: 1, ...at(9, 7) });
+    expect(gm.onMoveLight).toHaveBeenCalledWith(light, { col: 9, row: 7 });
+  });
+
+  it('soltar a luz fora do mapa cancela', () => {
+    const gm = renderGm(withLight());
+    const token = screen.getByRole('button', { name: /^Luz Fogueira/ });
+    fireEvent.pointerDown(token, { pointerId: 1, ...at(6, 4) });
+    fireEvent.pointerMove(token, { pointerId: 1, clientX: -50, clientY: 100 });
+    fireEvent.pointerUp(token, { pointerId: 1, clientX: -50, clientY: 100 });
+    expect(gm.onMoveLight).not.toHaveBeenCalled();
+  });
+
+  it('tocar na luz abre a barra com o rótulo e os raios; mudar um raio avisa ao sair do campo', () => {
+    const gm = renderGm(withLight());
+    fireEvent.click(screen.getByRole('button', { name: /^Luz Fogueira/ }));
+    const bar = screen.getByRole('group', { name: 'Ajustes da luz Fogueira' });
+    const bright = within(bar).getByLabelText('Luz plena (m)');
+    expect(bright).toHaveValue(6);
+    fireEvent.change(bright, { target: { value: '9' } });
+    fireEvent.blur(bright);
+    expect(gm.onChangeLight).toHaveBeenCalledWith('l1', { brightM: 9 });
+    const dim = within(bar).getByLabelText('Penumbra (m)');
+    fireEvent.change(dim, { target: { value: '3' } });
+    fireEvent.blur(dim);
+    expect(gm.onChangeLight).toHaveBeenLastCalledWith('l1', { dimM: 3 });
+  });
+
+  it('o raio digitado é prendido entre 0 e 120 m', () => {
+    const gm = renderGm(withLight());
+    fireEvent.click(screen.getByRole('button', { name: /^Luz Fogueira/ }));
+    const bright = within(
+      screen.getByRole('group', { name: 'Ajustes da luz Fogueira' }),
+    ).getByLabelText('Luz plena (m)');
+    fireEvent.change(bright, { target: { value: '500' } });
+    fireEvent.blur(bright);
+    expect(gm.onChangeLight).toHaveBeenCalledWith('l1', { brightM: 120 });
+  });
+
+  it('renomeia a luz e a remove pela barra', () => {
+    const gm = renderGm(withLight());
+    fireEvent.click(screen.getByRole('button', { name: /^Luz Fogueira/ }));
+    const bar = screen.getByRole('group', { name: 'Ajustes da luz Fogueira' });
+    const name = within(bar).getByLabelText('Nome da luz');
+    fireEvent.change(name, { target: { value: 'Braseiro' } });
+    fireEvent.blur(name);
+    expect(gm.onChangeLight).toHaveBeenCalledWith('l1', { label: 'Braseiro' });
+    fireEvent.click(within(bar).getByRole('button', { name: 'Remover luz' }));
+    expect(gm.onRemoveLight).toHaveBeenCalledWith('l1');
+  });
+
+  it('um inimigo ou NPC acende e apaga a própria luz pela barra do pin', () => {
+    const gm = renderGm(
+      sceneWith({
+        pins: [{ retrato: guarda, cell: { col: 2, row: 2 }, turn: false, level: 'plena' }],
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acender luz em E1' }));
+    expect(gm.onSetPinLight).toHaveBeenCalledWith(guarda, { brightM: 6, dimM: 6 });
+  });
+
+  it('com a luz acesa, a barra mostra os raios, apaga e ajusta', () => {
+    const gm = renderGm(
+      sceneWith({
+        pins: [
+          {
+            retrato: guarda,
+            cell: { col: 2, row: 2 },
+            turn: false,
+            level: 'plena',
+            light: { brightM: 3, dimM: 4.5 },
+          },
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV' }));
+    const bar = screen.getByRole('group', { name: 'Ações de E1' });
+    expect(within(bar).getByLabelText('Luz plena (m)')).toHaveValue(3);
+    expect(within(bar).getByLabelText('Penumbra (m)')).toHaveValue(4.5);
+    const bright = within(bar).getByLabelText('Luz plena (m)');
+    fireEvent.change(bright, { target: { value: '6' } });
+    fireEvent.blur(bright);
+    expect(gm.onSetPinLight).toHaveBeenCalledWith(guarda, { brightM: 6, dimM: 4.5 });
+    fireEvent.click(within(bar).getByRole('button', { name: 'Apagar luz de E1' }));
+    expect(gm.onSetPinLight).toHaveBeenLastCalledWith(guarda, null);
+  });
+
+  it('o personagem de jogador não tem luz pelo pin (a Tocha é outra coisa)', () => {
+    renderGm(sceneWith());
+    fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
+    expect(screen.queryByRole('button', { name: /luz em C1/i })).not.toBeInTheDocument();
   });
 });

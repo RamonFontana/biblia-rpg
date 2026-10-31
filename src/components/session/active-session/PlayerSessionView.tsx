@@ -23,6 +23,7 @@ import { buildRetratos, hiddenEntityIds, type Retrato } from '@/lib/retratos';
 import { withoutHiddenLog } from '@/lib/oculto';
 import { buildMapScene, distancesFrom } from '@/lib/mapScene';
 import { useMapPins } from '@/hooks/useMapPins';
+import { useMapLights } from '@/hooks/useMapLights';
 import { DockRail, type DockItem } from './DockRail';
 import { useCombatStore } from '@/store/combatStore';
 import { getShortRestState } from '@/domain/shortRest';
@@ -154,6 +155,7 @@ export function PlayerSessionView({
   });
   // Os pins do Mapa atual; quem tem pin aparece no mapa, mesmo o inimigo fora do combate.
   const { pins } = useMapPins(shownMap?.id);
+  const { lights } = useMapLights(shownMap?.id);
   const scene = buildMapScene({
     playerCharacters,
     npcs,
@@ -162,6 +164,9 @@ export function PlayerSessionView({
     hasActiveCombat,
     participants,
     pins,
+    lights,
+    ambient: shownMap?.ambient,
+    period: sessionData.current_period,
     viewer: 'player',
     turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });

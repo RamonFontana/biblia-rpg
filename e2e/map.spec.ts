@@ -277,6 +277,83 @@ test.describe('Pins', () => {
     await expect(raabeOnPlayer).toHaveCount(0);
   });
 
+  test('à noite o inimigo fora da luz some do mapa do jogador; uma luz ou a luz do pin o revela', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await tableWithMap(seed, signIn);
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+    const areaBox = (await area.boundingBox())!;
+
+    // Eliabe e o Guarda (revelado) em lugares diferentes do mapa.
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: /^Eliabe, / }).boundingBox())!),
+      { x: areaBox.x + areaBox.width * 0.25, y: areaBox.y + areaBox.height * 0.5 },
+    );
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: new RegExp(`^${GUARD}, `) }).boundingBox())!),
+      { x: areaBox.x + areaBox.width * 0.75, y: areaBox.y + areaBox.height * 0.5 },
+    );
+    await master.getByRole('button', { name: new RegExp(`^${GUARD}, .*oculto$`) }).click();
+    await master.getByRole('button', { name: `Revelar ${GUARD}` }).click();
+    const guardOnPlayer = player.getByRole('button', { name: new RegExp(`^${GUARD}, `) });
+    const eliabeOnPlayer = player.getByRole('button', { name: /^Eliabe, / });
+    await expect(guardOnPlayer).toBeVisible();
+    await expect(player.getByTestId('escuridao-do-mapa')).toHaveCount(0);
+
+    // A noite cai: o Mestre fixa o Ambiente em Escuridão. O grupo fica; o inimigo some.
+    await master.getByRole('button', { name: 'Fechar' }).click();
+    await master.getByLabel('Ambiente do mapa').selectOption('escuridao');
+    await expect(player.getByTestId('escuridao-do-mapa')).toHaveAttribute(
+      'data-ambient',
+      'escuridao',
+    );
+    await expect(guardOnPlayer).toHaveCount(0);
+    await expect(eliabeOnPlayer).toBeVisible();
+    // O Mestre vê tudo, com o escuro mais leve.
+    await expect(master.getByRole('button', { name: new RegExp(`^${GUARD}, `) })).toBeVisible();
+
+    // Uma fogueira arrastada até o Guarda o ilumina.
+    await master.getByRole('button', { name: 'Somar luz' }).click();
+    const lightToken = master.getByRole('button', { name: /^Luz Luz, 6 m de Luz plena/ });
+    await expect(lightToken).toBeVisible();
+    const guardAtMaster = master.getByRole('button', { name: new RegExp(`^${GUARD}, `) });
+    await dragMouse(
+      master,
+      center((await lightToken.boundingBox())!),
+      center((await guardAtMaster.boundingBox())!),
+    );
+    await expect(guardOnPlayer).toBeVisible();
+    await expect(player.getByTestId('escuridao-do-mapa')).toHaveAttribute('data-sources', '1');
+    const { data: lights } = await adminClient()
+      .from('session_map_lights')
+      .select('bright_m, dim_m, col, row');
+    expect(lights).toHaveLength(1);
+    expect(Number(lights![0]!.bright_m)).toBe(6);
+
+    // Tirar a luz o devolve ao escuro.
+    await lightToken.click();
+    await master.getByRole('button', { name: 'Remover luz' }).click();
+    await expect(guardOnPlayer).toHaveCount(0);
+
+    // A luz que o inimigo carrega no pin faz o mesmo.
+    await guardAtMaster.click();
+    await master.getByRole('button', { name: `Acender luz em ${GUARD}` }).click();
+    await expect(guardOnPlayer).toBeVisible();
+    const { data: pins } = await adminClient()
+      .from('session_map_pins')
+      .select('light_bright_m, light_dim_m')
+      .not('light_bright_m', 'is', null);
+    expect(pins).toHaveLength(1);
+
+    // De volta ao período: sem Ambiente fixado, manhã é clara.
+    await master.getByLabel('Ambiente do mapa').selectOption('');
+    await expect(player.getByTestId('escuridao-do-mapa')).toHaveCount(0);
+  });
+
   test('no combate, o pin do turno fica destacado e o Ataque mostra a distância até o alvo', async ({
     seed,
     signIn,

@@ -707,6 +707,44 @@ select pg_temp.t('session_maps: o mapa da sessão tem exatamente uma origem (as 
 select pg_temp.t('session_maps: o Mestre soma um mapa dele à sessão', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, master_map_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','f0f0f0f0-0000-0000-0000-000000000002','Dele',10,8)$q$), 'rows=1');
 select pg_temp.t('session_maps: o Mestre não soma o mapa de outro Mestre', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, master_map_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','f0f0f0f0-0000-0000-0000-000000000003','De outro',10,8)$q$), 'error=42501');
 
+-- ======================= session_map_lights e a luz no pin =======================
+insert into public.session_maps (id, session_id, library_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-000000000020', '22222222-0000-0000-0000-000000000003', 'terreno-areia', 'Mapa das luzes', 10, 8);
+insert into public.session_participants (session_id, character_id, user_id) values
+  ('22222222-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000001', (select alice from who));
+insert into public.session_map_lights (id, map_id, col, row, bright_m, dim_m, label) values
+  ('eeeeeeee-0000-0000-0000-000000000020', 'cccccccc-0000-0000-0000-000000000020', 2, 3, 6, 6, 'Fogueira');
+select pg_temp.t('luzes: anon não lê',                    pg_temp.run_as(null, 'select * from public.session_map_lights'), 'error=42501');
+select pg_temp.t('luzes: estranho não lê',                pg_temp.run_as((select carol from who), 'select * from public.session_map_lights'), 'rows=0');
+select pg_temp.t('luzes: jogador da sessão lê',           pg_temp.run_as((select alice from who), 'select * from public.session_map_lights'), 'rows=1');
+select pg_temp.t('luzes: Mestre lê',                      pg_temp.run_as((select gm from who), 'select * from public.session_map_lights'), 'rows=1');
+select pg_temp.t('luzes: jogador não cria',               pg_temp.run_as((select alice from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m) values ('cccccccc-0000-0000-0000-000000000020',1,1,3,3)$q$), 'error=42501');
+select pg_temp.t('luzes: Mestre de outra sessão não cria aqui', pg_temp.run_as((select carol from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m) values ('cccccccc-0000-0000-0000-000000000020',1,1,3,3)$q$), 'error=42501');
+select pg_temp.t('luzes: Mestre cria uma luz com o rótulo padrão', pg_temp.val_as((select gm from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m) values ('cccccccc-0000-0000-0000-000000000020',1,1,3,3) returning label$q$), 'Luz');
+select pg_temp.t('luzes: o banco recusa luz fora das colunas',  pg_temp.run_as((select gm from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m) values ('cccccccc-0000-0000-0000-000000000020',10,1,3,3)$q$), 'error=23514');
+select pg_temp.t('luzes: o banco recusa luz fora das linhas',   pg_temp.run_as((select gm from who), $q$update public.session_map_lights set row = 8 where id = 'eeeeeeee-0000-0000-0000-000000000020'$q$), 'error=23514');
+select pg_temp.t('luzes: o banco recusa raio negativo',   pg_temp.run_as((select gm from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m) values ('cccccccc-0000-0000-0000-000000000020',1,1,-1,3)$q$), 'error=23514');
+select pg_temp.t('luzes: o banco recusa raio acima de 120 m', pg_temp.run_as((select gm from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m) values ('cccccccc-0000-0000-0000-000000000020',1,1,121,3)$q$), 'error=23514');
+select pg_temp.t('luzes: o banco recusa rótulo vazio',    pg_temp.run_as((select gm from who), $q$insert into public.session_map_lights (map_id, col, row, bright_m, dim_m, label) values ('cccccccc-0000-0000-0000-000000000020',1,1,3,3,'')$q$), 'error=23514');
+select pg_temp.t('luzes: Mestre move a luz',              pg_temp.val_as((select gm from who), $q$update public.session_map_lights set col = 5, row = 6 where id = 'eeeeeeee-0000-0000-0000-000000000020' returning col || ',' || row$q$), '5,6');
+select pg_temp.t('luzes: Mestre muda os raios',           pg_temp.val_as((select gm from who), $q$update public.session_map_lights set bright_m = 1.5, dim_m = 4.5 where id = 'eeeeeeee-0000-0000-0000-000000000020' returning bright_m || '/' || dim_m$q$), '1.5/4.5');
+select pg_temp.t('luzes: jogador não move',               pg_temp.run_as((select alice from who), $q$update public.session_map_lights set col = 5$q$), 'rows=0');
+select pg_temp.t('luzes: jogador não apaga',              pg_temp.run_as((select alice from who), $q$delete from public.session_map_lights$q$), 'rows=0');
+select pg_temp.t('luzes: Mestre tira a luz',              pg_temp.run_as((select gm from who), $q$delete from public.session_map_lights where id = 'eeeeeeee-0000-0000-0000-000000000020'$q$), 'rows=1');
+select pg_temp.t('luzes: apagar o mapa da sessão apaga as luzes', pg_temp.after_as((select gm from who), array[$q$delete from public.session_maps where id = 'cccccccc-0000-0000-0000-000000000020'$q$], $q$select count(*)::text from public.session_map_lights$q$), '0');
+
+insert into public.session_maps (id, session_id, library_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-000000000021', '22222222-0000-0000-0000-000000000003', 'terreno-areia', 'Mapa da luz no pin', 10, 8);
+insert into public.session_map_pins (id, map_id, character_id, col, row) values
+  ('eeeeeeee-0000-0000-0000-000000000021', 'cccccccc-0000-0000-0000-000000000021', '33333333-0000-0000-0000-000000000001', 2, 2);
+select pg_temp.t('luz no pin: o pin nasce sem luz',       pg_temp.val_as((select gm from who), $q$select coalesce(light_bright_m::text, 'nulo') from public.session_map_pins where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'nulo');
+select pg_temp.t('luz no pin: Mestre acende a luz do pin', pg_temp.val_as((select gm from who), $q$update public.session_map_pins set light_bright_m = 6, light_dim_m = 6 where id = 'eeeeeeee-0000-0000-0000-000000000021' returning light_bright_m || '/' || light_dim_m$q$), '6.0/6.0');
+select pg_temp.t('luz no pin: Mestre apaga a luz do pin', pg_temp.val_as((select gm from who), $q$update public.session_map_pins set light_bright_m = null, light_dim_m = null where id = 'eeeeeeee-0000-0000-0000-000000000021' returning coalesce(light_bright_m::text, 'nulo')$q$), 'nulo');
+select pg_temp.t('luz no pin: o banco recusa só um dos raios', pg_temp.run_as((select gm from who), $q$update public.session_map_pins set light_bright_m = 6 where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'error=23514');
+select pg_temp.t('luz no pin: o banco recusa raio acima de 120 m', pg_temp.run_as((select gm from who), $q$update public.session_map_pins set light_bright_m = 200, light_dim_m = 0 where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'error=23514');
+select pg_temp.t('luz no pin: jogador não acende',        pg_temp.run_as((select alice from who), $q$update public.session_map_pins set light_bright_m = 6, light_dim_m = 6 where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'rows=0');
+select pg_temp.t('luz no pin: jogador da sessão lê a luz do pin', pg_temp.val_as((select alice from who), $q$select coalesce(light_bright_m::text, 'nulo') from public.session_map_pins where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'nulo');
+
 -- ============================ resultado ============================
 do $$
 declare bad text; total int; ok int;
