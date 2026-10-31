@@ -218,6 +218,10 @@ Pausa de 8 horas no jogo; 1 por dia. Recupera todos os PV, metade dos Dados de V
 O dado da Vocação (d10 para Guerreiro e Caçador, d8 para Batedor e Sacerdote/Sábio). O personagem tem tantos quanto o seu nível; cada um gasto no Descanso Curto cura o valor rolado mais o modificador de CON, no mínimo 1 PV. Uma sessão nova devolve todos.
 _Avoid_: hit die, dado de PV
 
+**Bálsamo**:
+Item consumível que cura o resultado do dado do item (1d4; a Qualidade sobe o dado), só dentro do Descanso Curto e só no próprio personagem. O jogador rola o dado na mesa e digita o resultado. Não soma o modificador de CON e não tem limite por Descanso além da quantidade que o personagem carrega. Os Dados de Vida seguem sendo como o personagem escolhe quantos gastar.
+_Avoid_: poção, cura de combate
+
 **Sustento**:
 1 Ração e 1 Odre consumidos por personagem num Descanso Longo. Quem descansa sem Sustento acorda Exausto.
 _Avoid_: comida, provisões (como termo de regra)
