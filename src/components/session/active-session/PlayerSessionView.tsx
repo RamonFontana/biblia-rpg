@@ -280,6 +280,8 @@ export function PlayerSessionView({
           entities={entities}
           onCharacterPatch={(patch) => myCharacter && updateLocal('player', myCharacter.id, patch)}
           onOpenDice={onOpenDice}
+          restOpen={!!sessionData.short_rest_id}
+          onOpenRest={() => setPanel('descanso')}
         />
       </div>
 

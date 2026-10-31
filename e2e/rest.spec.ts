@@ -2,7 +2,7 @@ import { ABILITIES } from '../src/content/abilities';
 import { adminClient } from './support/admin';
 import { startCombat } from './support/combat';
 import { expect, test, type Seed, type SignIn } from './fixtures';
-import { openPanel, watchPlayers } from './support/ui';
+import { closePanel, openPanel, watchPlayers } from './support/ui';
 
 const SESSION_NAME = 'Invasão a Jericó';
 const GUARD = 'Guarda de Jericó';
@@ -368,5 +368,42 @@ test.describe('Bálsamo', () => {
     if (error) throw error;
     expect((data.stats as { current_pv: number }).current_pv).toBe(8);
     expect(data.character_items[0].quantity).toBe(1);
+  });
+});
+
+test.describe('Bálsamo na Hotbar e no Inventário', () => {
+  test('fora do Descanso Curto fica bloqueado; com o Descanso aberto o Usar leva ao Painel Descanso', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      stats: { pv: 20, current_pv: 5, ca: 11, faith: 50 },
+    });
+    await seed.giveItem(eliabe, 'balsamo', 2);
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await watchPlayers(master, 2);
+
+    await player.getByRole('tab', { name: /^Itens/ }).click();
+    await player.getByRole('button', { name: /^Bálsamo Curativo/ }).click();
+    const card = player.getByRole('dialog');
+    await expect(card.getByText('Só no Descanso Curto.')).toBeVisible();
+    await expect(card.getByRole('button', { name: 'Usar' })).toBeDisabled();
+    await card.getByRole('button', { name: 'Fechar' }).click();
+
+    await openPanel(player, 'Inventário');
+    await expect(player.getByText('Só no Descanso Curto: use no painel Descanso.')).toBeVisible();
+    await closePanel(player);
+
+    await openPanel(master, 'Descanso');
+    await master.getByRole('button', { name: 'Abrir Descanso Curto' }).click();
+    await player.getByRole('button', { name: /^Bálsamo Curativo/ }).click();
+    await player.getByRole('dialog').getByRole('button', { name: 'Usar' }).click();
+    await expect(player.getByRole('dialog', { name: 'Descanso' })).toBeVisible();
+    await expect(player.getByText('Bálsamo: 2')).toBeVisible();
   });
 });

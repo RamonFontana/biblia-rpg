@@ -779,6 +779,15 @@ describe('visão do Mestre', () => {
       expect(hasStub('PlayerHotbar')).toBe(false);
     });
 
+    it('a Hotbar do NPC sabe do Descanso Curto e leva ao Painel Descanso do Mestre', async () => {
+      h.session = { ...baseSession, short_rest_id: 'sr1', short_rest_opened_by: 'master' };
+      await renderPage();
+      fireEvent.change(screen.getByLabelText('Agir como'), { target: { value: 'n2' } });
+      expect(prop('PlayerHotbar', 'restOpen')).toBe(true);
+      act(() => (prop('PlayerHotbar', 'onOpenRest') as () => void)());
+      expect(screen.getByRole('dialog', { name: 'Descanso' })).toBeInTheDocument();
+    });
+
     it('o que a Hotbar grava na ficha do NPC chega à tela', async () => {
       await renderPage();
       fireEvent.change(screen.getByLabelText('Agir como'), { target: { value: 'n2' } });
@@ -955,6 +964,17 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
     expect(props('ShortRestCard')).toMatchObject({ role: 'player', sessionId: 's1' });
     expect(prop('PlayerRestIndicator', 'sessionData')).toBeTruthy();
     expect(hasStub('SessionRestControls')).toBe(false);
+  });
+
+  it('a Hotbar sabe se o Descanso Curto está aberto e leva ao Painel Descanso', async () => {
+    await renderPage();
+    expect(prop('PlayerHotbar', 'restOpen')).toBe(false);
+    cleanup();
+    h.session = { ...baseSession, short_rest_id: 'sr1', short_rest_opened_by: 'master' };
+    await renderPage();
+    expect(prop('PlayerHotbar', 'restOpen')).toBe(true);
+    act(() => (prop('PlayerHotbar', 'onOpenRest') as () => void)());
+    expect(screen.getByRole('dialog', { name: 'Descanso' })).toBeInTheDocument();
   });
 
   it('Histórico abre o histórico do combate', async () => {

@@ -10,6 +10,7 @@ import type { ConsumableInventoryItem, InventoryItem } from '@/types/inventory';
 import { canEquipItem } from '@/lib/equipmentUtils';
 import { ITEMS_DB } from '@/content/items';
 import { CONDITIONS } from '@/content/conditions';
+import { isRestOnlyItem } from '@/domain/balm';
 import { normalizeHealingEffects } from '@/domain/consumables';
 import { isAmmunitionItem } from '@/domain/ammo';
 import { formatItemArmorClass } from '@/domain/armorClass';
@@ -528,11 +529,18 @@ export function InventoryList({
                                   items: { ...item.items, effects: normalizedEffects },
                                 })
                               }
-                              disabled={isUpdating || item.quantity <= 0}
+                              disabled={
+                                isUpdating || item.quantity <= 0 || isRestOnlyItem(item.items?.slug)
+                              }
                               className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
                             >
                               Usar
                             </button>
+                          )}
+                          {isRestOnlyItem(item.items?.slug) && (
+                            <span className="text-xs text-amber-400">
+                              Só no Descanso Curto: use no painel Descanso.
+                            </span>
                           )}
                         </div>
                       )}

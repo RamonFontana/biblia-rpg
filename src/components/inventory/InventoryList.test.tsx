@@ -178,6 +178,30 @@ describe('InventoryList: peso e consumível', () => {
     );
   });
 
+  it('o Bálsamo não se usa daqui: o botão fica desabilitado e diz onde usar', () => {
+    const onUseConsumable = vi.fn();
+    const item = withItems({
+      slug: 'balsamo',
+      name: 'Bálsamo Curativo / Óleo',
+      is_consumable: true,
+      description: 'Cura 1d4 HP em Descanso',
+    });
+    render(
+      <InventoryList
+        inventoryItems={[item]}
+        equipment={null}
+        onEquip={vi.fn()}
+        onUseConsumable={onUseConsumable}
+        isUpdating={false}
+      />,
+    );
+    const use = screen.getByRole('button', { name: 'Usar' });
+    expect(use).toBeDisabled();
+    expect(screen.getByText('Só no Descanso Curto: use no painel Descanso.')).toBeInTheDocument();
+    fireEvent.click(use);
+    expect(onUseConsumable).not.toHaveBeenCalled();
+  });
+
   it('o consumível sem unidades não pode ser usado', () => {
     renderList(withItems({ is_consumable: true }, { quantity: 0 }));
     expect(screen.getByRole('button', { name: 'Usar' })).toBeDisabled();

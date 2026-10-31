@@ -556,9 +556,9 @@ describe('PlayerHotbar: a aba Itens', () => {
     level: 1,
     items,
   });
-  const BALSAMO = owned('ci1', 2, {
-    slug: 'balsamo',
-    name: 'Bálsamo de Gileade',
+  const UNGUENTO = owned('ci1', 2, {
+    slug: 'unguento',
+    name: 'Unguento de Teste',
     description: 'Cura 2 PV. 1 dia de nutrição',
     is_consumable: true,
     effects: {},
@@ -566,15 +566,21 @@ describe('PlayerHotbar: a aba Itens', () => {
   const FLECHAS = owned('ci-fl', 12, { slug: 'flechas', name: 'Flecha', is_consumable: true });
   const ARCO = owned('ci-bow', 1, { slug: 'arco_curto', name: 'Arco Curto', is_consumable: false });
   const ESPADA = owned('ci-sw', 1, { slug: 'espada', name: 'Espada', is_consumable: false });
+  const BALSAMO = owned('ci-balm', 2, {
+    slug: 'balsamo',
+    name: 'Bálsamo Curativo / Óleo',
+    description: 'Cura 1d4 HP em Descanso',
+    is_consumable: true,
+  });
   const withItems = (items: unknown[], over: Partial<Character> = {}) =>
     sheet({ character_items: items, ...over } as Partial<Character>);
   const goToItems = () => fireEvent.click(screen.getByRole('tab', { name: /^Itens/ }));
 
   it('só os consumíveis que não são munição entram, com a quantidade', () => {
-    view(withItems([BALSAMO, FLECHAS, ESPADA]));
+    view(withItems([UNGUENTO, FLECHAS, ESPADA]));
     goToItems();
     expect(
-      screen.getByRole('button', { name: 'Bálsamo de Gileade, 2 unidades' }),
+      screen.getByRole('button', { name: 'Unguento de Teste, 2 unidades' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Flecha/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Espada/ })).not.toBeInTheDocument();
@@ -597,9 +603,9 @@ describe('PlayerHotbar: a aba Itens', () => {
   });
 
   it('usar o consumível gasta pelo caminho do Inventário, com a cura já resolvida', async () => {
-    view(withItems([BALSAMO]));
+    view(withItems([UNGUENTO]));
     goToItems();
-    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Unguento de Teste/ }));
     await pressUse();
     expect(h.consumeInventoryItem).toHaveBeenCalledWith({
       characterId: 'c1',
@@ -612,21 +618,21 @@ describe('PlayerHotbar: a aba Itens', () => {
   });
 
   it('avisa a tela da quantidade nova e da cura aplicada', async () => {
-    view(withItems([BALSAMO, ESPADA]));
+    view(withItems([UNGUENTO, ESPADA]));
     goToItems();
-    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Unguento de Teste/ }));
     await pressUse();
     expect(onCharacterPatch).toHaveBeenCalledWith({
-      character_items: [{ ...BALSAMO, quantity: 1 }, ESPADA],
+      character_items: [{ ...UNGUENTO, quantity: 1 }, ESPADA],
       stats: { ...sheet().stats, current_pv: 11 },
     });
   });
 
   it('a última unidade sai da lista', async () => {
-    const last = { ...BALSAMO, quantity: 1 };
+    const last = { ...UNGUENTO, quantity: 1 };
     view(withItems([last, ESPADA]));
     goToItems();
-    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Unguento de Teste/ }));
     await pressUse();
     expect(onCharacterPatch).toHaveBeenCalledWith(
       expect.objectContaining({ character_items: [ESPADA] }),
@@ -650,9 +656,9 @@ describe('PlayerHotbar: a aba Itens', () => {
   });
 
   it('o NPC jogável consome pela ficha de NPC', async () => {
-    view(withItems([BALSAMO], { is_npc: true } as Partial<Character>));
+    view(withItems([UNGUENTO], { is_npc: true } as Partial<Character>));
     goToItems();
-    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Unguento de Teste/ }));
     await pressUse();
     expect(h.consumeInventoryItem).toHaveBeenCalledWith(
       expect.objectContaining({ isPlayable: false }),
@@ -661,9 +667,9 @@ describe('PlayerHotbar: a aba Itens', () => {
 
   it('a falha ao consumir é registrada e a tela não é avisada', async () => {
     h.consumeInventoryItem.mockRejectedValueOnce(new Error('sem rede'));
-    view(withItems([BALSAMO]));
+    view(withItems([UNGUENTO]));
     goToItems();
-    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Unguento de Teste/ }));
     await pressUse();
     expect(console.error).toHaveBeenCalledWith('Error using item:', expect.any(Error));
     expect(onCharacterPatch).not.toHaveBeenCalled();
@@ -671,9 +677,50 @@ describe('PlayerHotbar: a aba Itens', () => {
 
   it('o consumível vale dentro e fora do combate', () => {
     startCombat([participant()]);
-    view(withItems([BALSAMO]));
+    view(withItems([UNGUENTO]));
     goToItems();
-    fireEvent.click(screen.getByRole('button', { name: /^Bálsamo de Gileade/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Unguento de Teste/ }));
     expect(within(card()).getByRole('button', { name: 'Usar' })).toBeEnabled();
+  });
+
+  describe('o Bálsamo, só no Descanso Curto', () => {
+    const viewBalm = (props: { restOpen?: boolean; hp?: number } = {}) => {
+      const onOpenRest = vi.fn();
+      render(
+        <PlayerHotbar
+          character={withItems([BALSAMO], {
+            stats: { pv: 12, current_pv: props.hp ?? 9, ca: 11, faith: 50, current_faith: 40 },
+          })}
+          entities={entities}
+          onCharacterPatch={onCharacterPatch}
+          onOpenDice={onOpenDice}
+          restOpen={props.restOpen ?? false}
+          onOpenRest={onOpenRest}
+        />,
+      );
+      goToItems();
+      fireEvent.click(screen.getByRole('button', { name: /^Bálsamo Curativo/ }));
+      return onOpenRest;
+    };
+
+    it('fora do Descanso Curto, o Cartão mostra o motivo e o Usar fica desabilitado', () => {
+      viewBalm({ restOpen: false });
+      expect(within(card()).getByText('Só no Descanso Curto.')).toBeInTheDocument();
+      expect(within(card()).getByRole('button', { name: 'Usar' })).toBeDisabled();
+    });
+
+    it('com o Descanso aberto, o Usar leva ao Painel Descanso e não gasta nada', async () => {
+      const onOpenRest = viewBalm({ restOpen: true });
+      await pressUse();
+      expect(onOpenRest).toHaveBeenCalledTimes(1);
+      expect(h.consumeInventoryItem).not.toHaveBeenCalled();
+      expect(onCharacterPatch).not.toHaveBeenCalled();
+    });
+
+    it('com PV cheio, o Cartão mostra o motivo e bloqueia', () => {
+      viewBalm({ restOpen: true, hp: 12 });
+      expect(within(card()).getByText('PV já está no máximo.')).toBeInTheDocument();
+      expect(within(card()).getByRole('button', { name: 'Usar' })).toBeDisabled();
+    });
   });
 });

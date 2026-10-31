@@ -1,9 +1,10 @@
 // CARACTERIZAÇÃO: regras de cura e Fé dos consumíveis, extraídas de InventoryList e
 // useUpdateNPCInventory sem alteração de comportamento.
-// Decisões: ROADMAP.md, Onda 2 (bloco B): Odre e Ração viram Sustento e não curam; o Bálsamo
-// cura 1d4 PV, rolado pelo jogador na mesa (ADR 0001).
-// Problemas conhecidos: o dado de cura é exibido mas nunca rolado; o texto da descrição do item
-// vira regra de cura (a descrição do catálogo é a fonte).
+// Decisões: ROADMAP.md, Onda 2 (bloco B): Odre e Ração viram Sustento e não curam. O Bálsamo não
+// passa mais por aqui para curar: só se usa no Descanso Curto, com o dado rolado pelo jogador
+// (ADR 0001), em `domain/balm.ts`; esta função só dá o dado dele (com a Qualidade).
+// Problema conhecido: o texto da descrição do item vira regra de cura (a descrição do catálogo é
+// a fonte).
 import { addFaith } from '@/domain/faith';
 import { applyHpDelta, getCurrentPv, getMaxPv, type VitalsLike } from '@/domain/vitals';
 

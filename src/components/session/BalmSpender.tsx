@@ -6,22 +6,17 @@ import {
   balmUseBlockMessage,
   getBalmDice,
   getBalmUseBlock,
+  isRestOnlyItem,
   healWithBalm,
   isValidBalmRoll,
   rollBalm,
 } from '@/domain/balm';
 import { isDying } from '@/domain/deathSaves';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
-import { ITEMS_DB } from '@/content/items';
 import type { CharacterStats } from '@/features/character-creation/types';
 import { systemRng } from '@/lib/systemRng';
 import type { CombatInventoryItem, InventoryCatalogItem } from '@/types/inventory';
 import type { SpenderCharacter } from './HitDiceSpender';
-
-/** Os itens que só valem no Descanso Curto (o Bálsamo), pelo slug do conteúdo. */
-const REST_ITEM_SLUGS = new Set(
-  ITEMS_DB.filter((item) => item.usableOnlyIn === 'short_rest').map((item) => item.id),
-);
 
 const catalogOf = (owned: CombatInventoryItem): InventoryCatalogItem | undefined =>
   Array.isArray(owned.items) ? owned.items[0] : (owned.items ?? undefined);
@@ -47,7 +42,7 @@ export function BalmSpender({ character, restOpen, onSpent }: BalmSpenderProps) 
 
   const items = character.character_items ?? [];
   const owned = items.find(
-    (entry) => REST_ITEM_SLUGS.has(catalogOf(entry)?.slug ?? '') && (entry.quantity ?? 0) > 0,
+    (entry) => isRestOnlyItem(catalogOf(entry)?.slug) && (entry.quantity ?? 0) > 0,
   );
   const quantity = owned?.quantity ?? 0;
   const dice = owned ? getBalmDice(catalogOf(owned)?.description ?? '', owned.level) : null;

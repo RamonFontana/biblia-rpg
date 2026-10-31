@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Hotbar: Bálsamo bloqueado com motivo; Usar do Cartão leva ao Painel Descanso
-- [ ] Inventário: botão desabilitado com motivo
-- [ ] Caminho genérico de consumir não trata mais itens de uso só no Descanso; teste de caracterização de `consumables` atualizado em commit `fix:` separado
-- [ ] Testes de componente (`PlayerHotbar`, inventário) e E2E: ao encerrar o Descanso o item volta bloqueado
-- [ ] `npm run check` verde
+- [x] Hotbar: Bálsamo bloqueado com motivo; Usar do Cartão leva ao Painel Descanso
+- [x] Inventário: botão desabilitado com motivo
+- [x] Caminho genérico de consumir não trata mais itens de uso só no Descanso; teste de caracterização de `consumables` atualizado em commit `fix:` separado
+- [x] Testes de componente (`PlayerHotbar`, inventário) e E2E: ao encerrar o Descanso o item volta bloqueado
+- [x] `npm run check` verde
