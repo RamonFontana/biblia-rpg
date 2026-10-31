@@ -187,3 +187,20 @@ export const kitSchema = z.strictObject({
 });
 
 export type Kit = z.infer<typeof kitSchema>;
+
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+/**
+ * Mapa da Biblioteca de mapas (CONTEXT.md). O terreno liso é gerado pelo app: uma cor de fundo e a
+ * cor dos pontos da textura, sem arquivo de imagem. O `id` é gravado em `session_maps.library_id`.
+ */
+export const mapLibrarySchema = z.strictObject({
+  id: z.string().regex(/^terreno-[a-z0-9-]+$/),
+  name: z.string().min(1),
+  kind: z.literal('terreno'),
+  fill: hexColor,
+  speck: hexColor,
+  license: z.strictObject({ source: z.string().min(1), license: z.string().min(1) }),
+});
+
+export type MapLibraryEntry = z.infer<typeof mapLibrarySchema>;
