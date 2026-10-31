@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration: a leitura de `session_npcs` passa a entregar a linha a todo participante da sessão (ADR 0011); `rls.sql` atualizado.
-- [ ] O Oculto vale por Retrato na sessão, usando a visibilidade que inimigo, NPC jogável e NPC simples já têm; gravar o primeiro pin de um inimigo na sessão o deixa Oculto.
-- [ ] A cena do mapa e as listas de iniciativa, feed e alvos filtram o Oculto para jogador e espectador; testes de unidade da cena.
-- [ ] Rótulos "escondido" viram "Oculto"; os nomes acessíveis usados no E2E são atualizados.
-- [ ] Remove a aresta "NPC escondido em tempo real" do ROADMAP.
-- [ ] E2E: o inimigo posto no mapa não aparece para o jogador até ser revelado; o NPC ocultado some sem recarregar.
+- [x] Migration: a leitura de `session_npcs` passa a entregar a linha a todo participante da sessão (ADR 0011); `rls.sql` atualizado.
+- [x] O Oculto vale por Retrato na sessão, usando a visibilidade que inimigo, NPC jogável e NPC simples já têm; gravar o primeiro pin de um inimigo na sessão o deixa Oculto.
+- [x] A cena do mapa e as listas de iniciativa, feed e alvos filtram o Oculto para jogador e espectador; testes de unidade da cena.
+- [x] Rótulos "escondido" viram "Oculto"; os nomes acessíveis usados no E2E são atualizados.
+- [x] Remove a aresta "NPC escondido em tempo real" do ROADMAP.
+- [x] E2E: o inimigo posto no mapa não aparece para o jogador até ser revelado; o NPC ocultado some sem recarregar.

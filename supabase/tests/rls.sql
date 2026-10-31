@@ -630,6 +630,38 @@ select pg_temp.t('pins: jogador não apaga o pin', pg_temp.run_as((select alice 
 select pg_temp.t('pins: Mestre devolve o Retrato à Bandeja', pg_temp.run_as((select gm from who), $q$delete from public.session_map_pins where id = 'eeeeeeee-0000-0000-0000-000000000001'$q$), 'rows=1');
 select pg_temp.t('pins: apagar o mapa apaga os pins dele', pg_temp.after_as((select gm from who), array[$q$delete from public.session_maps where id = 'cccccccc-0000-0000-0000-000000000003'$q$], $q$select count(*)::text from public.session_map_pins$q$), '0');
 
+-- ================== Oculto: session_npcs e o inimigo no primeiro pin ==================
+insert into public.session_npcs (id, session_id, name, is_visible) values
+  ('dddddddd-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000001', 'Espião', false);
+insert into public.session_maps (id, session_id, library_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000001', 'terreno-areia', 'Mapa A', 10, 8),
+  ('cccccccc-0000-0000-0000-000000000005', '22222222-0000-0000-0000-000000000001', 'terreno-pedra', 'Mapa B', 10, 8);
+select pg_temp.t('session_npcs: anon não lê',            pg_temp.run_as(null, 'select * from public.session_npcs'), 'rows=0');
+select pg_temp.t('session_npcs: estranho não lê',        pg_temp.run_as((select carol from who), $q$select * from public.session_npcs where session_id = '22222222-0000-0000-0000-000000000001'$q$), 'rows=0');
+select pg_temp.t('session_npcs: jogador lê também o NPC oculto', pg_temp.run_as((select alice from who), $q$select * from public.session_npcs where session_id = '22222222-0000-0000-0000-000000000001'$q$), 'rows=2');
+select pg_temp.t('session_npcs: o Mestre lê todos',      pg_temp.run_as((select gm from who), $q$select * from public.session_npcs where session_id = '22222222-0000-0000-0000-000000000001'$q$), 'rows=2');
+select pg_temp.t('session_npcs: jogador não oculta nem revela', pg_temp.run_as((select alice from who), $q$update public.session_npcs set is_visible = true where id = 'dddddddd-0000-0000-0000-000000000002'$q$), 'rows=0');
+select pg_temp.t('session_npcs: o Mestre revela o NPC', pg_temp.run_as((select gm from who), $q$update public.session_npcs set is_visible = true where id = 'dddddddd-0000-0000-0000-000000000002'$q$), 'rows=1');
+
+-- O inimigo (ficha 33333333-...-07, do Mestre) entra Oculto no primeiro pin da sessão.
+insert into public.session_participants (session_id, character_id, user_id) values
+  ('22222222-0000-0000-0000-000000000001', '33333333-0000-0000-0000-000000000007', (select gm from who));
+select pg_temp.t('Oculto: o inimigo começa visível', pg_temp.val_as((select gm from who), $q$select is_visible::text from public.characters where id = '33333333-0000-0000-0000-000000000007'$q$), 'true');
+select pg_temp.t('Oculto: o primeiro pin do inimigo o oculta', pg_temp.after_as((select gm from who), array[$q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000004','33333333-0000-0000-0000-000000000007',1,1)$q$], $q$select is_visible::text from public.characters where id = '33333333-0000-0000-0000-000000000007'$q$), 'false');
+select pg_temp.t('Oculto: o pin de um jogador não o oculta', pg_temp.after_as((select gm from who), array[$q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000004','33333333-0000-0000-0000-000000000002',1,1)$q$], $q$select is_visible::text from public.characters where id = '33333333-0000-0000-0000-000000000002'$q$), 'true');
+select pg_temp.t('Oculto: o pin de um NPC simples não mexe em ficha nenhuma', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, npc_id, col, row) values ('cccccccc-0000-0000-0000-000000000004','dddddddd-0000-0000-0000-000000000002',2,2)$q$), 'rows=1');
+select pg_temp.t('Oculto: revelado, o segundo pin dele em outro mapa não o oculta de novo', pg_temp.after_as((select gm from who), array[
+  $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000004','33333333-0000-0000-0000-000000000007',1,1)$q$,
+  $q$update public.characters set is_visible = true where id = '33333333-0000-0000-0000-000000000007'$q$,
+  $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000005','33333333-0000-0000-0000-000000000007',3,3)$q$
+], $q$select is_visible::text from public.characters where id = '33333333-0000-0000-0000-000000000007'$q$), 'true');
+select pg_temp.t('Oculto: mover o pin (upsert) não o oculta de novo', pg_temp.after_as((select gm from who), array[
+  $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000004','33333333-0000-0000-0000-000000000007',1,1)$q$,
+  $q$update public.characters set is_visible = true where id = '33333333-0000-0000-0000-000000000007'$q$,
+  $q$update public.session_map_pins set col = 5 where character_id = '33333333-0000-0000-0000-000000000007'$q$
+], $q$select is_visible::text from public.characters where id = '33333333-0000-0000-0000-000000000007'$q$), 'true');
+select pg_temp.t('Oculto: a função do gatilho não se chama direto', pg_temp.run_as((select gm from who), 'select public.hide_enemy_on_first_pin()'), 'error=0A000');
+
 -- ============================ resultado ============================
 do $$
 declare bad text; total int; ok int;

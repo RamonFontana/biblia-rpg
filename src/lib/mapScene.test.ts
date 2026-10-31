@@ -181,3 +181,28 @@ describe('distancesFrom: a distância até cada pin', () => {
     expect(distancesFrom(s, 'c1')).toEqual({});
   });
 });
+
+describe('buildMapScene: o inimigo Oculto', () => {
+  const enemies = [ch('e1', { is_enemy: true, is_visible: false }), ch('e2', { is_enemy: true })];
+  const pins = [
+    pin({ character_id: 'e1', col: 4, row: 4 }),
+    pin({ character_id: 'e2', col: 5, row: 5 }),
+  ];
+
+  it('o jogador e o espectador não veem o pin do inimigo Oculto', () => {
+    for (const viewer of ['player', 'spectator'] as const) {
+      const s = scene({ viewer, enemies, pins });
+      expect(s.pins.map((p) => p.retrato.id)).toEqual(['e2']);
+    }
+  });
+
+  it('o Mestre vê o pin do Oculto, marcado', () => {
+    const s = scene({ viewer: 'gm', enemies, pins });
+    expect(s.pins.find((p) => p.retrato.id === 'e1')?.retrato.hidden).toBe(true);
+  });
+
+  it('o Oculto sem pin espera na Bandeja do Mestre, marcado', () => {
+    const s = scene({ viewer: 'gm', enemies, pins: [] });
+    expect(s.tray.find((r) => r.id === 'e1')?.hidden).toBe(true);
+  });
+});

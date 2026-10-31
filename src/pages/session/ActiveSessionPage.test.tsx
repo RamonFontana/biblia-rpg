@@ -13,6 +13,7 @@ const h = vi.hoisted(() => ({
   },
   session: null as null | Record<string, unknown>,
   maps: [] as unknown[],
+  setRetratoHidden: vi.fn(),
   pins: [] as unknown[],
   movePin: vi.fn(),
   sessionListener: undefined as undefined | ((s: Record<string, unknown>) => void),
@@ -54,6 +55,7 @@ vi.mock('@/store/authStore', () => ({ useAuthStore: () => ({ user: h.user }) }))
 vi.mock('@/store/combatStore', () => ({ useCombatStore: () => h.combat }));
 vi.mock('@/hooks/useMapPins', () => ({ useMapPins: () => ({ pins: h.pins, move: h.movePin }) }));
 vi.mock('@/hooks/useSessionMaps', () => ({ useSessionMaps: () => h.maps }));
+vi.mock('@/services/visibilityService', () => ({ setRetratoHidden: h.setRetratoHidden }));
 vi.mock('@/data-access/maps', () => ({
   addSessionMap: vi.fn(),
   updateSessionMap: vi.fn(),
@@ -1104,6 +1106,68 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
       expect(hasStub('AttackLog')).toBe(true);
     });
 
+    describe('o Oculto: o que o jogador não vê', () => {
+      const hideEnemy = (isVisible: boolean) => {
+        h.roster.enemies = [
+          { id: 'e1', name: 'Filisteu', is_visible: isVisible, stats: { pv: 12, current_pv: 9 } },
+        ];
+      };
+      const log = () => {
+        h.combat.attacks = [
+          {
+            id: 'a1',
+            attacker_participant_id: 'p-c1',
+            target_participant_id: 'p-e1',
+            created_at: '2026-11-01T10:00:00Z',
+          },
+          {
+            id: 'a2',
+            attacker_participant_id: 'p-c1',
+            target_participant_id: 'p-c2',
+            created_at: '2026-11-01T10:01:00Z',
+          },
+          {
+            id: 'a3',
+            attacker_participant_id: 'p-e1',
+            target_participant_id: 'p-c1',
+            created_at: '2026-11-01T10:02:00Z',
+          },
+        ];
+      };
+
+      it('o inimigo Oculto some do Palco, da iniciativa, da lista de inimigos e dos alvos', async () => {
+        hideEnemy(false);
+        inCombat();
+        await renderPage();
+        expect(retratoIds()).toEqual(['c1', 'c2', 'n1']);
+        expect(pluck(prop('InitiativeStrip', 'entries'), 'id')).toEqual(['c1', 'c2']);
+        expect(prop('PlayerCombatView', 'enemies')).toEqual([]);
+        expect(pluck(prop('PlayerCombatView', 'entities'), 'id')).not.toContain('e1');
+      });
+
+      it('o feed e o histórico não citam quem está Oculto', async () => {
+        hideEnemy(false);
+        inCombat();
+        log();
+        await renderPage();
+        expect(pluck(prop('CombatFeed', 'attacks'), 'id')).toEqual(['a2']);
+      });
+
+      it('revelado, o inimigo volta a tudo isso sem recarregar', async () => {
+        hideEnemy(false);
+        inCombat();
+        log();
+        await renderPage();
+        expect(retratoIds()).not.toContain('e1');
+        hideEnemy(true);
+        cleanup();
+        await renderPage();
+        expect(retratoIds()).toContain('e1');
+        expect(pluck(prop('InitiativeStrip', 'entries'), 'id')).toContain('e1');
+        expect(pluck(prop('CombatFeed', 'attacks'), 'id')).toEqual(['a1', 'a2', 'a3']);
+      });
+    });
+
     it('o inimigo só aparece em combate', async () => {
       inCombat();
       await renderPage();
@@ -1511,6 +1575,44 @@ describe('o Mapa atual no Palco', () => {
       });
     });
 
+    describe('o Mestre oculta e revela', () => {
+      beforeEach(() => {
+        asGm();
+        h.setRetratoHidden.mockReset().mockResolvedValue(undefined);
+      });
+
+      it('revelar um NPC jogável Oculto: grava a marca e atualiza a tela na hora', async () => {
+        h.pins = [pinOf({ character_id: 'n2', col: 1, row: 1 })];
+        await renderPage();
+        fireEvent.click(screen.getByRole('button', { name: /^Guarda, .*oculto$/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Revelar Guarda' }));
+        expect(h.roster.updateLocal).toHaveBeenCalledWith('npc', 'n2', { is_visible: true });
+        expect(h.setRetratoHidden).toHaveBeenCalledWith({ kind: 'character', id: 'n2' }, false);
+      });
+
+      it('ocultar um inimigo visível', async () => {
+        h.pins = [pinOf({ character_id: 'e1', col: 1, row: 1 })];
+        await renderPage();
+        fireEvent.click(screen.getByRole('button', { name: /^Filisteu, / }));
+        fireEvent.click(screen.getByRole('button', { name: 'Ocultar Filisteu' }));
+        expect(h.roster.updateLocal).toHaveBeenCalledWith('enemy', 'e1', { is_visible: false });
+        expect(h.setRetratoHidden).toHaveBeenCalledWith({ kind: 'character', id: 'e1' }, true);
+      });
+
+      it('se a gravação falha, a tela volta ao que era', async () => {
+        h.setRetratoHidden.mockRejectedValue(new Error('falhou'));
+        h.pins = [pinOf({ character_id: 'e1', col: 1, row: 1 })];
+        await renderPage();
+        fireEvent.click(screen.getByRole('button', { name: /^Filisteu, / }));
+        fireEvent.click(screen.getByRole('button', { name: 'Ocultar Filisteu' }));
+        await waitFor(() =>
+          expect(h.roster.updateLocal).toHaveBeenLastCalledWith('enemy', 'e1', {
+            is_visible: true,
+          }),
+        );
+      });
+    });
+
     it('o Mestre vê a Bandeja com quem ainda não tem pin e arrasta pelo mapa', async () => {
       asGm();
       h.pins = [pinOf({ character_id: 'c1', col: 3, row: 2 })];
@@ -1582,7 +1684,7 @@ describe('visão do jogador e do espectador', () => {
     await renderPage();
     expect(props('PlayerCombatView')).toMatchObject({ isLoading: false });
     expect(prop('PlayerCombatView', 'character')).toMatchObject({ id: 'c1' });
-    expect(prop('PlayerCombatView', 'enemies')).toBe(h.roster.enemies);
+    expect(prop('PlayerCombatView', 'enemies')).toEqual(h.roster.enemies);
   });
 
   describe('o espectador (ficha excluída): moldura só de leitura', () => {

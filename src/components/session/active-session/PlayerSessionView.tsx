@@ -19,7 +19,8 @@ import type { SessionMap } from '@/data-access/maps';
 import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard, type RetratoAttack } from '@/components/session/palco/RetratoCard';
-import { buildRetratos, type Retrato } from '@/lib/retratos';
+import { buildRetratos, hiddenEntityIds, type Retrato } from '@/lib/retratos';
+import { withoutHiddenLog } from '@/lib/oculto';
 import { buildMapScene, distancesFrom } from '@/lib/mapScene';
 import { useMapPins } from '@/hooks/useMapPins';
 import { DockRail, type DockItem } from './DockRail';
@@ -120,7 +121,21 @@ export function PlayerSessionView({
   const [attackTargetId, setAttackTargetId] = useState<string | undefined>(undefined);
   const { activeCombat, attacks, abilityUses, currentTurnParticipant, participants } =
     useCombatStore();
-  const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
+  // O Oculto some de tudo o que o jogador vê: mapa, iniciativa, feed, histórico, alvos e lista de
+  // inimigos (ADR 0011). O Mestre decide quando revelar.
+  const hidden = hiddenEntityIds(npcs, enemies);
+  const shownEnemies = enemies.filter((enemy) => !hidden.has(enemy.id));
+  const entities = buildCombatEntities({
+    playerCharacters,
+    npcs: npcs.filter((npc) => !hidden.has(npc.id)),
+    enemies: shownEnemies,
+  });
+  const log = withoutHiddenLog({
+    attacks,
+    abilityUses,
+    participants,
+    hiddenEntityIds: hidden,
+  });
   const turn =
     hasActiveCombat && currentTurnParticipant
       ? {
@@ -155,16 +170,18 @@ export function PlayerSessionView({
     retratos.find((r) => r.id === retratoId) ??
     scene.pins.find((pin) => pin.retrato.id === retratoId)?.retrato;
   const me = retratos.find((r) => r.isMe);
-  const initiative = participants.map((p) => {
-    const retrato = retratos.find((r) => r.id === p.entity_id);
-    return {
-      id: p.entity_id,
-      name: entities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
-      imageUrl: retrato?.imageUrl,
-      isMe: p.entity_id === myCharacter?.id,
-      down: p.hp_current <= 0,
-    };
-  });
+  const initiative = participants
+    .filter((p) => !hidden.has(p.entity_id))
+    .map((p) => {
+      const retrato = retratos.find((r) => r.id === p.entity_id);
+      return {
+        id: p.entity_id,
+        name: entities.find((e) => e.id === p.entity_id)?.name ?? 'Inimigo',
+        imageUrl: retrato?.imageUrl,
+        isMe: p.entity_id === myCharacter?.id,
+        down: p.hp_current <= 0,
+      };
+    });
 
   // Um Teste pendente do jogador bloqueia a troca com ele (como na lista de participantes).
   const isBusyWithTest = (userId: string | undefined) =>
@@ -260,8 +277,8 @@ export function PlayerSessionView({
                 round={activeCombat?.round_number ?? 1}
               />
               <CombatFeed
-                attacks={attacks}
-                abilityUses={abilityUses}
+                attacks={log.attacks}
+                abilityUses={log.abilityUses}
                 onOpen={() => {
                   setRetratoId(null);
                   setPanel('historico');
@@ -297,7 +314,7 @@ export function PlayerSessionView({
             >
               <PlayerCombatView
                 character={myCharacter}
-                enemies={enemies}
+                enemies={shownEnemies}
                 isLoading={isCharactersLoading}
                 entities={entities}
                 distances={distances}
@@ -385,7 +402,7 @@ export function PlayerSessionView({
             testResults={testResults}
           />
         )}
-        {panel === 'historico' && <AttackLog attacks={attacks} abilityUses={abilityUses} />}
+        {panel === 'historico' && <AttackLog attacks={log.attacks} abilityUses={log.abilityUses} />}
         {panel === 'descanso' && (
           <div className="space-y-4">
             <ShortRestCard

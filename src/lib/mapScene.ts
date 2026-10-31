@@ -33,9 +33,9 @@ export interface MapScene {
 export const pinRetratoId = (pin: Pick<PinRow, 'character_id' | 'npc_id'>): string | null =>
   pin.character_id ?? pin.npc_id;
 
-/** O nome acessível de um Retrato no mapa: nome, PV e se está caído ou escondido. */
+/** O nome acessível de um Retrato no mapa: nome, PV e se está caído ou Oculto. */
 export const pinLabel = (retrato: Retrato): string =>
-  `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}${retrato.hidden ? ', escondido' : ''}`;
+  `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}${retrato.hidden ? ', oculto' : ''}`;
 
 /** A que coluna do pin o Retrato se liga: o NPC simples é uma linha própria; o resto é uma ficha. */
 export const pinTargetOf = (retrato: Retrato): PinTarget =>
@@ -43,7 +43,7 @@ export const pinTargetOf = (retrato: Retrato): PinTarget =>
     ? { kind: 'npc', id: retrato.id }
     : { kind: 'character', id: retrato.id };
 
-interface SceneInput extends Omit<BuildInput, 'extraEnemies' | 'includeHiddenNpcs'> {
+interface SceneInput extends Omit<BuildInput, 'extraEnemies' | 'includeHidden'> {
   pins: PinRow[];
   viewer: Viewer;
   /** Quem age agora no combate (o `entity_id` do participante do turno). */
@@ -55,7 +55,7 @@ export function buildMapScene({ pins, viewer, turnEntityId, ...input }: SceneInp
   const gm = viewer === 'gm';
   const retratos = buildRetratos({
     ...input,
-    includeHiddenNpcs: gm,
+    includeHidden: gm,
     extraEnemies: gm ? 'all' : placed,
   });
   const cells = new Map(pins.map((pin) => [pinRetratoId(pin), { col: pin.col, row: pin.row }]));

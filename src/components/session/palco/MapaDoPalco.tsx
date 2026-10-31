@@ -32,6 +32,8 @@ interface MapaDoPalcoProps {
   /** Só o Mestre arrasta os pins e vê a Bandeja. */
   isGm?: boolean;
   onOpenRetrato?: (retrato: Retrato) => void;
+  /** Oculta o Retrato visível ou revela o Oculto. Só o Mestre, e nunca o personagem de jogador. */
+  onToggleHidden?: (retrato: Retrato) => void;
   /** Põe o Retrato num Quadrado, ou o devolve à Bandeja com nulo. */
   onMovePin?: (retrato: Retrato, cell: Cell | null) => void;
 }
@@ -53,6 +55,7 @@ export function MapaDoPalco({
   scene = EMPTY_SCENE,
   isGm = false,
   onOpenRetrato,
+  onToggleHidden,
   onMovePin,
 }: MapaDoPalcoProps) {
   const entry = findMapLibraryEntry(map.library_id);
@@ -61,6 +64,8 @@ export function MapaDoPalco({
   const press = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
   const suppressClick = useRef(false);
   const [drag, setDrag] = useState<Drag | null>(null);
+  // O Retrato que o Mestre tocou: a barra de ações aparece embaixo do mapa.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   if (!entry) {
     return (
@@ -75,7 +80,10 @@ export function MapaDoPalco({
 
   /** Onde o dedo está: na Bandeja, no mapa (com o Quadrado) ou fora de ambos. */
   const locate = (clientX: number, clientY: number): Pick<Drag, 'cell' | 'overTray'> => {
-    const under = document.elementFromPoint?.(clientX, clientY) ?? null;
+    // Fora da janela do navegador não há elemento: soltar ali cancela (a conta do mapa não vale).
+    const canHitTest = typeof document.elementFromPoint === 'function';
+    const under = canHitTest ? document.elementFromPoint(clientX, clientY) : null;
+    if (canHitTest && !under) return { cell: null, overTray: false };
     if (under?.closest('[data-bandeja]')) return { cell: null, overTray: true };
     if (under && !under.closest('[data-area-do-mapa]')) return { cell: null, overTray: false };
     const point = viewApi.current?.clientToContent(clientX, clientY);
@@ -95,7 +103,8 @@ export function MapaDoPalco({
         suppressClick.current = false;
         return;
       }
-      onOpenRetrato?.(retrato);
+      if (isGm) setSelectedId(retrato.id);
+      else onOpenRetrato?.(retrato);
     };
     if (!isGm) return { onClick: open };
 
@@ -146,6 +155,9 @@ export function MapaDoPalco({
     };
   };
 
+  const selected = isGm
+    ? [...scene.pins.map((pin) => pin.retrato), ...scene.tray].find((r) => r.id === selectedId)
+    : undefined;
   const me = isGm ? undefined : scene.pins.find((pin) => pin.retrato.isMe);
   const patternId = `textura-${map.id}`;
   const vertical = Array.from({ length: map.columns - 1 }, (_, i) => i + 1);
@@ -268,6 +280,47 @@ export function MapaDoPalco({
           />
         ))}
       </PanZoomViewport>
+
+      {isGm && selected && (
+        <div
+          role="group"
+          aria-label={`Ações de ${selected.name}`}
+          className="absolute top-2 right-2 left-2 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-stone-700 bg-stone-900/95 p-2 text-sm text-stone-200 shadow-lg"
+        >
+          <span className="font-medium">{selected.name}</span>
+          {selected.kind !== 'player' && (
+            <span
+              className={`rounded-full border px-2 py-0.5 text-xs ${
+                selected.hidden
+                  ? 'border-amber-500/60 text-amber-400'
+                  : 'border-stone-600 text-stone-300'
+              }`}
+            >
+              {selected.hidden ? 'Oculto' : 'Visível'}
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            {selected.kind !== 'player' && onToggleHidden && (
+              <button
+                type="button"
+                aria-label={`${selected.hidden ? 'Revelar' : 'Ocultar'} ${selected.name}`}
+                onClick={() => onToggleHidden(selected)}
+                className="min-h-11 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+              >
+                {selected.hidden ? 'Revelar' : 'Ocultar'}
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label={`Abrir o cartão de ${selected.name}`}
+              onClick={() => onOpenRetrato?.(selected)}
+              className="min-h-11 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+            >
+              Abrir cartão
+            </button>
+          </div>
+        </div>
+      )}
 
       {isGm && (
         <Bandeja

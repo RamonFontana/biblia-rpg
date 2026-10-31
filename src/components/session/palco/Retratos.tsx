@@ -69,7 +69,7 @@ function RetratoTile({
 
   const percent =
     retrato.pvMax > 0 ? Math.min(100, Math.max(0, (retrato.pv / retrato.pvMax) * 100)) : 0;
-  const label = `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}${retrato.hidden ? ', escondido' : ''}`;
+  const label = `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}${retrato.hidden ? ', oculto' : ''}`;
   const kind = KIND_LABEL[retrato.kind];
 
   return (
@@ -101,7 +101,7 @@ function RetratoTile({
       <span className="w-full truncate text-sm text-stone-100">{retrato.name}</span>
       {kind && <span className="text-[10px] tracking-wide text-stone-500 uppercase">{kind}</span>}
       {retrato.hidden && (
-        <span className="text-[10px] tracking-wide text-amber-500 uppercase">Escondido</span>
+        <span className="text-[10px] tracking-wide text-amber-500 uppercase">Oculto</span>
       )}
       <span
         role="progressbar"

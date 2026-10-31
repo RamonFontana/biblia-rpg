@@ -31,6 +31,7 @@ import { useCombatStore } from '@/store/combatStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
+import { setRetratoHidden } from '@/services/visibilityService';
 import { useMapPins } from '@/hooks/useMapPins';
 import { getShortRestState } from '@/domain/shortRest';
 import { DockRail, type DockItem } from './DockRail';
@@ -152,7 +153,7 @@ export function GmSessionView({
     myCharacterId: undefined,
     hasActiveCombat,
     participants,
-    includeHiddenNpcs: true,
+    includeHidden: true,
   });
   // O Mestre arruma os pins do mapa que está na tela dele (o preparado ou o mostrado).
   const { pins, move: movePin } = useMapPins(stageMap?.id);
@@ -167,6 +168,18 @@ export function GmSessionView({
     viewer: 'gm',
     turnEntityId: hasActiveCombat ? currentTurnParticipant?.entity_id : undefined,
   });
+  // Oculta ou revela: a tela muda na hora e a marca é gravada; se falhar, volta ao que era.
+  const toggleHidden = async (retrato: Retrato) => {
+    const hide = !retrato.hidden;
+    const kind = retrato.kind === 'enemy' ? 'enemy' : 'npc';
+    updateLocal(kind, retrato.id, { is_visible: !hide });
+    try {
+      await setRetratoHidden(pinTargetOf(retrato), hide);
+    } catch (error) {
+      console.error('Erro ao ocultar ou revelar o Retrato:', error);
+      updateLocal(kind, retrato.id, { is_visible: hide });
+    }
+  };
   const dying = retratos
     .filter((r) => r.kind === 'player' && r.down)
     .filter((r) => !playerCharacters.find((pc) => pc.character.id === r.id)?.character.is_dead)
@@ -320,6 +333,7 @@ export function GmSessionView({
                     scene={mapScene}
                     isGm
                     onOpenRetrato={openRetrato}
+                    onToggleHidden={toggleHidden}
                     onMovePin={(retrato, cell) => movePin(pinTargetOf(retrato), cell)}
                   />
                 </>
