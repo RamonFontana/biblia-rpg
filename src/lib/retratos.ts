@@ -37,7 +37,7 @@ interface CombatSlice {
   conditions: unknown;
 }
 
-interface BuildInput {
+export interface BuildInput {
   playerCharacters: SessionPlayer[];
   npcs: SessionNpc[];
   enemies: SessionCharacter[];
@@ -46,6 +46,11 @@ interface BuildInput {
   participants: CombatSlice[];
   /** O Mestre vê os NPCs escondidos também. */
   includeHiddenNpcs?: boolean;
+  /**
+   * Inimigos que aparecem mesmo fora do combate (os que estão no mapa; no mapa do Mestre, todos).
+   * Em combate, os que estão nele aparecem de qualquer jeito.
+   */
+  extraEnemies?: ReadonlySet<string> | 'all';
 }
 
 const asConditions = (value: unknown): ConditionEntry[] =>
@@ -59,6 +64,7 @@ export function buildRetratos({
   hasActiveCombat,
   participants,
   includeHiddenNpcs = false,
+  extraEnemies,
 }: BuildInput): Retrato[] {
   const participantOf = (entityId: string) =>
     hasActiveCombat ? participants.find((p) => p.entity_id === entityId) : undefined;
@@ -97,11 +103,11 @@ export function buildRetratos({
       make(npc, 'npc', 'NPC', { npc, hidden: includeHiddenNpcs ? !npc.is_visible : undefined }),
     );
 
-  const inCombat = hasActiveCombat
-    ? enemies
-        .filter((enemy) => !enemy.is_deleted && participantOf(enemy.id))
-        .map((enemy) => make(enemy, 'enemy', 'Inimigo'))
-    : [];
+  const isExtra = (id: string) =>
+    extraEnemies === 'all' || (extraEnemies !== undefined && extraEnemies.has(id));
+  const inCombat = enemies
+    .filter((enemy) => !enemy.is_deleted && (participantOf(enemy.id) || isExtra(enemy.id)))
+    .map((enemy) => make(enemy, 'enemy', 'Inimigo'));
 
   return [...group, ...visibleNpcs, ...inCombat];
 }

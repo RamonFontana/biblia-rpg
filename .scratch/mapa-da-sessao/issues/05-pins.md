@@ -6,12 +6,12 @@
 
 **Status:** ready-for-agent
 
-- [ ] Migration: pins (mapa da sessão, Retrato personagem ou NPC simples, coluna, linha; um pin por Retrato por mapa), RLS (Mestre da sessão escreve, participantes leem) e Realtime; `gen:types`; `rls.sql` por papel.
-- [ ] A função que monta os Retratos para quem olha passa a montar a cena do mapa (posição ou Bandeja de cada Retrato, se é de quem olha); testes de unidade estendidos.
-- [ ] Pins como botões com o nome e o `CharacterAvatar`; tocar abre o cartão do Retrato de hoje.
-- [ ] Arrasto só do Mestre: da Bandeja ao mapa, entre Quadrados e de volta à Bandeja; encaixe; régua de Quadrados e metros desde a origem; arrastar no pin move o pin, fora dele move o mapa.
-- [ ] Inimigo pode ir ao mapa fora do combate.
-- [ ] Movimento ao vivo animado com `motion`; movimento reduzido deixa só o salto.
-- [ ] Botão de centralizar no personagem do jogador, desabilitado com o motivo quando ele não tem pin.
-- [ ] Jogador não arrasta nenhum pin (teste de componente).
-- [ ] E2E: o Mestre arrasta um pin e o jogador o vê mudar.
+- [x] Migration: pins (mapa da sessão, Retrato personagem ou NPC simples, coluna, linha; um pin por Retrato por mapa), RLS (Mestre da sessão escreve, participantes leem) e Realtime; `gen:types`; `rls.sql` por papel.
+- [x] A função que monta os Retratos para quem olha passa a montar a cena do mapa (posição ou Bandeja de cada Retrato, se é de quem olha); testes de unidade estendidos.
+- [x] Pins como botões com o nome e o `CharacterAvatar`; tocar abre o cartão do Retrato de hoje.
+- [x] Arrasto só do Mestre: da Bandeja ao mapa, entre Quadrados e de volta à Bandeja; encaixe; régua de Quadrados e metros desde a origem; arrastar no pin move o pin, fora dele move o mapa.
+- [x] Inimigo pode ir ao mapa fora do combate.
+- [x] Movimento ao vivo animado com `motion`; movimento reduzido deixa só o salto.
+- [x] Botão de centralizar no personagem do jogador, desabilitado com o motivo quando ele não tem pin.
+- [x] Jogador não arrasta nenhum pin (teste de componente).
+- [x] E2E: o Mestre arrasta um pin e o jogador o vê mudar.

@@ -10,6 +10,8 @@ import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard } from '@/components/session/palco/RetratoCard';
 import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { buildRetratos } from '@/lib/retratos';
+import { buildMapScene } from '@/lib/mapScene';
+import { useMapPins } from '@/hooks/useMapPins';
 import { buildCombatEntities } from '@/lib/combatEntities';
 import { useCombatStore } from '@/store/combatStore';
 import { DockRail, type DockItem } from './DockRail';
@@ -73,7 +75,20 @@ export function SpectatorView({
     hasActiveCombat,
     participants,
   });
-  const openRetrato = retratos.find((r) => r.id === retratoId);
+  const { pins } = useMapPins(shownMap?.id);
+  const scene = buildMapScene({
+    playerCharacters,
+    npcs,
+    enemies,
+    myCharacterId: undefined,
+    hasActiveCombat,
+    participants,
+    pins,
+    viewer: 'spectator',
+  });
+  const openRetrato =
+    retratos.find((r) => r.id === retratoId) ??
+    scene.pins.find((pin) => pin.retrato.id === retratoId)?.retrato;
   const entities = buildCombatEntities({ playerCharacters, npcs, enemies });
   const initiative = participants.map((p) => ({
     id: p.entity_id,
@@ -117,7 +132,14 @@ export function SpectatorView({
         )}
 
         {shownMap ? (
-          <MapaDoPalco map={shownMap} />
+          <MapaDoPalco
+            map={shownMap}
+            scene={scene}
+            onOpenRetrato={(retrato) => {
+              setPanel(null);
+              setRetratoId(retrato.id);
+            }}
+          />
         ) : (
           <Retratos
             turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}

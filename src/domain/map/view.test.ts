@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  centerOn,
   clampView,
   fitView,
   mapToScreen,
@@ -91,5 +92,22 @@ describe('clampView e panBy', () => {
     const view: View = { scale: 2, x: -100, y: -100 };
     expect(panBy(view, 30, -20, viewport, content)).toEqual({ scale: 2, x: -70, y: -120 });
     expect(panBy(view, 1000, 1000, viewport, content)).toEqual({ scale: 2, x: 0, y: 0 });
+  });
+});
+
+describe('centerOn', () => {
+  it('põe o ponto do mapa no meio do Palco, mantendo a escala', () => {
+    const view: View = { scale: 1, x: 0, y: 0 };
+    const next = centerOn(view, { x: 500, y: 400 }, viewport, content);
+    const screen = mapToScreen(next, { x: 500, y: 400 });
+    expect(screen.x).toBeCloseTo(200, 6);
+    expect(screen.y).toBeCloseTo(150, 6);
+    expect(next.scale).toBe(1);
+  });
+
+  it('não sai do mapa quando o ponto está na borda', () => {
+    const next = centerOn({ scale: 1, x: -300, y: -300 }, { x: 5, y: 5 }, viewport, content);
+    expect(next.x).toBe(0);
+    expect(next.y).toBe(0);
   });
 });

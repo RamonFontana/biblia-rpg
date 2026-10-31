@@ -1,0 +1,121 @@
+// Fixa o que a camada de pins pede ao Supabase. Usa o Supabase falso, que só registra as chamadas.
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FakeCall, FakeResult } from '../test/fakeSupabase';
+
+const state = vi.hoisted(() => ({
+  calls: [] as FakeCall[],
+  respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
+  subscriptions: [] as { subscriptions: { table: string; filter?: string }[] }[],
+}));
+
+vi.mock('@/lib/supabase', async () => {
+  const { createFakeSupabase } = await import('../test/fakeSupabase');
+  return {
+    supabase: createFakeSupabase({
+      calls: state.calls,
+      respond: (call) => state.respond?.(call),
+    }),
+  };
+});
+
+vi.mock('./realtime', () => ({
+  subscribeToTables: (_name: string, subscriptions: { table: string; filter?: string }[]) => {
+    state.subscriptions.push({ subscriptions });
+    return () => {};
+  },
+}));
+
+import { callsOf, filterOf } from '../test/fakeSupabase';
+import { listMapPins, placePin, removePin, subscribeToMapPins } from './mapPins';
+
+const failure = { message: 'falhou' };
+
+beforeEach(() => {
+  state.calls.length = 0;
+  state.respond = undefined;
+  state.subscriptions.length = 0;
+});
+
+describe('listMapPins', () => {
+  it('lê os pins do mapa', async () => {
+    state.respond = () => ({ data: [{ id: 'p1' }] });
+    expect(await listMapPins('m1')).toEqual([{ id: 'p1' }]);
+    const [call] = callsOf(state.calls, 'session_map_pins', 'select');
+    expect(filterOf(call, 'eq', 'map_id')).toBe('m1');
+  });
+
+  it('lança o erro do Supabase', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(listMapPins('m1')).rejects.toBe(failure);
+  });
+});
+
+describe('placePin', () => {
+  it('põe a ficha no Quadrado, trocando o pin que ela já tinha no mapa', async () => {
+    await placePin({ mapId: 'm1', target: { kind: 'character', id: 'c1' }, col: 3, row: 4 });
+    const [call] = callsOf(state.calls, 'session_map_pins', 'upsert');
+    expect(call.payload).toEqual({
+      map_id: 'm1',
+      character_id: 'c1',
+      npc_id: null,
+      col: 3,
+      row: 4,
+    });
+    expect(call.options).toEqual({ onConflict: 'map_id,character_id' });
+  });
+
+  it('põe o NPC simples pelo npc_id', async () => {
+    await placePin({ mapId: 'm1', target: { kind: 'npc', id: 'n1' }, col: 0, row: 0 });
+    const [call] = callsOf(state.calls, 'session_map_pins', 'upsert');
+    expect(call.payload).toEqual({
+      map_id: 'm1',
+      character_id: null,
+      npc_id: 'n1',
+      col: 0,
+      row: 0,
+    });
+    expect(call.options).toEqual({ onConflict: 'map_id,npc_id' });
+  });
+
+  it('lança o erro ao gravar', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(
+      placePin({ mapId: 'm1', target: { kind: 'character', id: 'c1' }, col: 1, row: 1 }),
+    ).rejects.toBe(failure);
+  });
+});
+
+describe('removePin', () => {
+  it('devolve a ficha à Bandeja apagando o pin dela no mapa', async () => {
+    await removePin('m1', { kind: 'character', id: 'c1' });
+    const [call] = callsOf(state.calls, 'session_map_pins', 'delete');
+    expect(filterOf(call, 'eq', 'map_id')).toBe('m1');
+    expect(filterOf(call, 'eq', 'character_id')).toBe('c1');
+  });
+
+  it('devolve o NPC simples pela coluna dele', async () => {
+    await removePin('m1', { kind: 'npc', id: 'n1' });
+    const [call] = callsOf(state.calls, 'session_map_pins', 'delete');
+    expect(filterOf(call, 'eq', 'npc_id')).toBe('n1');
+  });
+});
+
+describe('subscribeToMapPins', () => {
+  it('assina inserir e alterar filtrados pelo mapa, e apagar sem filtro (o Realtime não filtra DELETE)', () => {
+    subscribeToMapPins('m1', () => {});
+    expect(state.subscriptions[0]?.subscriptions).toEqual([
+      expect.objectContaining({
+        table: 'session_map_pins',
+        event: 'INSERT',
+        filter: 'map_id=eq.m1',
+      }),
+      expect.objectContaining({
+        table: 'session_map_pins',
+        event: 'UPDATE',
+        filter: 'map_id=eq.m1',
+      }),
+      expect.objectContaining({ table: 'session_map_pins', event: 'DELETE' }),
+    ]);
+    expect(state.subscriptions[0]?.subscriptions[2]).not.toHaveProperty('filter');
+  });
+});

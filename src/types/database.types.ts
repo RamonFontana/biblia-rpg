@@ -629,6 +629,58 @@ export type Database = {
           },
         ]
       }
+      session_map_pins: {
+        Row: {
+          character_id: string | null
+          col: number
+          created_at: string
+          id: string
+          map_id: string
+          npc_id: string | null
+          row: number
+        }
+        Insert: {
+          character_id?: string | null
+          col: number
+          created_at?: string
+          id?: string
+          map_id: string
+          npc_id?: string | null
+          row: number
+        }
+        Update: {
+          character_id?: string | null
+          col?: number
+          created_at?: string
+          id?: string
+          map_id?: string
+          npc_id?: string | null
+          row?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_map_pins_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_map_pins_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "session_maps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_map_pins_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "session_npcs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_maps: {
         Row: {
           ambient: string | null

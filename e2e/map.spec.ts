@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { adminClient } from './support/admin';
 import { test, expect, type Seed, type SignIn } from './fixtures';
 import { closePanel, openPanel, watchPlayers } from './support/ui';
@@ -62,6 +63,23 @@ test.describe('Mapa atual', () => {
     await expect(player.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeVisible();
   });
 
+  test('o Mestre remove um mapa e ele sai da lista dele; remover o mostrado devolve os Retratos ao jogador', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await openTable(seed, signIn);
+    await openPanel(master, 'Mapas');
+    await master.getByLabel('Nome do mapa').fill('Deserto de Zim');
+    await master.getByRole('button', { name: 'Somar terreno' }).click();
+    await master.getByRole('button', { name: 'Mostrar aos jogadores: Deserto de Zim' }).click();
+    await expect(player.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeVisible();
+
+    await master.getByRole('button', { name: 'Remover Deserto de Zim' }).click();
+    await expect(master.getByLabel('Nome de Deserto de Zim')).toHaveCount(0);
+    await expect(player.getByRole('region', { name: /^Mapa:/ })).toHaveCount(0);
+    await expect(player.getByRole('region', { name: 'Retratos' })).toBeVisible();
+  });
+
   test('o jogador amplia e arrasta o mapa, e o botão Ajustar volta ao mapa inteiro', async ({
     seed,
     signIn,
@@ -97,5 +115,118 @@ test.describe('Mapa atual', () => {
 
     await player.getByRole('button', { name: 'Ajustar o mapa ao Palco' }).click();
     expect(await scaleOf()).toBeCloseTo(fitted, 4);
+  });
+});
+
+test.describe('Pins', () => {
+  /** Uma mesa com Eliabe e um Guarda, o terreno já mostrado e o Palco do Mestre livre dos Painéis. */
+  async function tableWithMap(seed: Seed, signIn: SignIn) {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const guard = await seed.createEnemy('Guarda de Jericó');
+    const sessionId = await seed.createSession({ characters: [eliabe, guard] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await watchPlayers(master, 2);
+
+    await openPanel(master, 'Mapas');
+    await master.getByRole('button', { name: 'Somar terreno' }).click();
+    await master.getByRole('button', { name: /^Mostrar aos jogadores/ }).click();
+    await closePanel(master);
+    await expect(player.getByRole('region', { name: /^Mapa:/ })).toBeVisible();
+    return { master, player };
+  }
+
+  /** Arrasta com o mouse, em passos, de um ponto da tela a outro. */
+  async function dragMouse(
+    page: Page,
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+  ) {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+  }
+  const center = (box: { x: number; y: number; width: number; height: number }) => ({
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2,
+  });
+
+  test('o Mestre põe Eliabe no mapa e o move, e o jogador vê o pin aparecer e mudar de Quadrado', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await tableWithMap(seed, signIn);
+    const eliabeOnPlayer = player.getByRole('button', { name: /^Eliabe, \d+ de \d+ PV$/ });
+    await expect(eliabeOnPlayer).toHaveCount(0);
+
+    // Da Bandeja ao mapa.
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+    const item = tray.getByRole('button', { name: /^Eliabe, .*na Bandeja$/ });
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+    await dragMouse(
+      master,
+      center((await item.boundingBox())!),
+      center((await area.boundingBox())!),
+    );
+
+    const pin = master.getByRole('button', { name: /^Eliabe, \d+ de \d+ PV$/ });
+    await expect(pin).toBeVisible();
+    await expect(tray.getByRole('button', { name: /^Eliabe/ })).toHaveCount(0);
+    const col = Number(await pin.getAttribute('data-col'));
+    const row = Number(await pin.getAttribute('data-row'));
+    await expect(eliabeOnPlayer).toHaveAttribute('data-col', String(col));
+    await expect(eliabeOnPlayer).toHaveAttribute('data-row', String(row));
+
+    // Três Quadrados para a direita.
+    const transform = await master
+      .getByTestId('camada-do-mapa')
+      .evaluate((el) => (el as HTMLElement).style.transform);
+    const squarePx = 48 * Number(/scale\(([\d.]+)\)/.exec(transform)?.[1]);
+    const box = (await pin.boundingBox())!;
+    const from = center(box);
+    await dragMouse(master, from, { x: from.x + 3 * squarePx, y: from.y });
+
+    await expect(eliabeOnPlayer).toHaveAttribute('data-col', String(col + 3));
+    await expect(eliabeOnPlayer).toHaveAttribute('data-row', String(row));
+
+    // O jogador não arrasta: tentar mover o próprio pin não muda nada.
+    const playerBox = (await eliabeOnPlayer.boundingBox())!;
+    const playerFrom = center(playerBox);
+    await dragMouse(player, playerFrom, { x: playerFrom.x - 60, y: playerFrom.y });
+    await expect(eliabeOnPlayer).toHaveAttribute('data-col', String(col + 3));
+
+    const { data } = await adminClient().from('session_map_pins').select('col, row');
+    expect(data).toEqual([{ col: col + 3, row }]);
+  });
+
+  test('o inimigo posto no mapa aparece para o jogador mesmo fora do combate, e volta à Bandeja', async ({
+    seed,
+    signIn,
+  }) => {
+    const { master, player } = await tableWithMap(seed, signIn);
+    const guardOnPlayer = player.getByRole('button', { name: /^Guarda de Jericó, / });
+    await expect(guardOnPlayer).toHaveCount(0);
+
+    const tray = master.getByRole('region', { name: 'Bandeja' });
+    const area = master.getByRole('group', { name: /^Área do mapa/ });
+    await dragMouse(
+      master,
+      center((await tray.getByRole('button', { name: /^Guarda de Jericó, / }).boundingBox())!),
+      center((await area.boundingBox())!),
+    );
+    await expect(guardOnPlayer).toBeVisible();
+
+    // De volta à Bandeja: o pin some do mapa do jogador.
+    const pin = master.getByRole('button', { name: /^Guarda de Jericó, \d+ de \d+ PV$/ });
+    await dragMouse(
+      master,
+      center((await pin.boundingBox())!),
+      center((await tray.boundingBox())!),
+    );
+    await expect(guardOnPlayer).toHaveCount(0);
+    await expect(tray.getByRole('button', { name: /^Guarda de Jericó, / })).toBeVisible();
   });
 });

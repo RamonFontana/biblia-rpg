@@ -2,7 +2,7 @@
 // regra e I/O. Só registra as chamadas e devolve o que o teste mandar; não simula o banco.
 // Uso: `vi.mock('../lib/supabase', ...)` com `createFakeSupabase` (ver combatStore.test.ts).
 
-export type FakeOp = 'select' | 'insert' | 'update' | 'delete' | 'rpc';
+export type FakeOp = 'select' | 'insert' | 'upsert' | 'update' | 'delete' | 'rpc';
 
 export interface FakeCall {
   /** Nome da tabela; nas chamadas `rpc`, o nome da função. */
@@ -15,6 +15,8 @@ export interface FakeCall {
   single: boolean;
   /** Colunas pedidas no primeiro `select(...)`, quando houve. */
   columns?: unknown;
+  /** Opções do `upsert(payload, options)`. */
+  options?: unknown;
 }
 
 export interface FakeResult {
@@ -29,6 +31,7 @@ export type Responder = (call: FakeCall) => FakeResult | undefined;
 interface FakeBuilder extends PromiseLike<{ data: unknown; error: unknown }> {
   select: (...args: unknown[]) => FakeBuilder;
   insert: (payload: unknown) => FakeBuilder;
+  upsert: (payload: unknown, options?: unknown) => FakeBuilder;
   update: (payload: unknown) => FakeBuilder;
   delete: () => FakeBuilder;
   eq: (...args: unknown[]) => FakeBuilder;
@@ -57,6 +60,12 @@ function newBuilder(call: FakeCall, options: FakeOptions): FakeBuilder {
     insert: (payload) => {
       call.op = 'insert';
       call.payload = payload;
+      return builder;
+    },
+    upsert: (payload, options) => {
+      call.op = 'upsert';
+      call.payload = payload;
+      call.options = options;
       return builder;
     },
     update: (payload) => {

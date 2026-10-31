@@ -13,6 +13,8 @@ const h = vi.hoisted(() => ({
   },
   session: null as null | Record<string, unknown>,
   maps: [] as unknown[],
+  pins: [] as unknown[],
+  movePin: vi.fn(),
   sessionListener: undefined as undefined | ((s: Record<string, unknown>) => void),
   unsubscribeSession: vi.fn(),
   combat: {
@@ -50,6 +52,7 @@ vi.mock('react-router-dom', () => ({
 }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: () => ({ user: h.user }) }));
 vi.mock('@/store/combatStore', () => ({ useCombatStore: () => h.combat }));
+vi.mock('@/hooks/useMapPins', () => ({ useMapPins: () => ({ pins: h.pins, move: h.movePin }) }));
 vi.mock('@/hooks/useSessionMaps', () => ({ useSessionMaps: () => h.maps }));
 vi.mock('@/data-access/maps', () => ({
   addSessionMap: vi.fn(),
@@ -223,6 +226,7 @@ beforeEach(() => {
   h.combat.currentTurnParticipant = null;
   h.combat.participants = [];
   h.maps = [];
+  h.pins = [];
   h.tests = { activeTests: [], testResults: {} };
   h.roster.playerCharacters = [
     { user_id: 'u1', character: character('c1') },
@@ -1391,6 +1395,61 @@ describe('o Mapa atual no Palco', () => {
     await renderPage();
     await act(async () => h.sessionListener?.({ ...baseSession, shown_map_id: null }));
     expect(hasStub('Retratos')).toBe(true);
+  });
+
+  describe('os pins', () => {
+    const pinOf = (over: Obj) => ({
+      id: `pin-${String(over.character_id ?? over.npc_id)}`,
+      map_id: 'm1',
+      character_id: null,
+      npc_id: null,
+      col: 0,
+      row: 0,
+      ...over,
+    });
+    beforeEach(() => {
+      h.maps = [deserto];
+      h.session = { ...baseSession, shown_map_id: 'm1' };
+      // jsdom não mede: sem isto a camada do mapa fica oculta, à espera do tamanho do Palco.
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+        width: 400,
+        height: 300,
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 400,
+        bottom: 300,
+        toJSON: () => ({}),
+      });
+    });
+
+    it('o jogador vê quem tem pin no Quadrado dele, e nenhuma Bandeja', async () => {
+      h.pins = [pinOf({ character_id: 'c1', col: 3, row: 2 })];
+      await renderPage();
+      const pin = screen.getByRole('button', { name: 'Personagem c1, 10 de 10 PV' });
+      expect(pin).toHaveAttribute('data-col', '3');
+      expect(pin).toHaveAttribute('data-row', '2');
+      expect(screen.queryByRole('region', { name: 'Bandeja' })).not.toBeInTheDocument();
+      // Quem não tem pin não aparece.
+      expect(screen.queryByRole('button', { name: /Personagem c2/ })).not.toBeInTheDocument();
+    });
+
+    it('o inimigo com pin aparece para o jogador mesmo fora do combate', async () => {
+      h.pins = [pinOf({ character_id: 'e1', col: 6, row: 6 })];
+      await renderPage();
+      expect(screen.getByRole('button', { name: 'Filisteu, 9 de 12 PV' })).toBeInTheDocument();
+    });
+
+    it('o Mestre vê a Bandeja com quem ainda não tem pin e arrasta pelo mapa', async () => {
+      asGm();
+      h.pins = [pinOf({ character_id: 'c1', col: 3, row: 2 })];
+      await renderPage();
+      const tray = screen.getByRole('region', { name: 'Bandeja' });
+      expect(tray).toHaveTextContent('Filisteu');
+      expect(tray).toHaveTextContent('Personagem c2');
+      expect(tray).not.toHaveTextContent('Personagem c1');
+    });
   });
 
   describe('o Mestre', () => {

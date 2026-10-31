@@ -131,11 +131,22 @@ describe('showSessionMap', () => {
 });
 
 describe('subscribeToSessionMaps', () => {
-  it('assina session_maps filtrado pela sessão', () => {
+  it('assina inserir e alterar filtrados pela sessão, e apagar sem filtro', () => {
     subscribeToSessionMaps('s1', () => {});
     const [sub] = state.subscriptions;
     expect(sub?.subscriptions).toEqual([
-      expect.objectContaining({ table: 'session_maps', filter: 'session_id=eq.s1' }),
+      expect.objectContaining({
+        table: 'session_maps',
+        event: 'INSERT',
+        filter: 'session_id=eq.s1',
+      }),
+      expect.objectContaining({
+        table: 'session_maps',
+        event: 'UPDATE',
+        filter: 'session_id=eq.s1',
+      }),
+      expect.objectContaining({ table: 'session_maps', event: 'DELETE' }),
     ]);
+    expect(sub?.subscriptions[2]).not.toHaveProperty('filter');
   });
 });

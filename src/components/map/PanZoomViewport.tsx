@@ -1,12 +1,23 @@
 // A janela do mapa com pan e zoom (ADR 0009): um dedo arrasta, dois dedos ampliam (pinça), a roda do
 // mouse amplia em torno do cursor, e botões e teclado fazem o mesmo para quem não usa gestos. Pointer
 // Events e CSS transform, sem biblioteca; a conta fica em `src/domain/map/view.ts`.
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { Maximize2, Minus, Plus } from 'lucide-react';
 import {
+  centerOn,
   clampView,
   fitView,
   panBy,
+  screenToMap,
   zoomAround,
   type ScaleLimits,
   type Size,
@@ -14,12 +25,24 @@ import {
 } from '@/domain/map/view';
 import type { Point } from '@/domain/map/grid';
 
+/** O que quem desenha por cima do mapa precisa da vista: converter o dedo em ponto do mapa e centrar. */
+export interface ViewApi {
+  /** Um ponto da tela (clientX, clientY) em pixels do mapa sem zoom. */
+  clientToContent: (clientX: number, clientY: number) => Point;
+  /** Leva o ponto do mapa (em pixels sem zoom) ao meio do Palco, ampliando até o tamanho real. */
+  centerOn: (point: Point) => void;
+}
+
 interface PanZoomViewportProps {
   /** O tamanho do mapa em pixels, sem zoom. */
   content: Size;
   /** O nome acessível da área do mapa. */
   label: string;
   className?: string;
+  /** Acesso à vista para quem desenha pins e arrasta por cima do mapa. */
+  apiRef?: Ref<ViewApi>;
+  /** Botões extras ao lado dos de zoom. */
+  controls?: ReactNode;
   children: ReactNode;
 }
 
@@ -42,6 +65,8 @@ export function PanZoomViewport({
   content,
   label,
   className = '',
+  apiRef,
+  controls,
   children,
 }: PanZoomViewportProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -144,6 +169,14 @@ export function PanZoomViewport({
     event.currentTarget.releasePointerCapture?.(event.pointerId);
   };
 
+  useImperativeHandle(apiRef, () => ({
+    clientToContent: (clientX, clientY) => screenToMap(viewRef.current, toLocal(clientX, clientY)),
+    centerOn: (point) => {
+      const scale = Math.max(viewRef.current.scale, Math.min(limits.max, 1));
+      setChosen(centerOn({ ...viewRef.current, scale }, point, size, content));
+    },
+  }));
+
   const center = { x: size.width / 2, y: size.height / 2 };
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const pan: Record<string, [number, number]> = {
@@ -170,6 +203,7 @@ export function PanZoomViewport({
       <div
         ref={ref}
         role="group"
+        data-area-do-mapa
         aria-label={label}
         tabIndex={0}
         onPointerDown={onPointerDown}
@@ -184,6 +218,7 @@ export function PanZoomViewport({
           style={{
             width: content.width,
             height: content.height,
+            position: 'relative',
             transformOrigin: '0 0',
             transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
             visibility: measured ? 'visible' : 'hidden',
@@ -217,6 +252,7 @@ export function PanZoomViewport({
         >
           <Maximize2 className="h-5 w-5" />
         </button>
+        {controls}
       </div>
     </div>
   );
