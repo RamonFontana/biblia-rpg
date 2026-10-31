@@ -90,7 +90,12 @@ interface SceneInput extends Omit<BuildInput, 'extraEnemies' | 'includeHidden'> 
   ambient?: string | null;
   /** O período da sessão (Manhã, Tarde, Noite). */
   period?: string | null;
+  /** "Ver como" do Mestre: o id do personagem cuja Visão ele assume (sem Bandeja nem Oculto). */
+  viewAs?: string | null;
 }
+
+const isBlind = (retrato: Retrato): boolean =>
+  retrato.conditions.some((condition) => condition.conditionId === 'cego');
 
 const pinLight = (pin: PinRow | undefined) =>
   pin?.light_bright_m != null && pin.light_dim_m != null
@@ -104,8 +109,22 @@ export function buildMapScene({
   lights = [],
   ambient: fixedAmbient = null,
   period = null,
+  viewAs = null,
   ...input
 }: SceneInput): MapScene {
+  // "Ver como": o Mestre olha como o jogador daquele personagem olharia.
+  if (viewer === 'gm' && viewAs) {
+    return buildMapScene({
+      ...input,
+      pins,
+      viewer: 'player',
+      turnEntityId,
+      lights,
+      ambient: fixedAmbient,
+      period,
+      myCharacterId: viewAs,
+    });
+  }
   const placed = new Set(pins.map(pinRetratoId).filter((id): id is string => id !== null));
   const gm = viewer === 'gm';
   const retratos = buildRetratos({
@@ -139,6 +158,15 @@ export function buildMapScene({
     }),
   ];
 
+  // Quem enxerga: o Mestre sempre; o jogador, se o personagem dele não está Cego; o espectador, se
+  // algum do grupo não está.
+  const group = retratos.filter((retrato) => retrato.kind === 'player');
+  const sighted =
+    gm ||
+    (viewer === 'spectator'
+      ? group.length === 0 || group.some((retrato) => !isBlind(retrato))
+      : !group.some((retrato) => retrato.isMe && isBlind(retrato)));
+
   const scenePins = placedPins
     .map(({ retrato, cell }) => ({
       retrato,
@@ -148,7 +176,7 @@ export function buildMapScene({
       light: pinLight(cells.get(retrato.id)),
     }))
     // O grupo aparece sempre; inimigos e NPCs, só em Luz plena ou Penumbra. O Mestre vê todos.
-    .filter(({ retrato, level }) => gm || retrato.kind === 'player' || isSeen(level));
+    .filter(({ retrato, level }) => gm || retrato.kind === 'player' || (sighted && isSeen(level)));
 
   return { pins: scenePins, tray, ambient, sources, lights };
 }

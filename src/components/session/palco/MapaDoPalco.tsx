@@ -1,7 +1,7 @@
 // O Mapa atual no Palco (CONTEXT.md, Palco, Mapa, Retrato): o terreno da Biblioteca com o grid de
 // Quadrados e, por cima, os pins dos Retratos. Só o Mestre arrasta os pins; todos os tocam para abrir
 // o cartão. As coordenadas do desenho estão em Quadrados (1 unidade = 1,5 m).
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Crosshair, Flame, X } from 'lucide-react';
 import type { SessionMap } from '@/data-access/maps';
@@ -42,6 +42,8 @@ interface MapaDoPalcoProps {
   onMovePin?: (retrato: Retrato, cell: Cell | null) => void;
   /** O que só o Mestre faz com a luz: o Ambiente, as luzes fixas e a luz no pin. */
   gm?: GmMapActions;
+  /** O "Ver como" do Mestre: vai na barra do mapa, ou sozinho quando ele já olha pela Visão de alguém. */
+  visionControl?: ReactNode;
 }
 
 export interface GmMapActions {
@@ -93,6 +95,7 @@ export function MapaDoPalco({
   onToggleHidden,
   onMovePin,
   gm,
+  visionControl,
 }: MapaDoPalcoProps) {
   // O fundo vem da Biblioteca (terreno liso) ou da imagem de um mapa do Mestre.
   const entry = map.library_id ? findMapLibraryEntry(map.library_id) : undefined;
@@ -439,6 +442,12 @@ export function MapaDoPalco({
             <Flame className="h-4 w-4" aria-hidden="true" />
             Somar luz
           </button>
+          {visionControl}
+        </div>
+      )}
+      {!(isGm && gm) && visionControl && (
+        <div className="absolute top-2 left-2 z-[5] flex flex-wrap items-center gap-2 rounded-lg border border-stone-700 bg-stone-900/90 p-1.5 text-xs text-stone-200">
+          {visionControl}
         </div>
       )}
 
