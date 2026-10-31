@@ -19,6 +19,15 @@ export type SessionEnemyDraft = {
   imageBase64?: string;
 };
 
+/** Um terreno da Biblioteca de mapas que o Mestre escolheu para a sessão. */
+export type SessionMapDraft = {
+  id: string; // temp id
+  libraryId: string;
+  name: string;
+  columns: number;
+  rows: number;
+};
+
 /** A ficha de um NPC jogável da preparação: as chaves do formulário, lidas com valor padrão. */
 export type SessionNPCCharacterData = {
   tribo?: string;
@@ -66,6 +75,11 @@ interface SessionDraftState {
   participantCharacterIds: string[];
   setParticipantCharacterIds: (ids: string[]) => void;
 
+  // Step 5: Maps (optional)
+  maps: SessionMapDraft[];
+  addMap: (map: SessionMapDraft) => void;
+  removeMap: (id: string) => void;
+
   // Form Navigation State
   currentStep: number;
   setCurrentStep: (step: number) => void;
@@ -108,9 +122,13 @@ export const useSessionDraftStore = create<SessionDraftState>((set) => ({
   participantCharacterIds: [],
   setParticipantCharacterIds: (ids) => set({ participantCharacterIds: ids }),
 
+  maps: [],
+  addMap: (map) => set((state) => ({ maps: [...state.maps, map] })),
+  removeMap: (id) => set((state) => ({ maps: state.maps.filter((m) => m.id !== id) })),
+
   currentStep: 1,
   setCurrentStep: (step) => set({ currentStep: step }),
-  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 5) })),
+  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 6) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
 
   resetStore: () =>
@@ -120,6 +138,7 @@ export const useSessionDraftStore = create<SessionDraftState>((set) => ({
       enemies: [],
       npcs: [],
       participantCharacterIds: [],
+      maps: [],
       currentStep: 1,
     }),
 }));

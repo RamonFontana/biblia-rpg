@@ -33,6 +33,7 @@ vi.mock('./realtime', () => ({
 import { callsOf, filterOf } from '../test/fakeSupabase';
 import {
   addSessionMap,
+  addSessionMaps,
   listSessionMaps,
   removeSessionMap,
   showSessionMap,
@@ -96,6 +97,47 @@ describe('addSessionMap', () => {
         rows: 15,
         position: 0,
       }),
+    ).rejects.toBe(failure);
+  });
+});
+
+describe('addSessionMaps', () => {
+  it('insere todos de uma vez, na ordem, com a posição de cada um', async () => {
+    await addSessionMaps('s1', [
+      { libraryId: 'terreno-areia', name: 'Deserto', columns: 20, rows: 15 },
+      { libraryId: 'terreno-pedra', name: 'Muralha', columns: 30, rows: 8 },
+    ]);
+    const calls = callsOf(state.calls, 'session_maps', 'insert');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.payload).toEqual([
+      {
+        session_id: 's1',
+        library_id: 'terreno-areia',
+        name: 'Deserto',
+        columns: 20,
+        rows: 15,
+        position: 0,
+      },
+      {
+        session_id: 's1',
+        library_id: 'terreno-pedra',
+        name: 'Muralha',
+        columns: 30,
+        rows: 8,
+        position: 1,
+      },
+    ]);
+  });
+
+  it('sem mapas, não chama o banco', async () => {
+    await addSessionMaps('s1', []);
+    expect(state.calls).toEqual([]);
+  });
+
+  it('lança o erro ao inserir', async () => {
+    state.respond = () => ({ error: failure });
+    await expect(
+      addSessionMaps('s1', [{ libraryId: 'terreno-areia', name: 'x', columns: 20, rows: 15 }]),
     ).rejects.toBe(failure);
   });
 });

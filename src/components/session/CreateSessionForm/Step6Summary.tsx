@@ -5,7 +5,7 @@ import { createGameSession } from '@/services/sessionService';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/lib/errorMessage';
 
-export function Step5Summary() {
+export function Step6Summary() {
   const store = useSessionDraftStore();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,6 +20,7 @@ export function Step5Summary() {
         session_description: store.description,
         enemies: store.enemies,
         npcs: store.npcs,
+        maps: store.maps,
         participant_character_ids: store.participantCharacterIds,
       });
       store.resetStore();
@@ -73,6 +74,21 @@ export function Step5Summary() {
             </ul>
           ) : (
             <p className="text-muted-foreground italic">Nenhum NPC adicionado.</p>
+          )}
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-lg text-primary">Mapas ({store.maps.length})</h3>
+          {store.maps.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {store.maps.map((m) => (
+                <li key={m.id}>
+                  {m.name} ({m.columns}×{m.rows} Quadrados)
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground italic">Nenhum mapa escolhido.</p>
           )}
         </div>
 

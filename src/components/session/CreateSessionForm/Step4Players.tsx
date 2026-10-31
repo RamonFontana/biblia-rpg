@@ -105,7 +105,7 @@ export function Step4Players() {
           Voltar
         </Button>
         <Button type="button" onClick={nextStep} className="w-full sm:w-auto">
-          Próximo: Resumo
+          Próximo: Mapas
         </Button>
       </div>
     </div>

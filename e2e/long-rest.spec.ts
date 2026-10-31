@@ -70,6 +70,7 @@ test.describe('Dados de Vida: Descanso Longo e sessão nova', () => {
     await master.getByRole('button', { name: 'Próximo: NPCs' }).click();
     await master.getByRole('button', { name: 'Próximo: Jogadores' }).click();
     await master.getByLabel('Eliabe').check();
+    await master.getByRole('button', { name: 'Próximo: Mapas' }).click();
     await master.getByRole('button', { name: 'Próximo: Resumo' }).click();
     await master.getByRole('button', { name: 'Iniciar Sessão' }).click();
     await expect(master).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
