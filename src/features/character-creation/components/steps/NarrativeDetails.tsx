@@ -5,6 +5,7 @@ import { nameSchema, narrativeSchema } from '../../schemas/characterSchema';
 import { useCharacterCreationStore } from '../../store/useCharacterCreationStore';
 import { useQuickSave } from '../../hooks/useQuickSave';
 import { z } from 'zod';
+import { compressImage, PORTRAIT_COMPRESSION } from '@/lib/imageCompression';
 
 const combinedSchema = z.object({
   ...nameSchema.shape,
@@ -47,45 +48,10 @@ export function NarrativeDetails() {
     if (!file) return;
 
     setIsCompressing(true);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        // Redimensionar para max 500x500 mantendo proporção
-        const MAX_WIDTH = 500;
-        const MAX_HEIGHT = 500;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          // Comprimir como WEBP com 70% de qualidade
-          const base64String = canvas.toDataURL('image/webp', 0.7);
-          setValue('narrative.imageUrl', base64String);
-        }
-        setIsCompressing(false);
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    compressImage(file, PORTRAIT_COMPRESSION)
+      .then((base64String) => setValue('narrative.imageUrl', base64String))
+      .catch(() => undefined)
+      .finally(() => setIsCompressing(false));
   };
 
   const onSubmit = (data: NarrativeFormData) => {

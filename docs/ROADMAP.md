@@ -12,7 +12,7 @@
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
 | 5 — Features novas | **concluída em 2026-10-28**: Fé na mesa (PR #60), ataque físico (#61), Dados de Vida (#62) e efeitos de Habilidade (#63), todas com migrations aplicadas na produção. Resta o que cada feature registrou como decisão do autor. Próximo: refatorar o layout da sessão (Onda 6) e então o mapa |
-| 6 — Layout da sessão | **passo 1 concluído em 2026-10-31**: os 12 tickets de `.scratch/layout-da-sessao/` estão entregues (moldura, Barra de Status, Hotbar, Palco, Mestre na web e no celular, Hotbar do NPC jogável e espectador; ADRs 0008 e 0009). As migrations `convert_playable_npc_keys` e `npc_ability_use_by_gm` foram aplicadas na produção em 2026-10-31. Pendente: testar o arrasto e o toque longo num iPhone real e a mudança do Bálsamo. Próximo: o mapa. Detalhe em "Onda 6" |
+| 6 — Layout da sessão | **passo 1 concluído em 2026-10-31**: os 12 tickets de `.scratch/layout-da-sessao/` estão entregues (moldura, Barra de Status, Hotbar, Palco, Mestre na web e no celular, Hotbar do NPC jogável e espectador; ADRs 0008 e 0009). As migrations `convert_playable_npc_keys` e `npc_ability_use_by_gm` foram aplicadas na produção em 2026-10-31. Pendente: testar o arrasto e o toque longo num iPhone real e a mudança do Bálsamo. **Passo 2 (mapa): grill feito em 2026-10-31** (ADRs 0010 e 0011, regras de luz em `regras-base.md` 6.7); próximo: `/to-spec`. Detalhe em "Onda 6" e "Onda 6, passo 2" |
 
 
 ## Contexto
@@ -606,7 +606,7 @@ Quando incomodarem: as arestas da mesa (NPC escondido em tempo real, carteira ze
 - **Arestas da mesa** (NPC escondido que não some em tempo real, carteira com 0 Siclos que volta a 50, iniciativa sorteada opcional, a janela entre a leitura e a assinatura do canal em `useGameSession`, `useCharacterSheet` e `MasterDeathControls`): continuam adiadas; a Onda 6 já mexe nas três telas da janela de leitura.
 - **Ainda sem decisão:** o alerta de Morrendo que também dispara para o Estável e só vale ao vivo; a ordem de turno duplicada na tela e no banco; os 13 pontos de conteúdo bíblico (§2).
 
-**Depois da Onda 5:** refatorar o layout da sessão (Onda 6); em seguida o Sustento no Descanso Longo e os presets de inimigo com Habilidade, na tela nova; e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor.
+**Depois da Onda 5:** refatorar o layout da sessão (Onda 6); em seguida o Sustento no Descanso Longo e os presets de inimigo com Habilidade, na tela nova; e então o **mapa** (pins de personagem, grid e iluminação), pedido do autor, decidido no grill da Onda 6, passo 2.
 
 ### Onda 6: layout da sessão (grill de 2026-10-29)
 
@@ -639,6 +639,37 @@ Nenhuma regra de jogo muda. Antes de refatorar, leia os ADRs 0008 (motion e bott
 **Protótipo (2026-10-29, branch `prototype/session-layout`, commit `6ee68b5`).** Três variantes da Hotbar e do dock. Veredito do autor: as Habilidades como na B (abas por espaço do turno, peças com nome, Cartão acima da Hotbar) e o dock como na C (trilho na borda do Palco); o resto como no grill. Falta testar à mão o arrasto do bottom sheet num iPhone. **Próximo passo:** `/tdd` pelos tickets em `.scratch/layout-da-sessao/issues/` (01 e 07 começam já).
 
 **Para depois:** slots da Hotbar fixados pelo jogador (hoje é automática); troca automática de aba no combate (Reação fora do turno); arte de ícone por Habilidade; o Sustento no Descanso Longo e os presets de inimigo com Habilidade entram na tela nova, como já decidido.
+
+### Onda 6, passo 2: mapa (grill de 2026-10-31)
+
+Antes de começar, leia a seção "Mapa" do `CONTEXT.md`, os ADRs 0009, 0010 e 0011 e `regras-base.md` 6.7. **Regra nova confirmada pelo autor:** grid de 1,5 m (diagonal = 1 quadrado), luz plena, penumbra e escuridão, ambiente pelo período, Tocha com 6 m + 6 m, acendida como Ação Livre, sem ocupar a mão, e apagada no Descanso Curto, no Longo ou pelo Mestre.
+
+**Decisões do autor.**
+- **Mapas:** o mapa enviado é do Mestre e serve a qualquer sessão dele. A sessão escolhe da Biblioteca e dos mapas do Mestre num passo opcional "Mapas" do assistente, e o Mestre soma mapas durante o jogo pelo ícone **Mapas** do trilho (ADR 0009). A Biblioteca começa com terrenos lisos gerados pelo app; os mapas desenhados entram quando o autor trouxer imagens próprias, com grid ajustado e licença anotada.
+- **Imagem:** webp em base64 numa tabela própria, fora do Realtime, baixada uma vez por mapa (ADR 0010). **Recorte em quadrados:** o Mestre alinha a imagem por baixo do grid e escolhe colunas × linhas inteiras; proporção livre, no máximo 2048 px no lado maior; só na web.
+- **Grid:** visível a todos, com as linhas desligáveis por mapa; o pin encaixa no centro do quadrado; ao arrastar, o Mestre vê quadrados e metros andados.
+- **Mapa atual:** o Mestre prepara qualquer mapa só para ele e o mostra aos jogadores; sem mapa mostrado, o Palco é o de Retratos. Cada mapa guarda as posições; quem não tem posição fica na Bandeja.
+- **Pins:** só o Mestre arrasta; o jogador arrasta e amplia o mapa, toca no pin para abrir o cartão do Retrato e centraliza no próprio personagem. O inimigo pode ir ao mapa fora do combate. No combate, o pin do turno fica destacado e o painel de Ataque mostra a distância em metros, sem travar.
+- **Iluminação nível 1:** ambiente e Fontes de luz com raio, sem paredes (podem vir depois). A Tocha vai no pin de quem a acende pela Hotbar (gasta 1); o Mestre põe luzes fixas e luz no pin de inimigo ou NPC.
+- **Visão:** cada jogador vê pelo próprio personagem; o grupo é sempre visível; o Cego não vê inimigos nem NPCs; o Mestre vê tudo e tem "Ver como"; o espectador vê a soma do grupo.
+- **Oculto** (substitui "escondido" na tela): some do mapa, da iniciativa, do feed e dos alvos; o inimigo entra Oculto quando é posto no mapa. A luz só escurece o mapa. Tudo só na tela (ADR 0011): o RLS de `session_npcs` abre a todo participante, o que fecha a aresta "NPC escondido em tempo real".
+- **Celular:** o Mestre faz tudo, menos enviar e recortar mapa e cuidar dos mapas dele.
+- **Sem dependência nova:** pan e zoom próprios (Pointer Events e CSS transform, transformação num módulo puro), grid e luz em SVG.
+
+**Padrões adotados sem pergunta (o autor pode revê-los no `/to-spec`):** o Oculto vale por Retrato na sessão; a Tocha acesa é do personagem e atravessa a troca de mapa; o inimigo a 0 PV fica no mapa, apagado, até o Mestre tirá-lo; o Mestre não apaga mapa usado por sessão ativa; terreno liso com 20×15 por padrão (5 a 60 por lado); upload de até 20 MB; a posição grava ao soltar o pin.
+
+**Fatias** (cada PR deixa o app jogável):
+0. `fix:` comprimir a imagem do inimigo como o retrato (hoje `UnifiedEnemyForm` grava o arquivo cru).
+1. Mapa atual com terreno liso: mapas da sessão, passo do assistente, Painel Mapas, Palco com grid, pan e zoom.
+2. Pins: posições por mapa, Bandeja, arrasto com régua, cartão, destaque do turno e distância no Ataque.
+3. Envio e recorte em quadrados (ADR 0010).
+4. Oculto em inimigos e NPCs, com o RLS de `session_npcs` aberto.
+5. Iluminação: ambiente, luzes, Visão, "Ver como" e espectador.
+6. Tocha pela Hotbar, com a luz no pin e o apagar nos Descansos.
+
+**Divergência doc × código (registrada):** `docs/itens/consumiveis.md` e `regras-base.md` 6.7 já trazem a Tocha nova; a descrição em `src/content/items.ts` ("Ilumina 6m. Queima por 1h") só muda na fatia 6, com `npm run gen:items-seed` e a migration do seed.
+
+**Observado, não mexi:** os tickets de `.scratch/layout-da-sessao/issues/` continuam com `Status: ready-for-agent`, embora entregues.
 
 ## 6. O que VOCÊ precisa fazer fora do código
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.
