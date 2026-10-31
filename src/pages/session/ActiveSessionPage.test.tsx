@@ -51,6 +51,12 @@ vi.mock('react-router-dom', () => ({
 vi.mock('@/store/authStore', () => ({ useAuthStore: () => ({ user: h.user }) }));
 vi.mock('@/store/combatStore', () => ({ useCombatStore: () => h.combat }));
 vi.mock('@/hooks/useSessionMaps', () => ({ useSessionMaps: () => h.maps }));
+vi.mock('@/data-access/maps', () => ({
+  addSessionMap: vi.fn(),
+  updateSessionMap: vi.fn(),
+  removeSessionMap: vi.fn(),
+  showSessionMap: vi.fn(),
+}));
 vi.mock('@/hooks/useSessionTests', () => ({ useSessionTests: () => h.tests }));
 vi.mock('@/hooks/useSessionCharacters', () => ({ useSessionCharacters: () => h.roster }));
 vi.mock('@/hooks/useSessionTrades', () => ({
