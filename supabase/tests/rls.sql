@@ -603,6 +603,33 @@ select pg_temp.t('Mapa atual: o banco recusa o mapa de outra sessão', pg_temp.r
 select pg_temp.t('Mapa atual: jogador não muda',             pg_temp.run_as((select alice from who), $q$update public.game_sessions set shown_map_id = 'cccccccc-0000-0000-0000-000000000001' where id = '22222222-0000-0000-0000-000000000001'$q$), 'rows=0');
 select pg_temp.t('Mapa atual: apagar o mapa mostrado volta ao Palco de Retratos', pg_temp.after_as((select gm from who), array[$q$update public.game_sessions set shown_map_id = 'cccccccc-0000-0000-0000-000000000001' where id = '22222222-0000-0000-0000-000000000001'$q$, $q$delete from public.session_maps where id = 'cccccccc-0000-0000-0000-000000000001'$q$], $q$select coalesce(shown_map_id::text, 'nulo') from public.game_sessions where id = '22222222-0000-0000-0000-000000000001'$q$), 'nulo');
 
+-- ======================= session_map_pins =======================
+insert into public.session_maps (id, session_id, library_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000001', 'terreno-areia', 'Mapa dos pins', 10, 8);
+insert into public.session_npcs (id, session_id, name, is_visible) values
+  ('dddddddd-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000001', 'Mercador', true);
+insert into public.session_map_pins (id, map_id, character_id, col, row) values
+  ('eeeeeeee-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000003', '33333333-0000-0000-0000-000000000001', 2, 3);
+select pg_temp.t('pins: anon não lê',                  pg_temp.run_as(null, 'select * from public.session_map_pins'), 'error=42501');
+select pg_temp.t('pins: estranho não lê',              pg_temp.run_as((select carol from who), 'select * from public.session_map_pins'), 'rows=0');
+select pg_temp.t('pins: jogador da sessão lê',         pg_temp.run_as((select alice from who), 'select * from public.session_map_pins'), 'rows=1');
+select pg_temp.t('pins: Mestre lê',                    pg_temp.run_as((select gm from who), 'select * from public.session_map_pins'), 'rows=1');
+select pg_temp.t('pins: jogador não cria',             pg_temp.run_as((select alice from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','33333333-0000-0000-0000-000000000002',1,1)$q$), 'error=42501');
+select pg_temp.t('pins: Mestre de outra sessão não cria aqui', pg_temp.run_as((select carol from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','33333333-0000-0000-0000-000000000002',1,1)$q$), 'error=42501');
+select pg_temp.t('pins: Mestre cria o pin de uma ficha', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','33333333-0000-0000-0000-000000000002',1,1)$q$), 'rows=1');
+select pg_temp.t('pins: Mestre cria o pin de um NPC simples', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, npc_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','dddddddd-0000-0000-0000-000000000001',4,4)$q$), 'rows=1');
+select pg_temp.t('pins: o banco recusa pin sem Retrato', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, col, row) values ('cccccccc-0000-0000-0000-000000000003',1,1)$q$), 'error=23514');
+select pg_temp.t('pins: o banco recusa pin com ficha e NPC ao mesmo tempo', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, character_id, npc_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','33333333-0000-0000-0000-000000000002','dddddddd-0000-0000-0000-000000000001',1,1)$q$), 'error=23514');
+select pg_temp.t('pins: um Retrato tem um pin só por mapa', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','33333333-0000-0000-0000-000000000001',5,5)$q$), 'error=23505');
+select pg_temp.t('pins: o banco recusa Quadrado fora das colunas', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-000000000003','33333333-0000-0000-0000-000000000002',10,1)$q$), 'error=23514');
+select pg_temp.t('pins: o banco recusa Quadrado fora das linhas', pg_temp.run_as((select gm from who), $q$update public.session_map_pins set row = 8 where id = 'eeeeeeee-0000-0000-0000-000000000001'$q$), 'error=23514');
+select pg_temp.t('pins: o banco recusa Quadrado negativo', pg_temp.run_as((select gm from who), $q$update public.session_map_pins set col = -1 where id = 'eeeeeeee-0000-0000-0000-000000000001'$q$), 'error=23514');
+select pg_temp.t('pins: Mestre move o pin', pg_temp.val_as((select gm from who), $q$update public.session_map_pins set col = 7, row = 6 where id = 'eeeeeeee-0000-0000-0000-000000000001' returning col || ',' || row$q$), '7,6');
+select pg_temp.t('pins: jogador não move o pin', pg_temp.run_as((select alice from who), $q$update public.session_map_pins set col = 7 where id = 'eeeeeeee-0000-0000-0000-000000000001'$q$), 'rows=0');
+select pg_temp.t('pins: jogador não apaga o pin', pg_temp.run_as((select alice from who), $q$delete from public.session_map_pins$q$), 'rows=0');
+select pg_temp.t('pins: Mestre devolve o Retrato à Bandeja', pg_temp.run_as((select gm from who), $q$delete from public.session_map_pins where id = 'eeeeeeee-0000-0000-0000-000000000001'$q$), 'rows=1');
+select pg_temp.t('pins: apagar o mapa apaga os pins dele', pg_temp.after_as((select gm from who), array[$q$delete from public.session_maps where id = 'cccccccc-0000-0000-0000-000000000003'$q$], $q$select count(*)::text from public.session_map_pins$q$), '0');
+
 -- ============================ resultado ============================
 do $$
 declare bad text; total int; ok int;

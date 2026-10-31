@@ -73,3 +73,16 @@ export function zoomAround(
 export function panBy(view: View, dx: number, dy: number, viewport: Size, content: Size): View {
   return clampView({ ...view, x: view.x + dx, y: view.y + dy }, viewport, content);
 }
+
+/** Leva o ponto do mapa ao meio do Palco, mantendo a escala e sem mostrar além da borda do mapa. */
+export function centerOn(view: View, point: Point, viewport: Size, content: Size): View {
+  return clampView(
+    {
+      scale: view.scale,
+      x: viewport.width / 2 - point.x * view.scale,
+      y: viewport.height / 2 - point.y * view.scale,
+    },
+    viewport,
+    content,
+  );
+}
