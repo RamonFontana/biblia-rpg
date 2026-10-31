@@ -115,3 +115,48 @@ describe('PanZoomViewport', () => {
     expect(viewport.className).toContain('touch-none');
   });
 });
+
+describe('PanZoomViewport: modo cobrir (o editor de recorte)', () => {
+  const wide = { width: 1000, height: 500 };
+
+  it('começa cobrindo o Palco inteiro, sem vazio, em vez de mostrar o mapa inteiro', () => {
+    render(
+      <PanZoomViewport content={wide} label="Recorte" fit="cover">
+        <div>imagem</div>
+      </PanZoomViewport>,
+    );
+    const view = readView(screen.getByTestId('camada-do-mapa'));
+    expect(view.scale).toBeCloseTo(300 / 500, 5); // a altura manda; sobra largura dos lados
+    expect(view.x).toBeCloseTo((400 - 1000 * view.scale) / 2, 3);
+  });
+
+  it('não deixa reduzir abaixo de cobrir o Palco', () => {
+    render(
+      <PanZoomViewport content={wide} label="Recorte" fit="cover">
+        <div>imagem</div>
+      </PanZoomViewport>,
+    );
+    fireEvent.wheel(screen.getByRole('group', { name: 'Recorte' }), { deltaY: 5000 });
+    expect(readView(screen.getByTestId('camada-do-mapa')).scale).toBeCloseTo(0.6, 5);
+  });
+
+  it('a vista de agora fica à mão de quem desenha por cima, e o overlay não acompanha o zoom', () => {
+    const apiRef = {
+      current: null as null | { getView: () => unknown; getViewport: () => unknown },
+    };
+    render(
+      <PanZoomViewport
+        content={wide}
+        label="Recorte"
+        fit="cover"
+        apiRef={apiRef as never}
+        overlay={<span>grade</span>}
+      >
+        <div>imagem</div>
+      </PanZoomViewport>,
+    );
+    expect(apiRef.current?.getViewport()).toEqual({ width: 400, height: 300 });
+    expect(apiRef.current?.getView()).toMatchObject({ scale: expect.closeTo(0.6, 5) });
+    expect(screen.getByText('grade').closest('[data-testid="camada-do-mapa"]')).toBeNull();
+  });
+});
