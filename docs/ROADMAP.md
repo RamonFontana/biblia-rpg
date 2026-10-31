@@ -12,7 +12,7 @@
 | 4 — Restante + padronização visual | **concluída em 2026-10-24** (passos 1 a 9, PRs até o #57; ver o fechamento no fim da seção da Onda 4). Resta como dívida só o `PhysicalRollForm` e o que está listado em "Passa para a Onda 5" |
 | Rodada 2 — Regras do jogo | **respondida em 2026-10-24** (decisões no fim da seção da Onda 4); a implementação entra na Onda 5 |
 | 5 — Features novas | **concluída em 2026-10-28**: Fé na mesa (PR #60), ataque físico (#61), Dados de Vida (#62) e efeitos de Habilidade (#63), todas com migrations aplicadas na produção. Resta o que cada feature registrou como decisão do autor. Próximo: refatorar o layout da sessão (Onda 6) e então o mapa |
-| 6 — Layout da sessão | **passo 1 concluído em 2026-10-31**: os 12 tickets de `.scratch/layout-da-sessao/` estão entregues (moldura, Barra de Status, Hotbar, Palco, Mestre na web e no celular, Hotbar do NPC jogável e espectador; ADRs 0008 e 0009). Pendente: aplicar na produção as migrations `convert_playable_npc_keys` e `npc_ability_use_by_gm` (confirmação do autor), testar o arrasto e o toque longo num iPhone real e a mudança do Bálsamo. Próximo: o mapa. Detalhe em "Onda 6" |
+| 6 — Layout da sessão | **passo 1 concluído em 2026-10-31**: os 12 tickets de `.scratch/layout-da-sessao/` estão entregues (moldura, Barra de Status, Hotbar, Palco, Mestre na web e no celular, Hotbar do NPC jogável e espectador; ADRs 0008 e 0009). As migrations `convert_playable_npc_keys` e `npc_ability_use_by_gm` foram aplicadas na produção em 2026-10-31. Pendente: testar o arrasto e o toque longo num iPhone real e a mudança do Bálsamo. Próximo: o mapa. Detalhe em "Onda 6" |
 
 
 ## Contexto
@@ -75,14 +75,14 @@ Decisões já tomadas (perguntas desta sessão):
   - Máximo de Fé com 4 valores diferentes (100 / `stats.faith||100` / `||0` / `max_faith`).
   - `current_faith ?? faith ?? 0` repetido 16× em 10 arquivos.
 - **Aleatoriedade:** `Math.random` inline em 7 pontos de regra (`AttributeGeneration:48`, `DeathSavesModal:52`, `DiceRollerDialog:50`, `SessionRestControls:109`, `sessionTestService:112`, `PlayerTestDialog:260-304`, `useAmmunition:49`). Nada é injetável.
-- **NPC jogável:** corrigido na Onda 6 (ticket 07): a criação da sessão grava `for/des/…` sem `stats.armor_class` (a CA vem do equipamento), e a migration `convert_playable_npc_keys` converte as fichas existentes. A migration ainda precisa ser aplicada na produção, com a confirmação do autor.
+- **NPC jogável:** corrigido na Onda 6 (ticket 07): a criação da sessão grava `for/des/…` sem `stats.armor_class` (a CA vem do equipamento), e a migration `convert_playable_npc_keys` converte as fichas existentes. A migration foi aplicada na produção em 2026-10-31, com a confirmação do autor (0 fichas de NPC com as chaves antigas depois).
 
 **Itens**
 - A fonte real é `src/data/itemsDb.ts` (35 itens).
 - Seeds desatualizados: `seed_items*.sql` têm 32 itens; `seed_items.sql` insere slug em coluna UUID; os preços são arredondados para inteiro.
 - Itens também são criados em runtime (`syncInventory.ts:118`), com significado diferente para `category`.
 - Efeitos são `jsonb` livre: o código lê chaves fora do tipo `ItemEffects` (`combat.ts:43`).
-- `heal_dice` nunca é rolado: Bálsamo e Ração curam 0. **Decisão do autor (2026-10-29):** o Bálsamo continua um item e cura 1d4 PV, mas só **dentro do Descanso Curto** (como diz o `docs/itens/consumiveis.md`), com o jogador digitando o d4 rolado na mesa (ADR 0001); a cura em Descanso por escolha de dados continua sendo dos Dados de Vida. Falta especificar e implementar (e a aba Itens da Hotbar passa a mostrá-lo bloqueado fora do Descanso Curto); a Ração e o Odre seguem como Sustento, sem cura.
+- `heal_dice` nunca é rolado: Bálsamo e Ração curam 0. **Decisão do autor (2026-10-29):** o Bálsamo continua um item e cura 1d4 PV, mas só **dentro do Descanso Curto** (como diz o `docs/itens/consumiveis.md`), com o jogador digitando o d4 rolado na mesa (ADR 0001); a cura em Descanso por escolha de dados continua sendo dos Dados de Vida. Especificado em `.scratch/balsamo/spec.md` (2026-10-30; sem CON, sem teto por Descanso, só em si mesmo); falta implementar (e a aba Itens da Hotbar passa a mostrá-lo bloqueado fora do Descanso Curto); a Ração e o Odre seguem como Sustento, sem cura.
 - Elmos caem no slot `body` (`syncInventory.ts:62`).
 - Kits iniciais divergem entre `KITS_DB`, `VOCATION_KIT_ITEMS` e o doc.
 - Proficiências de vocação divergem do doc (`itemsDb.ts:87-93`).
@@ -620,7 +620,7 @@ Nenhuma regra de jogo muda. Antes de refatorar, leia os ADRs 0008 (motion e bott
 - **Palco:** Retratos de quem está na cena, que viram os pins do mapa; o cartão do Retrato absorve o `SessionParticipantList` e o `TokenContextMenu`. No combate, faixa de iniciativa e feed dos últimos 3 eventos.
 - **Dock do jogador:** Ficha, Inventário, Grupo, Histórico, Descanso, com selo de atenção.
 - **Mestre:** mesma moldura; trilho com Jogadores, Inimigos, NPCs, Testes, Descanso, Histórico e Sessão; coluna fixa de combate na web; Barra do Mestre com os comandos de hoje (mesmos nomes acessíveis). No celular, o Palco vira a lista de iniciativa durante o combate, com o botão "Cena".
-- **Hotbar do NPC jogável (capacidade nova):** aparece no turno dele e pelo seletor "Agir como". Pede uma migration (ticket 10): `record_ability_use` só aceitava o dono de um participante `player`, e o NPC jogável é `npc`; a migration `npc_ability_use_by_gm` deixa o Mestre da sessão gravar o uso dele (a suposição anterior, de que já aceitava, estava errada). A migration ainda precisa ser aplicada na produção, com a confirmação do autor.
+- **Hotbar do NPC jogável (capacidade nova):** aparece no turno dele e pelo seletor "Agir como". Pede uma migration (ticket 10): `record_ability_use` só aceitava o dono de um participante `player`, e o NPC jogável é `npc`; a migration `npc_ability_use_by_gm` deixa o Mestre da sessão gravar o uso dele (a suposição anterior, de que já aceitava, estava errada). Aplicada na produção em 2026-10-31.
 - **Espectador:** a mesma moldura só para leitura (Palco, iniciativa, feed; dock com Ficha e Grupo).
 - **Motion:** só `motion`, sem `vaul` (ADR 0008). Painel, dano e cura, turno, uso de Habilidade e entrada da Hotbar; nada em loop; `prefers-reduced-motion` deixa só opacidade.
 

@@ -14,7 +14,11 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('@/data-access/sessions', () => data);
 
-vi.mock('@/data-access/characters', () => ({ spendHitDie: vi.fn() }));
+vi.mock('@/data-access/characters', () => ({ spendHitDie: vi.fn(), healCharacter: vi.fn() }));
+vi.mock('@/data-access/inventory', () => ({
+  removeInventoryItem: vi.fn(),
+  setInventoryQuantity: vi.fn(),
+}));
 
 import { ShortRestCard } from './ShortRestCard';
 import type { SpenderCharacter } from './HitDiceSpender';
@@ -184,6 +188,43 @@ describe('ShortRestCard: Dados de Vida', () => {
   it('sem personagens na lista não mostra nada de Dados de Vida', () => {
     renderWith(open('master'), []);
     expect(screen.queryByLabelText(/Resultado do d/)).not.toBeInTheDocument();
+  });
+});
+
+describe('ShortRestCard: Bálsamo', () => {
+  const withBalm = (id: string): SpenderCharacter => ({
+    ...spender(id, 'Eliabe'),
+    character_items: [
+      {
+        id: 'ci1',
+        quantity: 2,
+        level: 1,
+        items: { slug: 'balsamo', name: 'Bálsamo', description: 'Cura 1d4 HP em Descanso' },
+      },
+    ],
+  });
+  const renderWith = (session: ShortRestSession, spenders: SpenderCharacter[]) =>
+    render(
+      <ShortRestCard
+        role="player"
+        sessionId="s1"
+        session={session}
+        hasActiveCombat={false}
+        spenders={spenders}
+        onSpent={vi.fn()}
+      />,
+    );
+
+  it('com o descanso aberto o jogador vê o Bálsamo ao lado dos Dados de Vida', () => {
+    renderWith(open('master'), [withBalm('c1')]);
+    expect(screen.getByLabelText(/Resultado do d10/)).toBeInTheDocument();
+    expect(screen.getByText('Bálsamo: 2')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Resultado do d4/)).toBeInTheDocument();
+  });
+
+  it('com o descanso fechado não mostra o Bálsamo', () => {
+    renderWith(closed, [withBalm('c1')]);
+    expect(screen.queryByText('Bálsamo: 2')).not.toBeInTheDocument();
   });
 });
 

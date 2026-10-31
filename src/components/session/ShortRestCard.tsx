@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Coffee, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BalmSpender } from './BalmSpender';
 import { HitDiceSpender, type SpenderCharacter } from './HitDiceSpender';
 import {
   closeShortRest,
@@ -115,13 +116,21 @@ export function ShortRestCard({
       {state.isOpen && spenders.length > 0 && (
         <div className="mt-3 flex flex-col gap-2">
           {spenders.map((character) => (
-            <HitDiceSpender
-              key={character.id}
-              character={character}
-              restOpen
-              showName={role === 'master'}
-              onSpent={(id, patch) => onSpent?.(id, patch)}
-            />
+            <div key={character.id} className="flex flex-col gap-2">
+              <HitDiceSpender
+                character={character}
+                restOpen
+                showName={role === 'master'}
+                onSpent={(id, patch) => onSpent?.(id, patch)}
+              />
+              {role === 'player' && (
+                <BalmSpender
+                  character={character}
+                  restOpen
+                  onSpent={(id, patch) => onSpent?.(id, patch)}
+                />
+              )}
+            </div>
           ))}
         </div>
       )}
