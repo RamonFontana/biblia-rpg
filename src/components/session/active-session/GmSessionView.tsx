@@ -30,6 +30,7 @@ import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { useCombatStore } from '@/store/combatStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
+import { extinguishTorch, lightTorch } from '@/data-access/torch';
 import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
 import { setRetratoHidden } from '@/services/visibilityService';
 import { useMapPins } from '@/hooks/useMapPins';
@@ -401,6 +402,11 @@ export function GmSessionView({
                             onRemoveLight: lightsApi.remove,
                             onSetPinLight: (retrato, light) =>
                               setPinLight(pinTargetOf(retrato), light),
+                            onSetTorch: (retrato, lit) => {
+                              (lit ? lightTorch : extinguishTorch)(retrato.id).catch((error) =>
+                                console.error('Erro ao mudar a Tocha:', error),
+                              );
+                            },
                           }
                     }
                     onMovePin={(retrato, cell) => movePin(pinTargetOf(retrato), cell)}

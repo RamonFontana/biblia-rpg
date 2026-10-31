@@ -471,6 +471,7 @@ describe('MapaDoPalco: o Mestre controla o Ambiente e as luzes', () => {
       onChangeLight: vi.fn(),
       onRemoveLight: vi.fn(),
       onSetPinLight: vi.fn(),
+      onSetTorch: vi.fn(),
     };
     render(
       <MapaDoPalco
@@ -626,5 +627,32 @@ describe('MapaDoPalco: o Mestre controla o Ambiente e as luzes', () => {
     renderGm(sceneWith());
     fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
     expect(screen.queryByRole('button', { name: /luz em C1/i })).not.toBeInTheDocument();
+  });
+
+  it('o Mestre acende a Tocha de um personagem de jogador pelo pin e a apaga quando acesa', () => {
+    const gm = renderGm(sceneWith());
+    fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acender Tocha de C1' }));
+    expect(gm.onSetTorch).toHaveBeenCalledWith(eliabe, true);
+  });
+
+  it('com a Tocha acesa o botão apaga', () => {
+    const gm = renderGm(
+      sceneWith({
+        pins: [
+          {
+            retrato: eliabe,
+            cell: { col: 1, row: 1 },
+            turn: false,
+            level: 'plena',
+            light: { brightM: 6, dimM: 6 },
+            torch: true,
+          },
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'C1, 8 de 10 PV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar Tocha de C1' }));
+    expect(gm.onSetTorch).toHaveBeenCalledWith(eliabe, false);
   });
 });

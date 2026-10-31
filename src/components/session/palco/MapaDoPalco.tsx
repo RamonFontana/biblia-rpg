@@ -55,6 +55,8 @@ export interface GmMapActions {
   onRemoveLight: (id: string) => void;
   /** Acende (ou muda) a luz no pin do Retrato; nulo apaga. */
   onSetPinLight: (retrato: Retrato, light: { brightM: number; dimM: number } | null) => void;
+  /** Acende (gasta uma Tocha do inventário) ou apaga a Tocha do personagem de jogador. */
+  onSetTorch: (retrato: Retrato, lit: boolean) => void;
 }
 
 /** A luz de uma tocha acesa em campo aberto: 6 m de Luz plena e mais 6 m de Penumbra. */
@@ -514,6 +516,17 @@ export function MapaDoPalco({
             >
               {selected.hidden ? 'Oculto' : 'Visível'}
             </span>
+          )}
+          {gm && selected.kind === 'player' && selectedPin && (
+            <button
+              type="button"
+              aria-label={`${selectedPin.torch ? 'Apagar' : 'Acender'} Tocha de ${selected.name}`}
+              onClick={() => gm.onSetTorch(selected, !selectedPin.torch)}
+              className="flex min-h-11 items-center gap-1 rounded-md border border-stone-700 px-3 text-stone-100 hover:border-amber-500/60"
+            >
+              <Flame className="h-4 w-4" aria-hidden="true" />
+              {selectedPin.torch ? 'Apagar Tocha' : 'Acender Tocha'}
+            </button>
           )}
           {gm && selected.kind !== 'player' && selectedPin && (
             <PinLightControls

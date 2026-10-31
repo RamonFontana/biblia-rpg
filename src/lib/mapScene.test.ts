@@ -436,3 +436,39 @@ describe('buildMapScene: a Visão', () => {
     ]);
   });
 });
+
+describe('buildMapScene: a Tocha acesa', () => {
+  const pins = [
+    pin({ character_id: 'c1', col: 0, row: 0 }),
+    pin({ character_id: 'e1', col: 3, row: 0 }),
+    pin({ character_id: 'e2', col: 30, row: 30 }),
+  ];
+  const torchBearer = (lit: boolean) => ({
+    playerCharacters: [
+      { user_id: 'u1', character: ch('c1', { torch_lit: lit }) },
+      player('u2', 'c2'),
+    ],
+  });
+  const ids = (s: ReturnType<typeof scene>) => s.pins.map((p) => p.retrato.id).sort();
+
+  it('à noite, a Tocha acesa ilumina 6 m + 6 m em volta do pin e revela o inimigo perto', () => {
+    const s = scene({ viewer: 'player', pins, period: 'Noite', ...torchBearer(true) });
+    expect(ids(s)).toEqual(['c1', 'e1']);
+    expect(s.sources).toEqual([{ cell: { col: 0, row: 0 }, brightM: 6, dimM: 6 }]);
+    const mine = s.pins.find((p) => p.retrato.id === 'c1');
+    expect(mine?.torch).toBe(true);
+    expect(mine?.light).toEqual({ brightM: 6, dimM: 6 });
+  });
+
+  it('sem Tocha acesa não há fonte, e a luz some quando ela apaga', () => {
+    const s = scene({ viewer: 'player', pins, period: 'Noite', ...torchBearer(false) });
+    expect(ids(s)).toEqual(['c1']);
+    expect(s.sources).toEqual([]);
+  });
+
+  it('a Tocha acesa vale em qualquer mapa onde o pin estiver', () => {
+    const other = [pin({ character_id: 'c1', col: 5, row: 5, map_id: 'm2' })];
+    const s = scene({ viewer: 'gm', pins: other, ...torchBearer(true) });
+    expect(s.sources).toEqual([{ cell: { col: 5, row: 5 }, brightM: 6, dimM: 6 }]);
+  });
+});

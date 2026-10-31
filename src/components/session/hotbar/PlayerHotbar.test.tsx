@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   submitAbilityUse: vi.fn(),
   updateCharacter: vi.fn(),
   getAbilitiesForCharacter: vi.fn(),
+  lightTorch: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -20,6 +21,7 @@ vi.mock('@/lib/supabase', () => ({
     },
   },
 }));
+vi.mock('@/data-access/torch', () => ({ lightTorch: h.lightTorch }));
 vi.mock('@/data-access/characters', () => ({ updateCharacter: h.updateCharacter }));
 vi.mock('@/data-access/inventory', () => ({
   addInventoryItem: vi.fn(),
@@ -652,6 +654,73 @@ describe('PlayerHotbar: a aba Itens', () => {
     await pressUse();
     expect(onCharacterPatch).toHaveBeenCalledWith({
       character_items: [{ ...racao, quantity: 2 }],
+    });
+  });
+
+  describe('a Tocha, Ação Livre', () => {
+    const TOCHA = owned('ci-torch', 2, {
+      slug: 'tocha',
+      name: 'Tocha',
+      description: 'Luz plena 6 m + Penumbra 6 m',
+      is_consumable: true,
+    });
+    const acender = () => within(card()).getByRole('button', { name: 'Acender' });
+
+    it('aparece em Itens e em Livre', () => {
+      view(withItems([TOCHA]));
+      goToItems();
+      expect(screen.getByRole('button', { name: 'Tocha, 2 unidades' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('tab', { name: /^Livre/ }));
+      expect(screen.getByRole('button', { name: 'Tocha, 2 unidades' })).toBeInTheDocument();
+    });
+
+    it('acende pelo banco, gasta uma e avisa a tela, sem passar pelo consumo comum', async () => {
+      h.lightTorch.mockResolvedValue(undefined);
+      view(withItems([TOCHA]));
+      goToItems();
+      fireEvent.click(screen.getByRole('button', { name: /^Tocha/ }));
+      fireEvent.click(acender());
+      await waitFor(() =>
+        expect(onCharacterPatch).toHaveBeenCalledWith({
+          torch_lit: true,
+          character_items: [{ ...TOCHA, quantity: 1 }],
+        }),
+      );
+      expect(h.lightTorch).toHaveBeenCalledWith('c1');
+      expect(h.consumeInventoryItem).not.toHaveBeenCalled();
+    });
+
+    it('a última Tocha some do inventário ao acender', async () => {
+      h.lightTorch.mockResolvedValue(undefined);
+      const ultima = { ...TOCHA, quantity: 1 };
+      view(withItems([ultima]));
+      goToItems();
+      fireEvent.click(screen.getByRole('button', { name: /^Tocha/ }));
+      fireEvent.click(acender());
+      await waitFor(() =>
+        expect(onCharacterPatch).toHaveBeenCalledWith({ torch_lit: true, character_items: [] }),
+      );
+    });
+
+    it('já acesa, fica desabilitada com o motivo e a peça marca "Acesa"', () => {
+      view(withItems([TOCHA], { torch_lit: true }));
+      goToItems();
+      expect(screen.getByText(/Acesa/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /^Tocha/ }));
+      expect(acender()).toBeDisabled();
+      expect(within(card()).getByText('A Tocha já está acesa')).toBeInTheDocument();
+    });
+
+    it('a falha do banco é registrada e a tela não é avisada', async () => {
+      h.lightTorch.mockRejectedValueOnce(new Error('Sem Tocha no inventário'));
+      view(withItems([TOCHA]));
+      goToItems();
+      fireEvent.click(screen.getByRole('button', { name: /^Tocha/ }));
+      fireEvent.click(acender());
+      await waitFor(() =>
+        expect(console.error).toHaveBeenCalledWith('Erro ao acender a Tocha:', expect.any(Error)),
+      );
+      expect(onCharacterPatch).not.toHaveBeenCalled();
     });
   });
 

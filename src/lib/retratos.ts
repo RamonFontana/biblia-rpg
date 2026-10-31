@@ -28,6 +28,8 @@ export interface Retrato {
   participantId?: string;
   /** Só do Mestre: o Retrato Oculto, que os jogadores não veem. */
   hidden?: boolean;
+  /** A Tocha do personagem está acesa. */
+  torchLit?: boolean;
 }
 
 interface CombatSlice {
@@ -103,6 +105,7 @@ export function buildRetratos({
       conditions: asConditions(participant ? participant.conditions : character.conditions),
       isMe: character.id === myCharacterId,
       participantId: participant?.id,
+      torchLit: character.torch_lit === true ? true : undefined,
       ...extra,
     };
   };

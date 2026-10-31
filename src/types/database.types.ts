@@ -92,6 +92,7 @@ export type Database = {
           skills: Json | null
           stats: Json
           temptation: string | null
+          torch_lit: boolean
           tribe: string
           updated_at: string
           user_id: string
@@ -160,6 +161,7 @@ export type Database = {
           skills?: Json | null
           stats?: Json
           temptation?: string | null
+          torch_lit?: boolean
           tribe?: string
           updated_at?: string
           user_id?: string
@@ -1189,6 +1191,18 @@ export type Database = {
       }
       cancel_session_trades: {
         Args: { p_session_id: string }
+        Returns: undefined
+      }
+      can_handle_torch: {
+        Args: { p_character_id: string; p_gm_only: boolean }
+        Returns: boolean
+      }
+      extinguish_torch: {
+        Args: { p_character_id: string }
+        Returns: undefined
+      }
+      light_torch: {
+        Args: { p_character_id: string }
         Returns: undefined
       }
       close_short_rest: {

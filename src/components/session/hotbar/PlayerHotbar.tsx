@@ -19,6 +19,8 @@ import { useCombatStore } from '@/store/combatStore';
 import { abilitySkills, getAbilitiesForCharacter } from '@/utils/abilityUtils';
 import { isAmmunitionItem } from '@/domain/ammo';
 import { balmUseBlockMessage, getBalmUseBlock, isRestOnlyItem } from '@/domain/balm';
+import { getTorchBlock, isTorchItem, torchBlockMessage } from '@/domain/torch';
+import { lightTorch } from '@/data-access/torch';
 import { isDying as isCharacterDying } from '@/domain/deathSaves';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { applyConsumableEffects, normalizeHealingEffects } from '@/domain/consumables';
@@ -146,13 +148,33 @@ export function PlayerHotbar({
     });
     return block ? balmUseBlockMessage(block) : null;
   };
-  const items: HotbarItem[] = usable.map((owned) => ({
-    id: owned.id ?? '',
-    name: catalogOf(owned)?.name ?? 'Item',
-    quantity: owned.quantity ?? 0,
-    description: catalogOf(owned)?.description ?? '',
-    blockedReason: balmBlock(owned),
-  }));
+  const torchLit = character.torch_lit === true;
+  const torchBlock = (owned: CombatInventoryItem): string | null => {
+    if (!isTorchItem(catalogOf(owned)?.slug)) return null;
+    const block = getTorchBlock({
+      lit: torchLit,
+      isDead: Boolean(character.is_dead),
+      quantity: owned.quantity ?? 0,
+    });
+    return block ? torchBlockMessage(block) : null;
+  };
+  const items: HotbarItem[] = usable.map((owned) => {
+    const torch = isTorchItem(catalogOf(owned)?.slug);
+    return {
+      id: owned.id ?? '',
+      name: catalogOf(owned)?.name ?? 'Item',
+      quantity: owned.quantity ?? 0,
+      description: catalogOf(owned)?.description ?? '',
+      blockedReason: balmBlock(owned) ?? torchBlock(owned),
+      ...(torch
+        ? {
+            freeAction: true,
+            actionLabel: 'Acender',
+            status: torchLit ? 'Acesa' : undefined,
+          }
+        : {}),
+    };
+  });
   const ammunition = resolveAmmunition(
     { character_items: ownedItems },
     resolveMainHandWeapon({ equipment: character.equipment, character_items: ownedItems })
@@ -171,6 +193,25 @@ export function PlayerHotbar({
       return;
     }
     const catalog = catalogOf(owned);
+    // A Tocha acende como Ação Livre: o banco gasta uma e acende numa transação só.
+    if (isTorchItem(catalog?.slug)) {
+      if (torchBlock(owned)) return;
+      try {
+        await lightTorch(character.id);
+      } catch (error) {
+        console.error('Erro ao acender a Tocha:', error);
+        return;
+      }
+      const left = (owned.quantity ?? 0) - 1;
+      onCharacterPatch?.({
+        torch_lit: true,
+        character_items:
+          left <= 0
+            ? ownedItems.filter((o) => o.id !== item.id)
+            : ownedItems.map((o) => (o.id === item.id ? { ...o, quantity: left } : o)),
+      });
+      return;
+    }
     const effects = normalizeHealingEffects(
       (catalog?.effects ?? {}) as { heal?: number; heal_dice?: string; restore_faith?: number },
       catalog?.description ?? undefined,
