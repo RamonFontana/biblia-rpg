@@ -745,6 +745,16 @@ select pg_temp.t('luz no pin: o banco recusa raio acima de 120 m', pg_temp.run_a
 select pg_temp.t('luz no pin: jogador não acende',        pg_temp.run_as((select alice from who), $q$update public.session_map_pins set light_bright_m = 6, light_dim_m = 6 where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'rows=0');
 select pg_temp.t('luz no pin: jogador da sessão lê a luz do pin', pg_temp.val_as((select alice from who), $q$select coalesce(light_bright_m::text, 'nulo') from public.session_map_pins where id = 'eeeeeeee-0000-0000-0000-000000000021'$q$), 'nulo');
 
+-- ======================= pin só de quem é da sessão =======================
+insert into public.game_sessions (id, name, gm_id, status) values
+  ('22222222-0000-0000-0000-0000000000a1', 'S outra do Mestre', (select gm from who), 'active');
+insert into public.session_maps (id, session_id, library_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-0000000000a1', '22222222-0000-0000-0000-0000000000a1', 'terreno-areia', 'Mapa de outra sessão', 10, 8);
+select pg_temp.t('pin de membro: a ficha de quem não é da sessão é recusada', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-0000000000a1','33333333-0000-0000-0000-000000000002',1,1)$q$), 'error=23514');
+select pg_temp.t('pin de membro: o inimigo de outro Mestre é recusado e não é oculto', pg_temp.after_as((select carol from who), array[$q$insert into public.game_sessions (id, name, gm_id, status) values ('22222222-0000-0000-0000-0000000000a2','S da Carol',(select carol from who),'active')$q$, $q$insert into public.session_maps (id, session_id, library_id, name, columns, rows) values ('cccccccc-0000-0000-0000-0000000000a2','22222222-0000-0000-0000-0000000000a2','terreno-areia','M',10,8)$q$, $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-0000000000a2','33333333-0000-0000-0000-000000000007',1,1)$q$], $q$select 'x'$q$), 'error=23514');
+select pg_temp.t('pin de membro: o NPC simples de outra sessão é recusado', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, npc_id, col, row) values ('cccccccc-0000-0000-0000-0000000000a1','dddddddd-0000-0000-0000-000000000001',1,1)$q$), 'error=23514');
+select pg_temp.t('pin de membro: o inimigo do próprio Mestre entra', pg_temp.run_as((select gm from who), $q$insert into public.session_map_pins (map_id, character_id, col, row) values ('cccccccc-0000-0000-0000-0000000000a1','33333333-0000-0000-0000-000000000007',2,2)$q$), 'rows=1');
+
 -- ============================ Tocha acesa ============================
 insert into public.character_items (character_id, item_id, quantity)
   select '33333333-0000-0000-0000-000000000001', id, 2 from public.items where slug = 'tocha';

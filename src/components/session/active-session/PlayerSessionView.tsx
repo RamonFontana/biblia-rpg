@@ -137,8 +137,9 @@ export function PlayerSessionView({
     participants,
     hiddenEntityIds: hidden,
   });
+  // A vez de um Oculto não aparece: o aviso denunciaria quem age (ADR 0011).
   const turn =
-    hasActiveCombat && currentTurnParticipant
+    hasActiveCombat && currentTurnParticipant && !hidden.has(currentTurnParticipant.entity_id)
       ? {
           isMine: currentTurnParticipant.entity_id === myCharacter?.id,
           name: entities.find((e) => e.id === currentTurnParticipant.entity_id)?.name ?? 'Inimigo',

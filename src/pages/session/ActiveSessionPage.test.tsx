@@ -1167,6 +1167,17 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
         expect(pluck(prop('PlayerCombatView', 'entities'), 'id')).not.toContain('e1');
       });
 
+      it('a vez de um inimigo Oculto não chega ao aviso de turno do jogador', async () => {
+        hideEnemy(false);
+        inCombat('e1');
+        await renderPage();
+        expect(prop('PlayerStatusBar', 'turn')).toBeNull();
+        hideEnemy(true);
+        cleanup();
+        await renderPage();
+        expect(prop('PlayerStatusBar', 'turn')).toEqual({ isMine: false, name: 'Filisteu' });
+      });
+
       it('o feed e o histórico não citam quem está Oculto', async () => {
         hideEnemy(false);
         inCombat();

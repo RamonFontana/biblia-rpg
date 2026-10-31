@@ -711,6 +711,15 @@ describe('PlayerHotbar: a aba Itens', () => {
       expect(within(card()).getByText('A Tocha já está acesa')).toBeInTheDocument();
     });
 
+    it('sem Tocha no inventário mas com uma acesa, a peça segue à vista marcada "Acesa"', () => {
+      view(withItems([], { torch_lit: true }));
+      fireEvent.click(screen.getByRole('tab', { name: /^Livre/ }));
+      expect(screen.getByText(/Acesa/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /^Tocha/ }));
+      expect(acender()).toBeDisabled();
+      expect(within(card()).getByText('A Tocha já está acesa')).toBeInTheDocument();
+    });
+
     it('a falha do banco é registrada e a tela não é avisada', async () => {
       h.lightTorch.mockRejectedValueOnce(new Error('Sem Tocha no inventário'));
       view(withItems([TOCHA]));

@@ -175,6 +175,19 @@ export function PlayerHotbar({
         : {}),
     };
   });
+  // Acendeu a última Tocha: a linha do inventário some, mas a Tocha acesa continua à vista.
+  if (torchLit && !items.some((item) => item.freeAction)) {
+    items.push({
+      id: 'tocha-acesa',
+      name: 'Tocha',
+      quantity: 0,
+      description: 'Luz plena 6 m e mais 6 m de Penumbra. Apaga no Descanso Curto ou Longo.',
+      blockedReason: torchBlockMessage('lit'),
+      freeAction: true,
+      actionLabel: 'Acender',
+      status: 'Acesa',
+    });
+  }
   const ammunition = resolveAmmunition(
     { character_items: ownedItems },
     resolveMainHandWeapon({ equipment: character.equipment, character_items: ownedItems })
