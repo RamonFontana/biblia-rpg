@@ -49,7 +49,13 @@ interface Drag {
   overTray: boolean;
 }
 
-const EMPTY_SCENE: MapScene = { pins: [], tray: [] };
+const EMPTY_SCENE: MapScene = {
+  pins: [],
+  tray: [],
+  ambient: 'claro',
+  sources: [],
+  lights: [],
+};
 
 export function MapaDoPalco({
   map,

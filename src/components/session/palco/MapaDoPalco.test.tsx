@@ -102,7 +102,10 @@ function renderScene(scene: MapScene, over: { isGm?: boolean } = {}) {
 const eliabe = retrato('c1', { isMe: true });
 const guarda = retrato('e1', { kind: 'enemy', pv: 12, pvMax: 12 });
 const sceneWith = (over: Partial<MapScene> = {}): MapScene => ({
-  pins: [{ retrato: eliabe, cell: { col: 4, row: 2 }, turn: false }],
+  ambient: 'claro',
+  sources: [],
+  lights: [],
+  pins: [{ retrato: eliabe, cell: { col: 4, row: 2 }, turn: false, level: 'plena' as const }],
   tray: [],
   ...over,
 });
@@ -252,7 +255,16 @@ describe('MapaDoPalco: a Bandeja', () => {
 describe('MapaDoPalco: centralizar no personagem', () => {
   it('fica desabilitado, com o motivo, quando o jogador não tem pin', () => {
     renderScene(
-      sceneWith({ pins: [{ retrato: retrato('c2'), cell: { col: 1, row: 1 }, turn: false }] }),
+      sceneWith({
+        pins: [
+          {
+            retrato: retrato('c2'),
+            cell: { col: 1, row: 1 },
+            turn: false,
+            level: 'plena' as const,
+          },
+        ],
+      }),
     );
     const button = screen.getByRole('button', { name: /Centralizar no meu personagem/ });
     expect(button).toBeDisabled();
@@ -280,8 +292,8 @@ describe('MapaDoPalco: combate', () => {
     renderScene(
       sceneWith({
         pins: [
-          { retrato: eliabe, cell: { col: 4, row: 2 }, turn: false },
-          { retrato: guarda, cell: { col: 8, row: 5 }, turn: true },
+          { retrato: eliabe, cell: { col: 4, row: 2 }, turn: false, level: 'plena' as const },
+          { retrato: guarda, cell: { col: 8, row: 5 }, turn: true, level: 'plena' as const },
         ],
       }),
     );
@@ -295,7 +307,11 @@ describe('MapaDoPalco: combate', () => {
 
   it('o inimigo a 0 PV fica no mapa, apagado, e o nome diz que está caído', () => {
     const caido = retrato('e1', { kind: 'enemy', pv: 0, pvMax: 12, down: true });
-    renderScene(sceneWith({ pins: [{ retrato: caido, cell: { col: 3, row: 3 }, turn: false }] }));
+    renderScene(
+      sceneWith({
+        pins: [{ retrato: caido, cell: { col: 3, row: 3 }, turn: false, level: 'plena' as const }],
+      }),
+    );
     const pin = screen.getByRole('button', { name: 'E1, 0 de 12 PV, caído' });
     expect(pin).toHaveAttribute('data-down', 'true');
     expect(pin.className).toContain('grayscale');
@@ -310,7 +326,9 @@ describe('MapaDoPalco: combate', () => {
 describe('MapaDoPalco: Oculto', () => {
   const oculto = retrato('e1', { kind: 'enemy', pv: 12, pvMax: 12, hidden: true });
   const withHidden = () =>
-    sceneWith({ pins: [{ retrato: oculto, cell: { col: 8, row: 5 }, turn: false }] });
+    sceneWith({
+      pins: [{ retrato: oculto, cell: { col: 8, row: 5 }, turn: false, level: 'plena' as const }],
+    });
 
   it('o Mestre vê o pin Oculto marcado, e o nome acessível diz que está oculto', () => {
     renderScene(withHidden(), { isGm: true });
@@ -330,7 +348,9 @@ describe('MapaDoPalco: Oculto', () => {
 
   it('quem está visível mostra o botão Ocultar', () => {
     const { onToggleHidden } = renderScene(
-      sceneWith({ pins: [{ retrato: guarda, cell: { col: 1, row: 1 }, turn: false }] }),
+      sceneWith({
+        pins: [{ retrato: guarda, cell: { col: 1, row: 1 }, turn: false, level: 'plena' as const }],
+      }),
       { isGm: true },
     );
     fireEvent.click(screen.getByRole('button', { name: 'E1, 12 de 12 PV' }));

@@ -1,7 +1,7 @@
 // A cena do mapa: onde cada Retrato está no mapa, o que fica na Bandeja e o que cada pessoa vê.
 // Termos: CONTEXT.md (Mapa, Bandeja, Retrato, pin).
 import { describe, expect, it } from 'vitest';
-import { buildMapScene, distancesFrom, pinTargetOf, type PinRow } from './mapScene';
+import { buildMapScene, distancesFrom, pinTargetOf, type LightRow, type PinRow } from './mapScene';
 
 const ch = (id: string, over: Record<string, unknown> = {}) => ({
   id,
@@ -204,5 +204,149 @@ describe('buildMapScene: o inimigo Oculto', () => {
   it('o Oculto sem pin espera na Bandeja do Mestre, marcado', () => {
     const s = scene({ viewer: 'gm', enemies, pins: [] });
     expect(s.tray.find((r) => r.id === 'e1')?.hidden).toBe(true);
+  });
+});
+
+describe('buildMapScene: a luz', () => {
+  const night = { period: 'Noite' as const };
+  const lamp = (over: Partial<LightRow> = {}): LightRow => ({
+    id: 'l1',
+    map_id: 'm1',
+    col: 10,
+    row: 10,
+    bright_m: 6,
+    dim_m: 6,
+    label: 'Fogueira',
+    ...over,
+  });
+  const pins = [
+    pin({ character_id: 'c1', col: 0, row: 0 }),
+    pin({ character_id: 'e1', col: 10, row: 10 }),
+    pin({ character_id: 'e2', col: 30, row: 30 }),
+    pin({ npc_id: 'n-simples', col: 12, row: 10 }),
+  ];
+  const ids = (s: ReturnType<typeof scene>) => s.pins.map((p) => p.retrato.id).sort();
+
+  it('de dia, o Ambiente é claro e todos aparecem', () => {
+    const s = scene({ viewer: 'player', pins, period: 'Manhã' });
+    expect(ids(s)).toEqual(['c1', 'e1', 'e2', 'n-simples']);
+    expect(s.pins.every((p) => p.level === 'plena')).toBe(true);
+    expect(s.ambient).toBe('claro');
+  });
+
+  it('à noite, sem luz, só o grupo aparece para o jogador', () => {
+    const s = scene({ viewer: 'player', pins, ...night });
+    expect(ids(s)).toEqual(['c1']);
+    expect(s.ambient).toBe('escuridao');
+  });
+
+  it('o grupo aparece sempre, mesmo no escuro, e o nível dele é o da luz do lugar', () => {
+    const s = scene({ viewer: 'player', pins, ...night });
+    expect(s.pins.find((p) => p.retrato.id === 'c1')?.level).toBe('escuridao');
+  });
+
+  it('inimigo e NPC iluminados por uma fonte fixa aparecem; os fora da luz, não', () => {
+    const s = scene({ viewer: 'player', pins, lights: [lamp()], ...night });
+    expect(ids(s)).toEqual(['c1', 'e1', 'n-simples']);
+    expect(s.pins.find((p) => p.retrato.id === 'e1')?.level).toBe('plena');
+  });
+
+  it('na Penumbra o Retrato aparece, e o nível diz que é Penumbra', () => {
+    // O NPC está a 2 Quadrados (3 m) da fonte de 1,5 m de Luz plena + 6 m de Penumbra.
+    const s = scene({
+      viewer: 'player',
+      pins,
+      lights: [lamp({ bright_m: 1.5, dim_m: 6 })],
+      ...night,
+    });
+    expect(s.pins.find((p) => p.retrato.id === 'n-simples')?.level).toBe('penumbra');
+  });
+
+  it('o Ambiente fixado no mapa vale mais que o período', () => {
+    expect(ids(scene({ viewer: 'player', pins, ambient: 'claro', ...night }))).toEqual([
+      'c1',
+      'e1',
+      'e2',
+      'n-simples',
+    ]);
+    expect(ids(scene({ viewer: 'player', pins, ambient: 'escuridao', period: 'Manhã' }))).toEqual([
+      'c1',
+    ]);
+    expect(ids(scene({ viewer: 'player', pins, ambient: 'penumbra', ...night }))).toEqual([
+      'c1',
+      'e1',
+      'e2',
+      'n-simples',
+    ]);
+  });
+
+  it('a luz no pin de um inimigo o ilumina, e a luz dele ilumina quem está perto', () => {
+    const withTorch = [
+      pin({ character_id: 'c1', col: 0, row: 0 }),
+      pin({ character_id: 'e1', col: 10, row: 10, light_bright_m: 6, light_dim_m: 6 }),
+      pin({ character_id: 'e2', col: 12, row: 10 }),
+    ];
+    const s = scene({ viewer: 'player', pins: withTorch, ...night });
+    expect(ids(s)).toEqual(['c1', 'e1', 'e2']);
+  });
+
+  it('o Oculto vale por cima: a luz de um Oculto não revela o lugar dele nem ilumina os outros', () => {
+    const enemies = [ch('e1', { is_enemy: true, is_visible: false }), ch('e2', { is_enemy: true })];
+    const withTorch = [
+      pin({ character_id: 'e1', col: 10, row: 10, light_bright_m: 6, light_dim_m: 6 }),
+      pin({ character_id: 'e2', col: 12, row: 10 }),
+    ];
+    const s = scene({ viewer: 'player', enemies, pins: withTorch, ...night });
+    expect(ids(s)).toEqual([]);
+    expect(s.sources).toEqual([]);
+  });
+
+  it('o Mestre vê todos, com o nível de luz de cada um, e a luz do Oculto conta', () => {
+    const enemies = [ch('e1', { is_enemy: true, is_visible: false })];
+    const withTorch = [
+      pin({ character_id: 'e1', col: 10, row: 10, light_bright_m: 6, light_dim_m: 6 }),
+      pin({ character_id: 'c1', col: 30, row: 30 }),
+    ];
+    const s = scene({ viewer: 'gm', enemies, pins: withTorch, ...night });
+    expect(ids(s)).toEqual(['c1', 'e1']);
+    expect(s.pins.find((p) => p.retrato.id === 'e1')?.level).toBe('plena');
+    expect(s.pins.find((p) => p.retrato.id === 'c1')?.level).toBe('escuridao');
+    expect(s.sources).toHaveLength(1);
+  });
+
+  it('o Mestre também vê quem está no escuro', () => {
+    expect(ids(scene({ viewer: 'gm', pins, ...night }))).toEqual(['c1', 'e1', 'e2', 'n-simples']);
+  });
+
+  it('o espectador vê como o jogador', () => {
+    expect(ids(scene({ viewer: 'spectator', pins, lights: [lamp()], ...night }))).toEqual([
+      'c1',
+      'e1',
+      'n-simples',
+    ]);
+  });
+
+  it('devolve as fontes de luz (fixas e dos pins) para a máscara de escuridão', () => {
+    const withTorch = [
+      pin({ character_id: 'e2', col: 5, row: 5, light_bright_m: 3, light_dim_m: 3 }),
+    ];
+    const s = scene({ viewer: 'gm', pins: withTorch, lights: [lamp()], ...night });
+    expect(s.sources).toEqual(
+      expect.arrayContaining([
+        { cell: { col: 10, row: 10 }, brightM: 6, dimM: 6 },
+        { cell: { col: 5, row: 5 }, brightM: 3, dimM: 3 },
+      ]),
+    );
+    expect(s.sources).toHaveLength(2);
+  });
+
+  it('as luzes fixas vão na cena, para o Mestre mover', () => {
+    const s = scene({ viewer: 'gm', pins: [], lights: [lamp()], ...night });
+    expect(s.lights).toEqual([expect.objectContaining({ id: 'l1', label: 'Fogueira' })]);
+  });
+
+  it('a luz não filtra o que está na Bandeja do Mestre', () => {
+    const s = scene({ viewer: 'gm', pins: [], ...night });
+    expect(s.tray.length).toBeGreaterThan(0);
   });
 });
