@@ -1,11 +1,28 @@
 // O passo opcional "Mapas" da preparação da sessão: o Mestre escolhe os terrenos que vai usar.
 // Termos: CONTEXT.md (Mapa, Biblioteca de mapas).
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+const auth = vi.hoisted(() => ({ user: { id: 'gm-1' } as { id: string } | null }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (select: (state: { user: typeof auth.user }) => unknown) =>
+    select({ user: auth.user }),
+}));
+vi.mock('@/components/session/maps/MasterMapLibrary', () => ({
+  MasterMapLibrary: ({ ownerId, onPick }: { ownerId: string; onPick: (map: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() => onPick({ id: 'mm1', name: 'Cerco de Jericó', columns: 30, rows: 8 })}
+    >
+      Meus mapas de {ownerId}
+    </button>
+  ),
+}));
+
 import { useSessionDraftStore } from '@/store/createSessionStore';
 import { StepMaps } from './StepMaps';
 
 beforeEach(() => {
+  auth.user = { id: 'gm-1' };
   useSessionDraftStore.getState().resetStore();
   useSessionDraftStore.getState().setCurrentStep(5);
 });
@@ -69,5 +86,27 @@ describe('StepMaps', () => {
     render(<StepMaps />);
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(useSessionDraftStore.getState().currentStep).toBe(4);
+  });
+
+  it('soma um dos meus mapas ao rascunho, guardando a origem dele', () => {
+    render(<StepMaps />);
+    fireEvent.click(screen.getByRole('button', { name: 'Meus mapas de gm-1' }));
+    expect(maps()).toEqual([
+      expect.objectContaining({
+        masterMapId: 'mm1',
+        name: 'Cerco de Jericó',
+        columns: 30,
+        rows: 8,
+      }),
+    ]);
+    expect(maps()[0]).not.toHaveProperty('libraryId');
+    expect(screen.getByText('30×8 Quadrados')).toBeInTheDocument();
+  });
+
+  it('sem usuário, não mostra Meus mapas (o terreno da Biblioteca continua)', () => {
+    auth.user = null;
+    render(<StepMaps />);
+    expect(screen.queryByRole('button', { name: /^Meus mapas de/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Somar terreno' })).toBeInTheDocument();
   });
 });

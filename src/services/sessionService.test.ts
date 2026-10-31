@@ -266,6 +266,23 @@ describe('createGameSession', () => {
       );
     });
 
+    it('um mapa do Mestre entra com a origem dele, e o terreno com a da Biblioteca', async () => {
+      state.respond = respond;
+      await createGameSession(
+        payload({
+          maps: [
+            { id: 'tmp-1', libraryId: 'terreno-areia', name: 'Deserto', columns: 20, rows: 15 },
+            { id: 'tmp-2', masterMapId: 'mm1', name: 'Cerco', columns: 30, rows: 8 },
+          ],
+        }),
+      );
+      const [insert] = callsOf(state.calls, 'session_maps', 'insert');
+      expect(insert?.payload).toEqual([
+        expect.objectContaining({ library_id: 'terreno-areia', master_map_id: null }),
+        expect.objectContaining({ library_id: null, master_map_id: 'mm1', name: 'Cerco' }),
+      ]);
+    });
+
     it('sem mapas, a sessão nasce como antes', async () => {
       state.respond = respond;
       await createGameSession(payload());

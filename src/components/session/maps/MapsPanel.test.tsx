@@ -9,6 +9,16 @@ const api = vi.hoisted(() => ({
   showSessionMap: vi.fn(),
 }));
 vi.mock('@/data-access/maps', () => api);
+vi.mock('./MasterMapLibrary', () => ({
+  MasterMapLibrary: ({ ownerId, onPick }: { ownerId: string; onPick: (map: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() => onPick({ id: 'mm1', name: 'Cerco de Jericó', columns: 30, rows: 8 })}
+    >
+      Meus mapas de {ownerId}
+    </button>
+  ),
+}));
 
 import { MapsPanel } from './MapsPanel';
 
@@ -32,6 +42,7 @@ function renderPanel(props: Partial<React.ComponentProps<typeof MapsPanel>> = {}
   render(
     <MapsPanel
       sessionId="s1"
+      ownerId="gm-1"
       maps={[base, second]}
       shownMapId={null}
       preparedId={null}
@@ -139,5 +150,27 @@ describe('MapsPanel', () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar aos jogadores: Deserto' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível');
+  });
+});
+
+describe('MapsPanel: Meus mapas', () => {
+  it('mostra os mapas do Mestre da sessão', () => {
+    renderPanel();
+    expect(screen.getByRole('button', { name: 'Meus mapas de gm-1' })).toBeInTheDocument();
+  });
+
+  it('somar um mapa do Mestre à sessão grava a origem dele, com o nome e o tamanho', async () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Meus mapas de gm-1' }));
+    await waitFor(() =>
+      expect(api.addSessionMap).toHaveBeenCalledWith({
+        sessionId: 's1',
+        masterMapId: 'mm1',
+        name: 'Cerco de Jericó',
+        columns: 30,
+        rows: 8,
+        position: 2,
+      }),
+    );
   });
 });

@@ -10,10 +10,13 @@ import {
   updateSessionMap,
   type SessionMap,
 } from '@/data-access/maps';
+import { MasterMapLibrary } from './MasterMapLibrary';
 import { TerrainPicker } from './TerrainPicker';
 
 interface MapsPanelProps {
   sessionId: string;
+  /** O Mestre da sessão: dono dos "Meus mapas". */
+  ownerId: string;
   maps: SessionMap[];
   /** O Mapa atual: o que os jogadores veem. */
   shownMapId: string | null;
@@ -24,7 +27,14 @@ interface MapsPanelProps {
 
 const ERROR = 'Não foi possível salvar. Tente de novo.';
 
-export function MapsPanel({ sessionId, maps, shownMapId, preparedId, onPrepare }: MapsPanelProps) {
+export function MapsPanel({
+  sessionId,
+  ownerId,
+  maps,
+  shownMapId,
+  preparedId,
+  onPrepare,
+}: MapsPanelProps) {
   const [error, setError] = useState<string | null>(null);
 
   const run = async (action: () => Promise<void>) => {
@@ -48,6 +58,22 @@ export function MapsPanel({ sessionId, maps, shownMapId, preparedId, onPrepare }
       <TerrainPicker
         onAdd={(terrain) =>
           run(() => addSessionMap({ sessionId, ...terrain, position: maps.length }))
+        }
+      />
+
+      <MasterMapLibrary
+        ownerId={ownerId}
+        onPick={(map) =>
+          run(() =>
+            addSessionMap({
+              sessionId,
+              masterMapId: map.id,
+              name: map.name,
+              columns: map.columns,
+              rows: map.rows,
+              position: maps.length,
+            }),
+          )
         }
       />
 

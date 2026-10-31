@@ -443,6 +443,7 @@ export function GmSessionView({
         {panel === 'mapas' && (
           <MapsPanel
             sessionId={sessionId}
+            ownerId={sessionData.gm_id}
             maps={maps}
             shownMapId={sessionData.shown_map_id}
             preparedId={preparedId}

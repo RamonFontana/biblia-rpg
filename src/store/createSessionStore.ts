@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { MapOrigin } from '@/data-access/maps';
 
 export type SessionEnemyDraft = {
   id: string; // temp id
@@ -19,10 +20,9 @@ export type SessionEnemyDraft = {
   imageBase64?: string;
 };
 
-/** Um terreno da Biblioteca de mapas que o Mestre escolheu para a sessão. */
-export type SessionMapDraft = {
+/** Um mapa que o Mestre escolheu para a sessão: um terreno da Biblioteca ou um mapa dele. */
+export type SessionMapDraft = MapOrigin & {
   id: string; // temp id
-  libraryId: string;
   name: string;
   columns: number;
   rows: number;
