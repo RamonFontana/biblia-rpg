@@ -188,6 +188,17 @@ Quem passa o turno é o Mestre, no app, quando o jogador avisa que terminou.
 
 Quando uma Habilidade de Tribo ou de Vocação pede um Teste de Resistência (TR) ao alvo, a **CD** é **8 + Proficiência + Modificador do atributo da Vocação** do personagem que a usa: **Sabedoria** para Sacerdote/Sábio e Caçador, **Força** para Guerreiro e **Destreza** para Batedor. Vale também para as Habilidades de Tribo. O alvo rola 1d20 + o modificador do atributo do TR contra essa CD (o personagem do jogador soma também a Proficiência quando o atributo do TR é um dos dois **Testes de Resistência** da Vocação dele, a linha de mesmo nome em `docs/vocacoes`); quem falha sofre a Condição da Habilidade, e quem passa não sofre nada. A Resistência a Condição do alvo ainda pode reduzir a duração ou anular a Condição.
 
+### 6.7 Distância, Luz e Visão
+- **Grid**: No mapa, cada quadrado vale **1,5 m**, e andar na diagonal também conta um quadrado. O deslocamento de 9 m são 6 quadrados.
+- **Luz plena**: Enxerga-se normalmente.
+- **Penumbra**: Vê-se a criatura, mas os testes de Percepção que dependem da visão têm Desvantagem. **Olhos de Águia** (Benjamim) e **Visão Além do Horizonte** (Zebulom) ignoram essa Desvantagem.
+- **Escuridão**: Não se vê a criatura que está nela, e atacar quem não se vê tem Desvantagem (o Mestre aplica).
+- **Ambiente**: De manhã e à tarde a cena é clara; à noite, escura. O Mestre pode decidir outra luz para um lugar: uma caverna escura de dia, uma noite de lua cheia em penumbra.
+- **Fontes de luz**: Uma fonte ilumina um raio de luz plena e, depois dele, uma faixa de penumbra. Só há fontes da época (fogo, sol, lua); não existe luz mágica. Fogueiras, braseiros e janelas têm o raio que o Mestre definir.
+- **Tocha**: Dá **6 m de luz plena e mais 6 m de penumbra**. Acendê-la é uma Ação Livre (não gasta a Ação de Usar um Item) e ela não ocupa a mão. Apaga no Descanso Curto, no Descanso Longo ou quando o Mestre decide.
+- **Visão**: Nenhuma tribo enxerga no escuro. O personagem vê as criaturas em luz plena ou em penumbra e sempre sabe onde estão os companheiros do grupo. O personagem **Cego** não vê ninguém além dos companheiros.
+- **Oculto**: O Mestre pode tirar qualquer criatura da vista dos jogadores, por exemplo quem usou a ação Esconder, até decidir revelá-la.
+
 ---
 
 ## 7. Guia de Criação de Personagem

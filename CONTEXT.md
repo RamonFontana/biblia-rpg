@@ -232,7 +232,7 @@ Consumível de Sustento, usado só no Descanso Longo.
 ## Tela da sessão
 
 **Palco**:
-O centro da tela da sessão, onde está a cena; depois o mapa ocupa o mesmo lugar.
+O centro da tela da sessão, onde está a cena: os Retratos ou, quando o Mestre mostra um, o Mapa atual.
 _Avoid_: mesa (que é a mesa presencial), tabuleiro, centro
 
 **Retrato**:
@@ -257,3 +257,49 @@ _Avoid_: tooltip, popup
 
 **Barra do Mestre**:
 Os comandos do Mestre (Solicitar Teste, combate, avançar o tempo, descanso, dados) e a Hotbar do NPC jogável que ele conduz.
+
+## Mapa
+
+**Mapa**:
+Imagem com grid em que os Retratos viram pins. Vem da Biblioteca de mapas ou é enviado pelo Mestre; o enviado é dele e serve a qualquer sessão dele.
+_Avoid_: battlemap, cenário, cena
+
+**Biblioteca de mapas**:
+Os mapas prontos do app, com o grid já ajustado: terrenos lisos e mapas desenhados.
+
+**Mapa atual**:
+O mapa que os jogadores veem no Palco. Só muda quando o Mestre mostra outro; ele pode preparar um mapa sem que os jogadores o vejam.
+_Avoid_: mapa ativo
+
+**Quadrado**:
+A unidade do grid, que vale 1,5 m; na diagonal também vale 1,5 m. O pin de um Retrato ocupa o centro de um Quadrado.
+_Avoid_: casa, célula
+
+**Bandeja**:
+Onde ficam, no mapa do Mestre, os Retratos que ainda não têm posição naquele mapa. Os jogadores não os veem.
+
+**Oculto**:
+Marca do Mestre num Retrato: nenhum jogador o vê, nem no mapa, nem na iniciativa, nem entre os alvos. O inimigo entra Oculto quando é posto no mapa.
+_Avoid_: escondido (que é o resultado da ação Esconder), invisível
+
+**Ambiente**:
+A luz de fundo de um mapa: claro, Penumbra ou Escuridão. Segue o período (manhã e tarde claras, noite escura), a menos que o Mestre o fixe naquele mapa.
+_Avoid_: iluminação global
+
+**Luz plena**:
+Luz em que se enxerga normalmente.
+
+**Penumbra**:
+Meia-luz em que se vê a criatura, mas os Testes de Percepção pela visão têm Desvantagem.
+_Avoid_: luz fraca
+
+**Escuridão**:
+Falta de luz em que não se vê a criatura; atacar quem não se vê tem Desvantagem.
+_Avoid_: trevas
+
+**Fonte de luz**:
+O que ilumina em volta de si um raio de Luz plena e, depois dele, uma faixa de Penumbra: a Tocha de um personagem ou uma luz que o Mestre põe no mapa ou num inimigo ou NPC. Só fontes da época (fogo, sol, lua).
+_Avoid_: luz mágica, lanterna
+
+**Visão**:
+O que o personagem de um jogador enxerga no mapa: os Retratos em Luz plena ou Penumbra e, sempre, os do grupo. O personagem Cego não vê inimigos nem NPCs. O Mestre vê tudo; o espectador vê a soma do grupo.

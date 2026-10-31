@@ -12,4 +12,5 @@ A tela da sessão deixa de empilhar tudo numa coluna: a Barra de Status fica fix
 
 - No celular, o Palco reserva à direita a largura do trilho; o mapa vai herdar essa margem.
 - O Mestre usa a mesma moldura: o trilho tem os painéis dele, o combate ganha uma coluna fixa e a Barra do Mestre substitui os botões do cabeçalho.
+- O mapa (Onda 6, passo 2) acrescenta o ícone Mapas ao trilho do Mestre, para preparar e mostrar o Mapa atual.
 - Os componentes de hoje entram nos Painéis sem mudança; os nomes acessíveis se mantêm, e os E2E ganham o ajudante `openPanel` e um projeto Playwright de celular.
