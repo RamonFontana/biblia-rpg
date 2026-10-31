@@ -51,7 +51,11 @@ export async function removePin(mapId: string, target: PinTarget): Promise<void>
   if (error) throw error;
 }
 
-/** Avisa a cada mudança nos pins do mapa. Devolve a função que cancela. */
+/**
+ * Avisa a cada mudança nos pins do mapa. Devolve a função que cancela. O Realtime não entrega
+ * `DELETE` por assinatura com filtro (e o registro apagado só traz o `id`), então o apagar vem de uma
+ * assinatura à parte, sem filtro; quem escuta ignora o `id` que não conhece.
+ */
 export function subscribeToMapPins(
   mapId: string,
   onChange: (payload: ChangePayload) => void,
@@ -59,7 +63,11 @@ export function subscribeToMapPins(
 ): () => void {
   return subscribeToTables(
     uniqueChannelName(`map-pins-${mapId}`),
-    [{ table: 'session_map_pins', filter: `map_id=eq.${mapId}`, onChange }],
+    [
+      { table: 'session_map_pins', event: 'INSERT', filter: `map_id=eq.${mapId}`, onChange },
+      { table: 'session_map_pins', event: 'UPDATE', filter: `map_id=eq.${mapId}`, onChange },
+      { table: 'session_map_pins', event: 'DELETE', onChange },
+    ],
     options,
   );
 }

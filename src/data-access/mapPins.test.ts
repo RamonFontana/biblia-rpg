@@ -101,10 +101,21 @@ describe('removePin', () => {
 });
 
 describe('subscribeToMapPins', () => {
-  it('assina session_map_pins filtrado pelo mapa', () => {
+  it('assina inserir e alterar filtrados pelo mapa, e apagar sem filtro (o Realtime não filtra DELETE)', () => {
     subscribeToMapPins('m1', () => {});
     expect(state.subscriptions[0]?.subscriptions).toEqual([
-      expect.objectContaining({ table: 'session_map_pins', filter: 'map_id=eq.m1' }),
+      expect.objectContaining({
+        table: 'session_map_pins',
+        event: 'INSERT',
+        filter: 'map_id=eq.m1',
+      }),
+      expect.objectContaining({
+        table: 'session_map_pins',
+        event: 'UPDATE',
+        filter: 'map_id=eq.m1',
+      }),
+      expect.objectContaining({ table: 'session_map_pins', event: 'DELETE' }),
     ]);
+    expect(state.subscriptions[0]?.subscriptions[2]).not.toHaveProperty('filter');
   });
 });

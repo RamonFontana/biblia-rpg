@@ -20,6 +20,8 @@ import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard, type RetratoAttack } from '@/components/session/palco/RetratoCard';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
+import { buildMapScene } from '@/lib/mapScene';
+import { useMapPins } from '@/hooks/useMapPins';
 import { DockRail, type DockItem } from './DockRail';
 import { useCombatStore } from '@/store/combatStore';
 import { getShortRestState } from '@/domain/shortRest';
@@ -135,7 +137,21 @@ export function PlayerSessionView({
     hasActiveCombat,
     participants,
   });
-  const openRetrato = retratos.find((r) => r.id === retratoId);
+  // Os pins do Mapa atual; quem tem pin aparece no mapa, mesmo o inimigo fora do combate.
+  const { pins } = useMapPins(shownMap?.id);
+  const scene = buildMapScene({
+    playerCharacters,
+    npcs,
+    enemies,
+    myCharacterId: myCharacter?.id,
+    hasActiveCombat,
+    participants,
+    pins,
+    viewer: 'player',
+  });
+  const openRetrato =
+    retratos.find((r) => r.id === retratoId) ??
+    scene.pins.find((pin) => pin.retrato.id === retratoId)?.retrato;
   const me = retratos.find((r) => r.isMe);
   const initiative = participants.map((p) => {
     const retrato = retratos.find((r) => r.id === p.entity_id);
@@ -253,7 +269,14 @@ export function PlayerSessionView({
           )}
 
           {shownMap ? (
-            <MapaDoPalco map={shownMap} />
+            <MapaDoPalco
+              map={shownMap}
+              scene={scene}
+              onOpenRetrato={(retrato) => {
+                setPanel(null);
+                setRetratoId(retrato.id);
+              }}
+            />
           ) : (
             <Retratos
               turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}

@@ -30,6 +30,8 @@ import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { useCombatStore } from '@/store/combatStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
+import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
+import { useMapPins } from '@/hooks/useMapPins';
 import { getShortRestState } from '@/domain/shortRest';
 import { DockRail, type DockItem } from './DockRail';
 import { MasterBar } from './MasterBar';
@@ -151,6 +153,18 @@ export function GmSessionView({
     hasActiveCombat,
     participants,
     includeHiddenNpcs: true,
+  });
+  // O Mestre arruma os pins do mapa que está na tela dele (o preparado ou o mostrado).
+  const { pins, move: movePin } = useMapPins(stageMap?.id);
+  const mapScene = buildMapScene({
+    playerCharacters,
+    npcs,
+    enemies,
+    myCharacterId: undefined,
+    hasActiveCombat,
+    participants,
+    pins,
+    viewer: 'gm',
   });
   const dying = retratos
     .filter((r) => r.kind === 'player' && r.down)
@@ -300,7 +314,13 @@ export function GmSessionView({
                       {shownMap ? shownMap.name : 'os Retratos'}.
                     </p>
                   )}
-                  <MapaDoPalco map={stageMap} />
+                  <MapaDoPalco
+                    map={stageMap}
+                    scene={mapScene}
+                    isGm
+                    onOpenRetrato={openRetrato}
+                    onMovePin={(retrato, cell) => movePin(pinTargetOf(retrato), cell)}
+                  />
                 </>
               ) : (
                 <Retratos
