@@ -300,6 +300,7 @@ export const ITEMS_DB: ContentItem[] = [
     cost: 5,
     description: 'Cura 1d4 HP em Descanso',
     category: 'Todas',
+    usableOnlyIn: 'short_rest',
   },
   {
     id: 'racao',

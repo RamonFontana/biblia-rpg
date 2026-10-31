@@ -224,6 +224,28 @@ export async function spendHitDie(
   if (error) throw error;
 }
 
+/**
+ * Grava o PV depois de uma cura de item. Quem estava Estável acorda (`wakeUp`): sai do Estável e
+ * os Testes de Morte recomeçam do zero.
+ */
+export async function healCharacter(
+  id: string,
+  patch: { stats: Partial<CharacterStats>; wakeUp: boolean },
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({
+      stats: toJson(patch.stats),
+      ...(patch.wakeUp && {
+        is_stable: false,
+        death_saves_successes: 0,
+        death_saves_failures: 0,
+      }),
+    })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function setCharacterVisible(id: string, isVisible: boolean): Promise<void> {
   const { error } = await supabase
     .from('characters')

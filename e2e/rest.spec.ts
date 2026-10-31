@@ -203,7 +203,10 @@ test.describe('Descanso Curto', () => {
 
     await master.getByRole('button', { name: 'Abrir Descanso Curto' }).click();
 
-    await expect(rute.getByText('Morrendo: resolva os Testes de Morte antes.')).toBeVisible();
+    // O Dado de Vida e o Bálsamo dão o mesmo motivo: o aviso aparece nos dois cartões.
+    await expect(
+      rute.getByText('Morrendo: resolva os Testes de Morte antes.').first(),
+    ).toBeVisible();
     await expect(rute.getByRole('button', { name: 'Gastar dado' })).toBeDisabled();
 
     await eliabe.getByLabel('Resultado do d10').fill('4');
@@ -326,5 +329,44 @@ test.describe('Descanso Curto', () => {
     // Um novo pedido apaga o aviso.
     await pEliabe.getByRole('button', { name: 'Pedir Descanso Curto' }).click();
     await expect(pRute.getByText(refusal)).toHaveCount(0, { timeout: 15_000 });
+  });
+});
+
+test.describe('Bálsamo', () => {
+  test('o jogador usa o Bálsamo no Descanso Curto aberto: o PV sobe e a quantidade cai', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', {
+      name: 'Eliabe',
+      stats: { pv: 20, current_pv: 5, ca: 11, faith: 50 },
+    });
+    await seed.giveItem(eliabe, 'balsamo', 2);
+    const sessionId = await seed.createSession({ name: SESSION_NAME, characters: [eliabe] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await watchPlayers(master, 2);
+    await openPanel(master, 'Descanso');
+    await master.getByRole('button', { name: 'Abrir Descanso Curto' }).click();
+    await openPanel(player, 'Descanso');
+    await expect(player.getByText('Aberto pelo Mestre')).toBeVisible();
+
+    await expect(player.getByText('Bálsamo: 2')).toBeVisible();
+    await player.getByLabel(/Resultado do d4/).fill('3');
+    await player.getByRole('button', { name: 'Usar Bálsamo' }).click();
+
+    await expect(player.getByText('Curou 3 PV (5 → 8).')).toBeVisible();
+    await expect(player.getByText('Bálsamo: 1')).toBeVisible();
+
+    const { data, error } = await adminClient()
+      .from('characters')
+      .select('stats, character_items(quantity)')
+      .eq('id', eliabe)
+      .single();
+    if (error) throw error;
+    expect((data.stats as { current_pv: number }).current_pv).toBe(8);
+    expect(data.character_items[0].quantity).toBe(1);
   });
 });

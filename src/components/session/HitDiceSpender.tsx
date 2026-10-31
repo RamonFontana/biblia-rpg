@@ -15,6 +15,7 @@ import { getCharacterLevel } from '@/domain/levelUp';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import type { CharacterStats } from '@/features/character-creation/types';
 import type { Character } from '@/features/character-management/types';
+import type { CombatInventoryItem } from '@/types/inventory';
 import { systemRng } from '@/lib/systemRng';
 import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 
@@ -22,7 +23,9 @@ import { getAbilitiesForCharacter } from '@/utils/abilityUtils';
 const BLOOD_RESILIENCE_ID = 'tribe-manasses-4-sangue-resilien';
 
 /** O que o gasto lê de uma ficha: a de um jogador ou a de um NPC jogável. */
-export type SpenderCharacter = Pick<
+export type SpenderCharacter = SpenderSheet & { character_items?: CombatInventoryItem[] };
+
+type SpenderSheet = Pick<
   Character,
   | 'id'
   | 'name'
