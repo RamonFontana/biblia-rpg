@@ -6,6 +6,7 @@ const api = vi.hoisted(() => ({
   listMapPins: vi.fn(),
   placePin: vi.fn(),
   removePin: vi.fn(),
+  setPinLight: vi.fn(),
   subscribeToMapPins: vi.fn(),
 }));
 vi.mock('@/data-access/mapPins', () => api);
@@ -29,6 +30,7 @@ beforeEach(() => {
   api.listMapPins.mockResolvedValue([pin({})]);
   api.placePin.mockResolvedValue(undefined);
   api.removePin.mockResolvedValue(undefined);
+  api.setPinLight.mockResolvedValue(undefined);
   api.subscribeToMapPins.mockImplementation((_id, onChange) => {
     emit = onChange;
     return () => {};
@@ -108,5 +110,33 @@ describe('useMapPins', () => {
       await result.current.move({ kind: 'character', id: 'c1' }, { col: 8, row: 8 });
     });
     await waitFor(() => expect(result.current.pins[0]).toMatchObject({ col: 1, row: 1 }));
+  });
+
+  it('acender a luz do pin muda a tela na hora e grava; nulo apaga', async () => {
+    const { result } = renderHook(() => useMapPins('m1'));
+    await waitFor(() => expect(result.current.pins).toHaveLength(1));
+    await act(async () => {
+      await result.current.setLight({ kind: 'character', id: 'c1' }, { brightM: 6, dimM: 6 });
+    });
+    expect(result.current.pins[0]).toMatchObject({ light_bright_m: 6, light_dim_m: 6 });
+    expect(api.setPinLight).toHaveBeenCalledWith(
+      'm1',
+      { kind: 'character', id: 'c1' },
+      { brightM: 6, dimM: 6 },
+    );
+    await act(async () => {
+      await result.current.setLight({ kind: 'character', id: 'c1' }, null);
+    });
+    expect(result.current.pins[0]).toMatchObject({ light_bright_m: null, light_dim_m: null });
+  });
+
+  it('se a luz do pin não grava, relê o que o banco tem', async () => {
+    const { result } = renderHook(() => useMapPins('m1'));
+    await waitFor(() => expect(result.current.pins).toHaveLength(1));
+    api.setPinLight.mockRejectedValue(new Error('falhou'));
+    await act(async () => {
+      await result.current.setLight({ kind: 'character', id: 'c1' }, { brightM: 6, dimM: 6 });
+    });
+    await waitFor(() => expect(result.current.pins[0]?.light_bright_m).toBeUndefined());
   });
 });
