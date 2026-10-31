@@ -330,3 +330,118 @@ test.describe('Pins', () => {
     await expect(player.getByRole('button', { name: 'Atacar' })).toBeEnabled();
   });
 });
+
+test.describe('Mapas do Mestre', () => {
+  /** Uma imagem 4:3 desenhada no navegador, para enviar como arquivo. */
+  async function makePng(page: Page) {
+    const base64 = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 480;
+      canvas.height = 360;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#7a5c3a';
+      ctx.fillRect(0, 0, 480, 360);
+      ctx.fillStyle = '#d9c9a3';
+      for (let i = 0; i < 20; i++) ctx.fillRect(i * 24 + 4, (i % 15) * 24 + 4, 16, 16);
+      return canvas.toDataURL('image/png').split(',')[1]!;
+    });
+    return Buffer.from(base64, 'base64');
+  }
+
+  test('o Mestre envia uma imagem, recorta, soma à sessão e mostra; o jogador vê a imagem', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const sessionId = await seed.createSession({ characters: [eliabe] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+    const player = await signIn('player1');
+    await player.goto(`/session/${sessionId}`);
+    await watchPlayers(master, 2);
+
+    await openPanel(master, 'Mapas');
+    await master.getByLabel('Enviar imagem de mapa').setInputFiles({
+      name: 'jerico.png',
+      mimeType: 'image/png',
+      buffer: await makePng(master),
+    });
+
+    // O editor abre com o nome do arquivo e 20×15 Quadrados; o Mestre renomeia e salva.
+    const dialog = master.getByRole('dialog', { name: 'Recortar mapa' });
+    await expect(dialog.getByLabel('Nome do mapa')).toHaveValue('jerico');
+    await expect(dialog.getByLabel('Colunas')).toHaveValue('20');
+    await dialog.getByLabel('Nome do mapa').fill('Cerco de Jericó');
+    await dialog.getByRole('button', { name: 'Salvar mapa' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(master.getByLabel('Renomear meu mapa Cerco de Jericó')).toBeVisible();
+
+    // A imagem fica numa tabela própria, em webp.
+    const admin = adminClient();
+    const { data: maps } = await admin.from('master_maps').select('id, name, columns, rows');
+    expect(maps).toEqual([
+      expect.objectContaining({ name: 'Cerco de Jericó', columns: 20, rows: 15 }),
+    ]);
+    const { data: images } = await admin.from('master_map_images').select('image');
+    expect(images?.[0]?.image).toMatch(/^data:image\/webp;base64,/);
+
+    // Soma à sessão e mostra: o jogador recebe o mapa e a imagem, lida à parte.
+    await master.getByRole('button', { name: 'Somar à sessão: Cerco de Jericó' }).click();
+    await master.getByRole('button', { name: 'Mostrar aos jogadores: Cerco de Jericó' }).click();
+    await expect(player.getByRole('region', { name: 'Mapa: Cerco de Jericó' })).toBeVisible();
+    await expect(player.getByTestId('fundo-do-mapa')).toHaveAttribute('data-status', 'ready');
+    await expect(player.locator('[data-testid="fundo-do-mapa"] image')).toHaveAttribute(
+      'href',
+      /^data:image\/webp;base64,/,
+    );
+
+    const { data: sessionMaps } = await admin
+      .from('session_maps')
+      .select('library_id, master_map_id');
+    expect(sessionMaps).toEqual([{ library_id: null, master_map_id: maps![0]!.id }]);
+
+    // Em uso por sessão ativa: o app recusa apagar, e o mapa continua lá.
+    await master.getByRole('button', { name: 'Apagar meu mapa Cerco de Jericó' }).click();
+    await master.getByRole('button', { name: 'Confirmar: apagar Cerco de Jericó' }).click();
+    await expect(master.getByRole('alert')).toContainText('em uso por uma sessão ativa');
+    const { data: still } = await admin.from('master_maps').select('id');
+    expect(still).toHaveLength(1);
+  });
+
+  test('o Mestre recusa o que não é imagem, e apaga um mapa que nenhuma sessão ativa usa', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const sessionId = await seed.createSession({ characters: [eliabe] });
+    const master = await signIn('master');
+    await master.goto(`/session/${sessionId}`);
+
+    await openPanel(master, 'Mapas');
+    const input = master.getByLabel('Enviar imagem de mapa');
+    await input.setInputFiles({
+      name: 'regras.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4'),
+    });
+    await expect(master.getByRole('alert')).toContainText('não é uma imagem');
+    await expect(master.getByRole('dialog', { name: 'Recortar mapa' })).toHaveCount(0);
+
+    await input.setInputFiles({
+      name: 'jerico.png',
+      mimeType: 'image/png',
+      buffer: await makePng(master),
+    });
+    await master
+      .getByRole('dialog', { name: 'Recortar mapa' })
+      .getByRole('button', { name: 'Salvar mapa' })
+      .click();
+    await expect(master.getByLabel('Renomear meu mapa jerico')).toBeVisible();
+
+    await master.getByRole('button', { name: 'Apagar meu mapa jerico' }).click();
+    await master.getByRole('button', { name: 'Confirmar: apagar jerico' }).click();
+    await expect(master.getByLabel('Renomear meu mapa jerico')).toHaveCount(0);
+    const { data } = await adminClient().from('master_maps').select('id');
+    expect(data).toEqual([]);
+  });
+});

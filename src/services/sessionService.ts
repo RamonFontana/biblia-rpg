@@ -83,7 +83,17 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
   // Os mapas escolhidos. A sessão já existe, então uma falha aqui só é registrada: o Mestre soma os
   // mapas pelo Painel Mapas.
   try {
-    await addSessionMaps(sessionId, payload.maps);
+    await addSessionMaps(
+      sessionId,
+      payload.maps.map((map) => ({
+        ...(map.masterMapId !== undefined
+          ? { masterMapId: map.masterMapId }
+          : { libraryId: map.libraryId }),
+        name: map.name,
+        columns: map.columns,
+        rows: map.rows,
+      })),
+    );
   } catch (error) {
     console.error('Error adding the chosen maps to the session:', error);
   }

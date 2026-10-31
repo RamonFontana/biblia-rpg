@@ -591,6 +591,62 @@ export type Database = {
           },
         ]
       }
+      master_map_images: {
+        Row: {
+          created_at: string
+          image: string
+          map_id: string
+        }
+        Insert: {
+          created_at?: string
+          image: string
+          map_id: string
+        }
+        Update: {
+          created_at?: string
+          image?: string
+          map_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_map_images_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: true
+            referencedRelation: "master_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_maps: {
+        Row: {
+          columns: number
+          created_at: string
+          grid_visible: boolean
+          id: string
+          name: string
+          owner_id: string
+          rows: number
+        }
+        Insert: {
+          columns: number
+          created_at?: string
+          grid_visible?: boolean
+          id?: string
+          name: string
+          owner_id?: string
+          rows: number
+        }
+        Update: {
+          columns?: number
+          created_at?: string
+          grid_visible?: boolean
+          id?: string
+          name?: string
+          owner_id?: string
+          rows?: number
+        }
+        Relationships: []
+      }
       session_enemies: {
         Row: {
           base_enemy_id: string
@@ -688,7 +744,8 @@ export type Database = {
           created_at: string
           grid_visible: boolean
           id: string
-          library_id: string
+          library_id: string | null
+          master_map_id: string | null
           name: string
           position: number
           rows: number
@@ -700,7 +757,8 @@ export type Database = {
           created_at?: string
           grid_visible?: boolean
           id?: string
-          library_id: string
+          library_id?: string | null
+          master_map_id?: string | null
           name: string
           position?: number
           rows: number
@@ -712,13 +770,21 @@ export type Database = {
           created_at?: string
           grid_visible?: boolean
           id?: string
-          library_id?: string
+          library_id?: string | null
+          master_map_id?: string | null
           name?: string
           position?: number
           rows?: number
           session_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "session_maps_master_map_id_fkey"
+            columns: ["master_map_id"]
+            isOneToOne: false
+            referencedRelation: "master_maps"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "session_maps_session_id_fkey"
             columns: ["session_id"]

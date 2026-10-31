@@ -15,6 +15,7 @@ import { Maximize2, Minus, Plus } from 'lucide-react';
 import {
   centerOn,
   clampView,
+  coverView,
   fitView,
   panBy,
   screenToMap,
@@ -31,6 +32,9 @@ export interface ViewApi {
   clientToContent: (clientX: number, clientY: number) => Point;
   /** Leva o ponto do mapa (em pixels sem zoom) ao meio do Palco, ampliando até o tamanho real. */
   centerOn: (point: Point) => void;
+  /** A vista de agora (escala e deslocamento, em pixels de tela) e o tamanho do Palco. */
+  getView: () => View;
+  getViewport: () => Size;
 }
 
 interface PanZoomViewportProps {
@@ -43,6 +47,15 @@ interface PanZoomViewportProps {
   apiRef?: Ref<ViewApi>;
   /** Botões extras ao lado dos de zoom. */
   controls?: ReactNode;
+  /**
+   * `contain` (padrão) começa com o mapa inteiro à vista; `cover` cobre o Palco inteiro, como o editor
+   * de recorte, que nunca deixa vazio por baixo do grid.
+   */
+  fit?: 'contain' | 'cover';
+  /** A altura mínima da janela, em pixels. */
+  minHeight?: number;
+  /** Desenhado por cima da janela, parado (não acompanha o zoom nem o arrasto). */
+  overlay?: ReactNode;
   children: ReactNode;
 }
 
@@ -52,9 +65,9 @@ const WHEEL_SENSITIVITY = 0.0015;
 const buttonClass =
   'flex h-11 w-11 items-center justify-center rounded-full border border-stone-700 bg-stone-900/90 text-stone-200 hover:border-amber-500/60 hover:text-amber-500';
 
-/** Da escala que mostra o mapa inteiro até seis vezes isso (no mínimo, o tamanho real em dobro). */
-function limitsFor(fit: number): ScaleLimits {
-  return { min: fit, max: Math.max(fit * 6, 2) };
+/** Da escala inicial até seis vezes ela (no mínimo, o tamanho real em dobro); oito no recorte. */
+function limitsFor(fit: number, mode: 'contain' | 'cover'): ScaleLimits {
+  return mode === 'cover' ? { min: fit, max: fit * 8 } : { min: fit, max: Math.max(fit * 6, 2) };
 }
 
 function distance(a: Point, b: Point): number {
@@ -67,6 +80,9 @@ export function PanZoomViewport({
   className = '',
   apiRef,
   controls,
+  fit: fitMode = 'contain',
+  minHeight = 288,
+  overlay,
   children,
 }: PanZoomViewportProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -94,8 +110,10 @@ export function PanZoomViewport({
   }, []);
 
   const measured = size.width > 0 && size.height > 0;
-  const fit = measured ? fitView(size, content) : { scale: 1, x: 0, y: 0 };
-  const limits = limitsFor(fit.scale);
+  const fit = measured
+    ? (fitMode === 'cover' ? coverView : fitView)(size, content)
+    : { scale: 1, x: 0, y: 0 };
+  const limits = limitsFor(fit.scale, fitMode);
   const view = !measured
     ? fit
     : chosen
@@ -175,6 +193,8 @@ export function PanZoomViewport({
       const scale = Math.max(viewRef.current.scale, Math.min(limits.max, 1));
       setChosen(centerOn({ ...viewRef.current, scale }, point, size, content));
     },
+    getView: () => viewRef.current,
+    getViewport: () => size,
   }));
 
   const center = { x: size.width / 2, y: size.height / 2 };
@@ -211,7 +231,8 @@ export function PanZoomViewport({
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
         onKeyDown={onKeyDown}
-        className="h-full min-h-[18rem] w-full cursor-grab touch-none overflow-hidden select-none focus-visible:ring-2 focus-visible:ring-amber-500/60 focus-visible:outline-none active:cursor-grabbing"
+        style={{ minHeight }}
+        className="h-full w-full cursor-grab touch-none overflow-hidden select-none focus-visible:ring-2 focus-visible:ring-amber-500/60 focus-visible:outline-none active:cursor-grabbing"
       >
         <div
           data-testid="camada-do-mapa"
@@ -227,6 +248,7 @@ export function PanZoomViewport({
           {children}
         </div>
       </div>
+      {overlay && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
       <div className="absolute bottom-2 left-2 flex gap-1">
         <button
           type="button"

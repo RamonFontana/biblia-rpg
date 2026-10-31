@@ -1,9 +1,12 @@
 import { useSessionDraftStore } from '@/store/createSessionStore';
 import { Button } from '@/components/ui/button';
+import { MasterMapLibrary } from '@/components/session/maps/MasterMapLibrary';
 import { TerrainPicker } from '@/components/session/maps/TerrainPicker';
+import { useAuthStore } from '@/store/authStore';
 
 export function StepMaps() {
   const { maps, addMap, removeMap, nextStep, prevStep } = useSessionDraftStore();
+  const ownerId = useAuthStore((state) => state.user?.id);
 
   return (
     <div className="space-y-6">
@@ -17,6 +20,23 @@ export function StepMaps() {
       <div className="border rounded-lg p-4 bg-stone-950/40">
         <TerrainPicker onAdd={(terrain) => addMap({ id: crypto.randomUUID(), ...terrain })} />
       </div>
+
+      {ownerId && (
+        <div className="border rounded-lg p-4 bg-stone-950/40">
+          <MasterMapLibrary
+            ownerId={ownerId}
+            onPick={(map) =>
+              addMap({
+                id: crypto.randomUUID(),
+                masterMapId: map.id,
+                name: map.name,
+                columns: map.columns,
+                rows: map.rows,
+              })
+            }
+          />
+        </div>
+      )}
 
       <div className="border rounded-lg p-4 bg-muted/20">
         <h3 className="font-medium text-lg mb-3">Mapas escolhidos ({maps.length})</h3>

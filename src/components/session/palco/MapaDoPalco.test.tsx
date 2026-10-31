@@ -3,12 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MapScene } from '@/lib/mapScene';
 import type { Retrato } from '@/lib/retratos';
 import type { SessionMap } from '@/data-access/maps';
+vi.mock('@/data-access/masterMaps', () => ({ getMasterMapImage: vi.fn() }));
+
 import { MapaDoPalco } from './MapaDoPalco';
 
 const map: SessionMap = {
   id: 'm1',
   session_id: 's1',
   library_id: 'terreno-areia',
+  master_map_id: null,
   name: 'Deserto de Zim',
   columns: 20,
   rows: 15,
