@@ -579,6 +579,30 @@ select pg_temp.t('convert_playable_npc_keys: tira stats.armor_class e mantém o 
 select pg_temp.t('convert_playable_npc_keys: ficha já no formato certo não muda', pg_temp.npc_keys_after('{"for":16,"des":14,"con":12,"int":8,"sab":10,"car":9}', '{"ca":12}', $q$select (select count(*) from public.characters where attributes ? 'strength')::text$q$), '0');
 select pg_temp.t('convert_playable_npc_keys: ninguém além do dono do banco executa', pg_temp.run_as((select gm from who), 'select public.convert_playable_npc_keys()'), 'error=42501');
 
+-- ================== session_maps e o Mapa atual ==================
+insert into public.session_maps (id, session_id, library_id, name, columns, rows) values
+  ('cccccccc-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000001', 'terreno-areia', 'Deserto', 20, 15),
+  ('cccccccc-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000002', 'terreno-areia', 'Mapa de outro Mestre', 20, 15);
+select pg_temp.t('session_maps: anon não lê',                pg_temp.run_as(null, 'select * from public.session_maps'), 'error=42501');
+select pg_temp.t('session_maps: estranho lê só o da sessão dele', pg_temp.run_as((select carol from who), 'select * from public.session_maps'), 'rows=1');
+select pg_temp.t('session_maps: jogador da sessão lê',       pg_temp.run_as((select alice from who), 'select * from public.session_maps'), 'rows=1');
+select pg_temp.t('session_maps: Mestre lê',                  pg_temp.run_as((select gm from who), 'select * from public.session_maps'), 'rows=1');
+select pg_temp.t('session_maps: anon não cria',              pg_temp.run_as(null, $q$insert into public.session_maps (session_id, library_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-pedra','Pedra',20,15)$q$), 'error=42501');
+select pg_temp.t('session_maps: jogador não cria',           pg_temp.run_as((select alice from who), $q$insert into public.session_maps (session_id, library_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-pedra','Pedra',20,15)$q$), 'error=42501');
+select pg_temp.t('session_maps: Mestre de outra sessão não cria aqui', pg_temp.run_as((select carol from who), $q$insert into public.session_maps (session_id, library_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-pedra','Pedra',20,15)$q$), 'error=42501');
+select pg_temp.t('session_maps: Mestre cria',                pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, library_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-pedra','Pedra',20,15)$q$), 'rows=1');
+select pg_temp.t('session_maps: o banco recusa menos de 5 colunas', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, library_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-pedra','Pedra',4,15)$q$), 'error=23514');
+select pg_temp.t('session_maps: o banco recusa mais de 60 linhas', pg_temp.run_as((select gm from who), $q$insert into public.session_maps (session_id, library_id, name, columns, rows) values ('22222222-0000-0000-0000-000000000001','terreno-pedra','Pedra',20,61)$q$), 'error=23514');
+select pg_temp.t('session_maps: o banco recusa um Ambiente desconhecido', pg_temp.run_as((select gm from who), $q$update public.session_maps set ambient = 'noite' where id = 'cccccccc-0000-0000-0000-000000000001'$q$), 'error=23514');
+select pg_temp.t('session_maps: Mestre fixa o Ambiente',     pg_temp.val_as((select gm from who), $q$update public.session_maps set ambient = 'penumbra' where id = 'cccccccc-0000-0000-0000-000000000001' returning ambient$q$), 'penumbra');
+select pg_temp.t('session_maps: jogador não altera',         pg_temp.run_as((select alice from who), $q$update public.session_maps set name = 'X'$q$), 'rows=0');
+select pg_temp.t('session_maps: jogador não apaga',          pg_temp.run_as((select alice from who), $q$delete from public.session_maps$q$), 'rows=0');
+select pg_temp.t('session_maps: Mestre apaga',               pg_temp.run_as((select gm from who), $q$delete from public.session_maps where id = 'cccccccc-0000-0000-0000-000000000001'$q$), 'rows=1');
+select pg_temp.t('Mapa atual: Mestre mostra um mapa da sessão', pg_temp.val_as((select gm from who), $q$update public.game_sessions set shown_map_id = 'cccccccc-0000-0000-0000-000000000001' where id = '22222222-0000-0000-0000-000000000001' returning shown_map_id::text$q$), 'cccccccc-0000-0000-0000-000000000001');
+select pg_temp.t('Mapa atual: o banco recusa o mapa de outra sessão', pg_temp.run_as((select gm from who), $q$update public.game_sessions set shown_map_id = 'cccccccc-0000-0000-0000-000000000002' where id = '22222222-0000-0000-0000-000000000001'$q$), 'error=23503');
+select pg_temp.t('Mapa atual: jogador não muda',             pg_temp.run_as((select alice from who), $q$update public.game_sessions set shown_map_id = 'cccccccc-0000-0000-0000-000000000001' where id = '22222222-0000-0000-0000-000000000001'$q$), 'rows=0');
+select pg_temp.t('Mapa atual: apagar o mapa mostrado volta ao Palco de Retratos', pg_temp.after_as((select gm from who), array[$q$update public.game_sessions set shown_map_id = 'cccccccc-0000-0000-0000-000000000001' where id = '22222222-0000-0000-0000-000000000001'$q$, $q$delete from public.session_maps where id = 'cccccccc-0000-0000-0000-000000000001'$q$], $q$select coalesce(shown_map_id::text, 'nulo') from public.game_sessions where id = '22222222-0000-0000-0000-000000000001'$q$), 'nulo');
+
 -- ============================ resultado ============================
 do $$
 declare bad text; total int; ok int;
