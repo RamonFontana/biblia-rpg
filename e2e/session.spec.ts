@@ -5,7 +5,7 @@ import { nextPaint, openPanel, watchPlayers } from './support/ui';
 const SESSION_NAME = 'Invasão a Jericó';
 
 test.describe('criar a sessão', () => {
-  test('o Mestre percorre os 5 passos e abre a mesa com o jogador e o NPC', async ({
+  test('o Mestre percorre os 6 passos e abre a mesa com o jogador e o NPC', async ({
     seed,
     signIn,
   }) => {
@@ -22,6 +22,7 @@ test.describe('criar a sessão', () => {
     await master.getByRole('button', { name: 'Adicionar NPC Simples' }).click();
     await master.getByRole('button', { name: 'Próximo: Jogadores' }).click();
     await master.getByLabel('Eliabe').check();
+    await master.getByRole('button', { name: 'Próximo: Mapas' }).click();
     await master.getByRole('button', { name: 'Próximo: Resumo' }).click();
 
     await expect(master.getByText(`Nome: ${SESSION_NAME}`)).toBeVisible();
@@ -59,6 +60,56 @@ test.describe('criar a sessão', () => {
     expect(character?.has_participated_in_session).toBe(true);
   });
 
+  test('o Mestre escolhe um terreno no passo Mapas e ele já está na sessão', async ({
+    seed,
+    signIn,
+  }) => {
+    const eliabe = await seed.createCharacter('player1', { name: 'Eliabe' });
+    const master = await signIn('master');
+
+    await master.goto('/session/create');
+    await master.getByLabel('Nome da Sessão').fill(SESSION_NAME);
+    await master.getByRole('button', { name: 'Próximo: Inimigos' }).click();
+    await master.getByRole('button', { name: 'Próximo: NPCs' }).click();
+    await master.getByRole('button', { name: 'Próximo: Jogadores' }).click();
+    await master.getByLabel('Eliabe').check();
+    await master.getByRole('button', { name: 'Próximo: Mapas' }).click();
+
+    await expect(master.getByText('Passo 5 de 6')).toBeVisible();
+    await master.getByLabel('Terreno', { exact: true }).selectOption('terreno-piso-de-casa');
+    await master.getByLabel('Nome do mapa').fill('Casa de Raabe');
+    await master.getByRole('button', { name: 'Somar terreno' }).click();
+    await expect(master.getByText('Casa de Raabe')).toBeVisible();
+    await master.getByRole('button', { name: 'Próximo: Resumo' }).click();
+
+    await expect(master.getByRole('heading', { name: 'Mapas (1)' })).toBeVisible();
+    await master.getByRole('button', { name: 'Iniciar Sessão' }).click();
+    await expect(master).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
+
+    // O mapa está na lista do Painel Mapas, ainda sem ser mostrado aos jogadores.
+    await openPanel(master, 'Mapas');
+    await expect(master.getByLabel('Nome de Casa de Raabe')).toHaveValue('Casa de Raabe');
+    const { data } = await adminClient()
+      .from('session_maps')
+      .select('library_id, name, columns, rows, position');
+    expect(data).toEqual([
+      {
+        library_id: 'terreno-piso-de-casa',
+        name: 'Casa de Raabe',
+        columns: 20,
+        rows: 15,
+        position: 0,
+      },
+    ]);
+    const { data: session } = await adminClient()
+      .from('game_sessions')
+      .select('shown_map_id')
+      .eq('name', SESSION_NAME)
+      .single();
+    expect(session?.shown_map_id).toBeNull();
+    void eliabe;
+  });
+
   test('o nome da sessão tem no mínimo 3 caracteres', async ({ signIn }) => {
     const master = await signIn('master');
 
@@ -67,7 +118,7 @@ test.describe('criar a sessão', () => {
     await master.getByRole('button', { name: 'Próximo: Inimigos' }).click();
 
     await expect(master.getByText('O nome deve ter no mínimo 3 caracteres')).toBeVisible();
-    await expect(master.getByText('Passo 1 de 5')).toBeVisible();
+    await expect(master.getByText('Passo 1 de 6')).toBeVisible();
   });
 
   test('personagem com Aumento de Nível pendente não pode ser convocado', async ({

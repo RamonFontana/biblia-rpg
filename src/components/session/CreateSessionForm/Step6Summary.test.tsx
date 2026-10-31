@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({ createGameSession: vi.fn() }));
 vi.mock('@/services/sessionService', () => ({ createGameSession: h.createGameSession }));
 
 import { useSessionDraftStore } from '@/store/createSessionStore';
-import { Step5Summary } from './Step5Summary';
+import { Step6Summary } from './Step6Summary';
 
 function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
@@ -20,7 +20,7 @@ const renderStep = () =>
     <MemoryRouter initialEntries={['/sessions/new']}>
       <Where />
       <Routes>
-        <Route path="/sessions/new" element={<Step5Summary />} />
+        <Route path="/sessions/new" element={<Step6Summary />} />
         <Route path="*" element={null} />
       </Routes>
     </MemoryRouter>,
@@ -40,13 +40,33 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('Step5Summary', () => {
+describe('Step6Summary', () => {
   it('resume o nome, a descrição e o que faltou adicionar', () => {
     renderStep();
     expect(screen.getByText('Noite em Betel')).toBeInTheDocument();
     expect(screen.getByText('Uma emboscada')).toBeInTheDocument();
     expect(screen.getByText('Nenhum inimigo adicionado.')).toBeInTheDocument();
     expect(screen.getByText('Nenhum NPC adicionado.')).toBeInTheDocument();
+  });
+
+  it('lista os mapas escolhidos e os envia com o rascunho', async () => {
+    useSessionDraftStore
+      .getState()
+      .addMap({ id: 't1', libraryId: 'terreno-areia', name: 'Deserto', columns: 20, rows: 15 });
+    renderStep();
+    expect(screen.getByRole('heading', { name: 'Mapas (1)' })).toBeInTheDocument();
+    expect(screen.getByText('Deserto (20×15 Quadrados)')).toBeInTheDocument();
+    start();
+    await waitFor(() => expect(h.createGameSession).toHaveBeenCalled());
+    expect(h.createGameSession.mock.calls[0]?.[0].maps).toEqual([
+      { id: 't1', libraryId: 'terreno-areia', name: 'Deserto', columns: 20, rows: 15 },
+    ]);
+  });
+
+  it('sem mapas, o resumo diz que nenhum foi escolhido', () => {
+    renderStep();
+    expect(screen.getByRole('heading', { name: 'Mapas (0)' })).toBeInTheDocument();
+    expect(screen.getByText('Nenhum mapa escolhido.')).toBeInTheDocument();
   });
 
   it('sem descrição, diz "Sem descrição"', () => {
@@ -64,6 +84,7 @@ describe('Step5Summary', () => {
       session_description: 'Uma emboscada',
       enemies: [],
       npcs: [],
+      maps: [],
       participant_character_ids: ['c1', 'c2'],
     });
     expect(useSessionDraftStore.getState().name).toBe('');

@@ -3,7 +3,8 @@ import { Step1Preparation } from './Step1Preparation';
 import { Step2Enemies } from './Step2Enemies';
 import { Step3NPCs } from './Step3NPCs';
 import { Step4Players } from './Step4Players';
-import { Step5Summary } from './Step5Summary';
+import { StepMaps } from './StepMaps';
+import { Step6Summary } from './Step6Summary';
 
 export function CreateSessionForm() {
   const currentStep = useSessionDraftStore((state) => state.currentStep);
@@ -13,7 +14,7 @@ export function CreateSessionForm() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Criar Nova Sessão</h1>
         <div className="text-sm font-medium bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
-          Passo {currentStep} de 5
+          Passo {currentStep} de 6
         </div>
       </div>
 
@@ -22,7 +23,8 @@ export function CreateSessionForm() {
         {currentStep === 2 && <Step2Enemies />}
         {currentStep === 3 && <Step3NPCs />}
         {currentStep === 4 && <Step4Players />}
-        {currentStep === 5 && <Step5Summary />}
+        {currentStep === 5 && <StepMaps />}
+        {currentStep === 6 && <Step6Summary />}
       </div>
     </div>
   );

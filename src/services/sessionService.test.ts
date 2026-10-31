@@ -180,6 +180,7 @@ describe('createGameSession', () => {
     session_description: 'Sete voltas',
     enemies: [],
     npcs: [],
+    maps: [],
     participant_character_ids: ['player-1'],
     ...over,
   });
@@ -228,6 +229,54 @@ describe('createGameSession', () => {
     const empty = { name: 'Vazio', isPlayable: true } as unknown as SessionNPCDraft;
     await createGameSession(payload({ npcs: [empty] }));
     expect(callsOf(state.calls, 'characters', 'insert')).toEqual([]);
+  });
+
+  describe('os mapas escolhidos', () => {
+    const maps = [
+      { id: 'tmp-1', libraryId: 'terreno-areia', name: 'Deserto', columns: 20, rows: 15 },
+      { id: 'tmp-2', libraryId: 'terreno-pedra', name: 'Muralha', columns: 30, rows: 8 },
+    ];
+
+    it('entram na sessão nova, em ordem, sem o id temporário', async () => {
+      state.respond = respond;
+      await createGameSession(payload({ maps }));
+      const [insert] = callsOf(state.calls, 'session_maps', 'insert');
+      expect(insert?.payload).toEqual([
+        expect.objectContaining({
+          session_id: 'session-new',
+          library_id: 'terreno-areia',
+          name: 'Deserto',
+          position: 0,
+        }),
+        expect.objectContaining({
+          session_id: 'session-new',
+          library_id: 'terreno-pedra',
+          name: 'Muralha',
+          position: 1,
+        }),
+      ]);
+      expect(JSON.stringify(insert?.payload)).not.toContain('tmp-1');
+    });
+
+    it('depois de criar a sessão', async () => {
+      state.respond = respond;
+      await createGameSession(payload({ maps }));
+      expect(ops().indexOf('session_maps:insert')).toBeGreaterThan(
+        ops().indexOf('create_game_session:rpc'),
+      );
+    });
+
+    it('sem mapas, a sessão nasce como antes', async () => {
+      state.respond = respond;
+      await createGameSession(payload());
+      expect(callsOf(state.calls, 'session_maps', 'insert')).toEqual([]);
+    });
+
+    it('erro ao gravar os mapas é só registrado: a sessão já existe e é devolvida', async () => {
+      state.respond = (call) =>
+        call.table === 'session_maps' ? { error: new Error('falhou') } : respond(call);
+      expect(await createGameSession(payload({ maps }))).toBe('session-new');
+    });
   });
 
   it('marca todos os participantes como "já participaram de sessão"', async () => {

@@ -12,15 +12,22 @@ import {
   listSessionParticipantCharacterIds,
   updateGameSession,
 } from '@/data-access/sessions';
+import { addSessionMaps } from '@/data-access/maps';
 import { cancelSessionTrades } from '@/data-access/trades';
 import { buildEnemyRow, buildPlayableNpcRow } from '@/lib/sessionEntities';
-import type { SessionEnemyDraft, SessionNPCDraft } from '@/store/createSessionStore';
+import type {
+  SessionEnemyDraft,
+  SessionMapDraft,
+  SessionNPCDraft,
+} from '@/store/createSessionStore';
 
 export interface CreateSessionPayload {
   session_name: string;
   session_description: string;
   enemies: SessionEnemyDraft[];
   npcs: SessionNPCDraft[];
+  /** Os terrenos escolhidos para a sessão (passo opcional). */
+  maps: SessionMapDraft[];
   participant_character_ids: string[];
 }
 
@@ -71,6 +78,14 @@ export const createGameSession = async (payload: CreateSessionPayload): Promise<
   } catch (error) {
     console.error('Error creating session via RPC:', error);
     throw error;
+  }
+
+  // Os mapas escolhidos. A sessão já existe, então uma falha aqui só é registrada: o Mestre soma os
+  // mapas pelo Painel Mapas.
+  try {
+    await addSessionMaps(sessionId, payload.maps);
+  } catch (error) {
+    console.error('Error adding the chosen maps to the session:', error);
   }
 
   if (finalParticipantIds.length > 0) {

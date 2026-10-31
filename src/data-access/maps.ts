@@ -39,6 +39,25 @@ export async function addSessionMap(map: NewSessionMap): Promise<void> {
   if (error) throw error;
 }
 
+/** Soma vários terrenos de uma vez a uma sessão nova, na ordem dada. */
+export async function addSessionMaps(
+  sessionId: string,
+  maps: Omit<NewSessionMap, 'sessionId' | 'position'>[],
+): Promise<void> {
+  if (maps.length === 0) return;
+  const { error } = await supabase.from('session_maps').insert(
+    maps.map((map, position) => ({
+      session_id: sessionId,
+      library_id: map.libraryId,
+      name: map.name,
+      columns: map.columns,
+      rows: map.rows,
+      position,
+    })),
+  );
+  if (error) throw error;
+}
+
 export async function updateSessionMap(
   id: string,
   patch: TablesUpdate<'session_maps'>,

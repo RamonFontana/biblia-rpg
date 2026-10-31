@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Passo novo e opcional no assistente; o rascunho guarda os mapas escolhidos.
-- [ ] O seletor é o mesmo componente do Painel Mapas.
-- [ ] Criar a sessão grava os mapas da sessão escolhidos; sessão sem mapas segue funcionando.
-- [ ] O resumo final lista os mapas.
-- [ ] Testes do passo seguindo os testes dos outros passos do assistente; E2E de criar sessão com um terreno.
+- [x] Passo novo e opcional no assistente; o rascunho guarda os mapas escolhidos.
+- [x] O seletor é o mesmo componente do Painel Mapas.
+- [x] Criar a sessão grava os mapas da sessão escolhidos; sessão sem mapas segue funcionando.
+- [x] O resumo final lista os mapas.
+- [x] Testes do passo seguindo os testes dos outros passos do assistente; E2E de criar sessão com um terreno.
