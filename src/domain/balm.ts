@@ -3,6 +3,7 @@
 import { rollDice } from '@/domain/dice';
 import { ITEMS_DB } from '@/content/items';
 import type { Rng } from '@/domain/rng';
+import type { CombatInventoryItem } from '@/types/inventory';
 import { resolveHealing } from '@/domain/consumables';
 
 /** Os itens que só valem no Descanso Curto (o Bálsamo), pelo slug do conteúdo. */
@@ -12,6 +13,14 @@ const REST_ONLY_SLUGS = new Set(
 
 export function isRestOnlyItem(slug: string | null | undefined): boolean {
   return !!slug && REST_ONLY_SLUGS.has(slug);
+}
+
+/** O inventário tem um Bálsamo para usar (o Mestre só vê o cartão de quem tem). */
+export function hasBalm(items: readonly CombatInventoryItem[] | undefined): boolean {
+  return (items ?? []).some((entry) => {
+    const catalog = Array.isArray(entry.items) ? entry.items[0] : entry.items;
+    return isRestOnlyItem(catalog?.slug) && (entry.quantity ?? 0) > 0;
+  });
 }
 
 export type BalmUseBlock = 'closed' | 'dead' | 'dying' | 'none' | 'full';

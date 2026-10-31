@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Coffee, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BalmSpender } from './BalmSpender';
+import { hasBalm } from '@/domain/balm';
 import { HitDiceSpender, type SpenderCharacter } from './HitDiceSpender';
 import {
   closeShortRest,
@@ -123,7 +124,7 @@ export function ShortRestCard({
                 showName={role === 'master'}
                 onSpent={(id, patch) => onSpent?.(id, patch)}
               />
-              {role === 'player' && (
+              {(role === 'player' || hasBalm(character.character_items)) && (
                 <BalmSpender
                   character={character}
                   restOpen
