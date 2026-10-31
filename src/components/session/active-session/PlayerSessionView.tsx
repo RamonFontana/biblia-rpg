@@ -14,6 +14,8 @@ import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { TradeNotices } from '@/components/session/TradeNotices';
 import { pendingTradesOf } from '@/lib/pendingTrades';
 import { Retratos } from '@/components/session/palco/Retratos';
+import { MapaDoPalco } from '@/components/session/palco/MapaDoPalco';
+import type { SessionMap } from '@/data-access/maps';
 import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard, type RetratoAttack } from '@/components/session/palco/RetratoCard';
@@ -36,6 +38,8 @@ import type { TradeWithItems } from '@/types/trade';
 type PlayerPanel = 'ficha' | 'inventario' | 'grupo' | 'historico' | 'descanso';
 
 interface PlayerSessionViewProps {
+  /** O Mapa atual, quando o Mestre mostrou um. */
+  shownMap: SessionMap | null;
   userId: string;
   sessionId: string;
   sessionData: GameSession;
@@ -70,6 +74,7 @@ interface PlayerSessionViewProps {
  */
 export function PlayerSessionView({
   userId,
+  shownMap,
   sessionId,
   sessionData,
   myCharacter,
@@ -247,14 +252,18 @@ export function PlayerSessionView({
             </>
           )}
 
-          <Retratos
-            turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
-            retratos={retratos}
-            onOpen={(retrato) => {
-              setPanel(null);
-              setRetratoId(retrato.id);
-            }}
-          />
+          {shownMap ? (
+            <MapaDoPalco map={shownMap} />
+          ) : (
+            <Retratos
+              turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
+              retratos={retratos}
+              onOpen={(retrato) => {
+                setPanel(null);
+                setRetratoId(retrato.id);
+              }}
+            />
+          )}
 
           {hasActiveCombat && (
             <div

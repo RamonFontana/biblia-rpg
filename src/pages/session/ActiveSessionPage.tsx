@@ -6,6 +6,7 @@ import { updateGameSession } from '@/data-access/sessions';
 import { cancelTrade } from '@/data-access/trades';
 import { endSession as endSessionService } from '@/services/sessionService';
 import { useGameSession } from '@/hooks/useGameSession';
+import { useSessionMaps } from '@/hooks/useSessionMaps';
 import { useSessionPresence } from '@/hooks/useSessionPresence';
 import { useSessionTests } from '@/hooks/useSessionTests';
 import { useSessionCharacters } from '@/hooks/useSessionCharacters';
@@ -36,6 +37,8 @@ export function ActiveSessionPage() {
 
   const { sessionData, isLoading, isNewDayDialogOpen, setIsNewDayDialogOpen } = useGameSession(id);
   const { onlineUsers } = useSessionPresence(id, user);
+  const maps = useSessionMaps(id);
+  const shownMap = maps.find((m) => m.id === sessionData?.shown_map_id) ?? null;
 
   const { activeTests, testResults } = useSessionTests(id!);
   const {
@@ -160,6 +163,7 @@ export function ActiveSessionPage() {
         {isGM ? (
           <GmSessionView
             sessionId={id}
+            maps={maps}
             sessionData={sessionData}
             playerCharacters={playerCharacters}
             npcs={npcs}
@@ -185,6 +189,7 @@ export function ActiveSessionPage() {
         ) : isSpectator ? (
           <SpectatorView
             userId={user.id}
+            shownMap={shownMap}
             sessionId={id}
             sessionData={sessionData}
             playerCharacters={playerCharacters}
@@ -199,6 +204,7 @@ export function ActiveSessionPage() {
         ) : (
           <PlayerSessionView
             userId={user.id}
+            shownMap={shownMap}
             sessionId={id}
             sessionData={sessionData}
             myCharacter={myCharacter}

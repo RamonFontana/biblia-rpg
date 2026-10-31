@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Dices, Moon, ScrollText, Skull, Sparkles, Swords, Users } from 'lucide-react';
+import {
+  Dices,
+  Map as MapIcon,
+  Moon,
+  ScrollText,
+  Skull,
+  Sparkles,
+  Swords,
+  Users,
+} from 'lucide-react';
 import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { SessionNPCList } from '@/components/session/SessionNPCList';
 import { SessionEnemyList } from '@/components/session/SessionEnemyList';
@@ -9,6 +18,9 @@ import { useShortRestRecharge } from '@/hooks/useShortRestRecharge';
 import { RuptureAlert } from '@/components/session/RuptureAlert';
 import { DyingAlert } from '@/components/session/DyingAlert';
 import { Retratos } from '@/components/session/palco/Retratos';
+import { MapaDoPalco } from '@/components/session/palco/MapaDoPalco';
+import { MapsPanel } from '@/components/session/maps/MapsPanel';
+import type { SessionMap } from '@/data-access/maps';
 import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { InitiativeList } from '@/components/session/palco/InitiativeList';
 import { CombatDashboard } from '@/components/combat/CombatDashboard';
@@ -33,10 +45,12 @@ import type { SessionTest, SessionTestResult } from '@/data-access/sessionTests'
 import type { buildCombatEntities } from '@/lib/combatEntities';
 import type { TradeWithItems } from '@/types/trade';
 
-type GmPanel = 'jogadores' | 'inimigos' | 'npcs' | 'descanso' | 'historico' | 'sessao';
+type GmPanel = 'jogadores' | 'inimigos' | 'npcs' | 'mapas' | 'descanso' | 'historico' | 'sessao';
 
 interface GmSessionViewProps {
   sessionId: string;
+  /** Os mapas da sessão. */
+  maps: SessionMap[];
   sessionData: GameSession;
   playerCharacters: SessionPlayer[];
   npcs: SessionNpc[];
@@ -70,6 +84,7 @@ interface GmSessionViewProps {
  */
 export function GmSessionView({
   sessionId,
+  maps,
   sessionData,
   playerCharacters,
   npcs,
@@ -110,6 +125,11 @@ export function GmSessionView({
   );
 
   const [panel, setPanel] = useState<GmPanel | null>(null);
+  // O mapa que o Mestre abriu só para si; os jogadores veem `shown_map_id`.
+  const [preparedId, setPreparedId] = useState<string | null>(null);
+  const shownMap = maps.find((m) => m.id === sessionData.shown_map_id) ?? null;
+  const preparedMap = maps.find((m) => m.id === preparedId) ?? null;
+  const stageMap = preparedMap ?? shownMap;
   // O NPC jogável que o Mestre conduz pela Hotbar da Barra: o do turno, ou o do seletor.
   const [actAs, setActAs] = useState<string | undefined>(undefined);
   const { activeCombat, attacks, abilityUses, currentTurnParticipant, participants } =
@@ -225,6 +245,7 @@ export function GmSessionView({
       : [{ id: 'jogadores' as const, label: 'Jogadores', icon: <Users className="h-6 w-6" /> }]),
     { id: 'inimigos', label: 'Inimigos', icon: <Skull className="h-6 w-6" /> },
     { id: 'npcs', label: 'NPCs', icon: <Sparkles className="h-6 w-6" /> },
+    { id: 'mapas', label: 'Mapas', icon: <MapIcon className="h-6 w-6" /> },
     // O Teste já tem a janela própria do Mestre; o ícone abre essa janela.
     { id: 'testes', label: 'Testes', icon: <Dices className="h-6 w-6" />, attention: hasAnswers },
     {
@@ -270,11 +291,25 @@ export function GmSessionView({
               )}
             />
           ) : (
-            <Retratos
-              turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
-              retratos={retratos}
-              onOpen={openRetrato}
-            />
+            <>
+              {stageMap ? (
+                <>
+                  {preparedMap && preparedMap.id !== shownMap?.id && (
+                    <p className="text-sm text-amber-400">
+                      Em preparo: {preparedMap.name}. Os jogadores veem{' '}
+                      {shownMap ? shownMap.name : 'os Retratos'}.
+                    </p>
+                  )}
+                  <MapaDoPalco map={stageMap} />
+                </>
+              ) : (
+                <Retratos
+                  turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
+                  retratos={retratos}
+                  onOpen={openRetrato}
+                />
+              )}
+            </>
           )}
 
           {hasActiveCombat && !wide && !phone && (
@@ -368,6 +403,15 @@ export function GmSessionView({
             sessionId={sessionId}
             onUpdateNPCData={(npcId, patch) => updateLocal('npc', npcId, patch)}
             onNPCNegotiate={onNPCNegotiate}
+          />
+        )}
+        {panel === 'mapas' && (
+          <MapsPanel
+            sessionId={sessionId}
+            maps={maps}
+            shownMapId={sessionData.shown_map_id}
+            preparedId={preparedId}
+            onPrepare={setPreparedId}
           />
         )}
         {panel === 'descanso' && (
