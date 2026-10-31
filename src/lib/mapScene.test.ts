@@ -350,3 +350,17 @@ describe('buildMapScene: a luz', () => {
     expect(s.tray.length).toBeGreaterThan(0);
   });
 });
+
+describe('buildMapScene: a luz que o pin carrega', () => {
+  it('devolve os raios do pin, ou nulo quando não há luz', () => {
+    const s = scene({
+      viewer: 'gm',
+      pins: [
+        pin({ character_id: 'e1', col: 1, row: 1, light_bright_m: 6, light_dim_m: 3 }),
+        pin({ character_id: 'e2', col: 2, row: 2 }),
+      ],
+    });
+    expect(s.pins.find((p) => p.retrato.id === 'e1')?.light).toEqual({ brightM: 6, dimM: 3 });
+    expect(s.pins.find((p) => p.retrato.id === 'e2')?.light).toBeNull();
+  });
+});

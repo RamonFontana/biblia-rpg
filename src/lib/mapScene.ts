@@ -45,6 +45,8 @@ export interface ScenePin {
   turn: boolean;
   /** A luz no Quadrado dele. */
   level: LightLevel;
+  /** A luz que ele próprio carrega (pin de inimigo ou NPC), se houver. */
+  light?: { brightM: number; dimM: number } | null;
 }
 
 export interface MapScene {
@@ -67,6 +69,10 @@ export const pinRetratoId = (pin: Pick<PinRow, 'character_id' | 'npc_id'>): stri
 export const pinLabel = (retrato: Retrato): string =>
   `${retrato.name}, ${retrato.pv} de ${retrato.pvMax} PV${retrato.down ? ', caído' : ''}${retrato.hidden ? ', oculto' : ''}`;
 
+/** O nome acessível de uma luz fixa no mapa: o rótulo e os dois raios. */
+export const lightLabel = (light: LightRow): string =>
+  `Luz ${light.label}, ${light.bright_m} m de Luz plena e ${light.dim_m} m de Penumbra`;
+
 /** A que coluna do pin o Retrato se liga: o NPC simples é uma linha própria; o resto é uma ficha. */
 export const pinTargetOf = (retrato: Retrato): PinTarget =>
   retrato.kind === 'npc' && retrato.npc?.is_playable === false
@@ -85,6 +91,11 @@ interface SceneInput extends Omit<BuildInput, 'extraEnemies' | 'includeHidden'> 
   /** O período da sessão (Manhã, Tarde, Noite). */
   period?: string | null;
 }
+
+const pinLight = (pin: PinRow | undefined) =>
+  pin?.light_bright_m != null && pin.light_dim_m != null
+    ? { brightM: pin.light_bright_m, dimM: pin.light_dim_m }
+    : null;
 
 export function buildMapScene({
   pins,
@@ -134,6 +145,7 @@ export function buildMapScene({
       cell,
       turn: retrato.id === turnEntityId,
       level: lightLevelAt(cell, ambient, sources),
+      light: pinLight(cells.get(retrato.id)),
     }))
     // O grupo aparece sempre; inimigos e NPCs, só em Luz plena ou Penumbra. O Mestre vê todos.
     .filter(({ retrato, level }) => gm || retrato.kind === 'player' || isSeen(level));
