@@ -3,6 +3,8 @@ import { BookOpen, Users } from 'lucide-react';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { SessionParticipantList } from '@/components/session/SessionParticipantList';
 import { Retratos } from '@/components/session/palco/Retratos';
+import { MapaDoPalco } from '@/components/session/palco/MapaDoPalco';
+import type { SessionMap } from '@/data-access/maps';
 import { InitiativeStrip } from '@/components/session/palco/InitiativeStrip';
 import { CombatFeed } from '@/components/session/palco/CombatFeed';
 import { RetratoCard } from '@/components/session/palco/RetratoCard';
@@ -25,6 +27,8 @@ type SpectatorPanel = 'ficha' | 'grupo';
 
 interface SpectatorViewProps {
   userId: string;
+  /** O Mapa atual, quando o Mestre mostrou um. */
+  shownMap: SessionMap | null;
   sessionId: string;
   sessionData: GameSession;
   playerCharacters: SessionPlayer[];
@@ -44,6 +48,7 @@ interface SpectatorViewProps {
  */
 export function SpectatorView({
   userId,
+  shownMap,
   sessionId,
   sessionData,
   playerCharacters,
@@ -111,14 +116,18 @@ export function SpectatorView({
           </>
         )}
 
-        <Retratos
-          turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
-          retratos={retratos}
-          onOpen={(retrato) => {
-            setPanel(null);
-            setRetratoId(retrato.id);
-          }}
-        />
+        {shownMap ? (
+          <MapaDoPalco map={shownMap} />
+        ) : (
+          <Retratos
+            turnId={hasActiveCombat ? currentTurnParticipant?.entity_id : undefined}
+            retratos={retratos}
+            onOpen={(retrato) => {
+              setPanel(null);
+              setRetratoId(retrato.id);
+            }}
+          />
+        )}
       </main>
 
       <DockRail

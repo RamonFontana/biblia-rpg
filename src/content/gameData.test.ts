@@ -13,12 +13,14 @@ import { CONDITIONS } from './conditions';
 import { ENEMY_ABILITIES } from './enemyAbilities';
 import { ITEMS_DB } from './items';
 import { KITS_DB } from './kits';
+import { MAP_LIBRARY } from './maps';
 import {
   abilitySchema,
   conditionSchema,
   enemyAbilitySchema,
   itemSchema,
   kitSchema,
+  mapLibrarySchema,
 } from './schemas';
 import knownViolations from './known-violations.json';
 
@@ -121,6 +123,13 @@ function collectViolations(): string[] {
     for (const { conditionId } of ability.effect.apply ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
+  }
+
+  // Biblioteca de mapas.
+  for (const id of duplicates(MAP_LIBRARY.map((m) => m.id)))
+    violations.push(`map:${id}:duplicate-id`);
+  for (const entry of MAP_LIBRARY) {
+    violations.push(...schemaViolations(`map:${entry.id}`, mapLibrarySchema, entry));
   }
 
   const vocationIds = new Set(Object.keys(VOCATION_RULES).map(normalize));

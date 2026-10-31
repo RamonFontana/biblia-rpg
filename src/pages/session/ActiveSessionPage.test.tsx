@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
     user_metadata?: Record<string, string>;
   },
   session: null as null | Record<string, unknown>,
+  maps: [] as unknown[],
   sessionListener: undefined as undefined | ((s: Record<string, unknown>) => void),
   unsubscribeSession: vi.fn(),
   combat: {
@@ -49,6 +50,13 @@ vi.mock('react-router-dom', () => ({
 }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: () => ({ user: h.user }) }));
 vi.mock('@/store/combatStore', () => ({ useCombatStore: () => h.combat }));
+vi.mock('@/hooks/useSessionMaps', () => ({ useSessionMaps: () => h.maps }));
+vi.mock('@/data-access/maps', () => ({
+  addSessionMap: vi.fn(),
+  updateSessionMap: vi.fn(),
+  removeSessionMap: vi.fn(),
+  showSessionMap: vi.fn(),
+}));
 vi.mock('@/hooks/useSessionTests', () => ({ useSessionTests: () => h.tests }));
 vi.mock('@/hooks/useSessionCharacters', () => ({ useSessionCharacters: () => h.roster }));
 vi.mock('@/hooks/useSessionTrades', () => ({
@@ -214,6 +222,7 @@ beforeEach(() => {
   h.combat.activeCombat = null;
   h.combat.currentTurnParticipant = null;
   h.combat.participants = [];
+  h.maps = [];
   h.tests = { activeTests: [], testResults: {} };
   h.roster.playerCharacters = [
     { user_id: 'u1', character: character('c1') },
@@ -491,14 +500,23 @@ describe('avançar o tempo', () => {
 describe('visão do Mestre', () => {
   beforeEach(asGm);
 
-  it('o trilho tem Jogadores, Inimigos, NPCs, Testes, Descanso, Histórico e Sessão', async () => {
+  it('o trilho tem Jogadores, Inimigos, NPCs, Mapas, Testes, Descanso, Histórico e Sessão', async () => {
     await renderPage();
     const rail = screen.getByRole('navigation', { name: 'Painéis' });
     expect(
       within(rail)
         .getAllByRole('button')
         .map((b) => b.getAttribute('aria-label')),
-    ).toEqual(['Jogadores', 'Inimigos', 'NPCs', 'Testes', 'Descanso', 'Histórico', 'Sessão']);
+    ).toEqual([
+      'Jogadores',
+      'Inimigos',
+      'NPCs',
+      'Mapas',
+      'Testes',
+      'Descanso',
+      'Histórico',
+      'Sessão',
+    ]);
     expect(screen.getByRole('main', { name: 'Palco' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -1318,6 +1336,87 @@ describe('moldura do jogador (Palco, trilho e Painéis)', () => {
   it('a Inspiração mora na Barra de Status, não no Palco', async () => {
     await renderPage();
     expect(hasStub('InspirationPanel')).toBe(false);
+  });
+});
+
+const deserto = {
+  id: 'm1',
+  session_id: 's1',
+  library_id: 'terreno-areia',
+  name: 'Deserto de Zim',
+  columns: 20,
+  rows: 15,
+  grid_visible: true,
+  ambient: null,
+  position: 0,
+  created_at: '2026-11-01T00:00:00Z',
+};
+const casa = { ...deserto, id: 'm2', name: 'Casa de Raabe', library_id: 'terreno-piso-de-casa' };
+
+describe('o Mapa atual no Palco', () => {
+  it('sem Mapa atual, o jogador vê os Retratos', async () => {
+    h.maps = [deserto];
+    await renderPage();
+    expect(hasStub('Retratos')).toBe(true);
+    expect(screen.queryByRole('region', { name: /^Mapa:/ })).not.toBeInTheDocument();
+  });
+
+  it('com Mapa atual, o jogador vê o mapa no lugar dos Retratos', async () => {
+    h.maps = [deserto];
+    h.session = { ...baseSession, shown_map_id: 'm1' };
+    await renderPage();
+    expect(screen.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeInTheDocument();
+    expect(hasStub('Retratos')).toBe(false);
+  });
+
+  it('o espectador também vê o Mapa atual', async () => {
+    h.user = { id: 'u3' };
+    h.maps = [deserto];
+    h.session = { ...baseSession, shown_map_id: 'm1' };
+    await renderPage();
+    expect(screen.getByRole('region', { name: 'Mapa: Deserto de Zim' })).toBeInTheDocument();
+  });
+
+  it('o mapa muda para o jogador quando o Mestre mostra outro, sem recarregar', async () => {
+    h.maps = [deserto, casa];
+    h.session = { ...baseSession, shown_map_id: 'm1' };
+    await renderPage();
+    await act(async () => h.sessionListener?.({ ...baseSession, shown_map_id: 'm2' }));
+    expect(screen.getByRole('region', { name: 'Mapa: Casa de Raabe' })).toBeInTheDocument();
+  });
+
+  it('o Mestre volta à cena e o jogador recebe os Retratos de novo', async () => {
+    h.maps = [deserto];
+    h.session = { ...baseSession, shown_map_id: 'm1' };
+    await renderPage();
+    await act(async () => h.sessionListener?.({ ...baseSession, shown_map_id: null }));
+    expect(hasStub('Retratos')).toBe(true);
+  });
+
+  describe('o Mestre', () => {
+    beforeEach(asGm);
+
+    it('o Painel Mapas lista os mapas da sessão', async () => {
+      h.maps = [deserto, casa];
+      await renderPage();
+      openPanel('Mapas');
+      expect(await screen.findByDisplayValue('Deserto de Zim')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Casa de Raabe')).toBeInTheDocument();
+    });
+
+    it('prepara um mapa só para ele: o Palco do Mestre muda e a sessão não', async () => {
+      h.maps = [deserto, casa];
+      h.session = { ...baseSession, shown_map_id: 'm1' };
+      await renderPage();
+      openPanel('Mapas');
+      fireEvent.click(await screen.findByRole('button', { name: 'Preparar Casa de Raabe' }));
+      await closePanel();
+      expect(screen.getByRole('region', { name: 'Mapa: Casa de Raabe' })).toBeInTheDocument();
+      expect(screen.getByText(/Em preparo: Casa de Raabe/)).toHaveTextContent(
+        'Os jogadores veem Deserto de Zim',
+      );
+      expect(h.updateGameSession).not.toHaveBeenCalled();
+    });
   });
 });
 

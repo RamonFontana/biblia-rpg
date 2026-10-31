@@ -446,6 +446,7 @@ export type Database = {
           short_rest_refused_at: string | null
           short_rest_requested: string[]
           short_rests_today: number | null
+          shown_map_id: string | null
           status: string
           updated_at: string
         }
@@ -464,6 +465,7 @@ export type Database = {
           short_rest_refused_at?: string | null
           short_rest_requested?: string[]
           short_rests_today?: number | null
+          shown_map_id?: string | null
           status: string
           updated_at?: string
         }
@@ -482,10 +484,19 @@ export type Database = {
           short_rest_refused_at?: string | null
           short_rest_requested?: string[]
           short_rests_today?: number | null
+          shown_map_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "game_sessions_shown_map_fkey"
+            columns: ["shown_map_id", "id"]
+            isOneToOne: false
+            referencedRelation: "session_maps"
+            referencedColumns: ["id", "session_id"]
+          },
+        ]
       }
       items: {
         Row: {
@@ -611,6 +622,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "session_enemies_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_maps: {
+        Row: {
+          ambient: string | null
+          columns: number
+          created_at: string
+          grid_visible: boolean
+          id: string
+          library_id: string
+          name: string
+          position: number
+          rows: number
+          session_id: string
+        }
+        Insert: {
+          ambient?: string | null
+          columns: number
+          created_at?: string
+          grid_visible?: boolean
+          id?: string
+          library_id: string
+          name: string
+          position?: number
+          rows: number
+          session_id: string
+        }
+        Update: {
+          ambient?: string | null
+          columns?: number
+          created_at?: string
+          grid_visible?: boolean
+          id?: string
+          library_id?: string
+          name?: string
+          position?: number
+          rows?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_maps_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "game_sessions"
