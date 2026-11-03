@@ -602,7 +602,7 @@ Quando incomodarem: as arestas da mesa (carteira zerada que volta a 50, iniciati
 - **CA do alvo pelo Realtime:** aceito e registrado no ADR 0005 (mesa de amigos, ADR 0004).
 - **Proficiência no TR:** aceito como regra; `regras-base.md` §6.6 diz que o personagem do jogador soma a Proficiência quando o atributo do TR é um dos dois Testes de Resistência da Vocação. **Observado, não mexi:** o TR do NPC jogável contra Habilidade de inimigo e o dos inimigos contra Habilidade de jogador somam só o modificador.
 - **Cancelar o TR de quem não respondeu:** fica coletivo ("Aplicar resultados").
-- **Presets de inimigo com Habilidade (Anakim, Endemoniado, Sacerdote de Baal):** entram num PR pequeno depois do layout, com os números de `docs/bestiario/` conferidos pelo autor.
+- **Presets de inimigo com Habilidade (Anakim, Endemoniado, Sacerdote de Baal):** atendido pelo grill "Presets de inimigo" (2026-11-03), seção abaixo.
 - **Arestas da mesa** (carteira com 0 Siclos que volta a 50, iniciativa sorteada opcional, a janela entre a leitura e a assinatura do canal em `useGameSession`, `useCharacterSheet` e `MasterDeathControls`): continuam adiadas; a Onda 6 já mexe nas três telas da janela de leitura.
 - **Ainda sem decisão:** o alerta de Morrendo que também dispara para o Estável e só vale ao vivo; a ordem de turno duplicada na tela e no banco; os 13 pontos de conteúdo bíblico (§2).
 
@@ -689,6 +689,27 @@ Antes de começar, leia a seção "Mapa" do `CONTEXT.md`, os ADRs 0009, 0010 e 0
 **Divergência da Tocha (resolvida no ticket 11):** a descrição em `src/content/items.ts` passou a dizer "Luz plena 6 m e mais 6 m de Penumbra. Acender é Ação Livre. Apaga no Descanso Curto ou Longo", com o seed `20261101180000_seed_items`.
 
 **Observado, não mexi:** os tickets de `.scratch/layout-da-sessao/issues/` continuam com `Status: ready-for-agent`, embora entregues.
+
+### Presets de inimigo: o Bestiário como conteúdo (grill de 2026-11-03)
+
+O Bestiário (`docs/bestiario/`, 10 inimigos e o Template Endemoniado) vira conteúdo tipado. ADR 0012. Termos em CONTEXT.md (Inimigos).
+
+**Decisões do autor:**
+- Os Presets moram em `src/content/enemyPresets.ts` (esquema zod em `schemas.ts`, no gate de dados); `bestiaryPresets.ts` (`MOCK_BESTIARY`) sai. O `id` nunca é renomeado. `src/data/npcPresets.json` fica como está.
+- Os números dos docs valem nos 4 presets atuais (Bandido, Soldado, General, Leão) e nos 6 novos. Um teste docs ↔ conteúdo trava a divergência.
+- O Preset carrega o bloco inteiro (dado de vida, deslocamento, perícias, sentidos, ND/XP, tipo, imunidades, bônus de TR e ataques estruturados). O XP não soma em nada.
+- O inimigo é cópia editável com a origem gravada (`presetId`, marca de endemoniado) no jsonb; sem migration. Quantidade de 1 a 8, com numeração contínua na sessão.
+- Mecânica nova: imunidade a Condição e bônus de TR do bloco valem no inimigo; Fúria Desumana (Mestre rola o TR de CON, CD 10 + 5 por uso, contador em `ability_state` por combate); lembrete do Ataque Furtivo no turno do inimigo. As outras passivas ficam como texto.
+- Template Endemoniado só na criação, sobre qualquer Preset (menos o Endemoniado Comum) e sobre o inimigo do zero. FOR e CON +4, INT 6, Caótico e Mau, Intimidação CAR + 2, ataques de FOR +2, imune a Amedrontado, Grito Atormentador CD 12 e Ataque Bestial +(FOR + 2), 1d6 + FOR. PV pelo dado de vida com a nova CON (Bandido 15, Leão 34). Nome concorda em gênero.
+- O bloco de consulta aparece no cartão do Retrato, só para o Mestre. O formulário é o mesmo no celular e na web, com o essencial no topo.
+
+**Divergência nos docs:** o Endemoniado Comum (30 PV) não bate com Bandido + Template (15 PV). Ele fica como Preset próprio; o autor decide se corrige o doc.
+
+**Pendente do autor:** a regra da Vulnerabilidade Espiritual (dano espiritual e CD do TR de CAR); o ataque do inimigo pelo app (feature futura, com grill próprio).
+
+**Dívida:** `src/data/npcPresets.json` segue fora do gate de dados.
+
+**Fatias:** 0 `CreateEnemyDialog` usa `buildEnemyRow` (um caminho só); 1 esquema, 10 Presets e teste dos docs; 2 Bloco no cartão e editor de ataques; 3 quantidade e numeração; 4 imunidade e bônus de TR; 5 Template Endemoniado; 6 Fúria Desumana; 7 lembrete do Ataque Furtivo.
 
 ## 6. O que VOCÊ precisa fazer fora do código
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.
