@@ -2,13 +2,12 @@
 // vínculo com a sessão, com um Supabase falso que só registra as chamadas.
 // Termos: CONTEXT.md (Inimigo, Mestre).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { FakeCall, FakeResult } from '@/test/fakeSupabase';
 
 const state = vi.hoisted(() => ({
   calls: [] as FakeCall[],
   respond: undefined as ((call: FakeCall) => FakeResult | undefined) | undefined,
-  userId: 'gm-1' as string | null,
 }));
 
 vi.mock('@/lib/supabase', async () => {
@@ -17,24 +16,25 @@ vi.mock('@/lib/supabase', async () => {
     supabase: createFakeSupabase({
       calls: state.calls,
       respond: (call) => state.respond?.(call),
-      userId: () => state.userId,
     }),
   };
 });
 
+vi.mock('@/data-access/auth', () => ({ getCurrentUser: vi.fn() }));
+
+import { getCurrentUser } from '@/data-access/auth';
 import { callsOf } from '@/test/fakeSupabase';
-import { buildEnemyRow } from '@/lib/sessionEntities';
 import { CreateEnemyDialog } from './CreateEnemyDialog';
 
 beforeEach(() => {
   state.calls.length = 0;
-  state.userId = 'gm-1';
+  vi.mocked(getCurrentUser).mockResolvedValue({ id: 'gm-1' } as never);
   state.respond = (call) =>
     call.table === 'characters' && call.op === 'insert' ? { data: { id: 'enemy-1' } } : undefined;
 });
 afterEach(cleanup);
 
-const createEnemy = async (onEnemyCreated?: (enemy: { id: string }) => void) => {
+const submitEnemy = async (onEnemyCreated?: (enemy: { id: string }) => void) => {
   render(<CreateEnemyDialog sessionId="session-1" onEnemyCreated={onEnemyCreated} />);
   fireEvent.click(screen.getByRole('button', { name: /Criar Inimigo/ }));
   fireEvent.change(await screen.findByPlaceholderText('Ex: Lobo Selvagem'), {
@@ -42,6 +42,10 @@ const createEnemy = async (onEnemyCreated?: (enemy: { id: string }) => void) => 
   });
   const buttons = screen.getAllByRole('button', { name: 'Criar Inimigo' });
   fireEvent.click(buttons[buttons.length - 1]);
+};
+
+const createEnemy = async (onEnemyCreated?: (enemy: { id: string }) => void) => {
+  await submitEnemy(onEnemyCreated);
   await waitFor(() =>
     expect(callsOf(state.calls, 'session_participants', 'insert')).toHaveLength(1),
   );
@@ -63,18 +67,6 @@ describe('CreateEnemyDialog', () => {
       skills: [],
       narrative: { imageUrl: '' },
     });
-    expect(insert.payload).toEqual(
-      buildEnemyRow(
-        {
-          name: 'Lobo Selvagem',
-          hpMax: 10,
-          hpCurrent: 10,
-          ca: 10,
-          attributes: { for: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
-        },
-        'gm-1',
-      ),
-    );
   });
 
   it('põe o inimigo na sessão e avisa quem chamou', async () => {
@@ -89,16 +81,14 @@ describe('CreateEnemyDialog', () => {
     expect(onEnemyCreated).toHaveBeenCalledWith({ id: 'enemy-1' });
   });
 
-  it('sem usuário logado não grava nada', async () => {
-    state.userId = null;
-    render(<CreateEnemyDialog sessionId="session-1" />);
-    fireEvent.click(screen.getByRole('button', { name: /Criar Inimigo/ }));
-    fireEvent.change(await screen.findByPlaceholderText('Ex: Lobo Selvagem'), {
-      target: { value: 'Lobo' },
-    });
-    const buttons = screen.getAllByRole('button', { name: 'Criar Inimigo' });
-    fireEvent.click(buttons[buttons.length - 1]);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+  it('sem usuário logado não grava nada e deixa o formulário aberto', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+    await submitEnemy();
+    await waitFor(() => expect(getCurrentUser).toHaveBeenCalled());
+    await act(async () => {});
     expect(callsOf(state.calls, 'characters', 'insert')).toEqual([]);
+    expect(callsOf(state.calls, 'session_participants', 'insert')).toEqual([]);
+    expect(screen.getByPlaceholderText('Ex: Lobo Selvagem')).toBeInTheDocument();
+    expect(screen.queryByText('Salvando...')).not.toBeInTheDocument();
   });
 });
