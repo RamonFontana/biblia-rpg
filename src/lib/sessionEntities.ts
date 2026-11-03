@@ -37,7 +37,10 @@ export function buildPlayableNpcRow(npc: SessionNPCDraft, userId: string) {
   };
 }
 
-export function buildEnemyRow(enemy: SessionEnemyDraft, userId: string) {
+/** Os dados de um inimigo novo: o rascunho do assistente ou o formulário da sessão (sem o id temporário). */
+export type EnemyRowInput = Omit<SessionEnemyDraft, 'id'>;
+
+export function buildEnemyRow(enemy: EnemyRowInput, userId: string) {
   return {
     user_id: userId,
     is_enemy: true,

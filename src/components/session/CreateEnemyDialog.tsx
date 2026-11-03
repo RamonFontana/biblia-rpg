@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { getCurrentUser } from '@/data-access/auth';
-import { createEnemyCharacter } from '@/data-access/characters';
-import { addSessionParticipant } from '@/data-access/sessions';
+import { createSessionEnemy } from '@/services/enemyService';
 import {
   Dialog,
   DialogContent,
@@ -28,35 +26,8 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
     setIsCreating(true);
 
     try {
-      const user = await getCurrentUser();
-      if (!user) return;
-
-      const newCharacter = {
-        name: formData.name,
-        vocation: formData.vocation ?? '',
-        tribe: 'Inimigo',
-        is_enemy: true,
-        user_id: user.id,
-        has_participated_in_session: true,
-        stats: {
-          pv: formData.hpMax,
-          current_pv: formData.hpCurrent,
-          ca: formData.ca,
-          faith: 0,
-          current_faith: 0,
-        },
-        attributes: formData.attributes,
-        skills: formData.skills || [],
-        narrative: {
-          imageUrl: formData.imageBase64 || '',
-        },
-      };
-
-      // 1. Create character
-      const enemy = await createEnemyCharacter(newCharacter);
-
-      // 2. Add to session
-      await addSessionParticipant({ sessionId, characterId: enemy.id, userId: user.id });
+      const enemy = await createSessionEnemy(sessionId, formData);
+      if (!enemy) return;
 
       if (onEnemyCreated) {
         onEnemyCreated(enemy);

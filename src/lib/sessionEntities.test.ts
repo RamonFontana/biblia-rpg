@@ -119,7 +119,7 @@ describe('buildEnemyRow', () => {
   });
 
   it('sem Vocação, habilidades ou imagem usa vazios', () => {
-    const bare = buildEnemyRow({ id: 't', name: 'X', hpMax: 1, hpCurrent: 1, ca: 10 }, 'u');
+    const bare = buildEnemyRow({ name: 'X', hpMax: 1, hpCurrent: 1, ca: 10 }, 'u');
     expect(bare).toMatchObject({ vocation: '', skills: [] });
     expect(bare.narrative.imageUrl).toBe('');
   });
