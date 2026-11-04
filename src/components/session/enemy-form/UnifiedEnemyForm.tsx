@@ -79,16 +79,21 @@ export function UnifiedEnemyForm({
     formState: { errors },
   } = form;
   const imageUrl = watch('imageBase64');
+  const selectedPreset = findEnemyPreset(selectedPresetId);
 
   // O Preset é copiado para o formulário (ADR 0012): depois daqui nada mais o lê.
   const onPresetSelect = (val: string) => {
     setSelectedPresetId(val);
     const preset = findEnemyPreset(val);
     setValue('presetId', preset?.id);
-    setValue('attacks', preset?.attacks);
-    setValue('details', preset?.details);
-    setValue('conditionImmunities', preset?.conditionImmunities);
-    setValue('saveBonuses', preset?.saveBonuses);
+    // Cópias profundas: o formulário nunca compartilha objeto com o conteúdo.
+    setValue('attacks', preset && structuredClone(preset.attacks));
+    setValue('details', preset && structuredClone(preset.details));
+    setValue(
+      'conditionImmunities',
+      preset?.conditionImmunities && structuredClone(preset.conditionImmunities),
+    );
+    setValue('saveBonuses', preset?.saveBonuses && structuredClone(preset.saveBonuses));
     if (!preset) return;
     setValue('name', preset.name);
     setValue('hpMax', preset.hp);
@@ -136,10 +141,8 @@ export function UnifiedEnemyForm({
             ))}
           </SelectContent>
         </Select>
-        {findEnemyPreset(selectedPresetId) && (
-          <p className="text-xs text-stone-400 mt-1">
-            {findEnemyPreset(selectedPresetId)?.description}
-          </p>
+        {selectedPreset && (
+          <p className="text-xs text-stone-400 mt-1">{selectedPreset.description}</p>
         )}
       </div>
 
