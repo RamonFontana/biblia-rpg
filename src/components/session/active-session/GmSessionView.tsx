@@ -153,6 +153,17 @@ export function GmSessionView({
     null,
   );
 
+  // O Bloco do Preset só vai para a visão do Mestre: o resto do app não recebe a narrativa do inimigo.
+  const dashboardEntities = useMemo(
+    () =>
+      availableEntities.map((entity) =>
+        entity.type === 'enemy'
+          ? { ...entity, narrative: enemies.find((e) => e.id === entity.id)?.narrative }
+          : entity,
+      ),
+    [availableEntities, enemies],
+  );
+
   const retratos = buildRetratos({
     playerCharacters,
     npcs,
@@ -328,7 +339,7 @@ export function GmSessionView({
               expandedId={expandedId}
               onToggle={toggleRow}
               renderExpanded={(id) => (
-                <CombatDashboard availableEntities={availableEntities} focusId={id} />
+                <CombatDashboard availableEntities={dashboardEntities} focusId={id} />
               )}
             />
           ) : (
@@ -425,7 +436,7 @@ export function GmSessionView({
 
           {hasActiveCombat && !wide && !phone && (
             <div className="p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-              <CombatDashboard availableEntities={availableEntities} />
+              <CombatDashboard availableEntities={dashboardEntities} />
             </div>
           )}
         </main>
@@ -477,7 +488,7 @@ export function GmSessionView({
                 round={activeCombat?.round_number ?? 1}
               />
               <div className="rounded-lg border border-red-500/50 bg-red-950/20 p-4">
-                <CombatDashboard availableEntities={availableEntities} focusId={focusId} />
+                <CombatDashboard availableEntities={dashboardEntities} focusId={focusId} />
               </div>
             </>
           ) : (

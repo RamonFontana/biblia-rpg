@@ -35,7 +35,6 @@ export function buildCombatEntities(roster: {
         name: enemy.name || 'Inimigo',
         type: 'enemy' as const,
         hpCurrent: getCurrentPv(enemy.stats),
-        narrative: enemy.narrative,
         ...getCombatStats(enemy),
       })),
   ];
