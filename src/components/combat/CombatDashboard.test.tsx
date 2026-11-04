@@ -218,6 +218,53 @@ describe('CombatDashboard: cada participante', () => {
     expect(screen.queryByText('Lança')).toBeNull();
   });
 
+  const block = {
+    enemy: {
+      presetId: 'enemy-preset-leao-da-judeia',
+      attacks: [
+        {
+          name: 'Mordida',
+          mode: 'melee',
+          attribute: 'for',
+          hitBonus: 5,
+          reach: '1,5m',
+          damage: { dice: '1d8', bonus: 3 },
+          damageType: 'perfurante',
+        },
+      ],
+      details: { speed: '15 m' },
+    },
+  };
+
+  it('o inimigo de Preset mostra o Bloco ao Mestre', () => {
+    startCombat([participant('p1', { entity_id: 'e1', entity_type: 'enemy' })]);
+    render(
+      <CombatDashboard
+        availableEntities={[
+          { id: 'e1', name: 'Leão', type: 'enemy', hpCurrent: 26, narrative: block },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Bloco' })).toHaveTextContent('Mordida');
+    expect(screen.getByRole('region', { name: 'Bloco' })).toHaveTextContent('15 m');
+  });
+
+  it('o inimigo sem bloco e quem não é inimigo não têm a seção Bloco', () => {
+    startCombat([
+      participant('p1', { entity_id: 'e1', entity_type: 'enemy' }),
+      participant('p2', { entity_id: 'e2' }),
+    ]);
+    render(
+      <CombatDashboard
+        availableEntities={[
+          { id: 'e1', name: 'Lobo', type: 'enemy', hpCurrent: 8, narrative: { imageUrl: '' } },
+          { id: 'e2', name: 'Eli', type: 'player', hpCurrent: 10, narrative: block },
+        ]}
+      />,
+    );
+    expect(screen.queryByRole('region', { name: 'Bloco' })).toBeNull();
+  });
+
   it('Modificar Vida abre a janela do participante', () => {
     startCombat([participant('p1', { entity_id: 'e1' })]);
     render(

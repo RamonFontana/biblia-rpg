@@ -184,3 +184,64 @@ describe('UnifiedEnemyForm: Preset do Bestiário', () => {
     expect(submitted(onSubmit).presetId).toBeUndefined();
   });
 });
+
+describe('UnifiedEnemyForm: Ataques, Detalhes e imunidades', () => {
+  it('o inimigo do zero, sem tocar nas seções, sai sem bloco', async () => {
+    const onSubmit = setup();
+    save();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    const data = submitted(onSubmit);
+    expect(data.attacks).toBeUndefined();
+    expect(data.details).toBeUndefined();
+    expect(data.conditionImmunities).toBeUndefined();
+    expect(data.saveBonuses).toBeUndefined();
+  });
+
+  it('o Mestre monta um ataque e os detalhes, e é isso que sai do formulário', async () => {
+    const onSubmit = setup();
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar ataque/ }));
+    fireEvent.change(screen.getByLabelText('Nome do ataque'), { target: { value: 'Clava' } });
+    fireEvent.change(screen.getByLabelText('Bônus de acerto'), { target: { value: '4' } });
+    fireEvent.change(screen.getByLabelText('Tipo de dano'), { target: { value: 'concussão' } });
+    fireEvent.change(screen.getByLabelText('Deslocamento'), { target: { value: '9 m' } });
+    save();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).attacks).toEqual([
+      expect.objectContaining({
+        name: 'Clava',
+        hitBonus: 4,
+        reach: '1,5m',
+        damage: { dice: '1d6', bonus: 0 },
+        damageType: 'concussão',
+      }),
+    ]);
+    expect(submitted(onSubmit).details).toEqual({ speed: '9 m' });
+  });
+
+  it('imunidade e bônus de TR marcados saem na ficha', async () => {
+    const onSubmit = setup();
+    fireEvent.click(screen.getByLabelText('Amedrontado'));
+    fireEvent.change(screen.getByLabelText('Bônus de TR FOR'), { target: { value: '7' } });
+    save();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).conditionImmunities).toEqual(['amedrontado']);
+    expect(submitted(onSubmit).saveBonuses).toEqual({ for: 7 });
+  });
+
+  it('o Preset enche o editor de ataques, que o Mestre pode apagar', async () => {
+    // O Select do Radix precisa das APIs de ponteiro (ver o describe do Preset).
+    window.HTMLElement.prototype.hasPointerCapture = () => false;
+    window.HTMLElement.prototype.setPointerCapture = () => undefined;
+    window.HTMLElement.prototype.releasePointerCapture = () => undefined;
+    window.HTMLElement.prototype.scrollIntoView = () => undefined;
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    fireEvent.keyDown(screen.getAllByRole('combobox')[0], { key: 'ArrowDown' });
+    fireEvent.click(screen.getByRole('option', { name: /^Bandido do Deserto/ }));
+    expect(screen.getAllByLabelText('Nome do ataque')).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remover ataque' })[0]);
+    save();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).attacks.map((a: { name: string }) => a.name)).toEqual(['Funda']);
+  });
+});

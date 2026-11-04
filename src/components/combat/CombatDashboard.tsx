@@ -3,6 +3,7 @@ import { AbilityPendingPanel } from './AbilityPendingPanel';
 import { AttackLog } from './AttackLog';
 import { abilityStateOf } from '@/domain/enemyAbility';
 import { EnemyAbilityPanel } from './EnemyAbilityPanel';
+import { EnemyBlock } from './EnemyBlock';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import { useCombatStore } from '../../store/combatStore';
@@ -33,6 +34,8 @@ interface CombatDashboardProps {
     totalAc?: number;
     weapon?: { name: string; damageDie: string };
     conditionResistanceLevels?: Record<string, number>;
+    /** Só do inimigo: a narrativa da ficha, de onde sai o Bloco do Preset (só o Mestre vê). */
+    narrative?: unknown;
   }[];
 }
 
@@ -171,6 +174,10 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
                           </span>
                         </div>
                       </div>
+                    )}
+
+                    {displayType === 'enemy' && entityDetails && (
+                      <EnemyBlock character={{ narrative: entityDetails.narrative }} />
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">

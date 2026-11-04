@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { enemyFormSchema, type EnemyFormValues } from './schema';
+import { enemyFormSchema, normalizeEnemyForm, type EnemyFormValues } from './schema';
+import { EnemyBlockFields } from './EnemyBlockFields';
 import { EnemyAbilityEffectEditor } from './EnemyAbilityEffectEditor';
 import { ENEMY_PRESETS, findEnemyPreset } from '@/content/enemyPresets';
 import { ENEMY_ABILITIES, findEnemyAbility } from '@/content/enemyAbilities';
@@ -120,7 +121,7 @@ export function UnifiedEnemyForm({
   };
 
   const onValidSubmit = (data: EnemyFormValues) => {
-    onSubmit(data);
+    onSubmit(normalizeEnemyForm(data));
   };
 
   return (
@@ -321,6 +322,8 @@ export function UnifiedEnemyForm({
           </div>
         )}
       </div>
+
+      <EnemyBlockFields form={form} />
 
       <div className="flex justify-end gap-2 pt-4 border-t border-stone-800">
         {onCancel && (
