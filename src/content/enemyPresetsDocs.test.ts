@@ -15,7 +15,7 @@ type Attribute = (typeof ATTRIBUTES)[number];
 
 interface DocAttack {
   hitBonus: number;
-  dice: string;
+  dice: string | undefined;
   bonus: number;
   damageType: string;
 }
@@ -26,6 +26,7 @@ interface DocBlock {
   hitDice: string;
   attributes: Record<Attribute, number>;
   saveBonuses: Partial<Record<Attribute, number>>;
+  conditionImmunities: string[];
   attacks: Map<string, DocAttack>;
 }
 
@@ -42,7 +43,7 @@ function readBlock(text: string): DocBlock {
   const saveBonuses: DocBlock['saveBonuses'] = {};
   const saves = text.match(/Testes de Resistência\*\*:\s*(.+)/);
   for (const [, name, value] of (saves?.[1] ?? '').matchAll(
-    /(For|Des|Con|Int|Sab|Car) ([+-]\d+)/g,
+    /(For|Des|Con|Int|Sab|Car) ([+-]\d+)/gi,
   )) {
     saveBonuses[name.toLowerCase() as Attribute] = signed(value);
   }
@@ -50,19 +51,26 @@ function readBlock(text: string): DocBlock {
   const attacks = new Map<string, DocAttack>();
   for (const line of text.split('\n')) {
     const attack = line.match(
-      /^- \*\*([^*]+?)\*\*: \*Ataque[^*]*\* ([+-]\d+) para acertar.*\*Dano\*: \d+ \((\d+d\d+) \+ (\d+)\) (\p{L}+)/u,
+      /^- \*\*([^*]+?)\*\*: \*Ataque[^*]*\* ([+-]\d+) para acertar.*\*Dano\*: (\d+) (?:\((\d+d\d+)(?: \+ (\d+))?\) )?(\p{L}+(?: ou \p{L}+)?)/u,
     );
     if (!attack) continue;
-    const [, name, hit, dice, bonus, damageType] = attack;
+    const [, name, hit, flat, dice, bonus, damageType] = attack;
     attacks.set(normalize(name), {
       hitBonus: signed(hit),
       dice,
-      bonus: Number(bonus),
+      bonus: dice ? Number(bonus ?? 0) : Number(flat),
       damageType: normalize(damageType),
     });
   }
 
+  const immunities = text.match(/Imunidades de Condição\*\*:\s*(.+)/);
+
   return {
+    conditionImmunities: (immunities?.[1] ?? '')
+      .split(',')
+      .map(normalize)
+      .map((c) => c.trim())
+      .filter(Boolean),
     ca: Number(ca[1]),
     hp: Number(hp[1]),
     hitDice: hp[2].replace(/\s/g, ''),
@@ -106,7 +114,12 @@ describe('Presets de inimigo × blocos dos docs', () => {
   const blocks = readDocBlocks();
 
   it('lê os blocos dos docs', () => {
-    expect(blocks.size).toBeGreaterThanOrEqual(10);
+    expect(blocks.size).toBe(10);
+  });
+
+  it('todo bloco do doc tem o Preset, pelo nome', () => {
+    const presetNames = new Set(ENEMY_PRESETS.map((p) => normalize(p.name)));
+    expect([...blocks.keys()].filter((name) => !presetNames.has(name))).toEqual([]);
   });
 
   it('todo Preset tem o bloco do doc, pelo nome', () => {
@@ -135,6 +148,10 @@ describe('Presets de inimigo × blocos dos docs', () => {
 
     it('bate nos bônus de TR do bloco', () => {
       expect(preset.saveBonuses ?? {}).toEqual(block?.saveBonuses);
+    });
+
+    it('bate nas imunidades a Condição', () => {
+      expect(preset.conditionImmunities ?? []).toEqual(block?.conditionImmunities);
     });
 
     it('bate nos ataques com dano em dado (acerto, dano e tipo)', () => {

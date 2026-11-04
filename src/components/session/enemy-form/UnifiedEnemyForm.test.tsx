@@ -97,7 +97,27 @@ describe('UnifiedEnemyForm: Preset do Bestiário', () => {
     fireEvent.click(screen.getByRole('option', { name: label }));
   };
 
-  it('lista os Presets com PV e CA', () => {
+  it('as Habilidades de biblioteca do Bestiário chegam ao inimigo criado', async () => {
+    const expected = {
+      'Guerreiro Anakim': 'enemy-presenca-aterradora',
+      'Sacerdote de Baal': 'enemy-maldicao-de-baal',
+      'Endemoniado Comum': 'enemy-grito-atormentador',
+    };
+    for (const [name, libraryId] of Object.entries(expected)) {
+      const onSubmit = vi.fn();
+      render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+      pick(new RegExp(`^${name}`));
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+      await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+      expect(submitted(onSubmit).skills.map((s: { libraryId?: string }) => s.libraryId)).toContain(
+        libraryId,
+      );
+      cleanup();
+    }
+  });
+
+  it('lista os 10 Presets do Bestiário com PV e CA', () => {
+    expect(ENEMY_PRESETS).toHaveLength(10);
     render(<UnifiedEnemyForm onSubmit={vi.fn()} />);
     fireEvent.keyDown(presetTrigger(), { key: 'ArrowDown' });
     expect(screen.getAllByRole('option')).toHaveLength(ENEMY_PRESETS.length + 1);

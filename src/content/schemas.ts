@@ -152,7 +152,11 @@ export const enemyAttackSchema = z.strictObject({
   hitBonus: z.number().int().min(-5).max(20),
   reach: z.string().min(1),
   damage: z.strictObject({
-    dice: z.string().regex(/^\d+d\d+$/),
+    /** Ausente no dano fixo (a Mordida da Víbora causa 1): o dano é só o `bonus`. */
+    dice: z
+      .string()
+      .regex(/^\d+d\d+$/)
+      .optional(),
     bonus: z.number().int().min(-5).max(20),
   }),
   damageType: z.string().min(1),
