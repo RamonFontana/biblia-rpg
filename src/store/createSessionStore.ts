@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { MapOrigin } from '@/data-access/maps';
+import type { EnemyAttack } from '@/content/schemas';
 
 export type SessionEnemyDraft = {
   id: string; // temp id
@@ -18,6 +19,12 @@ export type SessionEnemyDraft = {
   };
   skills?: { name: string; description: string }[];
   imageBase64?: string;
+  /** O bloco copiado de um Preset do Bestiário (ADR 0012); ausente no inimigo do zero. */
+  presetId?: string;
+  attacks?: EnemyAttack[];
+  details?: { speed: string; proficiencies?: string; senses: string; challenge: string };
+  conditionImmunities?: string[];
+  saveBonuses?: Partial<Record<'for' | 'des' | 'con' | 'int' | 'sab' | 'car', number>>;
 };
 
 /** Um mapa que o Mestre escolheu para a sessão: um terreno da Biblioteca ou um mapa dele. */

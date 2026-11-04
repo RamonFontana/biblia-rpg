@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { findEnemyAbility } from '@/content/enemyAbilities';
-import { MOCK_BESTIARY } from './bestiaryPresets';
+import { ENEMY_PRESETS, findEnemyPreset } from '@/content/enemyPresets';
 import { UnifiedEnemyForm } from './UnifiedEnemyForm';
 
 afterEach(cleanup);
@@ -70,9 +70,97 @@ describe('UnifiedEnemyForm: Habilidades com efeito', () => {
     expect(skill.effect).toBeUndefined();
   });
 
-  it('o preset do Leão da Judeia traz o Salto e Bote da biblioteca', () => {
-    const lion = MOCK_BESTIARY.find((b) => b.id === 'leao-judeia');
-    expect(lion?.skills.map((skill) => skill.libraryId)).toEqual(['enemy-salto-e-bote']);
+  it('o Preset do Leão da Judeia traz o Salto e Bote da biblioteca', () => {
+    const lion = findEnemyPreset('enemy-preset-leao-da-judeia');
+    expect(lion?.abilities.map((ability) => ability.libraryId)).toEqual([
+      undefined,
+      'enemy-salto-e-bote',
+    ]);
     expect(findEnemyAbility('enemy-salto-e-bote')).toBeDefined();
+  });
+});
+
+describe('UnifiedEnemyForm: Preset do Bestiário', () => {
+  // O Select do Radix usa APIs de ponteiro que o jsdom não tem.
+  beforeAll(() => {
+    window.HTMLElement.prototype.hasPointerCapture = () => false;
+    window.HTMLElement.prototype.setPointerCapture = () => undefined;
+    window.HTMLElement.prototype.releasePointerCapture = () => undefined;
+    window.HTMLElement.prototype.scrollIntoView = () => undefined;
+  });
+
+  // O Select do Preset vem antes do <select> da biblioteca de Habilidades.
+  const presetTrigger = () => screen.getAllByRole('combobox')[0];
+
+  const pick = (label: RegExp | string) => {
+    fireEvent.keyDown(presetTrigger(), { key: 'ArrowDown' });
+    fireEvent.click(screen.getByRole('option', { name: label }));
+  };
+
+  it('lista os Presets com PV e CA', () => {
+    render(<UnifiedEnemyForm onSubmit={vi.fn()} />);
+    fireEvent.keyDown(presetTrigger(), { key: 'ArrowDown' });
+    expect(screen.getAllByRole('option')).toHaveLength(ENEMY_PRESETS.length + 1);
+    expect(
+      screen.getByRole('option', { name: 'Leão da Judeia (PV: 26 | CA: 12)' }),
+    ).toBeInTheDocument();
+  });
+
+  it('escolher o Preset preenche o formulário e criar leva a cópia e a origem', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pick(/^Bandido do Deserto/);
+    expect(screen.getByPlaceholderText('Ex: Lobo Selvagem')).toHaveValue('Bandido do Deserto');
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit)).toMatchObject({
+      name: 'Bandido do Deserto',
+      vocation: 'Médio, Humano, Neutro e Mau',
+      hpMax: 11,
+      hpCurrent: 11,
+      ca: 12,
+      attributes: { for: 11, des: 12, con: 12, int: 10, sab: 10, car: 10 },
+      presetId: 'enemy-preset-bandido-do-deserto',
+      details: { speed: '9 m', challenge: '1/8 (25 XP)' },
+    });
+    expect(submitted(onSubmit).attacks.map((a: { name: string }) => a.name)).toEqual([
+      'Adaga de Bronze',
+      'Funda',
+    ]);
+    expect(submitted(onSubmit).skills).toEqual([
+      expect.objectContaining({ name: 'Ataque Furtivo' }),
+    ]);
+  });
+
+  it('o inimigo é uma cópia: editar o PV não toca o Preset', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pick(/^Soldado Filisteu/);
+    fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '20' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).hpMax).toBe(20);
+    expect(findEnemyPreset('enemy-preset-soldado-filisteu')?.hp).toBe(16);
+  });
+
+  it('"Nenhum" tira a origem e o bloco do Preset', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pick(/^Leão da Judeia/);
+    pick(/^Nenhum/);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    const data = submitted(onSubmit);
+    expect(data.presetId).toBeUndefined();
+    expect(data.attacks).toBeUndefined();
+    expect(data.details).toBeUndefined();
+  });
+
+  it('um inimigo antigo, sem os campos do Preset, abre e salva igual', async () => {
+    const onSubmit = setup({ name: 'Lobo', hpMax: 8, hpCurrent: 8, ca: 11 });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit)).toMatchObject({ hpMax: 8, ca: 11 });
+    expect(submitted(onSubmit).presetId).toBeUndefined();
   });
 });

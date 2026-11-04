@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { enemyAbilityEffectSchema } from '@/content/schemas';
+import { enemyAbilityEffectSchema, enemyAttackSchema } from '@/content/schemas';
 
 export const enemyFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -28,6 +28,22 @@ export const enemyFormSchema = z.object({
     )
     .optional(),
   imageBase64: z.string().optional(),
+  /** O Preset de origem (ADR 0012): só o rótulo, o inimigo é uma cópia independente. */
+  presetId: z.string().optional(),
+  attacks: z.array(enemyAttackSchema).optional(),
+  /** Deslocamento, perícias, sentidos e ND: consulta em texto, não entra no motor. */
+  details: z
+    .object({
+      speed: z.string(),
+      proficiencies: z.string().optional(),
+      senses: z.string(),
+      challenge: z.string(),
+    })
+    .optional(),
+  conditionImmunities: z.array(z.string()).optional(),
+  saveBonuses: z
+    .partialRecord(z.enum(['for', 'des', 'con', 'int', 'sab', 'car']), z.number())
+    .optional(),
 });
 
 export type EnemyFormValues = z.infer<typeof enemyFormSchema>;

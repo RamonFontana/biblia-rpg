@@ -41,6 +41,12 @@ export function buildPlayableNpcRow(npc: SessionNPCDraft, userId: string) {
 export type EnemyRowInput = Omit<SessionEnemyDraft, 'id'>;
 
 export function buildEnemyRow(enemy: EnemyRowInput, userId: string) {
+  // O bloco do Preset (ADR 0012) vai nos jsonb que já existem; sem ele a linha é a de sempre.
+  const block = {
+    ...(enemy.presetId && { presetId: enemy.presetId }),
+    ...(enemy.attacks && { attacks: enemy.attacks }),
+    ...(enemy.details && { details: enemy.details }),
+  };
   return {
     user_id: userId,
     is_enemy: true,
@@ -62,10 +68,13 @@ export function buildEnemyRow(enemy: EnemyRowInput, userId: string) {
       ca: enemy.ca,
       faith: 0,
       current_faith: 0,
+      ...(enemy.conditionImmunities && { conditionImmunities: enemy.conditionImmunities }),
+      ...(enemy.saveBonuses && { saveBonuses: enemy.saveBonuses }),
     },
     skills: enemy.skills || [],
     narrative: {
       imageUrl: enemy.imageBase64 || '',
+      ...(Object.keys(block).length > 0 && { enemy: block }),
     },
   };
 }

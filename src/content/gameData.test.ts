@@ -11,6 +11,7 @@ import { VOCATION_RULES } from '@/features/character-management/utils/rules/voca
 import { ABILITIES } from './abilities';
 import { CONDITIONS } from './conditions';
 import { ENEMY_ABILITIES } from './enemyAbilities';
+import { ENEMY_PRESETS } from './enemyPresets';
 import { ITEMS_DB } from './items';
 import { KITS_DB } from './kits';
 import { MAP_LIBRARY } from './maps';
@@ -18,6 +19,7 @@ import {
   abilitySchema,
   conditionSchema,
   enemyAbilitySchema,
+  enemyPresetSchema,
   itemSchema,
   kitSchema,
   mapLibrarySchema,
@@ -121,6 +123,22 @@ function collectViolations(): string[] {
     const p = `enemy-ability:${ability.id}`;
     violations.push(...schemaViolations(p, enemyAbilitySchema, ability));
     for (const { conditionId } of ability.effect.apply ?? []) {
+      if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
+    }
+  }
+
+  // Presets de inimigo (Bestiário).
+  const enemyAbilityIds = new Set(ENEMY_ABILITIES.map((a) => a.id));
+  for (const id of duplicates(ENEMY_PRESETS.map((p) => p.id)))
+    violations.push(`enemy-preset:${id}:duplicate-id`);
+  for (const preset of ENEMY_PRESETS) {
+    const p = `enemy-preset:${preset.id}`;
+    violations.push(...schemaViolations(p, enemyPresetSchema, preset));
+    for (const { libraryId } of preset.abilities) {
+      if (libraryId && !enemyAbilityIds.has(libraryId))
+        violations.push(`${p}:unknown-enemy-ability:${libraryId}`);
+    }
+    for (const conditionId of preset.conditionImmunities ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
   }

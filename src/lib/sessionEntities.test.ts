@@ -123,4 +123,45 @@ describe('buildEnemyRow', () => {
     expect(bare).toMatchObject({ vocation: '', skills: [] });
     expect(bare.narrative.imageUrl).toBe('');
   });
+
+  it('um inimigo sem Preset grava só os campos de sempre (ficha antiga continua válida)', () => {
+    expect(row.narrative).toEqual({ imageUrl: 'data:image/png;base64,AAA' });
+    expect(row.stats).not.toHaveProperty('conditionImmunities');
+    expect(row.stats).not.toHaveProperty('saveBonuses');
+  });
+
+  it('o bloco do Preset vai nos jsonb que já existem: origem, ataques e detalhes na narrativa, imunidades e TR nos stats', () => {
+    const attacks = [
+      {
+        name: 'Garra',
+        mode: 'melee' as const,
+        attribute: 'for' as const,
+        hitBonus: 5,
+        reach: '1,5m',
+        damage: { dice: '1d6', bonus: 3 },
+        damageType: 'cortante',
+      },
+    ];
+    const details = { speed: '15 m', senses: 'Percepção passiva 13', challenge: '1 (200 XP)' };
+    const withPreset = buildEnemyRow(
+      {
+        ...enemy,
+        presetId: 'enemy-preset-leao-da-judeia',
+        attacks,
+        details,
+        conditionImmunities: ['amedrontado'],
+        saveBonuses: { for: 7 },
+      },
+      'u',
+    );
+    expect(withPreset.narrative.enemy).toEqual({
+      presetId: 'enemy-preset-leao-da-judeia',
+      attacks,
+      details,
+    });
+    expect(withPreset.stats).toMatchObject({
+      conditionImmunities: ['amedrontado'],
+      saveBonuses: { for: 7 },
+    });
+  });
 });

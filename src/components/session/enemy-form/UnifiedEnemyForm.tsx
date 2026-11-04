@@ -3,7 +3,7 @@ import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { enemyFormSchema, type EnemyFormValues } from './schema';
 import { EnemyAbilityEffectEditor } from './EnemyAbilityEffectEditor';
-import { MOCK_BESTIARY } from './bestiaryPresets';
+import { ENEMY_PRESETS, findEnemyPreset } from '@/content/enemyPresets';
 import { ENEMY_ABILITIES, findEnemyAbility } from '@/content/enemyAbilities';
 import { describeEnemyEffect } from '@/domain/enemyAbility';
 import { compressImage, PORTRAIT_COMPRESSION } from '@/lib/imageCompression';
@@ -37,7 +37,7 @@ export function UnifiedEnemyForm({
   submitLabel = 'Salvar Inimigo',
   isSubmitting = false,
 }: UnifiedEnemyFormProps) {
-  const [selectedBaseId, setSelectedBaseId] = useState<string>('');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<EnemyFormValues>({
@@ -58,6 +58,11 @@ export function UnifiedEnemyForm({
       },
       skills: initialValues?.skills || [],
       imageBase64: initialValues?.imageBase64 || '',
+      presetId: initialValues?.presetId,
+      attacks: initialValues?.attacks,
+      details: initialValues?.details,
+      conditionImmunities: initialValues?.conditionImmunities,
+      saveBonuses: initialValues?.saveBonuses,
     },
   });
 
@@ -75,18 +80,30 @@ export function UnifiedEnemyForm({
   } = form;
   const imageUrl = watch('imageBase64');
 
-  const onBaseEnemySelect = (val: string) => {
-    setSelectedBaseId(val);
-    const base = MOCK_BESTIARY.find((b) => b.id === val);
-    if (base) {
-      setValue('name', base.name);
-      setValue('hpMax', base.max_hp);
-      setValue('hpCurrent', base.max_hp);
-      setValue('ca', base.ca);
-      setValue('vocation', base.vocation);
-      setValue('attributes', base.attributes);
-      setValue('skills', base.skills);
-    }
+  // O Preset é copiado para o formulário (ADR 0012): depois daqui nada mais o lê.
+  const onPresetSelect = (val: string) => {
+    setSelectedPresetId(val);
+    const preset = findEnemyPreset(val);
+    setValue('presetId', preset?.id);
+    setValue('attacks', preset?.attacks);
+    setValue('details', preset?.details);
+    setValue('conditionImmunities', preset?.conditionImmunities);
+    setValue('saveBonuses', preset?.saveBonuses);
+    if (!preset) return;
+    setValue('name', preset.name);
+    setValue('hpMax', preset.hp);
+    setValue('hpCurrent', preset.hp);
+    setValue('ca', preset.ca);
+    setValue('vocation', preset.creatureType);
+    setValue('attributes', { ...preset.attributes });
+    setValue(
+      'skills',
+      preset.abilities.map(({ name, description, libraryId }) => ({
+        name,
+        description,
+        libraryId,
+      })),
+    );
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,23 +122,23 @@ export function UnifiedEnemyForm({
     <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6">
       {/* Preset Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Base (Bestiário)</label>
-        <Select value={selectedBaseId} onValueChange={onBaseEnemySelect}>
+        <label className="text-sm font-medium">Preset do Bestiário</label>
+        <Select value={selectedPresetId} onValueChange={onPresetSelect}>
           <SelectTrigger className="bg-stone-800 border-stone-700">
             <SelectValue placeholder="Selecione para preencher automaticamente..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Nenhum (Criar do Zero)</SelectItem>
-            {MOCK_BESTIARY.map((base) => (
-              <SelectItem key={base.id} value={base.id}>
-                {base.name} (HP: {base.max_hp} | CA: {base.ca})
+            {ENEMY_PRESETS.map((preset) => (
+              <SelectItem key={preset.id} value={preset.id}>
+                {preset.name} (PV: {preset.hp} | CA: {preset.ca})
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {selectedBaseId && selectedBaseId !== 'none' && (
+        {findEnemyPreset(selectedPresetId) && (
           <p className="text-xs text-stone-400 mt-1">
-            {MOCK_BESTIARY.find((b) => b.id === selectedBaseId)?.desc}
+            {findEnemyPreset(selectedPresetId)?.description}
           </p>
         )}
       </div>
