@@ -123,8 +123,20 @@ describe('FuriaDesumanaPrompt', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('sem rede');
   });
 
-  it('libera o próximo pedido quando o inimigo tem PV de novo', () => {
-    render(<FuriaDesumanaPrompt enemies={[enemy({ hp: 1 })]} />);
+  it('libera o próximo pedido quando o inimigo tem PV de novo e o 0 PV estava tratado', () => {
+    const handled = { furia: { uses: 1, handled: true } };
+    render(<FuriaDesumanaPrompt enemies={[enemy({ hp: 1, abilityState: handled })]} />);
+    expect(releaseFuria).toHaveBeenCalledTimes(1);
     expect(releaseFuria).toHaveBeenCalledWith(expect.objectContaining({ participantId: 'p1' }), 1);
+  });
+
+  it('não grava nada quando não há 0 PV tratado a liberar, nem repete a cada render', () => {
+    const { rerender } = render(<FuriaDesumanaPrompt enemies={[enemy({ hp: 5 })]} />);
+    rerender(<FuriaDesumanaPrompt enemies={[enemy({ hp: 6 })]} />);
+    expect(releaseFuria).not.toHaveBeenCalled();
+    const handled = { furia: { uses: 1, handled: true } };
+    rerender(<FuriaDesumanaPrompt enemies={[enemy({ hp: 6, abilityState: handled })]} />);
+    rerender(<FuriaDesumanaPrompt enemies={[enemy({ hp: 7, abilityState: handled })]} />);
+    expect(releaseFuria).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,7 +1,7 @@
 // O pedido da Fúria Desumana, na tela do Mestre: quando o PV de um inimigo com a passiva chega a 0
 // (por qualquer caminho, visto pelo Realtime), o Mestre faz o TR de CON dele. Termos: CONTEXT.md
 // (Fúria Desumana, Endemoniado).
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { rollAbilitySaveDice, saveReminder } from '@/domain/abilitySave';
@@ -39,14 +39,23 @@ export function FuriaDesumanaPrompt({ enemies }: { enemies: FuriaEnemy[] }) {
   const [error, setError] = useState<string | null>(null);
   const [notices, setNotices] = useState<{ id: string; text: string }[]>([]);
 
-  // O inimigo com PV de novo libera o próximo pedido de Fúria.
+  // O inimigo com PV de novo libera o próximo pedido de Fúria. Só os que têm um 0 PV tratado
+  // pendente de liberar entram na lista; o efeito roda quando essa lista muda, não a cada render.
+  const toRelease = enemies.filter(
+    (enemy) => enemy.hp > 0 && furiaStateOf(enemy.abilityState).handled,
+  );
+  const releaseKey = toRelease.map((enemy) => enemy.participantId).join(',');
+  const toReleaseRef = useRef(toRelease);
   useEffect(() => {
-    for (const enemy of enemies) {
+    toReleaseRef.current = toRelease;
+  });
+  useEffect(() => {
+    for (const enemy of toReleaseRef.current) {
       void releaseFuria(enemy, enemy.hp).catch((e) =>
         console.error('Erro ao liberar a Fúria Desumana:', e),
       );
     }
-  }, [enemies]);
+  }, [releaseKey]);
 
   const pending = enemies.flatMap((enemy) => {
     const prompt = furiaPrompt({
