@@ -37,6 +37,13 @@ export const enemyFormSchema = z.object({
     )
     .optional(),
   imageBase64: z.string().optional(),
+  /** Quantas cópias criar de uma vez (1 a 8); não faz parte da ficha. */
+  quantity: z
+    .number()
+    .int('A quantidade deve ser um número inteiro')
+    .min(1, 'A quantidade mínima é 1')
+    .max(8, 'A quantidade máxima é 8')
+    .optional(),
   /** O Preset de origem (ADR 0012): só o rótulo, o inimigo é uma cópia independente. */
   presetId: z.string().optional(),
   attacks: z.array(formAttackSchema).optional(),

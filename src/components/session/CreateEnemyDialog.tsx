@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { createSessionEnemy } from '@/services/enemyService';
+import { createSessionEnemies } from '@/services/enemyService';
+import { expandEnemyCopies } from '@/lib/enemyCopies';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +16,15 @@ import { UnifiedEnemyForm, type EnemyFormValues } from './enemy-form';
 interface CreateEnemyDialogProps {
   sessionId: string;
   onEnemyCreated?: (enemy: Character) => void;
+  /** Os nomes dos inimigos que a sessão já tem: a numeração do lote continua deles. */
+  existingNames?: string[];
 }
 
-export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDialogProps) {
+export function CreateEnemyDialog({
+  sessionId,
+  onEnemyCreated,
+  existingNames = [],
+}: CreateEnemyDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -26,12 +33,13 @@ export function CreateEnemyDialog({ sessionId, onEnemyCreated }: CreateEnemyDial
     setIsCreating(true);
 
     try {
-      const enemy = await createSessionEnemy(sessionId, formData);
-      if (!enemy) return;
+      const created = await createSessionEnemies(
+        sessionId,
+        expandEnemyCopies(formData, existingNames),
+      );
+      if (created.length === 0) return;
 
-      if (onEnemyCreated) {
-        onEnemyCreated(enemy);
-      }
+      created.forEach((enemy) => onEnemyCreated?.(enemy));
 
       setIsOpen(false);
     } catch (err) {

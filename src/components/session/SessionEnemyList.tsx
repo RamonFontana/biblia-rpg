@@ -76,7 +76,10 @@ export function SessionEnemyList({
           <h3 className="text-xl font-bold text-stone-200 flex items-center gap-2">
             Inimigos ({enemies.length})
           </h3>
-          <CreateEnemyDialog sessionId={sessionId} />
+          <CreateEnemyDialog
+            sessionId={sessionId}
+            existingNames={enemies.flatMap((e) => (e.is_deleted || !e.name ? [] : [e.name]))}
+          />
         </div>
 
         {isLoading ? (

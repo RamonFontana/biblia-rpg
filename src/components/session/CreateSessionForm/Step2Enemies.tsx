@@ -3,16 +3,17 @@ import { useSessionDraftStore } from '@/store/createSessionStore';
 import { Button } from '@/components/ui/button';
 import { UnifiedEnemyForm, type EnemyFormValues } from './../enemy-form';
 import { Plus } from 'lucide-react';
+import { expandEnemyCopies } from '@/lib/enemyCopies';
 
 export function Step2Enemies() {
   const { enemies, addEnemy, removeEnemy, nextStep, prevStep } = useSessionDraftStore();
   const [isAdding, setIsAdding] = useState(false);
 
   const onAddEnemy = (data: EnemyFormValues) => {
-    addEnemy({
-      id: crypto.randomUUID(),
-      ...data,
-    });
+    expandEnemyCopies(
+      data,
+      enemies.map((enemy) => enemy.name),
+    ).forEach((copy) => addEnemy({ id: crypto.randomUUID(), ...copy }));
     setIsAdding(false);
   };
 

@@ -17,3 +17,17 @@ export async function createSessionEnemy(
   await addSessionParticipant({ sessionId, characterId: enemy.id, userId: user.id });
   return enemy;
 }
+
+/** Cria as fichas em ordem e as põe na sessão; sem usuário logado não cria nenhuma. */
+export async function createSessionEnemies(
+  sessionId: string,
+  copies: EnemyRowInput[],
+): Promise<Character[]> {
+  const created: Character[] = [];
+  for (const copy of copies) {
+    const enemy = await createSessionEnemy(sessionId, copy);
+    if (!enemy) break;
+    created.push(enemy);
+  }
+  return created;
+}

@@ -91,4 +91,41 @@ describe('CreateEnemyDialog', () => {
     expect(screen.getByPlaceholderText('Ex: Lobo Selvagem')).toBeInTheDocument();
     expect(screen.queryByText('Salvando...')).not.toBeInTheDocument();
   });
+
+  it('criar 3 grava 3 fichas independentes, numeradas, e as põe na sessão', async () => {
+    const onEnemyCreated = vi.fn();
+    render(<CreateEnemyDialog sessionId="session-1" onEnemyCreated={onEnemyCreated} />);
+    fireEvent.click(screen.getByRole('button', { name: /Criar Inimigo/ }));
+    fireEvent.change(await screen.findByPlaceholderText('Ex: Lobo Selvagem'), {
+      target: { value: 'Lobo' },
+    });
+    fireEvent.change(screen.getByLabelText('Quantidade'), { target: { value: '3' } });
+    const buttons = screen.getAllByRole('button', { name: 'Criar Inimigo' });
+    fireEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() =>
+      expect(callsOf(state.calls, 'session_participants', 'insert')).toHaveLength(3),
+    );
+    const names = callsOf(state.calls, 'characters', 'insert').map(
+      (call) => (call.payload as { name: string }).name,
+    );
+    expect(names).toEqual(['Lobo 1', 'Lobo 2', 'Lobo 3']);
+    expect(callsOf(state.calls, 'characters', 'insert')[0].payload).not.toHaveProperty('quantity');
+    expect(onEnemyCreated).toHaveBeenCalledTimes(3);
+  });
+
+  it('a numeração continua a dos inimigos que a sessão já tem', async () => {
+    render(<CreateEnemyDialog sessionId="session-1" existingNames={['Lobo 1', 'Lobo 2']} />);
+    fireEvent.click(screen.getByRole('button', { name: /Criar Inimigo/ }));
+    fireEvent.change(await screen.findByPlaceholderText('Ex: Lobo Selvagem'), {
+      target: { value: 'Lobo' },
+    });
+    const buttons = screen.getAllByRole('button', { name: 'Criar Inimigo' });
+    fireEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() =>
+      expect(callsOf(state.calls, 'session_participants', 'insert')).toHaveLength(1),
+    );
+    expect((callsOf(state.calls, 'characters', 'insert')[0].payload as { name: string }).name).toBe(
+      'Lobo 3',
+    );
+  });
 });

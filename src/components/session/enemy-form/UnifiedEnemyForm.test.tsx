@@ -97,23 +97,19 @@ describe('UnifiedEnemyForm: Preset do Bestiário', () => {
     fireEvent.click(screen.getByRole('option', { name: label }));
   };
 
-  it('as Habilidades de biblioteca do Bestiário chegam ao inimigo criado', async () => {
-    const expected = {
-      'Guerreiro Anakim': 'enemy-presenca-aterradora',
-      'Sacerdote de Baal': 'enemy-maldicao-de-baal',
-      'Endemoniado Comum': 'enemy-grito-atormentador',
-    };
-    for (const [name, libraryId] of Object.entries(expected)) {
-      const onSubmit = vi.fn();
-      render(<UnifiedEnemyForm onSubmit={onSubmit} />);
-      pick(new RegExp(`^${name}`));
-      fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
-      await waitFor(() => expect(onSubmit).toHaveBeenCalled());
-      expect(submitted(onSubmit).skills.map((s: { libraryId?: string }) => s.libraryId)).toContain(
-        libraryId,
-      );
-      cleanup();
-    }
+  it.each([
+    ['Guerreiro Anakim', 'enemy-presenca-aterradora'],
+    ['Sacerdote de Baal', 'enemy-maldicao-de-baal'],
+    ['Endemoniado Comum', 'enemy-grito-atormentador'],
+  ])('a Habilidade de biblioteca de %s chega ao inimigo criado', async (name, libraryId) => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pick(new RegExp(`^${name}`));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).skills.map((s: { libraryId?: string }) => s.libraryId)).toContain(
+      libraryId,
+    );
   });
 
   it('lista os 10 Presets do Bestiário com PV e CA', () => {
@@ -156,7 +152,7 @@ describe('UnifiedEnemyForm: Preset do Bestiário', () => {
     const onSubmit = vi.fn();
     render(<UnifiedEnemyForm onSubmit={onSubmit} />);
     pick(/^Soldado Filisteu/);
-    fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '20' } });
+    fireEvent.change(screen.getAllByRole('spinbutton')[1], { target: { value: '20' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(submitted(onSubmit).hpMax).toBe(20);
@@ -243,5 +239,30 @@ describe('UnifiedEnemyForm: Ataques, Detalhes e imunidades', () => {
     save();
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(submitted(onSubmit).attacks.map((a: { name: string }) => a.name)).toEqual(['Funda']);
+  });
+});
+
+describe('UnifiedEnemyForm: quantidade', () => {
+  it.each(['0', '9', '2.5'])('recusa a quantidade %s', async (value) => {
+    const onSubmit = setup();
+    fireEvent.change(screen.getByLabelText('Quantidade'), { target: { value } });
+    save();
+    await waitFor(() => expect(document.querySelector('.text-red-500')).not.toBeNull());
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('entrega a quantidade pedida (1 por padrão)', async () => {
+    const onSubmit = setup();
+    save();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).quantity).toBe(1);
+  });
+
+  it('aceita de 1 a 8', async () => {
+    const onSubmit = setup();
+    fireEvent.change(screen.getByLabelText('Quantidade'), { target: { value: '8' } });
+    save();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(submitted(onSubmit).quantity).toBe(8);
   });
 });
