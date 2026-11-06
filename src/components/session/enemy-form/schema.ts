@@ -39,7 +39,7 @@ export const enemyFormSchema = z.object({
   imageBase64: z.string().optional(),
   /** Quantas cópias criar de uma vez (1 a 8); não faz parte da ficha. */
   quantity: z
-    .number()
+    .number({ error: 'Informe a quantidade, de 1 a 8' })
     .int('A quantidade deve ser um número inteiro')
     .min(1, 'A quantidade mínima é 1')
     .max(8, 'A quantidade máxima é 8')

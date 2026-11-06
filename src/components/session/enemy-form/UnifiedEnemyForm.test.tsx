@@ -243,7 +243,7 @@ describe('UnifiedEnemyForm: Ataques, Detalhes e imunidades', () => {
 });
 
 describe('UnifiedEnemyForm: quantidade', () => {
-  it.each(['0', '9', '2.5'])('recusa a quantidade %s', async (value) => {
+  it.each(['0', '9', '2.5', ''])('recusa a quantidade %s', async (value) => {
     const onSubmit = setup();
     fireEvent.change(screen.getByLabelText('Quantidade'), { target: { value } });
     save();
