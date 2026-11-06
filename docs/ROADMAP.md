@@ -727,6 +727,12 @@ O Bestiário (`docs/bestiario/`, 10 inimigos e o Template Endemoniado) vira cont
 - O texto "Imunidade: imune a X" está duplicado em 3 lugares; `UnifiedEnemyForm.tsx` está grande (extrair um hook); tipo e contexto do Preset não aparecem em "Detalhes".
 - Falta a conferência visual manual no celular e na web (só E2E).
 
+**Repreensão Divina no app (feita em 2026-11-06, `.scratch/repreensao-divina/`):**
+- O servidor confia no cliente: `record_ability_use` não confere a passiva do alvo (nem a Fé e o uso, que o cliente gasta depois do registro). Um cliente adulterado pode repreender qualquer participante. Mesma limitação das outras Habilidades (ADR 0004); resolver pede função no banco.
+- O lembrete tem três redações para o mesmo fato (`describeReminder`, `describeAbilityUse` e o painel de uso), e `abilityReminderOf` faz um `ABILITIES.find` por chamada. Unificar num formatador do domínio.
+- A passiva exigida do alvo (`requiresTargetSkill`) casa pelo nome de exibição, não por id; renomear a passiva no Template quebra o filtro (o teste de conteúdo trava isso).
+- `skills` do inimigo viaja como `unknown` por `AttackTarget` e `buildCombatEntities` (só os nomes chegam ao jogador e ao espectador).
+
 **Fatias:** 0 `CreateEnemyDialog` usa `buildEnemyRow` (um caminho só); 1 esquema, 10 Presets e teste dos docs; 2 Bloco no cartão e editor de ataques; 3 quantidade e numeração; 4 imunidade e bônus de TR; 5 Template Endemoniado; 6 Fúria Desumana; 7 lembrete do Ataque Furtivo (feita).
 
 ## 6. O que VOCÊ precisa fazer fora do código

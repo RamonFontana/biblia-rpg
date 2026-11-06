@@ -623,7 +623,7 @@ describe('Repreensão Divina: TR de Carisma e lembrete de fuga', () => {
           : { data: 'resolved' };
     });
 
-    it('quem falha volta como falhou, sem Condição; quem passa, como passou; o resultado traz o lembrete', async () => {
+    it('quem falha volta como falhou, sem Condição; quem passa, como passou; nenhuma Condição entra', async () => {
       const outcome = await resolveAbilityUseRolls({
         use: pendingUse,
         participants,
@@ -655,21 +655,7 @@ describe('Repreensão Divina: TR de Carisma e lembrete de fuga', () => {
           conditions: [],
         },
       ]);
-      expect(outcome.failureReminder).toBe(
-        'Lembrete (Legião): foge do combate por 1 min (10 rodadas)',
-      );
-    });
-
-    it('se todos passam, não há lembrete', async () => {
-      const outcome = await resolveAbilityUseRolls({
-        use: pendingUse,
-        participants,
-        rolls: [
-          { participantId: 'p2', natural: 20, mark: null },
-          { participantId: 'p3', natural: 20, mark: null },
-        ],
-      });
-      expect(outcome.failureReminder).toBeNull();
+      expect(outcome.status).toBe('resolved');
     });
   });
 });

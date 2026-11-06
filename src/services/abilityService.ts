@@ -28,7 +28,6 @@ import {
   saveModifierOf,
   type SaveAttribute,
 } from '@/domain/abilitySave';
-import { describeReminder } from '@/domain/enemyAbility';
 import { enemyConditionImmunities, enemySaveBonuses } from '@/domain/enemyBlock';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { getConditionResistanceLevels, resolveEquippedItems } from '@/domain/armorResistance';
@@ -247,8 +246,6 @@ export interface AbilitySaveRoll {
 
 export interface AbilityResolution {
   status: 'resolved' | 'expired';
-  /** O lembrete ao Mestre para quem falhou (a fuga da Repreensão Divina); nulo sem lembrete. */
-  failureReminder?: string | null;
   results: (AbilitySaveOutcome & { name: string; messages: string[] })[];
 }
 
@@ -337,10 +334,5 @@ export async function resolveAbilityUseRolls(input: {
       }
     }
   }
-  // O app não aplica o que o efeito só lembra; o aviso e o histórico saem do uso gravado (Realtime).
-  const reminder = describeReminder(
-    effect,
-    results.filter((r) => r.failed).map((r) => r.name),
-  );
-  return { status, results, failureReminder: status === 'resolved' ? reminder : null };
+  return { status, results };
 }
