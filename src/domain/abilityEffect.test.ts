@@ -24,6 +24,39 @@ const effect = (targets: Parameters<typeof isSingleTarget>[0]['targets']) => ({
   apply: [{ conditionId: 'paralisado', rounds: 1 }],
 });
 
+describe('alvos possíveis: passiva exigida do alvo (Repreensão Divina)', () => {
+  const rebuke = {
+    targets: 'enemy' as const,
+    save: { attribute: 'car' as const },
+    reminder: 'foge',
+    requiresTargetSkill: 'Vulnerabilidade Espiritual',
+  };
+  const participants = [
+    { participantId: 'p1', entityType: 'player', skills: [{ name: 'Vulnerabilidade Espiritual' }] },
+    { participantId: 'e1', entityType: 'enemy', skills: [{ name: 'Vulnerabilidade Espiritual' }] },
+    { participantId: 'e2', entityType: 'enemy', skills: [{ name: 'Ataque Furtivo' }] },
+    { participantId: 'e3', entityType: 'enemy', skills: [{ name: 'vulnerabilidade espiritual' }] },
+    { participantId: 'e4', entityType: 'enemy' },
+  ];
+
+  it('só entram os inimigos com a passiva, sem acento nem caixa', () => {
+    expect(effectTargetPool(rebuke, participants).map((p) => p.participantId)).toEqual([
+      'e1',
+      'e3',
+    ]);
+  });
+
+  it('sem Endemoniado na mesa, não há alvo', () => {
+    expect(effectTargetPool(rebuke, participants.slice(2, 3))).toEqual([]);
+  });
+
+  it('um efeito sem a exigência segue como antes', () => {
+    expect(
+      effectTargetPool({ targets: 'enemy', apply: [{ conditionId: 'cego' }] }, participants).length,
+    ).toBe(4);
+  });
+});
+
 describe('alvos possíveis', () => {
   const participants = [
     { participantId: 'p1', entityType: 'player' },
@@ -215,6 +248,22 @@ describe('descrição do uso', () => {
         ],
       }),
     ).toBe('Eliabe usou X: A ficou Cego e Caído; B ficou Cego.');
+  });
+
+  it('quem falhou no TR de um efeito com lembrete mostra o lembrete, e quem passou, não', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'Repreensão Divina',
+        reminder: 'foge do combate por 1 min (10 rodadas)',
+        targets: [
+          { name: 'Legião', conditionIds: [], failed: true },
+          { name: 'Gadareno', conditionIds: [], failed: false },
+        ],
+      }),
+    ).toBe(
+      'Eliabe usou Repreensão Divina: Legião falhou no TR: foge do combate por 1 min (10 rodadas); Gadareno passou no TR.',
+    );
   });
 
   it('o alvo que ficou sem Condição resistiu', () => {

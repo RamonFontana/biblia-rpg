@@ -1,5 +1,9 @@
 import { CONDITIONS } from '@/content/conditions';
-import { abilityUseTargets, type AbilityUseTarget } from '@/domain/abilityEffect';
+import {
+  abilityReminderOf,
+  abilityUseTargets,
+  type AbilityUseTarget,
+} from '@/domain/abilityEffect';
 import { saveAttributeLabel, type SaveAttribute } from '@/domain/abilitySave';
 import { describeWeaponEffect } from '@/domain/attack';
 import { describeReminder, enemyEffectOfUse } from '@/domain/enemyAbility';
@@ -46,7 +50,7 @@ function abilityTargetsText(use: CombatAbilityUse): string {
           ? t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')
           : t.failed === false
             ? 'passou'
-            : t.faithLost !== undefined
+            : t.faithLost !== undefined || (t.failed && abilityReminderOf(use.ability_id))
               ? 'falhou'
               : 'resistiu';
       const faith = t.failed && t.faithLost !== undefined ? ` · perdeu ${t.faithLost} de Fé` : '';
@@ -64,7 +68,7 @@ function abilityTargetsText(use: CombatAbilityUse): string {
 function reminderOf(use: CombatAbilityUse, targets: AbilityUseTarget[]): string | null {
   if (use.status !== 'resolved') return null;
   return describeReminder(
-    enemyEffectOfUse(use),
+    enemyEffectOfUse(use) ?? { reminder: abilityReminderOf(use.ability_id) },
     targets.filter((t) => t.failed).map((t) => t.name),
   );
 }

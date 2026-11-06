@@ -7,11 +7,14 @@ import { CONDITIONS } from '@/content/conditions';
 import type { AbilityEffect } from '@/content/schemas';
 import type { ConditionEntry } from '@/types/combat';
 import { saveAttributeLabel, type SaveAttribute } from './abilitySave';
+import { hasSkillNamed } from './abilityState';
 import { applyConditionResistance } from './armorResistance';
 
 /** O que o efeito lê de um participante do combate para saber se ele é um alvo possível. */
 export interface EffectTargetCandidate {
   entityType: string;
+  /** As Habilidades da ficha do alvo (só o nome importa): de onde sai a passiva exigida. */
+  skills?: unknown;
 }
 
 /** Os alvos possíveis: inimigos para "inimigo(s)", jogadores e NPCs para "aliado(s)", todos para o agressor. */
@@ -19,6 +22,14 @@ export function effectTargetPool<T extends EffectTargetCandidate>(
   effect: AbilityEffect,
   participants: T[],
 ): T[] {
+  const { requiresTargetSkill } = effect;
+  const pool = basePool(effect, participants);
+  return requiresTargetSkill
+    ? pool.filter((p) => hasSkillNamed(p.skills, requiresTargetSkill))
+    : pool;
+}
+
+function basePool<T extends EffectTargetCandidate>(effect: AbilityEffect, participants: T[]): T[] {
   switch (effect.targets) {
     case 'enemy':
     case 'enemies':
@@ -193,6 +204,11 @@ export function getAbilityEffectBlock(ctx: AbilityUseContext): string | null {
   return null;
 }
 
+/** O lembrete que o efeito da Habilidade (pelo id) dá a quem falha no TR, ou `undefined`. */
+export function abilityReminderOf(abilityId: string): string | undefined {
+  return ABILITIES.find((a) => a.id === abilityId)?.combatEffect?.reminder;
+}
+
 export interface TargetProtection {
   /** O nível de Resistência a Condição do alvo, por Condição (itens equipados). */
   resistanceLevels: Record<string, number>;
@@ -231,6 +247,8 @@ export function resolveAbilityEffect(
 export function describeAbilityUse(use: {
   userName: string;
   abilityName: string;
+  /** O lembrete do efeito (a fuga da Repreensão Divina): aparece para quem falhou no TR. */
+  reminder?: string;
   targets: {
     name: string;
     conditionIds: string[];
@@ -258,6 +276,7 @@ export function describeAbilityUse(use: {
     if (t.conditionIds.length > 0) {
       return `${t.name} ficou ${t.conditionIds.map(conditionName).join(' e ')}`;
     }
+    if (t.failed && use.reminder) return `${t.name} falhou no TR: ${use.reminder}`;
     if (t.failed === undefined) return `${t.name} resistiu`;
     return t.failed ? `${t.name} falhou no TR, mas resistiu à Condição` : `${t.name} passou no TR`;
   });

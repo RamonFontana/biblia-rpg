@@ -48,7 +48,7 @@ Sacerdotes não possuem o poder de criar eventos sobrenaturais à vontade. Em ve
 | Guia Espiritual | 1 | Ação Bônus | - | 3 / D. Longo | (Custo: 2 Fé) Aliado recebe Vantagem no próximo teste de SAB. |
 | Autoridade Espiritual | 2 | Passiva | - | - | Vantagem persuasão contra tementes a Deus. |
 | Súplica Curativa | 2 | Ação | 1d8 | 3 / D. Longo | Cura 1d8+SAB PV e recupera 1d4 Fé do aliado. |
-| Repreensão Divina | 2 | Ação | - | 1 / D. Curto | (Custo: 8 Fé) Endemoniado TR SAB ou foge abalado 1 min. |
+| Repreensão Divina | 2 | Ação | - | 1 / D. Curto | (Custo: 8 Fé) Endemoniado faz TR CAR ou foge do combate por 1 min. |
 | Purificação | 6 | Ação | - | 1 / D. Curto | Encerra Amedrontado, Atordoado, Envenenado ou Possessão. |
 | Jejum Protetivo | 6 | Passiva | 1d4 | - | Desc. Longo: cura total, +1d4+2 Fé p/ grupo, +5 PV Temp. |
 | Consagração | 6 | 10 Minutos | - | 1 / D. Longo | (Custo: 10 Fé) Área de 9m segura para descanso (8h). |

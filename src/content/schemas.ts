@@ -92,9 +92,21 @@ export const abilityEffectSchema = z
         z.strictObject({ mode: z.literal('per_target') }),
       ])
       .optional(),
+    /**
+     * O que o app não aplica a quem falha no TR (a fuga da Repreensão Divina): o Mestre vê o
+     * lembrete no aviso e no histórico, sem Condição.
+     */
+    reminder: z.string().min(1).optional(),
+    /** Só é alvo quem tem esta passiva (pelo nome): a Repreensão Divina atinge o Endemoniado. */
+    requiresTargetSkill: z.string().min(1).optional(),
   })
-  .refine((effect) => effect.apply !== undefined || effect.remove !== undefined, {
-    message: 'O efeito precisa aplicar ou remover uma Condição',
+  .refine(
+    (effect) =>
+      effect.apply !== undefined || effect.remove !== undefined || effect.reminder !== undefined,
+    { message: 'O efeito precisa aplicar ou remover uma Condição, ou lembrar o Mestre' },
+  )
+  .refine((effect) => effect.reminder === undefined || effect.save !== undefined, {
+    message: 'O lembrete só vale para quem falha num TR',
   });
 
 /**

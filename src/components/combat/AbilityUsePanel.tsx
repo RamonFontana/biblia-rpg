@@ -116,13 +116,16 @@ export function AbilityUsePanel({
         {effect.save && (
           <p className="text-sm text-stone-300">
             TR de {saveAttributeLabel(effect.save.attribute)} dos alvos
-            {cd !== undefined && ` (CD ${cd})`}: a Condição só entra em quem falhar.
+            {cd !== undefined && ` (CD ${cd})`}:{' '}
+            {effect.reminder
+              ? `o Mestre lembra de quem falhar: ${effect.reminder}.`
+              : 'a Condição só entra em quem falhar.'}
           </p>
         )}
         <p className="text-xs text-stone-400">{ability.effect}</p>
 
         {outcome?.pending ? (
-          <PendingResult outcome={outcome} liveUse={liveUse} />
+          <PendingResult outcome={outcome} liveUse={liveUse} reminder={effect.reminder} />
         ) : outcome ? (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-stone-200">Resultado</h4>
@@ -158,7 +161,11 @@ export function AbilityUsePanel({
             </ul>
           </div>
         ) : targets.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum alvo possível no combate.</p>
+          <p className="text-sm text-muted-foreground">
+            {effect.requiresTargetSkill
+              ? `Nenhum alvo possível: só atinge inimigos com ${effect.requiresTargetSkill}.`
+              : 'Nenhum alvo possível no combate.'}
+          </p>
         ) : (
           <>
             {single ? (
@@ -249,9 +256,12 @@ export function AbilityUsePanel({
 function PendingResult({
   outcome,
   liveUse,
+  reminder,
 }: {
   outcome: AbilityUseOutcome;
   liveUse: CombatAbilityUse | undefined;
+  /** O lembrete do efeito (a fuga da Repreensão Divina) para quem falhou no TR. */
+  reminder?: string;
 }) {
   const live = liveUse?.id === outcome.id ? liveUse : undefined;
   if (live?.status === 'expired') {
@@ -269,7 +279,9 @@ function PendingResult({
               t.conditionIds.length > 0
                 ? t.conditionIds.map((id) => CONDITIONS[id]?.name ?? id).join(' e ')
                 : t.failed
-                  ? 'falhou no TR, mas resistiu à Condição'
+                  ? reminder
+                    ? `falhou no TR: ${reminder}`
+                    : 'falhou no TR, mas resistiu à Condição'
                   : 'passou no TR';
             return (
               <li key={t.participantId}>

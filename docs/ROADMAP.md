@@ -703,18 +703,21 @@ O Bestiário (`docs/bestiario/`, 10 inimigos e o Template Endemoniado) vira cont
 - Template Endemoniado só na criação, sobre qualquer Preset (menos o Endemoniado Comum) e sobre o inimigo do zero. FOR e CON +4, INT 6, Caótico e Mau, Intimidação CAR + 2, ataques de FOR +2, imune a Amedrontado, Grito Atormentador CD 12 e Ataque Bestial +(FOR + 2), 1d6 + FOR. PV pelo dado de vida com a nova CON (Bandido 15, Leão 34). Nome concorda em gênero.
 - O bloco de consulta aparece no cartão do Retrato, só para o Mestre. O formulário é o mesmo no celular e na web, com o essencial no topo.
 
-**Divergência nos docs:** o Endemoniado Comum (30 PV) não bate com Bandido + Template (15 PV). Ele fica como Preset próprio; o autor decide se corrige o doc.
+**Decidido (2026-11-06):** o Endemoniado Comum (30 PV, 4d8+12, ND 2) é outra criatura, não "Bandido + Template"; mantém os 30 PV e o doc diz isso.
 
-**Pendente do autor:** a regra da Vulnerabilidade Espiritual (dano espiritual e CD do TR de CAR); o ataque do inimigo pelo app (feature futura, com grill próprio).
+**Pendente do autor:** o ataque do inimigo pelo app (feature futura, com grill próprio).
 
 **Dívida:** `src/data/npcPresets.json` segue fora do gate de dados.
 
 **Implementado (2026-11-06):** os 9 tickets de `.scratch/presets-de-inimigo/` (e o extra 10, imunidade em efeito de arma e Condição manual), com E2E de criação com Preset, Fúria Desumana e Ataque Furtivo (desktop e Pixel 7).
 
-**Decisões de regra a confirmar pelo autor (o código fez a escolha mais simples):**
-- Uma falha no TR da Fúria Desumana não consome um uso (só o TR que passa sobe a CD). O doc diz "a cada uso" sem definir.
-- O Template Endemoniado não sobe `saveBonuses`: General e Anakim ficam com o TR fixo do bloco depois do Template, mesmo com FOR e CON +4.
-- A imunidade passiva de jogador (Resistência a Condição) ainda não vale em efeito de arma; só a do inimigo.
+**Regras fechadas pelo autor (grill de 2026-11-06):**
+- R1: o Template Endemoniado soma +2 aos bônus fixos de TR de FOR e CON do bloco (General For +7 / Con +6; Anakim For +9 / Con +7). *Feito (64b2d4b).*
+- R2: só o TR da Fúria Desumana que passa conta como uso; a falha não sobe a CD (como o código já faz).
+- R3: a CD da Fúria volta a 10 a cada combate (como o código já faz).
+- R4: a imunidade passiva do personagem vale também no efeito de arma. *Feito.*
+- R6 e R7: a Vulnerabilidade Espiritual é só estar sujeito à Repreensão Divina (sem Dano Espiritual); o TR da Repreensão é de Carisma, CD da regra 6.6. *Docs e texto da Habilidade ajustados.*
+- R8: a Repreensão Divina no app pede o TR de CAR ao alvo e dá um lembrete ao Mestre a quem falha ("foge do combate por 1 min"), sem Condição; só Endemoniados (passiva Vulnerabilidade Espiritual) são alvo, e sem nenhum na mesa a Habilidade avisa e não gasta Fé nem uso. *Feature própria (spec e tickets).*
 
 **Dívida técnica da feature:**
 - `ability_state` é gravado por leitura, mescla e escrita (`setEnemyAbilityState`, `setEnemyFuriaState`, `setEnemyFurtivoUsed`): seguro com um só Mestre; com dois clientes do Mestre, uma gravação pode apagar a outra. Resolver pede uma função no banco (migration com RLS).
@@ -723,6 +726,12 @@ O Bestiário (`docs/bestiario/`, 10 inimigos e o Template Endemoniado) vira cont
 - "Só para o Mestre" no lembrete vale porque o `CombatDashboard` só é montado na visão do Mestre; não há checagem de papel nem teste que trave isso.
 - O texto "Imunidade: imune a X" está duplicado em 3 lugares; `UnifiedEnemyForm.tsx` está grande (extrair um hook); tipo e contexto do Preset não aparecem em "Detalhes".
 - Falta a conferência visual manual no celular e na web (só E2E).
+
+**Repreensão Divina no app (feita em 2026-11-06, `.scratch/repreensao-divina/`):**
+- O servidor confia no cliente: `record_ability_use` não confere a passiva do alvo (nem a Fé e o uso, que o cliente gasta depois do registro). Um cliente adulterado pode repreender qualquer participante. Mesma limitação das outras Habilidades (ADR 0004); resolver pede função no banco.
+- O lembrete tem três redações para o mesmo fato (`describeReminder`, `describeAbilityUse` e o painel de uso), e `abilityReminderOf` faz um `ABILITIES.find` por chamada. Unificar num formatador do domínio.
+- A passiva exigida do alvo (`requiresTargetSkill`) casa pelo nome de exibição, não por id; renomear a passiva no Template quebra o filtro (o teste de conteúdo trava isso).
+- `skills` do inimigo viaja como `unknown` por `AttackTarget` e `buildCombatEntities` (só os nomes chegam ao jogador e ao espectador).
 
 **Fatias:** 0 `CreateEnemyDialog` usa `buildEnemyRow` (um caminho só); 1 esquema, 10 Presets e teste dos docs; 2 Bloco no cartão e editor de ataques; 3 quantidade e numeração; 4 imunidade e bônus de TR; 5 Template Endemoniado; 6 Fúria Desumana; 7 lembrete do Ataque Furtivo (feita).
 

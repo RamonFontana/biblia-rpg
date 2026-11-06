@@ -324,6 +324,18 @@ describe('UnifiedEnemyForm: Template Endemoniado', () => {
     expect(data.attacks).toHaveLength(2);
   });
 
+  it('o General Endemoniado sobe os TR fixos de FOR e CON e desligar os restaura', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^General de Guerra/);
+    fireEvent.click(template());
+    expect((await submitForm(onSubmit)).saveBonuses).toEqual({ for: 7, con: 6 });
+
+    onSubmit.mockClear();
+    fireEvent.click(template());
+    expect((await submitForm(onSubmit)).saveBonuses).toEqual({ for: 5, con: 4 });
+  });
+
   it('o Mestre edita o resultado do Template antes de criar', async () => {
     const onSubmit = vi.fn();
     render(<UnifiedEnemyForm onSubmit={onSubmit} />);

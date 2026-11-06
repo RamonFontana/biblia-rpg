@@ -56,6 +56,112 @@ const setup = (over: Partial<Parameters<typeof AbilityUsePanel>[0]> = {}) => {
   return { onUse, onClose };
 };
 
+describe('AbilityUsePanel: efeito só com lembrete', () => {
+  it('a Repreensão Divina diz o TR de Carisma e que o Mestre lembra de quem falhar', () => {
+    setup({
+      ability: {
+        ...base,
+        id: 'vocation-sacerdote-2-repreensao-divi',
+        name: 'Repreensão Divina',
+        combatEffect: {
+          targets: 'enemy',
+          save: { attribute: 'car' },
+          reminder: 'foge do combate por 1 min (10 rodadas)',
+        },
+      },
+      cd: 13,
+    });
+    expect(
+      screen.getByText(
+        /TR de Carisma dos alvos \(CD 13\): o Mestre lembra de quem falhar: foge do combate por 1 min/,
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/O app aplica/)).toBeNull();
+  });
+
+  it('sem alvo possível, diz que só atinge Endemoniados e não deixa usar', () => {
+    setup({
+      ability: {
+        ...base,
+        combatEffect: {
+          targets: 'enemy',
+          save: { attribute: 'car' },
+          requiresTargetSkill: 'Vulnerabilidade Espiritual',
+          reminder: 'foge',
+        },
+      },
+      targets: [],
+    });
+    expect(
+      screen.getByText('Nenhum alvo possível: só atinge inimigos com Vulnerabilidade Espiritual.'),
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Usar Habilidade' })).toBeNull();
+  });
+
+  it('depois que o Mestre resolve, quem falhou mostra o lembrete e quem passou, não', async () => {
+    const rebuke = {
+      ...base,
+      combatEffect: {
+        targets: 'enemy' as const,
+        save: { attribute: 'car' as const },
+        reminder: 'foge do combate por 1 min (10 rodadas)',
+      },
+    };
+    const onUse = vi.fn().mockResolvedValue({
+      id: 'use-1',
+      pending: { cd: 13, attribute: 'car' },
+      results: [{ participantId: 'p2', name: 'Filisteu', conditions: [], messages: [] }],
+    });
+    const element = (live?: unknown) => (
+      <AbilityUsePanel
+        ability={rebuke}
+        targets={pool}
+        blockedReason={null}
+        cd={13}
+        onUse={onUse}
+        onClose={vi.fn()}
+        liveUse={live as never}
+      />
+    );
+    const view = render(element());
+    fireEvent.change(screen.getByLabelText('Alvo'), { target: { value: 'p2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Habilidade' }));
+    await waitFor(() => expect(screen.getByText(/Aguardando o Mestre/)).toBeVisible());
+    view.rerender(
+      element({
+        id: 'use-1',
+        status: 'resolved',
+        cd: 13,
+        save_attribute: 'car',
+        targets: [
+          {
+            participantId: 'p2',
+            name: 'Filisteu',
+            conditions: [],
+            natural: 4,
+            total: 4,
+            failed: true,
+          },
+          {
+            participantId: 'p3',
+            name: 'Bandido',
+            conditions: [],
+            natural: 15,
+            total: 15,
+            failed: false,
+          },
+        ],
+      }),
+    );
+    expect(
+      screen.getByText(
+        'Filisteu: falhou no TR: foge do combate por 1 min (10 rodadas) (d20 4, total 4)',
+      ),
+    ).toBeVisible();
+    expect(screen.getByText('Bandido: passou no TR (d20 15, total 15)')).toBeVisible();
+  });
+});
+
 describe('AbilityUsePanel', () => {
   it('mostra a Habilidade, o que o app aplica e o texto que fica com o Mestre', () => {
     setup();

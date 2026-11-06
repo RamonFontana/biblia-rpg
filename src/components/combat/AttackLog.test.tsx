@@ -249,6 +249,45 @@ describe('AttackLog: usos de Habilidade', () => {
     expect(row).toHaveTextContent('Bandido: d20 15 (19 contra CD 13) · passou');
   });
 
+  it('a Repreensão Divina mostra quem falhou e o lembrete da fuga', () => {
+    render(
+      <AttackLog
+        attacks={[]}
+        abilityUses={[
+          abilityUse({
+            ability_id: 'vocation-sacerdote-2-repreensao-divi',
+            ability_name: 'Repreensão Divina',
+            status: 'resolved',
+            cd: 13,
+            save_attribute: 'car',
+            targets: [
+              {
+                participantId: 'p2',
+                name: 'Legião',
+                conditions: [],
+                natural: 4,
+                total: 4,
+                failed: true,
+              },
+              {
+                participantId: 'p3',
+                name: 'Gadareno',
+                conditions: [],
+                natural: 15,
+                total: 15,
+                failed: false,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent('Legião: d20 4 (4 contra CD 13) · falhou');
+    expect(row).toHaveTextContent('Gadareno: d20 15 (15 contra CD 13) · passou');
+    expect(row).toHaveTextContent('Lembrete (Legião): foge do combate por 1 min (10 rodadas)');
+  });
+
   it('um uso que tira Fé mostra quanto cada alvo perdeu', () => {
     render(
       <AttackLog

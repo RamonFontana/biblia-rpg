@@ -294,6 +294,32 @@ describe('submitAttack: efeito de arma', () => {
     expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'sangrando', duration: 3 }] });
   });
 
+  it('a imunidade passiva do personagem (Sangue Amargo) anula o efeito de arma e avisa', async () => {
+    state.respond = (call) =>
+      call.table === 'characters' && call.op === 'select'
+        ? {
+            data: {
+              equipment: {},
+              character_items: [],
+              tribe: 'simeao',
+              vocation: 'guerreiro',
+              level: 12,
+              skills: { path_choices: { tribe: 'A' } },
+            },
+          }
+        : { data: 'atk-1' };
+    const poison = {
+      ...hit,
+      weaponEffect: {
+        effects: [{ conditionId: 'envenenado', trigger: 'natural_18_plus' as const }],
+        target: { entityId: 'c9', entityType: 'player' },
+      },
+    };
+    const outcome = await submitAttack(poison);
+    expect(sent()).toMatchObject({ p_weapon_effect_triggered: true, p_conditions: [] });
+    expect(outcome.messages).toEqual(['Imunidade: imune a Envenenado']);
+  });
+
   it('se a leitura da ficha do alvo falha, aplica sem resistência', async () => {
     state.respond = (call) =>
       call.table === 'characters' ? { error: new Error('falhou') } : { data: 'atk-1' };

@@ -217,7 +217,13 @@ _Avoid_: template (sozinho, para Preset), possessão (para o modificador)
 Inimigo habitado por um demônio, pelo Template Endemoniado ou pelo Preset Endemoniado Comum. É imune a Amedrontado e tem Fúria Desumana e Vulnerabilidade Espiritual.
 
 **Fúria Desumana**:
-Ao cair a 0 PV, o Endemoniado faz um TR de CON (CD 10, mais 5 a cada uso no mesmo combate); se passar, fica com 1 PV.
+Ao cair a 0 PV, o Endemoniado faz um TR de CON (CD 10, mais 5 a cada uso no mesmo combate); se passar, fica com 1 PV. Só o TR que passa conta como uso; a CD volta a 10 no combate seguinte.
+
+**Vulnerabilidade Espiritual**:
+O Endemoniado é alvo da Repreensão Divina. Não há Dano Espiritual: a vulnerabilidade é só essa.
+
+**Repreensão Divina**:
+Habilidade do Sacerdote contra o Endemoniado: o alvo faz um TR de CAR e, se falhar, foge do combate por 1 minuto. Só o inimigo com a Vulnerabilidade Espiritual pode ser alvo.
 
 **Ataque Furtivo**:
 +1d6 de dano, uma vez por turno do inimigo, com Vantagem ou com um aliado a 1,5 m do alvo.

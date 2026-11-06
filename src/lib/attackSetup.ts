@@ -71,6 +71,8 @@ export interface AttackTarget {
   conditionIds: string[];
   /** A distância em metros até o alvo no mapa, quando os dois têm pin. Só informa; não trava. */
   distanceMeters?: number;
+  /** Só do inimigo: os nomes das Habilidades (o filtro de alvos da Repreensão Divina). */
+  skills?: unknown;
 }
 
 /** Os ids das Condições gravadas num participante (`conditions` é `jsonb`). */
@@ -84,7 +86,7 @@ export function conditionIdsOf(conditions: unknown): string[] {
 export function buildAttackTargets(
   participants: { id: string; entity_id: string; entity_type: string; conditions?: unknown }[],
   attackerParticipantId: string,
-  entities: { id: string; name: string; totalAc: number }[],
+  entities: { id: string; name: string; totalAc: number; skills?: unknown }[],
 ): AttackTarget[] {
   return participants.flatMap((p) => {
     const entity = entities.find((e) => e.id === p.entity_id);
@@ -98,6 +100,7 @@ export function buildAttackTargets(
             name: entity.name,
             ac: entity.totalAc,
             conditionIds: conditionIdsOf(p.conditions),
+            ...(entity.skills !== undefined && { skills: entity.skills }),
           },
         ];
   });
