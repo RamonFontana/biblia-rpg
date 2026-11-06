@@ -12,6 +12,7 @@ import { ABILITIES } from './abilities';
 import { CONDITIONS } from './conditions';
 import { ENEMY_ABILITIES } from './enemyAbilities';
 import { ENEMY_PRESETS } from './enemyPresets';
+import { ENDEMONIADO_ABILITIES } from './enemyTemplate';
 import { ITEMS_DB } from './items';
 import { KITS_DB } from './kits';
 import { MAP_LIBRARY } from './maps';
@@ -141,6 +142,12 @@ function collectViolations(): string[] {
     for (const conditionId of preset.conditionImmunities ?? []) {
       if (!conditionIds.has(conditionId)) violations.push(`${p}:unknown-condition:${conditionId}`);
     }
+  }
+
+  // Habilidades que o Template Endemoniado acrescenta.
+  for (const { name, libraryId } of ENDEMONIADO_ABILITIES) {
+    if (libraryId && !enemyAbilityIds.has(libraryId))
+      violations.push(`enemy-template:${name}:unknown-enemy-ability:${libraryId}`);
   }
 
   // Biblioteca de mapas.

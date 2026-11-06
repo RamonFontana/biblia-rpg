@@ -46,6 +46,8 @@ export const enemyFormSchema = z.object({
     .optional(),
   /** O Preset de origem (ADR 0012): só o rótulo, o inimigo é uma cópia independente. */
   presetId: z.string().optional(),
+  /** O inimigo é Endemoniado (Template ou Preset Endemoniado Comum): a marca fica na origem. */
+  endemoniado: z.boolean().optional(),
   attacks: z.array(formAttackSchema).optional(),
   /** Deslocamento, perícias, sentidos e ND: consulta em texto, não entra no motor. */
   details: z

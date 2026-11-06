@@ -67,4 +67,52 @@ test.describe('Presets de inimigo', () => {
       ),
     ).toBe(true);
   });
+
+  test('o Mestre cria um Leão da Judeia Endemoniado: 34 PV, nome e imune a Amedrontado', async ({
+    seed,
+    signIn,
+  }) => {
+    await seed.createCharacter('player1', { name: 'Eliabe' });
+    const master = await signIn('master');
+
+    await master.goto('/session/create');
+    await master.getByLabel('Nome da Sessão').fill(SESSION_NAME);
+    await master.getByRole('button', { name: 'Próximo: Inimigos' }).click();
+    await master.getByRole('button', { name: 'Próximo: NPCs' }).click();
+    await master.getByRole('button', { name: 'Próximo: Jogadores' }).click();
+    await master.getByLabel('Eliabe').check();
+    await master.getByRole('button', { name: 'Próximo: Mapas' }).click();
+    await master.getByRole('button', { name: 'Próximo: Resumo' }).click();
+    await master.getByRole('button', { name: 'Iniciar Sessão' }).click();
+    await expect(master).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
+
+    await openPanel(master, 'Inimigos');
+    const panel = master.getByRole('dialog', { name: 'Inimigos' });
+    await panel.getByRole('button', { name: 'Criar Inimigo' }).click();
+    await master.getByRole('combobox').first().click();
+    await master.getByRole('option', { name: /^Leão da Judeia/ }).click();
+    await master.getByLabel('Endemoniado (Template)').check();
+    await expect(master.getByPlaceholder('Ex: Lobo Selvagem')).toHaveValue(
+      'Leão da Judeia Endemoniado',
+    );
+    await master.getByRole('button', { name: 'Criar Inimigo' }).last().click();
+    await expect(master.getByText('Leão da Judeia Endemoniado', { exact: true })).toBeVisible();
+
+    const { data: enemies } = await adminClient()
+      .from('characters')
+      .select('name, stats, attributes, narrative')
+      .eq('is_enemy', true);
+    expect(enemies).toHaveLength(1);
+    const [lion] = enemies ?? [];
+    expect(lion.name).toBe('Leão da Judeia Endemoniado');
+    expect(lion.stats).toMatchObject({
+      pv: 34,
+      current_pv: 34,
+      conditionImmunities: ['amedrontado'],
+    });
+    expect(lion.attributes).toMatchObject({ for: 21, con: 17, int: 3 });
+    expect(lion.narrative).toMatchObject({
+      enemy: { presetId: 'enemy-preset-leao-da-judeia', endemoniado: true },
+    });
+  });
 });

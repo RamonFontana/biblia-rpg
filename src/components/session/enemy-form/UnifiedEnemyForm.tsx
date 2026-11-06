@@ -3,6 +3,7 @@ import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { enemyFormSchema, normalizeEnemyForm, type EnemyFormValues } from './schema';
 import { EnemyBlockFields } from './EnemyBlockFields';
+import { endemoniadoPatch, patchOf, type EndemoniadoFormPatch } from './endemoniadoForm';
 import { EnemyAbilityEffectEditor } from './EnemyAbilityEffectEditor';
 import { ENEMY_PRESETS, findEnemyPreset } from '@/content/enemyPresets';
 import { ENEMY_ABILITIES, findEnemyAbility } from '@/content/enemyAbilities';
@@ -40,6 +41,10 @@ export function UnifiedEnemyForm({
 }: UnifiedEnemyFormProps) {
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // O Template Endemoniado (ligado/desligado) e o que o formulário tinha antes dele.
+  const [endemoniadoOn, setEndemoniadoOn] = useState(false);
+  const beforeTemplate = useRef<EndemoniadoFormPatch | null>(null);
+  const templateName = useRef<string | null>(null);
 
   const form = useForm<EnemyFormValues>({
     resolver: zodResolver(enemyFormSchema),
@@ -61,6 +66,7 @@ export function UnifiedEnemyForm({
       imageBase64: initialValues?.imageBase64 || '',
       quantity: initialValues?.quantity ?? 1,
       presetId: initialValues?.presetId,
+      endemoniado: initialValues?.endemoniado,
       attacks: initialValues?.attacks,
       details: initialValues?.details,
       conditionImmunities: initialValues?.conditionImmunities,
@@ -83,11 +89,44 @@ export function UnifiedEnemyForm({
   const imageUrl = watch('imageBase64');
   const selectedPreset = findEnemyPreset(selectedPresetId);
 
+  const setPatch = (patch: EndemoniadoFormPatch) => {
+    (Object.keys(patch) as (keyof EndemoniadoFormPatch)[]).forEach((key) =>
+      setValue(key, patch[key] as never),
+    );
+  };
+
+  // Liga o Template sobre o que o formulário mostra agora (do Preset ou do zero); o Mestre edita o resultado.
+  const turnTemplateOn = (preset: ReturnType<typeof findEnemyPreset>) => {
+    beforeTemplate.current = patchOf(form.getValues());
+    const patch = endemoniadoPatch(form.getValues(), preset);
+    templateName.current = patch.name;
+    setPatch(patch);
+    setEndemoniadoOn(true);
+  };
+
+  const turnTemplateOff = () => {
+    const before = beforeTemplate.current;
+    if (before) {
+      // O nome que o Mestre reescreveu depois de ligar fica; o gerado pelo Template volta ao de antes.
+      const keepName = form.getValues('name') !== templateName.current;
+      setPatch(keepName ? { ...before, name: form.getValues('name') } : before);
+    }
+    beforeTemplate.current = null;
+    setEndemoniadoOn(false);
+  };
+
+  const onTemplateToggle = (checked: boolean) =>
+    checked ? turnTemplateOn(selectedPreset) : turnTemplateOff();
+
   // O Preset é copiado para o formulário (ADR 0012): depois daqui nada mais o lê.
   const onPresetSelect = (val: string) => {
+    const keepTemplate = endemoniadoOn;
+    setEndemoniadoOn(false);
+    beforeTemplate.current = null;
     setSelectedPresetId(val);
     const preset = findEnemyPreset(val);
     setValue('presetId', preset?.id);
+    setValue('endemoniado', preset?.endemoniado);
     // Cópias profundas: o formulário nunca compartilha objeto com o conteúdo.
     setValue('attacks', preset && structuredClone(preset.attacks));
     setValue('details', preset && structuredClone(preset.details));
@@ -111,6 +150,8 @@ export function UnifiedEnemyForm({
         libraryId,
       })),
     );
+    // Trocar de Preset com o Template ligado reaplica o Template ao novo (menos ao já Endemoniado).
+    if (keepTemplate && !preset.endemoniado) turnTemplateOn(preset);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,6 +186,18 @@ export function UnifiedEnemyForm({
         </Select>
         {selectedPreset && (
           <p className="text-xs text-stone-400 mt-1">{selectedPreset.description}</p>
+        )}
+        <label className="flex min-h-9 items-center gap-2 text-sm text-stone-200">
+          <input
+            type="checkbox"
+            checked={endemoniadoOn}
+            disabled={!!selectedPreset?.endemoniado}
+            onChange={(e) => onTemplateToggle(e.target.checked)}
+          />
+          Endemoniado (Template)
+        </label>
+        {selectedPreset?.endemoniado && (
+          <p className="text-xs text-stone-500">Este Preset já é Endemoniado.</p>
         )}
       </div>
 

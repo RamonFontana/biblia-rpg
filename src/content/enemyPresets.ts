@@ -439,6 +439,7 @@ export const ENEMY_PRESETS: EnemyPresetDefinition[] = [
     caSource: 'Couro cru rasgado',
     attributes: { for: 15, des: 12, con: 16, int: 6, sab: 10, car: 10 },
     conditionImmunities: ['amedrontado'],
+    endemoniado: true,
     abilities: [
       {
         name: 'Fúria Desumana',

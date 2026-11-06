@@ -266,3 +266,122 @@ describe('UnifiedEnemyForm: quantidade', () => {
     expect(submitted(onSubmit).quantity).toBe(8);
   });
 });
+
+describe('UnifiedEnemyForm: Template Endemoniado', () => {
+  beforeAll(() => {
+    window.HTMLElement.prototype.hasPointerCapture = () => false;
+    window.HTMLElement.prototype.setPointerCapture = () => undefined;
+    window.HTMLElement.prototype.releasePointerCapture = () => undefined;
+    window.HTMLElement.prototype.scrollIntoView = () => undefined;
+  });
+
+  const pickPreset = (label: RegExp) => {
+    fireEvent.keyDown(screen.getAllByRole('combobox')[0], { key: 'ArrowDown' });
+    fireEvent.click(screen.getByRole('option', { name: label }));
+  };
+  const template = () => screen.getByLabelText('Endemoniado (Template)');
+  const nameField = () => screen.getByPlaceholderText('Ex: Lobo Selvagem');
+  const submitForm = async (onSubmit: ReturnType<typeof vi.fn>) => {
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Inimigo' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    return submitted(onSubmit);
+  };
+
+  it('ligar o Template no Leão mostra os números transformados e a marca de Endemoniado', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^Leão da Judeia/);
+    fireEvent.click(template());
+    expect(nameField()).toHaveValue('Leão da Judeia Endemoniado');
+    const data = await submitForm(onSubmit);
+    expect(data).toMatchObject({
+      name: 'Leão da Judeia Endemoniado',
+      hpMax: 34,
+      hpCurrent: 34,
+      vocation: 'Grande, Fera, Caótico e Mau',
+      attributes: { for: 21, con: 17, int: 3 },
+      conditionImmunities: ['amedrontado'],
+      endemoniado: true,
+      presetId: 'enemy-preset-leao-da-judeia',
+    });
+    expect(data.attacks.map((a: { name: string }) => a.name)).toContain(
+      'Ataque Bestial (Garras/Mordida)',
+    );
+    expect(data.skills.map((s: { name: string }) => s.name)).toContain('Fúria Desumana');
+  });
+
+  it('desligar volta ao Preset e tira a marca', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^Bandido do Deserto/);
+    fireEvent.click(template());
+    fireEvent.click(template());
+    expect(nameField()).toHaveValue('Bandido do Deserto');
+    const data = await submitForm(onSubmit);
+    expect(data).toMatchObject({ hpMax: 11, attributes: { for: 11, con: 12, int: 10 } });
+    expect(data.endemoniado).toBeUndefined();
+    expect(data.conditionImmunities).toBeUndefined();
+    expect(data.attacks).toHaveLength(2);
+  });
+
+  it('o Mestre edita o resultado do Template antes de criar', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^Bandido do Deserto/);
+    fireEvent.click(template());
+    fireEvent.change(nameField(), { target: { value: 'Legião' } });
+    const data = await submitForm(onSubmit);
+    expect(data).toMatchObject({ name: 'Legião', hpMax: 15, endemoniado: true });
+  });
+
+  it('o inimigo do zero com o Template mantém o PV', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    fireEvent.change(nameField(), { target: { value: 'Lobo' } });
+    fireEvent.change(screen.getAllByRole('spinbutton')[1], { target: { value: '22' } });
+    fireEvent.click(template());
+    const data = await submitForm(onSubmit);
+    expect(data).toMatchObject({ name: 'Lobo Endemoniado', hpMax: 22, endemoniado: true });
+    expect(data.conditionImmunities).toEqual(['amedrontado']);
+  });
+
+  it('o PV editado antes do Template não é recalculado pelo dado de vida', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^Bandido do Deserto/);
+    fireEvent.change(screen.getAllByRole('spinbutton')[1], { target: { value: '30' } });
+    fireEvent.click(template());
+    expect((await submitForm(onSubmit)).hpMax).toBe(30);
+  });
+
+  it('o Endemoniado Comum já é Endemoniado e recusa o Template', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^Endemoniado Comum/);
+    expect(template()).toBeDisabled();
+    expect(screen.getByText('Este Preset já é Endemoniado.')).toBeInTheDocument();
+    const data = await submitForm(onSubmit);
+    expect(data).toMatchObject({ hpMax: 30, endemoniado: true });
+    expect(data.conditionImmunities).toEqual(['amedrontado']);
+  });
+
+  it('trocar de Preset com o Template ligado reaplica o Template ao novo', async () => {
+    const onSubmit = vi.fn();
+    render(<UnifiedEnemyForm onSubmit={onSubmit} />);
+    pickPreset(/^Bandido do Deserto/);
+    fireEvent.click(template());
+    pickPreset(/^Víbora do Deserto/);
+    expect(nameField()).toHaveValue('Víbora do Deserto Endemoniada');
+    expect(template()).toBeChecked();
+    expect((await submitForm(onSubmit)).hpMax).toBe(4);
+  });
+
+  it('trocar para o Endemoniado Comum desliga o Template', () => {
+    render(<UnifiedEnemyForm onSubmit={vi.fn()} />);
+    pickPreset(/^Bandido do Deserto/);
+    fireEvent.click(template());
+    pickPreset(/^Endemoniado Comum/);
+    expect(template()).not.toBeChecked();
+    expect(nameField()).toHaveValue('Endemoniado Comum');
+  });
+});

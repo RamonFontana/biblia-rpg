@@ -207,6 +207,8 @@ export const enemyPresetSchema = z.strictObject({
   /** O bônus de TR do bloco (já com a Proficiência), só nos atributos que o bloco lista. */
   saveBonuses: z.partialRecord(attributeKeySchema, z.number().int().min(-5).max(20)).optional(),
   conditionImmunities: z.array(z.string().min(1)).optional(),
+  /** O Preset já é Endemoniado (o Endemoniado Comum): o Template não se aplica. */
+  endemoniado: z.boolean().optional(),
   abilities: z.array(enemyPresetAbilitySchema),
   attacks: z.array(enemyAttackSchema).min(1),
   details: z.strictObject({

@@ -44,6 +44,7 @@ export function buildEnemyRow(enemy: EnemyRowInput, userId: string) {
   // O bloco do Preset (ADR 0012) vai nos jsonb que já existem; sem ele a linha é a de sempre.
   const block = {
     ...(enemy.presetId && { presetId: enemy.presetId }),
+    ...(enemy.endemoniado && { endemoniado: true }),
     ...(enemy.attacks && { attacks: enemy.attacks }),
     ...(enemy.details && { details: enemy.details }),
   };

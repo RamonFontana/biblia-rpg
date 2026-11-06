@@ -174,4 +174,42 @@ describe('buildEnemyRow', () => {
     expect(enemyConditionImmunities(anakim.stats)).toEqual(['amedrontado']);
     expect(enemySaveBonuses(anakim.stats)).toEqual({ for: 7, con: 5 });
   });
+
+  it('a marca de Endemoniado vai na origem do inimigo', () => {
+    const row = buildEnemyRow(
+      { ...enemy, presetId: 'enemy-preset-leao-da-judeia', endemoniado: true },
+      'u',
+    );
+    expect(row.narrative.enemy).toMatchObject({
+      presetId: 'enemy-preset-leao-da-judeia',
+      endemoniado: true,
+    });
+    expect(buildEnemyRow(enemy, 'u').narrative).not.toHaveProperty('enemy');
+  });
+
+  it('o Endemoniado do Template sai da criação imune a Amedrontado para o motor', async () => {
+    const { endemoniadoPatch } = await import('@/components/session/enemy-form/endemoniadoForm');
+    const { findEnemyPreset } = await import('@/content/enemyPresets');
+    const preset = findEnemyPreset('enemy-preset-leao-da-judeia')!;
+    const patch = endemoniadoPatch(
+      {
+        name: preset.name,
+        hpMax: preset.hp,
+        hpCurrent: preset.hp,
+        ca: preset.ca,
+        vocation: preset.creatureType,
+        attributes: { ...preset.attributes },
+        skills: [],
+        attacks: preset.attacks,
+        details: preset.details,
+      },
+      preset,
+    );
+    const row = buildEnemyRow(
+      { ...enemy, ...patch, hpMax: patch.hpMax!, hpCurrent: patch.hpCurrent!, name: patch.name! },
+      'u',
+    );
+    expect(enemyConditionImmunities(row.stats)).toEqual(['amedrontado']);
+    expect(row.stats.pv).toBe(34);
+  });
 });

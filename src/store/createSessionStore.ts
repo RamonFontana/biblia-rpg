@@ -21,6 +21,7 @@ export type SessionEnemyDraft = {
   imageBase64?: string;
   /** O bloco copiado de um Preset do Bestiário (ADR 0012); ausente no inimigo do zero. */
   presetId?: string;
+  endemoniado?: boolean;
   attacks?: EnemyAttack[];
   details?: { speed?: string; proficiencies?: string; senses?: string; challenge?: string };
   conditionImmunities?: string[];
