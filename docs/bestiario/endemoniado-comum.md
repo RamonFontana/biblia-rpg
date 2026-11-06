@@ -11,13 +11,13 @@
 
 - **Perícias**: Furtividade +3, Intimidação +2
 - **Imunidades de Condição**: Amedrontado
-- **Vulnerabilidades**: Vulnerabilidade Espiritual (orações, rituais de Fé)
+- **Vulnerabilidades**: Vulnerabilidade Espiritual (alvo da Repreensão Divina)
 - **Sentidos**: Percepção passiva 10
 - **Nível de Desafio / XP**: 2 (450 XP)
 - **Contexto**: Um homem levado à loucura, cujos ossos e músculos foram torcidos pela entidade que o habita.
 
 **Passivas / Habilidades**
-- **Fúria Desumana**: O endemoniado ignora dores mortais. Quando cair a 0 PV, faz um Teste de Constituição (CD 10). Se passar, sobrevive com 1 PV. O CD aumenta em 5 a cada uso.
+- **Fúria Desumana**: O endemoniado ignora dores mortais. Quando cair a 0 PV, faz um Teste de Constituição (CD 10). Se passar, sobrevive com 1 PV. O CD aumenta em 5 a cada uso (só conta o Teste que passa) até o fim do combate.
 - **Ataque Furtivo**: Uma vez por turno, causa 1d6 de dano extra se tiver vantagem no ataque ou aliado a 1,5m do alvo.
 
 **Ações**
