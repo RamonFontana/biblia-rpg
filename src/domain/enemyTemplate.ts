@@ -41,6 +41,8 @@ export interface TemplateEnemy {
   attacks: EnemyAttack[];
   abilities: { name: string; description: string; libraryId?: string }[];
   conditionImmunities: string[];
+  /** Os bônus fixos de TR do bloco ("For +7"); sem eles vale o modificador do atributo. */
+  saveBonuses?: Partial<Record<keyof Attributes, number>>;
   /** As perícias do bloco, em texto ("Atletismo +5, Intimidação +4"). */
   proficiencies?: string;
   /** O inimigo já é Endemoniado (o Preset Endemoniado Comum): o Template não se aplica de novo. */
@@ -83,6 +85,23 @@ function upgradeAttack(attack: EnemyAttack, before: Attributes, after: Attribute
     hitBonus: attack.hitBonus + delta,
     damage: { ...attack.damage, bonus: attack.damage.bonus + delta },
   };
+}
+
+/** Os bônus fixos de TR de FOR e CON sobem o mesmo que os modificadores deles (docs/bestiario). */
+function upgradeSaveBonuses(
+  saveBonuses: TemplateEnemy['saveBonuses'],
+  before: Attributes,
+  after: Attributes,
+): TemplateEnemy['saveBonuses'] {
+  if (!saveBonuses) return saveBonuses;
+  const raised = { ...saveBonuses };
+  for (const key of ['for', 'con'] as const) {
+    const bonus = raised[key];
+    if (bonus !== undefined) {
+      raised[key] = bonus + calculateModifier(after[key]) - calculateModifier(before[key]);
+    }
+  }
+  return raised;
 }
 
 function withIntimidation(proficiencies: string | undefined, charisma: number): string {
@@ -140,6 +159,7 @@ export function applyEndemoniado(enemy: TemplateEnemy): TemplateEnemy {
       ...ENDEMONIADO_ABILITIES.filter((ability) => !have.has(ability.name)),
     ],
     conditionImmunities: [...new Set([...enemy.conditionImmunities, ...ENDEMONIADO_IMMUNITIES])],
+    saveBonuses: upgradeSaveBonuses(enemy.saveBonuses, enemy.attributes, attributes),
     proficiencies: withIntimidation(enemy.proficiencies, attributes.car),
     endemoniado: true,
   };

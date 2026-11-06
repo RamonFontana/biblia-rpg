@@ -18,6 +18,7 @@ export type EndemoniadoFormPatch = Pick<
   | 'attacks'
   | 'skills'
   | 'conditionImmunities'
+  | 'saveBonuses'
   | 'details'
   | 'endemoniado'
 >;
@@ -33,6 +34,7 @@ export function patchOf(values: EnemyFormValues): EndemoniadoFormPatch {
     attacks: values.attacks,
     skills: values.skills,
     conditionImmunities: values.conditionImmunities,
+    saveBonuses: values.saveBonuses,
     details: values.details,
     endemoniado: values.endemoniado,
   });
@@ -61,6 +63,7 @@ export function templateInputOf(
       libraryId,
     })),
     conditionImmunities: [...(values.conditionImmunities ?? [])],
+    saveBonuses: values.saveBonuses && { ...values.saveBonuses },
     proficiencies: values.details?.proficiencies,
     endemoniado: preset?.endemoniado,
   };
@@ -81,6 +84,7 @@ export function endemoniadoPatch(
     attacks: result.attacks,
     skills: result.abilities,
     conditionImmunities: result.conditionImmunities,
+    saveBonuses: result.saveBonuses,
     details: { ...values.details, proficiencies: result.proficiencies },
     endemoniado: true,
   };

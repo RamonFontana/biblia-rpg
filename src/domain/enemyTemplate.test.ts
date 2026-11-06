@@ -14,6 +14,7 @@ const enemyOf = (preset: EnemyPresetDefinition): TemplateEnemy => ({
   attacks: preset.attacks,
   abilities: preset.abilities,
   conditionImmunities: preset.conditionImmunities ?? [],
+  saveBonuses: preset.saveBonuses,
   proficiencies: preset.details.proficiencies,
   endemoniado: preset.endemoniado,
 });
@@ -132,6 +133,20 @@ describe('Template Endemoniado sobre os outros Presets', () => {
       hitBonus: 9,
       damage: { dice: '2d8', bonus: 7 },
     });
+  });
+
+  it('os bônus fixos de TR de FOR e CON sobem junto com o modificador (+2)', () => {
+    expect(endemoniadoOf('general-de-guerra').saveBonuses).toEqual({ for: 7, con: 6 });
+    expect(endemoniadoOf('guerreiro-anakim').saveBonuses).toEqual({ for: 9, con: 7 });
+  });
+
+  it('só sobe o bônus que o bloco tem: SAB do Sacerdote fica, e sem bônus fixo nada é criado', () => {
+    expect(endemoniadoOf('bandido-do-deserto').saveBonuses).toBeUndefined();
+    const withSab = applyEndemoniado({
+      ...enemyOf(findEnemyPreset('enemy-preset-bandido-do-deserto') as EnemyPresetDefinition),
+      saveBonuses: { sab: 5, con: 4 },
+    });
+    expect(withSab.saveBonuses).toEqual({ sab: 5, con: 6 });
   });
 
   it('o Template troca a tendência mesmo quando ela tem barra ("Leal e Neutro/Mau")', () => {
