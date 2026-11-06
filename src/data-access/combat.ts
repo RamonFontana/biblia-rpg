@@ -5,6 +5,7 @@ import type { Tables, TablesInsert } from '@/types/database.types';
 import type { EnemyAbilityEffect } from '@/content/schemas';
 import { mergeAbilityState } from '@/domain/enemyAbility';
 import { withFuriaState, type FuriaState } from '@/domain/furiaDesumana';
+import { withFurtivoUsed } from '@/domain/furtivo';
 import type { TestMode } from '@/domain/testMode';
 import type { ConditionEntry } from '@/types/combat';
 import type { CharacterSkills } from '@/features/character-creation/types';
@@ -150,6 +151,16 @@ export async function setEnemyFuriaState(participantId: string, furia: FuriaStat
   const { error } = await supabase
     .from('combat_participants')
     .update({ ability_state: toJson(withFuriaState(raw, furia)) })
+    .eq('id', participantId);
+  if (error) throw error;
+}
+
+/** O Mestre marca o Ataque Furtivo do inimigo como usado na rodada; o resto do estado fica. */
+export async function setEnemyFurtivoUsed(participantId: string, round: number): Promise<void> {
+  const raw = await readAbilityState(participantId);
+  const { error } = await supabase
+    .from('combat_participants')
+    .update({ ability_state: toJson(withFurtivoUsed(raw, round)) })
     .eq('id', participantId);
   if (error) throw error;
 }

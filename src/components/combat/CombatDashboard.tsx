@@ -5,6 +5,7 @@ import { abilityStateOf } from '@/domain/enemyAbility';
 import { EnemyAbilityPanel } from './EnemyAbilityPanel';
 import { EnemyBlock } from './EnemyBlock';
 import { FuriaDesumanaPrompt } from './FuriaDesumanaPrompt';
+import { FurtivoReminder } from './FurtivoReminder';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import { useCombatStore } from '../../store/combatStore';
@@ -183,6 +184,17 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
 
                     {displayType === 'enemy' && entityDetails && (
                       <EnemyBlock character={{ narrative: entityDetails.narrative }} />
+                    )}
+
+                    {displayType === 'enemy' && entityDetails && (
+                      <FurtivoReminder
+                        participantId={participant.id}
+                        skills={entityDetails.skills}
+                        hp={participant.hp_current}
+                        isCurrentTurn={isCurrentTurn}
+                        round={activeCombat.round_number}
+                        abilityState={participant.ability_state}
+                      />
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
