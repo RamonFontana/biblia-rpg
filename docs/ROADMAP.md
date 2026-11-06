@@ -712,11 +712,11 @@ O Bestiário (`docs/bestiario/`, 10 inimigos e o Template Endemoniado) vira cont
 **Implementado (2026-11-06):** os 9 tickets de `.scratch/presets-de-inimigo/` (e o extra 10, imunidade em efeito de arma e Condição manual), com E2E de criação com Preset, Fúria Desumana e Ataque Furtivo (desktop e Pixel 7).
 
 **Regras fechadas pelo autor (grill de 2026-11-06):**
-- R1: o Template Endemoniado soma +2 aos bônus fixos de TR de FOR e CON do bloco (General For +7 / Con +6; Anakim For +9 / Con +7). *A implementar.*
+- R1: o Template Endemoniado soma +2 aos bônus fixos de TR de FOR e CON do bloco (General For +7 / Con +6; Anakim For +9 / Con +7). *Feito (64b2d4b).*
 - R2: só o TR da Fúria Desumana que passa conta como uso; a falha não sobe a CD (como o código já faz).
 - R3: a CD da Fúria volta a 10 a cada combate (como o código já faz).
-- R4: a imunidade passiva do personagem vale também no efeito de arma. *A implementar.*
-- R6 e R7: a Vulnerabilidade Espiritual é só estar sujeito à Repreensão Divina (sem Dano Espiritual); o TR da Repreensão é de Carisma, CD da regra 6.6. *Docs e texto da Habilidade a ajustar.*
+- R4: a imunidade passiva do personagem vale também no efeito de arma. *Feito.*
+- R6 e R7: a Vulnerabilidade Espiritual é só estar sujeito à Repreensão Divina (sem Dano Espiritual); o TR da Repreensão é de Carisma, CD da regra 6.6. *Docs e texto da Habilidade ajustados.*
 - R8: a Repreensão Divina no app pede o TR de CAR ao alvo e dá um lembrete ao Mestre a quem falha ("foge do combate por 1 min"), sem Condição; só Endemoniados (passiva Vulnerabilidade Espiritual) são alvo, e sem nenhum na mesa a Habilidade avisa e não gasta Fé nem uso. *Feature própria (spec e tickets).*
 
 **Dívida técnica da feature:**

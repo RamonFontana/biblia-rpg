@@ -2058,7 +2058,7 @@ export const ABILITIES: AbilityDefinition[] = [
     usageType: 'short_rest',
     maxUses: 1,
     faithCost: 8,
-    effect: 'Endemoniado TR SAB ou foge abalado 1 min.',
+    effect: 'Endemoniado faz TR CAR ou foge do combate por 1 min.',
   },
   {
     id: 'vocation-sacerdote-6-purificacao',
