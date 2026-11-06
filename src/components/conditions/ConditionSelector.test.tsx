@@ -20,9 +20,15 @@ beforeAll(() => {
 
 afterEach(cleanup);
 
-function setup(resistanceLevels?: Record<string, number>) {
+function setup(resistanceLevels?: Record<string, number>, immuneConditionIds?: string[]) {
   const onAdd = vi.fn();
-  render(<ConditionSelector onAddCondition={onAdd} resistanceLevels={resistanceLevels} />);
+  render(
+    <ConditionSelector
+      onAddCondition={onAdd}
+      resistanceLevels={resistanceLevels}
+      immuneConditionIds={immuneConditionIds}
+    />,
+  );
   fireEvent.click(screen.getByRole('button', { name: /Adicionar Efeito/ }));
   return onAdd;
 }
@@ -125,5 +131,32 @@ describe('ConditionSelector: alvo com Resistência a Condição', () => {
     pick('Cego');
     const box = screen.getByRole('checkbox', { name: /Ignorar a resistência/ });
     expect(box.getAttribute('aria-checked')).toBe('false');
+  });
+});
+
+describe('ConditionSelector: alvo imune pelo bloco do Preset', () => {
+  it('avisa a imunidade e não deixa aplicar', () => {
+    const onAdd = setup({}, ['amedrontado']);
+    pick('Amedrontado');
+    expect(screen.getByText('Imunidade: imune a Amedrontado')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it('o Mestre pode ignorar a imunidade e aplicar', () => {
+    const onAdd = setup({}, ['amedrontado']);
+    pick('Amedrontado');
+    setDuration(2);
+    fireEvent.click(screen.getByLabelText(/Ignorar a resistência/));
+    apply();
+    expect(onAdd).toHaveBeenCalledWith('amedrontado', 2);
+  });
+
+  it('outra Condição, ou sem imunidade, aplica sem aviso', () => {
+    const onAdd = setup({}, ['amedrontado']);
+    pick('Sangrando');
+    expect(screen.queryByText(/Imunidade/)).toBeNull();
+    apply();
+    expect(onAdd).toHaveBeenCalledWith('sangrando', 0);
   });
 });

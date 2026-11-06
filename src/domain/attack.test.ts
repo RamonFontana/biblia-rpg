@@ -495,6 +495,17 @@ describe('resolveWeaponEffect: a Condição que chega ao alvo', () => {
   it('o nível de uma Condição não afeta as outras', () => {
     expect(resolveWeaponEffect(effects, { outra: 4 }).conditions).toHaveLength(2);
   });
+
+  it('a imunidade do alvo anula a Condição e avisa; as outras chegam', () => {
+    const result = resolveWeaponEffect(effects, {}, ['sangrando']);
+    expect(result.conditions).toEqual([{ conditionId: 'atordoado', duration: 3 }]);
+    expect(result.messages).toEqual(['Imunidade: imune a Sangrando']);
+  });
+
+  it('sem imunidade (ou imune a outra Condição), aplica como hoje', () => {
+    expect(resolveWeaponEffect(effects, {}, ['paralisado']).conditions).toHaveLength(2);
+    expect(resolveWeaponEffect(effects, {}).messages).toEqual([]);
+  });
 });
 
 describe('avisos do ataque', () => {

@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { useCombatStore } from '@/store/combatStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { enemyConditionImmunities } from '@/domain/enemyBlock';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { extinguishTorch, lightTorch } from '@/data-access/torch';
 import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
@@ -158,7 +159,13 @@ export function GmSessionView({
     () =>
       availableEntities.map((entity) =>
         entity.type === 'enemy'
-          ? { ...entity, narrative: enemies.find((e) => e.id === entity.id)?.narrative }
+          ? {
+              ...entity,
+              narrative: enemies.find((e) => e.id === entity.id)?.narrative,
+              immuneConditionIds: enemyConditionImmunities(
+                enemies.find((e) => e.id === entity.id)?.stats,
+              ),
+            }
           : entity,
       ),
     [availableEntities, enemies],

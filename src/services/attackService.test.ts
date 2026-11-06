@@ -258,10 +258,39 @@ describe('submitAttack: efeito de arma', () => {
     expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'impedido', duration: 2 }] });
   });
 
-  it('inimigo não tem ficha: aplica sem consultar o banco', async () => {
-    state.respond = target([]);
+  const enemyStats =
+    (stats: unknown) =>
+    (call: FakeCall): FakeResult | undefined =>
+      call.table === 'characters' && call.op === 'select'
+        ? { data: [{ id: 'e1', attributes: {}, stats }] }
+        : { data: 'atk-1' };
+
+  it('o inimigo de ficha antiga, sem imunidades, recebe o efeito como hoje', async () => {
+    state.respond = enemyStats({ pv: 10 });
     await submitAttack(withEffect({ entityId: 'e1', entityType: 'enemy' }));
-    expect(callsOf(state.calls, 'characters')).toEqual([]);
+    expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'sangrando', duration: 3 }] });
+  });
+
+  it('a imunidade do bloco do inimigo anula o efeito de arma e avisa', async () => {
+    state.respond = enemyStats({ conditionImmunities: ['sangrando'] });
+    const outcome = await submitAttack(withEffect({ entityId: 'e1', entityType: 'enemy' }));
+    expect(sent()).toMatchObject({ p_weapon_effect_triggered: true, p_conditions: [] });
+    expect(outcome.messages).toEqual(['Imunidade: imune a Sangrando']);
+    expect(toasts).toEqual(['Imunidade: imune a Sangrando']);
+  });
+
+  it('a imunidade vale só para o inimigo: o personagem segue como hoje', async () => {
+    state.respond = (call) =>
+      call.table === 'characters' && call.op === 'select'
+        ? {
+            data: {
+              equipment: {},
+              character_items: [],
+              stats: { conditionImmunities: ['sangrando'] },
+            },
+          }
+        : { data: 'atk-1' };
+    await submitAttack(withEffect({ entityId: 'c9', entityType: 'player' }));
     expect(sent()).toMatchObject({ p_conditions: [{ conditionId: 'sangrando', duration: 3 }] });
   });
 

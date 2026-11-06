@@ -36,6 +36,8 @@ interface CombatDashboardProps {
     conditionResistanceLevels?: Record<string, number>;
     /** Só do inimigo: a narrativa da ficha, de onde sai o Bloco do Preset (só o Mestre vê). */
     narrative?: unknown;
+    /** Só do inimigo: as Condições a que o bloco do Preset o faz imune. */
+    immuneConditionIds?: string[];
   }[];
 }
 
@@ -202,6 +204,7 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
                         )}
                       <ConditionSelector
                         resistanceLevels={entityDetails?.conditionResistanceLevels}
+                        immuneConditionIds={entityDetails?.immuneConditionIds}
                         onAddCondition={async (conditionId, duration) => {
                           const newCond: ConditionEntry = {
                             conditionId,
