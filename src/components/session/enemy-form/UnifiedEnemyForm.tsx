@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { enemyFormSchema, type EnemyFormValues } from './schema';
+import { enemyFormSchema, normalizeEnemyForm, type EnemyFormValues } from './schema';
+import { EnemyBlockFields } from './EnemyBlockFields';
+import { endemoniadoPatch, patchOf, type EndemoniadoFormPatch } from './endemoniadoForm';
 import { EnemyAbilityEffectEditor } from './EnemyAbilityEffectEditor';
-import { MOCK_BESTIARY } from './bestiaryPresets';
+import { ENEMY_PRESETS, findEnemyPreset } from '@/content/enemyPresets';
 import { ENEMY_ABILITIES, findEnemyAbility } from '@/content/enemyAbilities';
 import { describeEnemyEffect } from '@/domain/enemyAbility';
 import { compressImage, PORTRAIT_COMPRESSION } from '@/lib/imageCompression';
@@ -37,8 +39,12 @@ export function UnifiedEnemyForm({
   submitLabel = 'Salvar Inimigo',
   isSubmitting = false,
 }: UnifiedEnemyFormProps) {
-  const [selectedBaseId, setSelectedBaseId] = useState<string>('');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // O Template Endemoniado (ligado/desligado) e o que o formulário tinha antes dele.
+  const [endemoniadoOn, setEndemoniadoOn] = useState(false);
+  const beforeTemplate = useRef<EndemoniadoFormPatch | null>(null);
+  const templateName = useRef<string | null>(null);
 
   const form = useForm<EnemyFormValues>({
     resolver: zodResolver(enemyFormSchema),
@@ -58,6 +64,13 @@ export function UnifiedEnemyForm({
       },
       skills: initialValues?.skills || [],
       imageBase64: initialValues?.imageBase64 || '',
+      quantity: initialValues?.quantity ?? 1,
+      presetId: initialValues?.presetId,
+      endemoniado: initialValues?.endemoniado,
+      attacks: initialValues?.attacks,
+      details: initialValues?.details,
+      conditionImmunities: initialValues?.conditionImmunities,
+      saveBonuses: initialValues?.saveBonuses,
     },
   });
 
@@ -74,19 +87,71 @@ export function UnifiedEnemyForm({
     formState: { errors },
   } = form;
   const imageUrl = watch('imageBase64');
+  const selectedPreset = findEnemyPreset(selectedPresetId);
 
-  const onBaseEnemySelect = (val: string) => {
-    setSelectedBaseId(val);
-    const base = MOCK_BESTIARY.find((b) => b.id === val);
-    if (base) {
-      setValue('name', base.name);
-      setValue('hpMax', base.max_hp);
-      setValue('hpCurrent', base.max_hp);
-      setValue('ca', base.ca);
-      setValue('vocation', base.vocation);
-      setValue('attributes', base.attributes);
-      setValue('skills', base.skills);
+  const setPatch = (patch: EndemoniadoFormPatch) => {
+    (Object.keys(patch) as (keyof EndemoniadoFormPatch)[]).forEach((key) =>
+      setValue(key, patch[key] as never),
+    );
+  };
+
+  // Liga o Template sobre o que o formulário mostra agora (do Preset ou do zero); o Mestre edita o resultado.
+  const turnTemplateOn = (preset: ReturnType<typeof findEnemyPreset>) => {
+    beforeTemplate.current = patchOf(form.getValues());
+    const patch = endemoniadoPatch(form.getValues(), preset);
+    templateName.current = patch.name;
+    setPatch(patch);
+    setEndemoniadoOn(true);
+  };
+
+  const turnTemplateOff = () => {
+    const before = beforeTemplate.current;
+    if (before) {
+      // O nome que o Mestre reescreveu depois de ligar fica; o gerado pelo Template volta ao de antes.
+      const keepName = form.getValues('name') !== templateName.current;
+      setPatch(keepName ? { ...before, name: form.getValues('name') } : before);
     }
+    beforeTemplate.current = null;
+    setEndemoniadoOn(false);
+  };
+
+  const onTemplateToggle = (checked: boolean) =>
+    checked ? turnTemplateOn(selectedPreset) : turnTemplateOff();
+
+  // O Preset é copiado para o formulário (ADR 0012): depois daqui nada mais o lê.
+  const onPresetSelect = (val: string) => {
+    const keepTemplate = endemoniadoOn;
+    setEndemoniadoOn(false);
+    beforeTemplate.current = null;
+    setSelectedPresetId(val);
+    const preset = findEnemyPreset(val);
+    setValue('presetId', preset?.id);
+    setValue('endemoniado', preset?.endemoniado);
+    // Cópias profundas: o formulário nunca compartilha objeto com o conteúdo.
+    setValue('attacks', preset && structuredClone(preset.attacks));
+    setValue('details', preset && structuredClone(preset.details));
+    setValue(
+      'conditionImmunities',
+      preset?.conditionImmunities && structuredClone(preset.conditionImmunities),
+    );
+    setValue('saveBonuses', preset?.saveBonuses && structuredClone(preset.saveBonuses));
+    if (!preset) return;
+    setValue('name', preset.name);
+    setValue('hpMax', preset.hp);
+    setValue('hpCurrent', preset.hp);
+    setValue('ca', preset.ca);
+    setValue('vocation', preset.creatureType);
+    setValue('attributes', { ...preset.attributes });
+    setValue(
+      'skills',
+      preset.abilities.map(({ name, description, libraryId }) => ({
+        name,
+        description,
+        libraryId,
+      })),
+    );
+    // Trocar de Preset com o Template ligado reaplica o Template ao novo (menos ao já Endemoniado).
+    if (keepTemplate && !preset.endemoniado) turnTemplateOn(preset);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,64 +163,45 @@ export function UnifiedEnemyForm({
   };
 
   const onValidSubmit = (data: EnemyFormValues) => {
-    onSubmit(data);
+    onSubmit(normalizeEnemyForm(data));
   };
 
   return (
-    <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6">
+    <form noValidate onSubmit={handleSubmit(onValidSubmit)} className="space-y-6">
       {/* Preset Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Base (Bestiário)</label>
-        <Select value={selectedBaseId} onValueChange={onBaseEnemySelect}>
+        <label className="text-sm font-medium">Preset do Bestiário</label>
+        <Select value={selectedPresetId} onValueChange={onPresetSelect}>
           <SelectTrigger className="bg-stone-800 border-stone-700">
             <SelectValue placeholder="Selecione para preencher automaticamente..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Nenhum (Criar do Zero)</SelectItem>
-            {MOCK_BESTIARY.map((base) => (
-              <SelectItem key={base.id} value={base.id}>
-                {base.name} (HP: {base.max_hp} | CA: {base.ca})
+            {ENEMY_PRESETS.map((preset) => (
+              <SelectItem key={preset.id} value={preset.id}>
+                {preset.name} (PV: {preset.hp} | CA: {preset.ca})
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {selectedBaseId && selectedBaseId !== 'none' && (
-          <p className="text-xs text-stone-400 mt-1">
-            {MOCK_BESTIARY.find((b) => b.id === selectedBaseId)?.desc}
-          </p>
+        {selectedPreset && (
+          <p className="text-xs text-stone-400 mt-1">{selectedPreset.description}</p>
         )}
-      </div>
-
-      {/* Image Upload */}
-      <div className="flex flex-col gap-2 border border-stone-700 p-4 rounded-lg items-center">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt="Avatar"
-            className="w-24 h-24 rounded-full object-cover border-2 border-stone-600"
+        <label className="flex min-h-9 items-center gap-2 text-sm text-stone-200">
+          <input
+            type="checkbox"
+            checked={endemoniadoOn}
+            disabled={!!selectedPreset?.endemoniado}
+            onChange={(e) => onTemplateToggle(e.target.checked)}
           />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-stone-800 flex items-center justify-center border-2 border-stone-600">
-            <span className="text-stone-500 text-sm">Sem Imagem</span>
-          </div>
+          Endemoniado (Template)
+        </label>
+        {selectedPreset?.endemoniado && (
+          <p className="text-xs text-stone-500">Este Preset já é Endemoniado.</p>
         )}
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          ref={fileInputRef}
-          onChange={handleImageUpload}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="mt-2 flex items-center px-3 py-1.5 text-sm border border-stone-700 rounded-md hover:bg-stone-800 transition-colors"
-        >
-          <Upload size={14} className="mr-2" /> Upload Imagem
-        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_7rem] gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Nome do Inimigo</label>
           <input
@@ -167,142 +213,20 @@ export function UnifiedEnemyForm({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Vocação (Classe)</label>
+          <label htmlFor="enemy-quantity" className="text-sm font-medium">
+            Quantidade
+          </label>
           <input
-            {...register('vocation')}
-            className="flex h-9 w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-300"
-            placeholder="Ex: Batedor"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">PV Máx</label>
-          <input
+            id="enemy-quantity"
             type="number"
-            {...register('hpMax', { valueAsNumber: true })}
-            className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.hpMax ? 'border-red-500' : 'border-stone-700'}`}
+            {...register('quantity', { valueAsNumber: true })}
+            className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.quantity ? 'border-red-500' : 'border-stone-700'}`}
           />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">PV Atual</label>
-          <input
-            type="number"
-            {...register('hpCurrent', { valueAsNumber: true })}
-            className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.hpCurrent ? 'border-red-500' : 'border-stone-700'}`}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">CA</label>
-          <input
-            type="number"
-            {...register('ca', { valueAsNumber: true })}
-            className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.ca ? 'border-red-500' : 'border-stone-700'}`}
-          />
+          {errors.quantity && <p className="text-xs text-red-500">{errors.quantity.message}</p>}
         </div>
       </div>
 
-      <div className="pt-2">
-        <h4 className="text-sm font-medium mb-2 border-b border-stone-700 pb-1">Atributos</h4>
-        <div className="grid grid-cols-3 gap-3">
-          {(['for', 'des', 'con', 'int', 'sab', 'car'] as const).map((attr) => (
-            <div key={attr} className="grid gap-1">
-              <label className="text-xs uppercase text-stone-400">{attr}</label>
-              <input
-                type="number"
-                {...register(`attributes.${attr}`, { valueAsNumber: true })}
-                className="flex h-8 w-full rounded-md border border-stone-700 bg-stone-800 px-2 py-1 text-sm shadow-sm transition-colors"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="pt-2">
-        <div className="flex items-center justify-between mb-2 border-b border-stone-700 pb-1">
-          <h4 className="text-sm font-medium">Habilidades</h4>
-          <div className="flex items-center gap-3">
-            <select
-              aria-label="Adicionar da biblioteca"
-              value=""
-              onChange={(e) => {
-                const ability = findEnemyAbility(e.target.value);
-                if (ability) {
-                  append({
-                    name: ability.name,
-                    description: ability.description,
-                    libraryId: ability.id,
-                  });
-                }
-              }}
-              className="h-7 rounded-md border border-stone-700 bg-stone-800 px-2 text-xs text-stone-300"
-            >
-              <option value="">Da biblioteca…</option>
-              {ENEMY_ABILITIES.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => append({ name: '', description: '' })}
-              className="flex items-center text-xs text-stone-300 hover:text-stone-100"
-            >
-              <Plus size={14} className="mr-1" /> Adicionar
-            </button>
-          </div>
-        </div>
-
-        {fields.length === 0 ? (
-          <p className="text-xs text-stone-500 italic">Nenhuma habilidade adicionada.</p>
-        ) : (
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div
-                key={field.id}
-                className="flex gap-2 items-start bg-stone-800/50 p-2 rounded-md border border-stone-700/50"
-              >
-                <div className="flex-1 space-y-2">
-                  <input
-                    {...register(`skills.${index}.name`)}
-                    placeholder="Nome da habilidade"
-                    className={`flex h-8 w-full rounded-md border bg-stone-800 px-2 py-1 text-xs shadow-sm transition-colors ${errors.skills?.[index]?.name ? 'border-red-500' : 'border-stone-700'}`}
-                  />
-                  <input
-                    {...register(`skills.${index}.description`)}
-                    placeholder="Descrição do efeito"
-                    className="flex h-8 w-full rounded-md border border-stone-700 bg-stone-800 px-2 py-1 text-xs shadow-sm transition-colors"
-                  />
-                  {skillLibraryEffect(watch(`skills.${index}.libraryId`)) ? (
-                    <p className="text-xs text-amber-400">
-                      Efeito do bestiário: {skillLibraryEffect(watch(`skills.${index}.libraryId`))}
-                    </p>
-                  ) : (
-                    <Controller
-                      control={form.control}
-                      name={`skills.${index}.effect`}
-                      render={({ field }) => (
-                        <EnemyAbilityEffectEditor value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="p-1.5 text-stone-400 hover:text-red-400 rounded-md hover:bg-stone-800 transition-colors mt-1"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4 border-t border-stone-800">
+      <div className="flex justify-end gap-2">
         {onCancel && (
           <button
             type="button"
@@ -321,6 +245,183 @@ export function UnifiedEnemyForm({
           {isSubmitting ? 'Salvando...' : submitLabel}
         </button>
       </div>
+
+      <details open={Object.keys(errors).length > 0 || undefined} className="space-y-6">
+        <summary className="cursor-pointer text-sm font-medium text-stone-200 min-h-9">
+          Ajuste fino
+        </summary>
+        <div className="space-y-6 pt-4">
+          {/* Image Upload */}
+          <div className="flex flex-col gap-2 border border-stone-700 p-4 rounded-lg items-center">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt="Avatar"
+                className="w-24 h-24 rounded-full object-cover border-2 border-stone-600"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-stone-800 flex items-center justify-center border-2 border-stone-600">
+                <span className="text-stone-500 text-sm">Sem Imagem</span>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2 flex items-center px-3 py-1.5 text-sm border border-stone-700 rounded-md hover:bg-stone-800 transition-colors"
+            >
+              <Upload size={14} className="mr-2" /> Upload Imagem
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Vocação (Classe)</label>
+            <input
+              {...register('vocation')}
+              className="flex h-9 w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-300"
+              placeholder="Ex: Batedor"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">PV Máx</label>
+              <input
+                type="number"
+                {...register('hpMax', { valueAsNumber: true })}
+                className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.hpMax ? 'border-red-500' : 'border-stone-700'}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">PV Atual</label>
+              <input
+                type="number"
+                {...register('hpCurrent', { valueAsNumber: true })}
+                className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.hpCurrent ? 'border-red-500' : 'border-stone-700'}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">CA</label>
+              <input
+                type="number"
+                {...register('ca', { valueAsNumber: true })}
+                className={`flex h-9 w-full rounded-md border bg-stone-800 px-3 py-1 text-sm shadow-sm transition-colors ${errors.ca ? 'border-red-500' : 'border-stone-700'}`}
+              />
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <h4 className="text-sm font-medium mb-2 border-b border-stone-700 pb-1">Atributos</h4>
+            <div className="grid grid-cols-3 gap-3">
+              {(['for', 'des', 'con', 'int', 'sab', 'car'] as const).map((attr) => (
+                <div key={attr} className="grid gap-1">
+                  <label className="text-xs uppercase text-stone-400">{attr}</label>
+                  <input
+                    type="number"
+                    {...register(`attributes.${attr}`, { valueAsNumber: true })}
+                    className="flex h-8 w-full rounded-md border border-stone-700 bg-stone-800 px-2 py-1 text-sm shadow-sm transition-colors"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <div className="flex items-center justify-between mb-2 border-b border-stone-700 pb-1">
+              <h4 className="text-sm font-medium">Habilidades</h4>
+              <div className="flex items-center gap-3">
+                <select
+                  aria-label="Adicionar da biblioteca"
+                  value=""
+                  onChange={(e) => {
+                    const ability = findEnemyAbility(e.target.value);
+                    if (ability) {
+                      append({
+                        name: ability.name,
+                        description: ability.description,
+                        libraryId: ability.id,
+                      });
+                    }
+                  }}
+                  className="h-7 rounded-md border border-stone-700 bg-stone-800 px-2 text-xs text-stone-300"
+                >
+                  <option value="">Da biblioteca…</option>
+                  {ENEMY_ABILITIES.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => append({ name: '', description: '' })}
+                  className="flex items-center text-xs text-stone-300 hover:text-stone-100"
+                >
+                  <Plus size={14} className="mr-1" /> Adicionar
+                </button>
+              </div>
+            </div>
+
+            {fields.length === 0 ? (
+              <p className="text-xs text-stone-500 italic">Nenhuma habilidade adicionada.</p>
+            ) : (
+              <div className="space-y-3">
+                {fields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="flex gap-2 items-start bg-stone-800/50 p-2 rounded-md border border-stone-700/50"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <input
+                        {...register(`skills.${index}.name`)}
+                        placeholder="Nome da habilidade"
+                        className={`flex h-8 w-full rounded-md border bg-stone-800 px-2 py-1 text-xs shadow-sm transition-colors ${errors.skills?.[index]?.name ? 'border-red-500' : 'border-stone-700'}`}
+                      />
+                      <input
+                        {...register(`skills.${index}.description`)}
+                        placeholder="Descrição do efeito"
+                        className="flex h-8 w-full rounded-md border border-stone-700 bg-stone-800 px-2 py-1 text-xs shadow-sm transition-colors"
+                      />
+                      {skillLibraryEffect(watch(`skills.${index}.libraryId`)) ? (
+                        <p className="text-xs text-amber-400">
+                          Efeito do bestiário:{' '}
+                          {skillLibraryEffect(watch(`skills.${index}.libraryId`))}
+                        </p>
+                      ) : (
+                        <Controller
+                          control={form.control}
+                          name={`skills.${index}.effect`}
+                          render={({ field }) => (
+                            <EnemyAbilityEffectEditor
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          )}
+                        />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="p-1.5 text-stone-400 hover:text-red-400 rounded-md hover:bg-stone-800 transition-colors mt-1"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <EnemyBlockFields form={form} />
+        </div>
+      </details>
     </form>
   );
 }

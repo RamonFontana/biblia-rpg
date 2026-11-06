@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { DOCK_PANEL_GAP, DockPanel } from '@/components/ui/dock-panel';
 import { useCombatStore } from '@/store/combatStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { enemyConditionImmunities } from '@/domain/enemyBlock';
 import { buildRetratos, type Retrato } from '@/lib/retratos';
 import { extinguishTorch, lightTorch } from '@/data-access/torch';
 import { buildMapScene, pinTargetOf } from '@/lib/mapScene';
@@ -151,6 +152,22 @@ export function GmSessionView({
   const [viewAs, setViewAs] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{ id: string | null; turn: string | undefined } | null>(
     null,
+  );
+
+  // O Bloco do Preset só vai para a visão do Mestre: o resto do app não recebe a narrativa do inimigo.
+  const dashboardEntities = useMemo(
+    () =>
+      availableEntities.map((entity) => {
+        if (entity.type !== 'enemy') return entity;
+        const enemy = enemies.find((e) => e.id === entity.id);
+        return {
+          ...entity,
+          narrative: enemy?.narrative,
+          skills: enemy?.skills,
+          immuneConditionIds: enemyConditionImmunities(enemy?.stats),
+        };
+      }),
+    [availableEntities, enemies],
   );
 
   const retratos = buildRetratos({
@@ -328,7 +345,7 @@ export function GmSessionView({
               expandedId={expandedId}
               onToggle={toggleRow}
               renderExpanded={(id) => (
-                <CombatDashboard availableEntities={availableEntities} focusId={id} />
+                <CombatDashboard availableEntities={dashboardEntities} focusId={id} />
               )}
             />
           ) : (
@@ -425,7 +442,7 @@ export function GmSessionView({
 
           {hasActiveCombat && !wide && !phone && (
             <div className="p-4 border border-red-500/50 bg-red-950/20 rounded-lg">
-              <CombatDashboard availableEntities={availableEntities} />
+              <CombatDashboard availableEntities={dashboardEntities} />
             </div>
           )}
         </main>
@@ -477,7 +494,7 @@ export function GmSessionView({
                 round={activeCombat?.round_number ?? 1}
               />
               <div className="rounded-lg border border-red-500/50 bg-red-950/20 p-4">
-                <CombatDashboard availableEntities={availableEntities} focusId={focusId} />
+                <CombatDashboard availableEntities={dashboardEntities} focusId={focusId} />
               </div>
             </>
           ) : (

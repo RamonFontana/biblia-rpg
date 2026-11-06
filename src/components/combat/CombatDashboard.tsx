@@ -3,6 +3,9 @@ import { AbilityPendingPanel } from './AbilityPendingPanel';
 import { AttackLog } from './AttackLog';
 import { abilityStateOf } from '@/domain/enemyAbility';
 import { EnemyAbilityPanel } from './EnemyAbilityPanel';
+import { EnemyBlock } from './EnemyBlock';
+import { FuriaDesumanaPrompt } from './FuriaDesumanaPrompt';
+import { FurtivoReminder } from './FurtivoReminder';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import { useCombatStore } from '../../store/combatStore';
@@ -33,6 +36,12 @@ interface CombatDashboardProps {
     totalAc?: number;
     weapon?: { name: string; damageDie: string };
     conditionResistanceLevels?: Record<string, number>;
+    /** Só do inimigo: a narrativa da ficha, de onde sai o Bloco do Preset (só o Mestre vê). */
+    narrative?: unknown;
+    /** Só do inimigo: as Condições a que o bloco do Preset o faz imune. */
+    immuneConditionIds?: string[];
+    /** Só do inimigo: as Habilidades da ficha (a Fúria Desumana pede o TR de CON a 0 PV). */
+    skills?: unknown;
   }[];
 }
 
@@ -173,6 +182,21 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
                       </div>
                     )}
 
+                    {displayType === 'enemy' && entityDetails && (
+                      <EnemyBlock character={{ narrative: entityDetails.narrative }} />
+                    )}
+
+                    {displayType === 'enemy' && entityDetails && (
+                      <FurtivoReminder
+                        participantId={participant.id}
+                        skills={entityDetails.skills}
+                        hp={participant.hp_current}
+                        isCurrentTurn={isCurrentTurn}
+                        round={activeCombat.round_number}
+                        abilityState={participant.ability_state}
+                      />
+                    )}
+
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       {Array.isArray(participant.conditions) &&
                         (participant.conditions as unknown as ConditionEntry[]).map(
@@ -195,6 +219,7 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
                         )}
                       <ConditionSelector
                         resistanceLevels={entityDetails?.conditionResistanceLevels}
+                        immuneConditionIds={entityDetails?.immuneConditionIds}
                         onAddCondition={async (conditionId, duration) => {
                           const newCond: ConditionEntry = {
                             conditionId,
@@ -270,6 +295,19 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
             entityId: p.entity_id,
             entityType: p.entity_type,
             name: nameOf(p.entity_id),
+          }))}
+      />
+
+      <FuriaDesumanaPrompt
+        enemies={participants
+          .filter((p) => p.entity_type === 'enemy')
+          .map((p) => ({
+            participantId: p.id,
+            entityId: p.entity_id,
+            name: nameOf(p.entity_id),
+            hp: p.hp_current,
+            skills: availableEntities.find((e) => e.id === p.entity_id)?.skills,
+            abilityState: p.ability_state,
           }))}
       />
 

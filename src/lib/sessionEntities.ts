@@ -37,7 +37,17 @@ export function buildPlayableNpcRow(npc: SessionNPCDraft, userId: string) {
   };
 }
 
-export function buildEnemyRow(enemy: SessionEnemyDraft, userId: string) {
+/** Os dados de um inimigo novo: o rascunho do assistente ou o formulário da sessão (sem o id temporário). */
+export type EnemyRowInput = Omit<SessionEnemyDraft, 'id'>;
+
+export function buildEnemyRow(enemy: EnemyRowInput, userId: string) {
+  // O bloco do Preset (ADR 0012) vai nos jsonb que já existem; sem ele a linha é a de sempre.
+  const block = {
+    ...(enemy.presetId && { presetId: enemy.presetId }),
+    ...(enemy.endemoniado && { endemoniado: true }),
+    ...(enemy.attacks && { attacks: enemy.attacks }),
+    ...(enemy.details && { details: enemy.details }),
+  };
   return {
     user_id: userId,
     is_enemy: true,
@@ -59,10 +69,13 @@ export function buildEnemyRow(enemy: SessionEnemyDraft, userId: string) {
       ca: enemy.ca,
       faith: 0,
       current_faith: 0,
+      ...(enemy.conditionImmunities && { conditionImmunities: enemy.conditionImmunities }),
+      ...(enemy.saveBonuses && { saveBonuses: enemy.saveBonuses }),
     },
     skills: enemy.skills || [],
     narrative: {
       imageUrl: enemy.imageBase64 || '',
+      ...(Object.keys(block).length > 0 && { enemy: block }),
     },
   };
 }

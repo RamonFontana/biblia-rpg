@@ -190,11 +190,37 @@ _Avoid_: skill, poder, magia
 A CD do TR que a Habilidade de um personagem impõe ao alvo: 8 + Proficiência + o modificador do atributo da Vocação (SAB para Sacerdote/Sábio e Caçador, FOR para Guerreiro, DES para Batedor), também nas Habilidades de Tribo.
 
 **Habilidade de inimigo**:
-Ação ou passiva de um inimigo, vinda do bestiário ou criada pelo Mestre. Pode impor um TR com CD própria, aplicar Condição ou tirar Fé de quem falha.
+Ação ou passiva de um inimigo, vinda de um Preset do Bestiário ou criada pelo Mestre. Pode impor um TR com CD própria, aplicar Condição ou tirar Fé de quem falha.
 
 **Recarga**:
 Uso de Habilidade de inimigo que volta quando o Mestre tira 5 ou 6 num d6 no início do turno do inimigo.
 _Avoid_: cooldown
+
+## Inimigos
+
+**Inimigo**:
+Criatura hostil conduzida pelo Mestre numa sessão, criada do zero ou a partir de um Preset. Não tem Tribo, Vocação nem Fé.
+_Avoid_: monstro, mob, NPC (que é um Personagem)
+
+**Bestiário**:
+O conjunto dos Presets do jogo.
+
+**Preset**:
+Um inimigo pronto do Bestiário, com o bloco inteiro (PV, CA, atributos, ataques, Habilidades, deslocamento, perícias, ND). Criar um inimigo a partir dele faz uma cópia que o Mestre ajusta; mudar o Preset depois não muda os inimigos já criados.
+_Avoid_: base, modelo, template
+
+**Template Endemoniado**:
+O modificador que torna Endemoniado um Preset ou um inimigo do zero, aplicado na criação.
+_Avoid_: template (sozinho, para Preset), possessão (para o modificador)
+
+**Endemoniado**:
+Inimigo habitado por um demônio, pelo Template Endemoniado ou pelo Preset Endemoniado Comum. É imune a Amedrontado e tem Fúria Desumana e Vulnerabilidade Espiritual.
+
+**Fúria Desumana**:
+Ao cair a 0 PV, o Endemoniado faz um TR de CON (CD 10, mais 5 a cada uso no mesmo combate); se passar, fica com 1 PV.
+
+**Ataque Furtivo**:
++1d6 de dano, uma vez por turno do inimigo, com Vantagem ou com um aliado a 1,5 m do alvo.
 
 ## Progressão
 

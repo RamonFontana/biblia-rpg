@@ -29,12 +29,18 @@ export interface ConditionSelectorProps {
    * janela mostra o efeito e aplica a Condição já com ele; o Mestre pode ignorá-la.
    */
   resistanceLevels?: Record<string, number>;
+  /**
+   * As Condições a que o alvo é imune pelo bloco do Preset (inimigo). A janela avisa; o Mestre
+   * pode ignorar, como na resistência.
+   */
+  immuneConditionIds?: string[];
 }
 
 export const ConditionSelector: React.FC<ConditionSelectorProps> = ({
   onAddCondition,
   trigger,
   resistanceLevels,
+  immuneConditionIds,
 }) => {
   const [selectedCondition, setSelectedCondition] = useState<string>('');
   const [duration, setDuration] = useState<number>(0);
@@ -44,7 +50,14 @@ export const ConditionSelector: React.FC<ConditionSelectorProps> = ({
   // Duração 0 é "até ser curada" (sem duração).
   const typedDuration = duration > 0 ? duration : null;
   const targetLevel = selectedCondition ? (resistanceLevels?.[selectedCondition] ?? 0) : 0;
-  const withResistance = applyConditionResistance(selectedCondition, typedDuration, targetLevel);
+  const blockImmune = !!selectedCondition && !!immuneConditionIds?.includes(selectedCondition);
+  const withResistance = blockImmune
+    ? {
+        ...applyConditionResistance(selectedCondition, typedDuration, 0),
+        immune: true,
+        message: `Imunidade: imune a ${CONDITIONS[selectedCondition]?.name ?? selectedCondition}`,
+      }
+    : applyConditionResistance(selectedCondition, typedDuration, targetLevel);
   const outcome = ignoreResistance
     ? applyConditionResistance(selectedCondition, typedDuration, 0)
     : withResistance;
@@ -123,7 +136,7 @@ export const ConditionSelector: React.FC<ConditionSelectorProps> = ({
             </p>
           </div>
 
-          {targetLevel > 0 && (
+          {(targetLevel > 0 || blockImmune) && (
             <div className="rounded-md border border-amber-900/50 bg-amber-900/20 p-3 text-sm text-amber-200 space-y-2">
               <p className="font-semibold">{withResistance.message}</p>
               {withResistance.halved && typedDuration !== null && (

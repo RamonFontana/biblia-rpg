@@ -138,8 +138,91 @@ export const enemyAbilitySchema = z.strictObject({
   effect: enemyAbilityEffectSchema,
 });
 
+const attributeKeySchema = z.enum(['for', 'des', 'con', 'int', 'sab', 'car']);
+
+/**
+ * O ataque de um bloco do Bestiário (docs/bestiario/). `attribute` é o que rege o acerto e o dano:
+ * 'finesse' é a Acuidade (FOR ou DES, o maior), usada pelo Template Endemoniado. O que o app não
+ * interpreta (o veneno da Víbora, o 1d6 psíquico da Adaga Cerimonial) vai em `extra`, em texto.
+ */
+export const enemyAttackSchema = z.strictObject({
+  name: z.string().min(1),
+  mode: z.enum(['melee', 'ranged', 'both']),
+  attribute: z.enum(['for', 'des', 'finesse']),
+  hitBonus: z.number().int().min(-5).max(20),
+  reach: z.string().min(1),
+  damage: z.strictObject({
+    /** Ausente no dano fixo (a Mordida da Víbora causa 1): o dano é só o `bonus`. */
+    dice: z
+      .string()
+      .regex(/^\d+d\d+$/)
+      .optional(),
+    bonus: z.number().int().min(-5).max(20),
+  }),
+  damageType: z.string().min(1),
+  extra: z.string().min(1).optional(),
+});
+
+/** A Habilidade de um bloco: da biblioteca (`libraryId`, com efeito no app) ou só texto. */
+export const enemyPresetAbilitySchema = z.strictObject({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  libraryId: z
+    .string()
+    .regex(/^enemy-[a-z0-9-]+$/)
+    .optional(),
+});
+
+/**
+ * Um Preset do Bestiário (CONTEXT.md, Inimigos): o bloco de docs/bestiario/ inteiro. Criar um
+ * inimigo copia estes valores (ADR 0012); o `id` fica gravado como origem e nunca é renomeado.
+ * Deslocamento, perícias, sentidos e ND são consulta em texto: o app não os interpreta.
+ */
+export const enemyPresetSchema = z.strictObject({
+  id: z.string().regex(/^enemy-preset-[a-z0-9-]+$/),
+  name: z.string().min(1),
+  /** Para o sufixo do Template Endemoniado concordar ("Endemoniado" ou "Endemoniada"). */
+  nameGender: z.enum(['m', 'f']),
+  description: z.string().min(1),
+  /** Tamanho, tipo e tendência, como no doc ("Médio, Humano, Neutro e Mau"). */
+  creatureType: z.string().min(1),
+  context: z.string().min(1).optional(),
+  hitDice: z.strictObject({
+    count: z.number().int().min(1),
+    sides: z.union([z.literal(4), z.literal(6), z.literal(8), z.literal(10), z.literal(12)]),
+    bonus: z.number().int(),
+  }),
+  hp: z.number().int().min(1),
+  ca: z.number().int().min(1),
+  /** A fonte da CA, em texto ("Couro cru"). */
+  caSource: z.string().min(1),
+  attributes: z.strictObject({
+    for: z.number().int().min(1).max(30),
+    des: z.number().int().min(1).max(30),
+    con: z.number().int().min(1).max(30),
+    int: z.number().int().min(1).max(30),
+    sab: z.number().int().min(1).max(30),
+    car: z.number().int().min(1).max(30),
+  }),
+  /** O bônus de TR do bloco (já com a Proficiência), só nos atributos que o bloco lista. */
+  saveBonuses: z.partialRecord(attributeKeySchema, z.number().int().min(-5).max(20)).optional(),
+  conditionImmunities: z.array(z.string().min(1)).optional(),
+  /** O Preset já é Endemoniado (o Endemoniado Comum): o Template não se aplica. */
+  endemoniado: z.boolean().optional(),
+  abilities: z.array(enemyPresetAbilitySchema),
+  attacks: z.array(enemyAttackSchema).min(1),
+  details: z.strictObject({
+    speed: z.string().min(1),
+    proficiencies: z.string().min(1).optional(),
+    senses: z.string().min(1),
+    challenge: z.string().min(1),
+  }),
+});
+
 export type EnemyAbilityEffect = z.infer<typeof enemyAbilityEffectSchema>;
 export type EnemyAbilityDefinition = z.infer<typeof enemyAbilitySchema>;
+export type EnemyAttack = z.infer<typeof enemyAttackSchema>;
+export type EnemyPresetDefinition = z.infer<typeof enemyPresetSchema>;
 
 export const abilitySchema = z.strictObject({
   id: z.string().regex(/^(tribe|vocation)-[a-z0-9-]+$/),

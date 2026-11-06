@@ -95,6 +95,20 @@ describe('modificador do alvo no TR', () => {
   it('aceita o atributo gravado como texto', () => {
     expect(saveModifierOf({ sab: '14' }, 'sab')).toBe(2);
   });
+
+  it('o bônus de TR do bloco vale no lugar do modificador (Anakim: For +7)', () => {
+    expect(saveModifierOf({ for: 21 }, 'for', { for: 7 })).toBe(7);
+  });
+
+  it('sem bônus para aquele atributo, vale o modificador', () => {
+    expect(saveModifierOf({ for: 21, sab: 10 }, 'sab', { for: 7 })).toBe(0);
+    expect(saveModifierOf({ for: 21 }, 'for', {})).toBe(5);
+    expect(saveModifierOf({ for: 21 }, 'for', undefined)).toBe(5);
+  });
+
+  it('o bônus de TR zero vale zero, não o modificador', () => {
+    expect(saveModifierOf({ for: 21 }, 'for', { for: 0 })).toBe(0);
+  });
 });
 
 describe('resultado do TR por alvo', () => {

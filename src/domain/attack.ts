@@ -254,10 +254,17 @@ export function weaponEffectTriggers(
 export function resolveWeaponEffect(
   effects: WeaponEffect[],
   resistanceLevels: Record<string, number>,
+  immuneConditionIds: readonly string[] = [],
 ): { conditions: ConditionEntry[]; messages: string[] } {
   const conditions: ConditionEntry[] = [];
   const messages: string[] = [];
   for (const effect of effects) {
+    if (immuneConditionIds.includes(effect.conditionId)) {
+      messages.push(
+        `Imunidade: imune a ${CONDITIONS[effect.conditionId]?.name ?? effect.conditionId}`,
+      );
+      continue;
+    }
     const outcome = applyConditionResistance(
       effect.conditionId,
       WEAPON_EFFECT_DURATION,

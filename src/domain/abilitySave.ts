@@ -55,9 +55,16 @@ function attributeValue(attributes: unknown, key: SaveAttribute): number | undef
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-/** O modificador de um atributo da ficha; atributo ausente ou inválido vale 0. */
-export function saveModifierOf(attributes: unknown, key: SaveAttribute): number {
-  return calculateModifier(attributeValue(attributes, key));
+/**
+ * O modificador do TR de um atributo da ficha; atributo ausente ou inválido vale 0. O inimigo de um
+ * Preset pode ter o bônus de TR do bloco (já com a Proficiência), que vale no lugar do modificador.
+ */
+export function saveModifierOf(
+  attributes: unknown,
+  key: SaveAttribute,
+  saveBonuses?: Partial<Record<SaveAttribute, number>>,
+): number {
+  return saveBonuses?.[key] ?? calculateModifier(attributeValue(attributes, key));
 }
 
 /** A CD da Habilidade do personagem: 8 + Proficiência + modificador do atributo da Vocação. */

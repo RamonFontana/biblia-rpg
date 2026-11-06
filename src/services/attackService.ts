@@ -1,3 +1,4 @@
+import { protectionOf } from './abilityService';
 import { markInspirationUsed } from '@/data-access/characters';
 import { getCharacterResistanceSource } from '@/data-access/characters';
 import { applyAttack } from '@/data-access/combat';
@@ -34,7 +35,7 @@ export interface AttackOutcome {
   messages: string[];
 }
 
-/** O nível de Resistência a Condição do alvo, por Condição; o inimigo não tem ficha nem itens. */
+/** O nível de Resistência a Condição do alvo, por Condição; o inimigo não tem itens. */
 async function resistanceLevelsOf(entityId: string, entityType: string) {
   if (entityType === 'enemy') return {};
   const source = await getCharacterResistanceSource(entityId).catch(() => null);
@@ -42,6 +43,12 @@ async function resistanceLevelsOf(entityId: string, entityType: string) {
   return getConditionResistanceLevels(
     resolveEquippedItems(source.equipment as unknown as CharacterEquipment, source.character_items),
   );
+}
+
+/** As Condições a que o alvo é imune pelo bloco do Preset; só o inimigo tem (ADR 0012). */
+async function blockImmunitiesOf(entityId: string, entityType: string) {
+  if (entityType !== 'enemy') return [];
+  return (await protectionOf(entityId, entityType)).immuneConditionIds;
 }
 
 /**
@@ -56,7 +63,11 @@ export async function submitAttack(attack: AttackSubmission): Promise<AttackOutc
   const messages: string[] = [];
   if (triggered && attack.weaponEffect) {
     const { entityId, entityType } = attack.weaponEffect.target;
-    const resolved = resolveWeaponEffect(effects, await resistanceLevelsOf(entityId, entityType));
+    const resolved = resolveWeaponEffect(
+      effects,
+      await resistanceLevelsOf(entityId, entityType),
+      await blockImmunitiesOf(entityId, entityType),
+    );
     weaponConditions = resolved.conditions;
     messages.push(...resolved.messages);
   }

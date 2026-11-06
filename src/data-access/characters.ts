@@ -496,12 +496,22 @@ export async function getCharacterProtectionSource(characterId: string) {
   return data;
 }
 
-/** Os atributos de várias fichas (inimigos e NPCs jogáveis também são fichas), por id. */
-export async function getCharactersAttributes(ids: string[]): Promise<Record<string, unknown>> {
+/**
+ * Os atributos e os `stats` de várias fichas (inimigos e NPCs jogáveis também são fichas), por id:
+ * o que o TR do alvo precisa (modificador ou bônus de TR do bloco).
+ */
+export async function getCharactersSaveSources(
+  ids: string[],
+): Promise<Record<string, { attributes: unknown; stats: unknown }>> {
   if (ids.length === 0) return {};
-  const { data, error } = await supabase.from('characters').select('id, attributes').in('id', ids);
+  const { data, error } = await supabase
+    .from('characters')
+    .select('id, attributes, stats')
+    .in('id', ids);
   if (error) throw error;
-  return Object.fromEntries(data.map((row) => [row.id, row.attributes]));
+  return Object.fromEntries(
+    data.map((row) => [row.id, { attributes: row.attributes, stats: row.stats }]),
+  );
 }
 
 /** Os donos (usuários) de várias fichas, por id da ficha: quem recebe o pedido de TR de cada uma. */

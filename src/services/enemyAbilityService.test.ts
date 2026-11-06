@@ -277,7 +277,7 @@ describe('resolveEnemyAbilityUse', () => {
       targets: [{ participantId: 'p-npc', name: 'Jonas', conditions: [] }],
     };
     state.respond = (call) => {
-      if (call.table === 'characters' && call.columns === 'id, attributes') {
+      if (call.table === 'characters' && call.columns === 'id, attributes, stats') {
         return { data: [{ id: 'c-npc', attributes: { sab: 8 } }] };
       }
       return { data: 'resolved' };
@@ -297,6 +297,35 @@ describe('resolveEnemyAbilityUse', () => {
     expect(callsOf(state.calls, 'session_tests', 'update')).toHaveLength(0);
   });
 
+  it('o inimigo alvo usa o bônus de TR do bloco e a imunidade da ficha', async () => {
+    const foeUse = {
+      ...use,
+      test_id: null,
+      targets: [{ participantId: 'p-foe', name: 'Anakim', conditions: [] }],
+    };
+    state.respond = (call) => {
+      if (call.table === 'characters' && call.columns === 'id, attributes, stats') {
+        return {
+          data: [
+            {
+              id: 'c-foe',
+              attributes: { sab: 8 },
+              stats: { saveBonuses: { sab: 4 }, conditionImmunities: ['amedrontado'] },
+            },
+          ],
+        };
+      }
+      return { data: 'resolved' };
+    };
+    // d20 8 com o bônus +4 do bloco = 12, abaixo da CD 13: falha, mas é imune a Amedrontado.
+    await resolveEnemyAbilityUse({
+      use: foeUse,
+      participants: [{ id: 'p-foe', entity_id: 'c-foe', entity_type: 'enemy' as const }],
+      npcRolls: [{ participantId: 'p-foe', natural: 8, mark: null }],
+    });
+    expect(applied()[0]).toMatchObject({ natural: 8, total: 12, failed: true, conditions: [] });
+  });
+
   it('o NPC jogável que passa não recebe a Condição', async () => {
     const npcUse = {
       ...use,
@@ -304,7 +333,7 @@ describe('resolveEnemyAbilityUse', () => {
       targets: [{ participantId: 'p-npc', name: 'Jonas', conditions: [] }],
     };
     state.respond = (call) =>
-      call.table === 'characters' && call.columns === 'id, attributes'
+      call.table === 'characters' && call.columns === 'id, attributes, stats'
         ? { data: [{ id: 'c-npc', attributes: { sab: 14 } }] }
         : { data: 'resolved' };
     await resolveEnemyAbilityUse({

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { getCombatStats } from './equipmentUtils';
 import { abilityCd } from '@/domain/abilitySave';
 import { calculateModifier } from '@/domain/attributes';
+import { enemyConditionImmunities, enemySaveBonuses } from '@/domain/enemyBlock';
 import { buildEnemyRow, buildPlayableNpcRow } from './sessionEntities';
 
 const npc = (characterData?: Record<string, unknown>) => ({
@@ -119,8 +120,96 @@ describe('buildEnemyRow', () => {
   });
 
   it('sem Vocação, habilidades ou imagem usa vazios', () => {
-    const bare = buildEnemyRow({ id: 't', name: 'X', hpMax: 1, hpCurrent: 1, ca: 10 }, 'u');
+    const bare = buildEnemyRow({ name: 'X', hpMax: 1, hpCurrent: 1, ca: 10 }, 'u');
     expect(bare).toMatchObject({ vocation: '', skills: [] });
     expect(bare.narrative.imageUrl).toBe('');
+  });
+
+  it('um inimigo sem Preset grava só os campos de sempre (ficha antiga continua válida)', () => {
+    expect(row.narrative).toEqual({ imageUrl: 'data:image/png;base64,AAA' });
+    expect(row.stats).not.toHaveProperty('conditionImmunities');
+    expect(row.stats).not.toHaveProperty('saveBonuses');
+  });
+
+  it('o bloco do Preset vai nos jsonb que já existem: origem, ataques e detalhes na narrativa, imunidades e TR nos stats', () => {
+    const attacks = [
+      {
+        name: 'Garra',
+        mode: 'melee' as const,
+        attribute: 'for' as const,
+        hitBonus: 5,
+        reach: '1,5m',
+        damage: { dice: '1d6', bonus: 3 },
+        damageType: 'cortante',
+      },
+    ];
+    const details = { speed: '15 m', senses: 'Percepção passiva 13', challenge: '1 (200 XP)' };
+    const withPreset = buildEnemyRow(
+      {
+        ...enemy,
+        presetId: 'enemy-preset-leao-da-judeia',
+        attacks,
+        details,
+        conditionImmunities: ['amedrontado'],
+        saveBonuses: { for: 7 },
+      },
+      'u',
+    );
+    expect(withPreset.narrative.enemy).toEqual({
+      presetId: 'enemy-preset-leao-da-judeia',
+      attacks,
+      details,
+    });
+    expect(withPreset.stats).toMatchObject({
+      conditionImmunities: ['amedrontado'],
+      saveBonuses: { for: 7 },
+    });
+  });
+
+  it('o que a linha grava é o que o motor lê: imunidade e bônus de TR do bloco', () => {
+    const anakim = buildEnemyRow(
+      { ...enemy, conditionImmunities: ['amedrontado'], saveBonuses: { for: 7, con: 5 } },
+      'u',
+    );
+    expect(enemyConditionImmunities(anakim.stats)).toEqual(['amedrontado']);
+    expect(enemySaveBonuses(anakim.stats)).toEqual({ for: 7, con: 5 });
+  });
+
+  it('a marca de Endemoniado vai na origem do inimigo', () => {
+    const row = buildEnemyRow(
+      { ...enemy, presetId: 'enemy-preset-leao-da-judeia', endemoniado: true },
+      'u',
+    );
+    expect(row.narrative.enemy).toMatchObject({
+      presetId: 'enemy-preset-leao-da-judeia',
+      endemoniado: true,
+    });
+    expect(buildEnemyRow(enemy, 'u').narrative).not.toHaveProperty('enemy');
+  });
+
+  it('o Endemoniado do Template sai da criação imune a Amedrontado para o motor', async () => {
+    const { endemoniadoPatch } = await import('@/components/session/enemy-form/endemoniadoForm');
+    const { findEnemyPreset } = await import('@/content/enemyPresets');
+    const preset = findEnemyPreset('enemy-preset-leao-da-judeia')!;
+    const patch = endemoniadoPatch(
+      {
+        name: preset.name,
+        hpMax: preset.hp,
+        hpCurrent: preset.hp,
+        ca: preset.ca,
+        vocation: preset.creatureType,
+        attributes: { ...preset.attributes },
+        skills: [],
+        attacks: preset.attacks,
+        details: preset.details,
+      },
+      preset,
+    );
+    const row = buildEnemyRow(
+      { ...enemy, ...patch, hpMax: patch.hpMax!, hpCurrent: patch.hpCurrent!, name: patch.name! },
+      'u',
+    );
+    expect(enemyConditionImmunities(row.stats)).toEqual(['amedrontado']);
+    expect(row.stats.pv).toBe(34);
   });
 });

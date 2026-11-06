@@ -40,7 +40,7 @@ import {
   findLatestCharacterOfUser,
   getActiveSessionCharacterIds,
   getCharacterById,
-  getCharactersAttributes,
+  getCharactersSaveSources,
   getCharacterDeathState,
   getCharacterProtectionSource,
   getCharacterResistanceSource,
@@ -527,31 +527,31 @@ describe('getCharacterProtectionSource', () => {
   });
 });
 
-describe('getCharactersAttributes', () => {
-  it('lê os atributos das fichas pedidas e devolve por id', async () => {
+describe('getCharactersSaveSources', () => {
+  it('lê atributos e stats das fichas pedidas e devolve por id', async () => {
     state.respond = () => ({
       data: [
-        { id: 'c1', attributes: { sab: 14 } },
-        { id: 'c2', attributes: null },
+        { id: 'c1', attributes: { sab: 14 }, stats: { saveBonuses: { sab: 5 } } },
+        { id: 'c2', attributes: null, stats: null },
       ],
     });
-    await expect(getCharactersAttributes(['c1', 'c2'])).resolves.toEqual({
-      c1: { sab: 14 },
-      c2: null,
+    await expect(getCharactersSaveSources(['c1', 'c2'])).resolves.toEqual({
+      c1: { attributes: { sab: 14 }, stats: { saveBonuses: { sab: 5 } } },
+      c2: { attributes: null, stats: null },
     });
     const [call] = callsOf(state.calls, 'characters', 'select');
-    expect(call.columns).toBe('id, attributes');
+    expect(call.columns).toBe('id, attributes, stats');
     expect(filterOf(call, 'in', 'id')).toEqual(['c1', 'c2']);
   });
 
   it('sem fichas não consulta o banco', async () => {
-    await expect(getCharactersAttributes([])).resolves.toEqual({});
+    await expect(getCharactersSaveSources([])).resolves.toEqual({});
     expect(callsOf(state.calls, 'characters', 'select')).toHaveLength(0);
   });
 
   it('lança o erro do Supabase', async () => {
     state.respond = () => ({ error: failure });
-    await expect(getCharactersAttributes(['c1'])).rejects.toBe(failure);
+    await expect(getCharactersSaveSources(['c1'])).rejects.toBe(failure);
   });
 });
 

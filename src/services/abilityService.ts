@@ -2,7 +2,7 @@ import { ABILITIES } from '@/content/abilities';
 import type { AbilityDefinition } from '@/content/schemas';
 import {
   getCharacterProtectionSource,
-  getCharactersAttributes,
+  getCharactersSaveSources,
   updateCharacter,
 } from '@/data-access/characters';
 import {
@@ -28,6 +28,7 @@ import {
   saveModifierOf,
   type SaveAttribute,
 } from '@/domain/abilitySave';
+import { enemyConditionImmunities, enemySaveBonuses } from '@/domain/enemyBlock';
 import { applyAbilityUse, getAbilityAvailability } from '@/domain/abilityUse';
 import { getConditionResistanceLevels, resolveEquippedItems } from '@/domain/armorResistance';
 import type { AttackTarget } from '@/lib/attackSetup';
@@ -93,7 +94,16 @@ export async function protectionOf(
   entityId: string,
   entityType: string,
 ): Promise<TargetProtection> {
-  if (entityType === 'enemy') return NO_PROTECTION;
+  if (entityType === 'enemy') {
+    // O inimigo de um Preset guarda as imunidades do bloco nos `stats` (ADR 0012).
+    const sources = await getCharactersSaveSources([entityId]).catch(
+      () => ({}) as Record<string, never>,
+    );
+    return {
+      resistanceLevels: {},
+      immuneConditionIds: enemyConditionImmunities(sources[entityId]?.stats),
+    };
+  }
   const source = await getCharacterProtectionSource(entityId).catch(() => null);
   if (!source) return NO_PROTECTION;
 
@@ -266,8 +276,8 @@ export async function resolveAbilityUseRolls(input: {
 
   const entityOf = (participantId: string) => participants.find((p) => p.id === participantId);
   const entityIds = targets.flatMap((t) => entityOf(t.participantId)?.entity_id ?? []);
-  const attributesById = await getCharactersAttributes(entityIds).catch(
-    () => ({}) as Record<string, unknown>,
+  const sourcesById = await getCharactersSaveSources(entityIds).catch(
+    () => ({}) as Awaited<ReturnType<typeof getCharactersSaveSources>>,
   );
 
   const results: AbilityResolution['results'] = [];
@@ -278,8 +288,9 @@ export async function resolveAbilityUseRolls(input: {
       dice: [roll.natural],
       mark: roll.mark,
       modifier: saveModifierOf(
-        participant ? attributesById[participant.entity_id] : null,
+        participant ? sourcesById[participant.entity_id]?.attributes : null,
         effect.save.attribute,
+        enemySaveBonuses(participant ? sourcesById[participant.entity_id]?.stats : null),
       ),
       cd: use.cd,
     });

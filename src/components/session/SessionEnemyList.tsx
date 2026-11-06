@@ -8,6 +8,7 @@ import { getCombatStats } from '@/lib/equipmentUtils';
 import { getCurrentPv, getMaxPv } from '@/domain/vitals';
 import { characterVitalsService } from '@/data-access/vitals';
 import { CharacterAvatar } from '../ui/CharacterAvatar';
+import { EnemyBlock } from '../combat/EnemyBlock';
 import { addFaith } from '@/domain/faith';
 
 interface SessionEnemyListProps {
@@ -75,7 +76,10 @@ export function SessionEnemyList({
           <h3 className="text-xl font-bold text-stone-200 flex items-center gap-2">
             Inimigos ({enemies.length})
           </h3>
-          <CreateEnemyDialog sessionId={sessionId} />
+          <CreateEnemyDialog
+            sessionId={sessionId}
+            existingNames={enemies.flatMap((e) => (e.is_deleted || !e.name ? [] : [e.name]))}
+          />
         </div>
 
         {isLoading ? (
@@ -179,11 +183,16 @@ export function SessionEnemyList({
           </DialogHeader>
           <div className="overflow-y-auto max-h-[calc(100vh-150px)]">
             {selectedEnemy && (
-              <CharacterSheetView
-                characterId={selectedEnemy.id}
-                sessionId={sessionId}
-                isGM={true}
-              />
+              <>
+                <div className="px-6 pt-4">
+                  <EnemyBlock character={selectedEnemy} />
+                </div>
+                <CharacterSheetView
+                  characterId={selectedEnemy.id}
+                  sessionId={sessionId}
+                  isGM={true}
+                />
+              </>
             )}
           </div>
         </DialogContent>
