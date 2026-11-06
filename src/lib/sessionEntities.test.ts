@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { getCombatStats } from './equipmentUtils';
 import { abilityCd } from '@/domain/abilitySave';
 import { calculateModifier } from '@/domain/attributes';
+import { enemyConditionImmunities, enemySaveBonuses } from '@/domain/enemyBlock';
 import { buildEnemyRow, buildPlayableNpcRow } from './sessionEntities';
 
 const npc = (characterData?: Record<string, unknown>) => ({
@@ -163,5 +164,14 @@ describe('buildEnemyRow', () => {
       conditionImmunities: ['amedrontado'],
       saveBonuses: { for: 7 },
     });
+  });
+
+  it('o que a linha grava é o que o motor lê: imunidade e bônus de TR do bloco', () => {
+    const anakim = buildEnemyRow(
+      { ...enemy, conditionImmunities: ['amedrontado'], saveBonuses: { for: 7, con: 5 } },
+      'u',
+    );
+    expect(enemyConditionImmunities(anakim.stats)).toEqual(['amedrontado']);
+    expect(enemySaveBonuses(anakim.stats)).toEqual({ for: 7, con: 5 });
   });
 });
