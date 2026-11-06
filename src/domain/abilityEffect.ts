@@ -7,11 +7,14 @@ import { CONDITIONS } from '@/content/conditions';
 import type { AbilityEffect } from '@/content/schemas';
 import type { ConditionEntry } from '@/types/combat';
 import { saveAttributeLabel, type SaveAttribute } from './abilitySave';
+import { hasSkillNamed } from './abilityState';
 import { applyConditionResistance } from './armorResistance';
 
 /** O que o efeito lê de um participante do combate para saber se ele é um alvo possível. */
 export interface EffectTargetCandidate {
   entityType: string;
+  /** As Habilidades da ficha do alvo (só o nome importa): de onde sai a passiva exigida. */
+  skills?: unknown;
 }
 
 /** Os alvos possíveis: inimigos para "inimigo(s)", jogadores e NPCs para "aliado(s)", todos para o agressor. */
@@ -19,6 +22,14 @@ export function effectTargetPool<T extends EffectTargetCandidate>(
   effect: AbilityEffect,
   participants: T[],
 ): T[] {
+  const { requiresTargetSkill } = effect;
+  const pool = basePool(effect, participants);
+  return requiresTargetSkill
+    ? pool.filter((p) => hasSkillNamed(p.skills, requiresTargetSkill))
+    : pool;
+}
+
+function basePool<T extends EffectTargetCandidate>(effect: AbilityEffect, participants: T[]): T[] {
   switch (effect.targets) {
     case 'enemy':
     case 'enemies':

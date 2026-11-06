@@ -1,6 +1,6 @@
 # 02: Só Endemoniados como alvo da Repreensão Divina, e aviso quando não há nenhum
 
-Status: ready-for-agent
+Status: done
 Blocked by: 01
 Spec: `.scratch/repreensao-divina/spec.md`
 

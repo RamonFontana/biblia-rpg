@@ -206,3 +206,14 @@ describe('buildAttackTargets', () => {
     ).not.toContain('p4');
   });
 });
+
+describe('buildAttackTargets: passivas do alvo', () => {
+  it('leva as Habilidades do inimigo para o filtro de alvos', () => {
+    const [target] = buildAttackTargets(
+      [{ id: 'p2', entity_id: 'e1', entity_type: 'enemy' }],
+      'p1',
+      [{ id: 'e1', name: 'Legião', totalAc: 12, skills: [{ name: 'Vulnerabilidade Espiritual' }] }],
+    );
+    expect(target.skills).toEqual([{ name: 'Vulnerabilidade Espiritual' }]);
+  });
+});

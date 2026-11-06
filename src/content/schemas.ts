@@ -97,6 +97,8 @@ export const abilityEffectSchema = z
      * lembrete no aviso e no histórico, sem Condição.
      */
     reminder: z.string().min(1).optional(),
+    /** Só é alvo quem tem esta passiva (pelo nome): a Repreensão Divina atinge o Endemoniado. */
+    requiresTargetSkill: z.string().min(1).optional(),
   })
   .refine(
     (effect) =>

@@ -69,3 +69,24 @@ describe('buildCombatEntities', () => {
     expect(entity).toMatchObject({ totalAc: 12, baseAc: 12, bonusAc: 0, resistances: [] });
   });
 });
+
+describe('buildCombatEntities: passivas do inimigo', () => {
+  it('o inimigo expõe só os nomes das Habilidades, sem descrição nem narrativa', () => {
+    const [enemy] = buildCombatEntities({
+      playerCharacters: [],
+      npcs: [],
+      enemies: [
+        fake<SessionCharacter>({
+          id: 'e1',
+          name: 'Legião',
+          stats: { pv: 30 },
+          narrative: { enemy: { presetId: 'x' } },
+          skills: [{ name: 'Vulnerabilidade Espiritual', description: 'segredo do Mestre' }],
+        }),
+      ],
+    });
+    expect(enemy).toMatchObject({ skills: [{ name: 'Vulnerabilidade Espiritual' }] });
+    expect(JSON.stringify(enemy)).not.toContain('segredo do Mestre');
+    expect(enemy).not.toHaveProperty('narrative');
+  });
+});

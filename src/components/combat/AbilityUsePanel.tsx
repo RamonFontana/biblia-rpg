@@ -161,7 +161,11 @@ export function AbilityUsePanel({
             </ul>
           </div>
         ) : targets.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum alvo possível no combate.</p>
+          <p className="text-sm text-muted-foreground">
+            {effect.requiresTargetSkill
+              ? `Nenhum alvo possível: só atinge inimigos com ${effect.requiresTargetSkill}.`
+              : 'Nenhum alvo possível no combate.'}
+          </p>
         ) : (
           <>
             {single ? (

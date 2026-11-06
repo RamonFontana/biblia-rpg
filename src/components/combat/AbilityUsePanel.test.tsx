@@ -79,6 +79,25 @@ describe('AbilityUsePanel: efeito só com lembrete', () => {
     expect(screen.queryByText(/O app aplica/)).toBeNull();
   });
 
+  it('sem alvo possível, diz que só atinge Endemoniados e não deixa usar', () => {
+    setup({
+      ability: {
+        ...base,
+        combatEffect: {
+          targets: 'enemy',
+          save: { attribute: 'car' },
+          requiresTargetSkill: 'Vulnerabilidade Espiritual',
+          reminder: 'foge',
+        },
+      },
+      targets: [],
+    });
+    expect(
+      screen.getByText('Nenhum alvo possível: só atinge inimigos com Vulnerabilidade Espiritual.'),
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Usar Habilidade' })).toBeNull();
+  });
+
   it('depois que o Mestre resolve, quem falhou mostra o lembrete e quem passou, não', async () => {
     const rebuke = {
       ...base,

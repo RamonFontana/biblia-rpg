@@ -2062,6 +2062,7 @@ export const ABILITIES: AbilityDefinition[] = [
     combatEffect: {
       targets: 'enemy',
       save: { attribute: 'car' },
+      requiresTargetSkill: 'Vulnerabilidade Espiritual',
       reminder: 'foge do combate por 1 min (10 rodadas)',
     },
   },
