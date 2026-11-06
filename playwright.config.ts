@@ -23,7 +23,14 @@ export default defineConfig({
     {
       name: 'mobile',
       use: { ...devices['Pixel 7'] },
-      testMatch: ['session.spec.ts', 'ability.spec.ts', 'combat.spec.ts', 'map.spec.ts'],
+      testMatch: [
+        'session.spec.ts',
+        'ability.spec.ts',
+        'combat.spec.ts',
+        'map.spec.ts',
+        'furia.spec.ts',
+        'enemy-presets.spec.ts',
+      ],
     },
   ],
   webServer: {

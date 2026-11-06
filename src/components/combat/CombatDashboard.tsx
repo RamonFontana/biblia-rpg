@@ -4,6 +4,7 @@ import { AttackLog } from './AttackLog';
 import { abilityStateOf } from '@/domain/enemyAbility';
 import { EnemyAbilityPanel } from './EnemyAbilityPanel';
 import { EnemyBlock } from './EnemyBlock';
+import { FuriaDesumanaPrompt } from './FuriaDesumanaPrompt';
 import { describeStrikeOnDying } from '@/domain/attack';
 import { useCombatAttackEvents } from '@/hooks/useCombatAttackEvents';
 import { useCombatStore } from '../../store/combatStore';
@@ -38,6 +39,8 @@ interface CombatDashboardProps {
     narrative?: unknown;
     /** Só do inimigo: as Condições a que o bloco do Preset o faz imune. */
     immuneConditionIds?: string[];
+    /** Só do inimigo: as Habilidades da ficha (a Fúria Desumana pede o TR de CON a 0 PV). */
+    skills?: unknown;
   }[];
 }
 
@@ -280,6 +283,19 @@ export function CombatDashboard({ availableEntities = [], focusId }: CombatDashb
             entityId: p.entity_id,
             entityType: p.entity_type,
             name: nameOf(p.entity_id),
+          }))}
+      />
+
+      <FuriaDesumanaPrompt
+        enemies={participants
+          .filter((p) => p.entity_type === 'enemy')
+          .map((p) => ({
+            participantId: p.id,
+            entityId: p.entity_id,
+            name: nameOf(p.entity_id),
+            hp: p.hp_current,
+            skills: availableEntities.find((e) => e.id === p.entity_id)?.skills,
+            abilityState: p.ability_state,
           }))}
       />
 

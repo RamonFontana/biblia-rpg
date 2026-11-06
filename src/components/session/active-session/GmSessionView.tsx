@@ -163,6 +163,7 @@ export function GmSessionView({
         return {
           ...entity,
           narrative: enemy?.narrative,
+          skills: enemy?.skills,
           immuneConditionIds: enemyConditionImmunities(enemy?.stats),
         };
       }),

@@ -3,6 +3,8 @@
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert } from '@/types/database.types';
 import type { EnemyAbilityEffect } from '@/content/schemas';
+import { mergeAbilityState } from '@/domain/enemyAbility';
+import { withFuriaState, type FuriaState } from '@/domain/furiaDesumana';
 import type { TestMode } from '@/domain/testMode';
 import type { ConditionEntry } from '@/types/combat';
 import type { CharacterSkills } from '@/features/character-creation/types';
@@ -116,14 +118,47 @@ export async function setParticipantConditions(
   }
 }
 
-/** O Mestre grava o estado de uso das Habilidades de um inimigo (usada, em recarga). */
+async function readAbilityState(participantId: string): Promise<unknown> {
+  const { data, error } = await supabase
+    .from('combat_participants')
+    .select('ability_state')
+    .eq('id', participantId)
+    .single();
+  if (error) throw error;
+  return data?.ability_state;
+}
+
+/**
+ * O Mestre grava o estado de uso das Habilidades de um inimigo (usada, em recarga). O que o jsonb
+ * guarda além disso (o estado da Fúria Desumana) fica como está.
+ */
 export async function setEnemyAbilityState(
   participantId: string,
   abilityState: Record<string, 'used' | 'recharging'>,
 ): Promise<void> {
+  const raw = await readAbilityState(participantId);
   const { error } = await supabase
     .from('combat_participants')
-    .update({ ability_state: toJson(abilityState) })
+    .update({ ability_state: toJson(mergeAbilityState(raw, abilityState)) })
+    .eq('id', participantId);
+  if (error) throw error;
+}
+
+/** O Mestre grava o estado da Fúria Desumana do inimigo; o uso das Habilidades fica como está. */
+export async function setEnemyFuriaState(participantId: string, furia: FuriaState): Promise<void> {
+  const raw = await readAbilityState(participantId);
+  const { error } = await supabase
+    .from('combat_participants')
+    .update({ ability_state: toJson(withFuriaState(raw, furia)) })
+    .eq('id', participantId);
+  if (error) throw error;
+}
+
+/** O Mestre põe o PV do participante num valor (a Fúria Desumana o deixa com 1). */
+export async function setParticipantHp(participantId: string, hp: number): Promise<void> {
+  const { error } = await supabase
+    .from('combat_participants')
+    .update({ hp_current: hp })
     .eq('id', participantId);
   if (error) throw error;
 }

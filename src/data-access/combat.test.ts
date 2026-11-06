@@ -34,6 +34,8 @@ import {
   recordAbilityUse,
   resolveAbilityUse,
   setEnemyAbilityState,
+  setEnemyFuriaState,
+  setParticipantHp,
   setParticipantConditions,
   softDeleteCharacters,
   updateCombatTurn,
@@ -191,9 +193,52 @@ describe('gravações do combate', () => {
     expect(filterOf(call, 'eq', 'id')).toBe('p1');
   });
 
+  it('setEnemyAbilityState preserva o estado da Fúria Desumana que já estava gravado', async () => {
+    state.respond = (call) =>
+      call.op === 'select'
+        ? { data: { ability_state: { 'enemy-x': 'used', furia: { uses: 1, handled: false } } } }
+        : undefined;
+    await setEnemyAbilityState('p1', { 'enemy-grito-atormentador': 'recharging' });
+    const [call] = callsOf(state.calls, 'combat_participants', 'update');
+    expect(call.payload).toEqual({
+      ability_state: {
+        furia: { uses: 1, handled: false },
+        'enemy-grito-atormentador': 'recharging',
+      },
+    });
+  });
+
   it('setEnemyAbilityState lança o erro ao gravar', async () => {
-    state.respond = () => ({ error: failure });
+    state.respond = (call) => (call.op === 'update' ? { error: failure } : undefined);
     await expect(setEnemyAbilityState('p1', {})).rejects.toBe(failure);
+  });
+
+  it('setEnemyFuriaState grava a Fúria e preserva o uso das Habilidades', async () => {
+    state.respond = (call) =>
+      call.op === 'select'
+        ? { data: { ability_state: { 'enemy-grito-atormentador': 'recharging' } } }
+        : undefined;
+    await setEnemyFuriaState('p1', { uses: 2, handled: true });
+    const [call] = callsOf(state.calls, 'combat_participants', 'update');
+    expect(call.payload).toEqual({
+      ability_state: {
+        'enemy-grito-atormentador': 'recharging',
+        furia: { uses: 2, handled: true },
+      },
+    });
+  });
+
+  it('setEnemyFuriaState sem estado anterior começa do vazio', async () => {
+    await setEnemyFuriaState('p1', { uses: 0, handled: true });
+    const [call] = callsOf(state.calls, 'combat_participants', 'update');
+    expect(call.payload).toEqual({ ability_state: { furia: { uses: 0, handled: true } } });
+  });
+
+  it('setParticipantHp grava o PV do participante', async () => {
+    await setParticipantHp('p1', 1);
+    const [call] = callsOf(state.calls, 'combat_participants', 'update');
+    expect(call.payload).toEqual({ hp_current: 1 });
+    expect(filterOf(call, 'eq', 'id')).toBe('p1');
   });
 
   it('updateCombatTurn grava turno e rodada', async () => {

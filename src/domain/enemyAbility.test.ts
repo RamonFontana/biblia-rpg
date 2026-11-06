@@ -4,6 +4,7 @@ import type { EnemyAbilityEffect } from '@/content/schemas';
 import { createSeededRng } from './rng';
 import {
   abilityStateOf,
+  mergeAbilityState,
   enemyEffectOfUse,
   abilityStateKey,
   checkFaithDie,
@@ -369,5 +370,21 @@ describe('enemyEffectOfUse: o efeito de um uso gravado', () => {
       enemyEffectOfUse({ ability_id: 'enemy-salto-e-bote', enemy_effect: { lixo: 1 } })?.usage,
     ).toBe('unlimited');
     expect(enemyEffectOfUse({ ability_id: 'enemy-custom', enemy_effect: null })).toBeNull();
+  });
+});
+
+describe('mergeAbilityState', () => {
+  it('troca o mapa de uso e preserva o que o jsonb guardava além dele', () => {
+    expect(
+      mergeAbilityState(
+        { a: 'used', b: 'recharging', furia: { uses: 1, handled: false } },
+        { c: 'recharging' },
+      ),
+    ).toEqual({ furia: { uses: 1, handled: false }, c: 'recharging' });
+  });
+
+  it('sem estado anterior, ou inválido, é só o mapa novo', () => {
+    expect(mergeAbilityState(null, { a: 'used' })).toEqual({ a: 'used' });
+    expect(mergeAbilityState([], { a: 'used' })).toEqual({ a: 'used' });
   });
 });

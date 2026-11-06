@@ -219,6 +219,23 @@ export function abilityStateOf(raw: unknown): EnemyAbilityStateMap {
 }
 
 /**
+ * O `ability_state` a gravar quando o uso das Habilidades muda: o novo mapa de uso mais o que o
+ * jsonb já guardava além dele (o estado da Fúria Desumana), que não pode se perder.
+ */
+export function mergeAbilityState(
+  raw: unknown,
+  state: EnemyAbilityStateMap,
+): Record<string, unknown> {
+  const others =
+    raw && typeof raw === 'object' && !Array.isArray(raw)
+      ? Object.fromEntries(
+          Object.entries(raw).filter(([, value]) => value !== 'used' && value !== 'recharging'),
+        )
+      : {};
+  return { ...others, ...state };
+}
+
+/**
  * O lembrete de um efeito que o app não aplica (a Desvantagem do Grito Atormentador), para quem
  * falhou no TR; `null` sem lembrete ou sem ninguém que falhou.
  */
