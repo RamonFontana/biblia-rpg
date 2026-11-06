@@ -2,6 +2,7 @@
 // ao cair a 0 PV, o Mestre faz um TR de CON contra CD 10, +5 a cada uso no combate; passou, o
 // inimigo fica com 1 PV. O estado (usos e "já tratado este 0 PV") vive no `ability_state` do
 // participante do combate, que nasce zerado a cada combate (ADR 0012).
+import { hasSkillNamed, stateRecord } from './abilityState';
 import { resolveAbilitySave } from './abilitySave';
 import type { MasterMark } from './testMode';
 
@@ -18,32 +19,18 @@ export interface FuriaState {
   handled: boolean;
 }
 
-const normalize = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-
 export function furiaCd(uses: number): number {
   return FURIA_BASE_CD + FURIA_CD_STEP * uses;
 }
 
 /** O inimigo tem a passiva se a lista de Habilidades (o jsonb `skills`) traz a Fúria Desumana. */
 export function hasFuria(skills: unknown): boolean {
-  return (
-    Array.isArray(skills) &&
-    skills.some(
-      (skill) =>
-        typeof skill === 'object' &&
-        skill !== null &&
-        typeof (skill as { name?: unknown }).name === 'string' &&
-        normalize((skill as { name: string }).name) === normalize(FURIA_NAME),
-    )
-  );
+  return hasSkillNamed(skills, FURIA_NAME);
 }
 
 /** Lê o estado da Fúria do `ability_state` (jsonb); sem estado, ou inválido, é o inicial. */
 export function furiaStateOf(raw: unknown): FuriaState {
-  const furia =
-    typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-      ? (raw as Record<string, unknown>)[FURIA_STATE_KEY]
-      : undefined;
+  const furia = stateRecord(raw)[FURIA_STATE_KEY];
   const { uses, handled } = (typeof furia === 'object' && furia !== null ? furia : {}) as Record<
     string,
     unknown
@@ -56,11 +43,7 @@ export function furiaStateOf(raw: unknown): FuriaState {
 
 /** O `ability_state` com o estado da Fúria trocado; o resto (uso das Habilidades) fica como está. */
 export function withFuriaState(raw: unknown, state: FuriaState): Record<string, unknown> {
-  const rest =
-    typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-      ? { ...(raw as Record<string, unknown>) }
-      : {};
-  return { ...rest, [FURIA_STATE_KEY]: state };
+  return { ...stateRecord(raw), [FURIA_STATE_KEY]: state };
 }
 
 /** O pedido de TR de CON: só para o inimigo com a Fúria a 0 PV cujo 0 PV ainda não foi tratado. */
