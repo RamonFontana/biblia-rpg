@@ -2,6 +2,7 @@
 // que o Mestre vê no cartão. Vem do jsonb da ficha (`narrative.enemy`); inimigo do zero ou antigo
 // não tem e devolve `null`. Termos: CONTEXT.md (Inimigo, Preset).
 import { enemyAttackSchema } from '@/content/schemas';
+import type { SaveAttribute } from './abilitySave';
 import type { EnemyAttack } from '@/content/schemas';
 
 export interface EnemyBlockDetails {
@@ -57,4 +58,23 @@ export function describeEnemyAttack(attack: EnemyAttack): string {
   ];
   if (attack.extra) parts.push(attack.extra);
   return parts.join(' · ');
+}
+
+/** As imunidades a Condição que o Preset gravou nos `stats` do inimigo; ficha antiga não tem. */
+export function enemyConditionImmunities(stats: unknown): string[] {
+  const raw = isRecord(stats) ? stats.conditionImmunities : undefined;
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+}
+
+const SAVE_ATTRIBUTES: readonly SaveAttribute[] = ['for', 'des', 'con', 'int', 'sab', 'car'];
+
+/** Os bônus de TR do bloco gravados nos `stats` do inimigo, só os válidos; ficha antiga não tem. */
+export function enemySaveBonuses(stats: unknown): Partial<Record<SaveAttribute, number>> {
+  const raw = isRecord(stats) && isRecord(stats.saveBonuses) ? stats.saveBonuses : {};
+  const bonuses: Partial<Record<SaveAttribute, number>> = {};
+  for (const key of SAVE_ATTRIBUTES) {
+    const value = raw[key];
+    if (typeof value === 'number' && Number.isFinite(value)) bonuses[key] = value;
+  }
+  return bonuses;
 }

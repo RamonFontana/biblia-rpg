@@ -191,9 +191,6 @@ export function EnemyBlockFields({ form }: { form: UseFormReturn<EnemyFormValues
             </label>
           ))}
         </div>
-        <p className="text-xs text-stone-500">
-          O bônus de TR e as imunidades do bloco ainda não alteram os testes; viram regra no motor.
-        </p>
       </Section>
     </div>
   );

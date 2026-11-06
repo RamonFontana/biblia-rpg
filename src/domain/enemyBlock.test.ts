@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { describeEnemyAttack, enemyBlockOf } from './enemyBlock';
+import {
+  describeEnemyAttack,
+  enemyConditionImmunities,
+  enemySaveBonuses,
+  enemyBlockOf,
+} from './enemyBlock';
 
 const claw = {
   name: 'Garra',
@@ -62,5 +67,30 @@ describe('describeEnemyAttack', () => {
         extra: 'Veneno.',
       }),
     ).toBe('+5 para acertar · 1,5m · 1 perfurante · Veneno.');
+  });
+});
+
+describe('regras do bloco que valem no motor (stats da ficha)', () => {
+  it('lê as imunidades a Condição', () => {
+    expect(enemyConditionImmunities({ conditionImmunities: ['amedrontado'] })).toEqual([
+      'amedrontado',
+    ]);
+  });
+
+  it('inimigo antigo, sem o campo ou com lixo, não tem imunidade', () => {
+    expect(enemyConditionImmunities({ pv: 10 })).toEqual([]);
+    expect(enemyConditionImmunities(null)).toEqual([]);
+    expect(enemyConditionImmunities({ conditionImmunities: 'amedrontado' })).toEqual([]);
+    expect(enemyConditionImmunities({ conditionImmunities: ['caido', 3] })).toEqual(['caido']);
+  });
+
+  it('lê os bônus de TR por atributo', () => {
+    expect(enemySaveBonuses({ saveBonuses: { for: 7, con: 5 } })).toEqual({ for: 7, con: 5 });
+  });
+
+  it('sem bônus, ou com valores inválidos, devolve só o que vale', () => {
+    expect(enemySaveBonuses({ pv: 10 })).toEqual({});
+    expect(enemySaveBonuses(undefined)).toEqual({});
+    expect(enemySaveBonuses({ saveBonuses: { for: '7', xyz: 3, sab: 2 } })).toEqual({ sab: 2 });
   });
 });

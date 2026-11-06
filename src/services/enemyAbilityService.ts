@@ -6,7 +6,7 @@ import type { EnemyAbilityEffect } from '@/content/schemas';
 import {
   getCharacterOwners,
   getCharacterStats,
-  getCharactersAttributes,
+  getCharactersSaveSources,
   updateCharacterStats,
 } from '@/data-access/characters';
 import {
@@ -24,6 +24,7 @@ import {
 } from '@/data-access/sessionTests';
 import { abilityUseTargets, resolveAbilityEffect } from '@/domain/abilityEffect';
 import { resolveAbilitySave, saveModifierOf, saveTestType } from '@/domain/abilitySave';
+import { enemySaveBonuses } from '@/domain/enemyBlock';
 import {
   abilityStateKey,
   checkFaithDie,
@@ -193,8 +194,8 @@ export async function resolveEnemyAbilityUse(input: {
     const p = entityOf(t.participantId);
     return p && p.entity_type !== 'player' ? [p.entity_id] : [];
   });
-  const attributes = await getCharactersAttributes(npcIds).catch(
-    () => ({}) as Record<string, unknown>,
+  const sources = await getCharactersSaveSources(npcIds).catch(
+    () => ({}) as Awaited<ReturnType<typeof getCharactersSaveSources>>,
   );
 
   const results: EnemySaveResult[] = [];
@@ -227,7 +228,11 @@ export async function resolveEnemyAbilityUse(input: {
       const save = resolveAbilitySave({
         dice: [roll.natural],
         mark: roll.mark,
-        modifier: saveModifierOf(attributes[participant.entity_id], effect.save.attribute),
+        modifier: saveModifierOf(
+          sources[participant.entity_id]?.attributes,
+          effect.save.attribute,
+          enemySaveBonuses(sources[participant.entity_id]?.stats),
+        ),
         cd: effect.save.cd,
       });
       results.push({

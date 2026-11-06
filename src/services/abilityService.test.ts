@@ -146,9 +146,37 @@ describe('submitAbilityUse: proteção do alvo', () => {
   });
   const withTarget = { ...base, targets: [ally] };
 
-  it('o inimigo não tem ficha nem proteção: não lê nada', async () => {
+  const enemyRow = (stats: unknown) => ({ id: 'e1', attributes: { sab: 10 }, stats });
+  const respondEnemy = (stats: unknown) => (call: { table: string; op: string }) =>
+    call.table === 'characters' && call.op === 'select'
+      ? { data: [enemyRow(stats)] }
+      : { data: 'use-1' };
+
+  it('o inimigo de ficha antiga, sem o bloco do Preset, recebe a Condição como hoje', async () => {
+    state.respond = respondEnemy({ pv: 10, ca: 14 });
     await submitAbilityUse(base);
-    expect(callsOf(state.calls, 'characters', 'select')).toEqual([]);
+    expect(sent()).toMatchObject({
+      p_targets: [
+        { participantId: 'p2', conditions: [{ conditionId: 'paralisado', duration: 1 }] },
+      ],
+    });
+  });
+
+  it('a imunidade do bloco do inimigo anula a Condição e avisa, como no personagem', async () => {
+    state.respond = respondEnemy({ conditionImmunities: ['paralisado'] });
+    const outcome = await submitAbilityUse(base);
+    expect(sent()).toMatchObject({ p_targets: [{ participantId: 'p2', conditions: [] }] });
+    expect(outcome.results[0].messages).toEqual(['Imunidade: imune a Paralisado']);
+  });
+
+  it('a imunidade a outra Condição não protege desta', async () => {
+    state.respond = respondEnemy({ conditionImmunities: ['amedrontado'] });
+    await submitAbilityUse(base);
+    expect(sent()).toMatchObject({
+      p_targets: [
+        { participantId: 'p2', conditions: [{ conditionId: 'paralisado', duration: 1 }] },
+      ],
+    });
   });
 
   it('a imunidade de Habilidade passiva do alvo anula a Condição e avisa', async () => {
@@ -323,6 +351,43 @@ describe('resolveAbilityUseRolls', () => {
     });
     // e2 tem SAB 14 (+2): 11 + 2 = 13, alcança a CD 13.
     expect(resolved().p_results.map((r) => r.failed)).toEqual([false, false]);
+  });
+
+  it('o bônus de TR do bloco do inimigo vale no lugar do modificador (Anakim: For +7)', async () => {
+    // O alvo e1 tem SAB 10 (+0), mas o bloco dá SAB +5: 8 + 5 = 13 alcança a CD 13.
+    state.respond = (call) =>
+      call.table === 'characters'
+        ? {
+            data: [
+              { id: 'e1', attributes: { sab: 10 }, stats: { saveBonuses: { sab: 5 } } },
+              { id: 'e2', attributes: { sab: 14 } },
+            ],
+          }
+        : { data: 'resolved' };
+    await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 8, mark: null },
+        { participantId: 'p3', natural: 8, mark: null },
+      ],
+    });
+    expect(resolved().p_results.map((r) => [r.total, r.failed])).toEqual([
+      [13, false],
+      [10, true],
+    ]);
+  });
+
+  it('sem bônus de TR no bloco, o inimigo usa o modificador', async () => {
+    await resolveAbilityUseRolls({
+      use: pendingUse,
+      participants,
+      rolls: [
+        { participantId: 'p2', natural: 8, mark: null },
+        { participantId: 'p3', natural: 8, mark: null },
+      ],
+    });
+    expect(resolved().p_results.map((r) => r.total)).toEqual([8, 10]);
   });
 
   it('a marca do Mestre fica gravada como a modalidade do alvo', async () => {
