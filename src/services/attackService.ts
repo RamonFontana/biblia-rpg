@@ -1,11 +1,9 @@
 import { protectionOf } from './abilityService';
 import { markInspirationUsed } from '@/data-access/characters';
-import { getCharacterResistanceSource } from '@/data-access/characters';
 import { applyAttack } from '@/data-access/combat';
 import { consumeAmmo } from '@/data-access/inventory';
 import { resolveWeaponEffect, weaponEffectTriggers, type AttackResult } from '@/domain/attack';
-import { getConditionResistanceLevels, resolveEquippedItems } from '@/domain/armorResistance';
-import type { CharacterEquipment, ConditionEntry, WeaponEffect } from '@/types/combat';
+import type { ConditionEntry, WeaponEffect } from '@/types/combat';
 import type { TestMode } from '@/domain/testMode';
 
 export interface AttackSubmission {
@@ -35,22 +33,6 @@ export interface AttackOutcome {
   messages: string[];
 }
 
-/** O nível de Resistência a Condição do alvo, por Condição; o inimigo não tem itens. */
-async function resistanceLevelsOf(entityId: string, entityType: string) {
-  if (entityType === 'enemy') return {};
-  const source = await getCharacterResistanceSource(entityId).catch(() => null);
-  if (!source) return {};
-  return getConditionResistanceLevels(
-    resolveEquippedItems(source.equipment as unknown as CharacterEquipment, source.character_items),
-  );
-}
-
-/** As Condições a que o alvo é imune pelo bloco do Preset; só o inimigo tem (ADR 0012). */
-async function blockImmunitiesOf(entityId: string, entityType: string) {
-  if (entityType !== 'enemy') return [];
-  return (await protectionOf(entityId, entityType)).immuneConditionIds;
-}
-
 /**
  * Manda o ataque à função do banco (ADR 0005); devolve o id do registro. A Inspiração só é marcada
  * na ficha depois que o ataque foi registrado; se marcar falhar, o ataque fica (o pior caso é a
@@ -63,10 +45,12 @@ export async function submitAttack(attack: AttackSubmission): Promise<AttackOutc
   const messages: string[] = [];
   if (triggered && attack.weaponEffect) {
     const { entityId, entityType } = attack.weaponEffect.target;
+    // Resistência a Condição dos itens e imunidade (passiva do personagem ou bloco do inimigo).
+    const protection = await protectionOf(entityId, entityType);
     const resolved = resolveWeaponEffect(
       effects,
-      await resistanceLevelsOf(entityId, entityType),
-      await blockImmunitiesOf(entityId, entityType),
+      protection.resistanceLevels,
+      protection.immuneConditionIds,
     );
     weaponConditions = resolved.conditions;
     messages.push(...resolved.messages);
