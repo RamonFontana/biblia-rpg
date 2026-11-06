@@ -26,7 +26,12 @@ import {
 import { characterVitalsService } from '@/data-access/vitals';
 import { subscribeToTables } from '@/data-access/realtime';
 import { uniqueChannelName } from '@/lib/channelName';
-import { abilityUseTargets, describeAbilityUse, describePendingUse } from '@/domain/abilityEffect';
+import {
+  abilityReminderOf,
+  abilityUseTargets,
+  describeAbilityUse,
+  describePendingUse,
+} from '@/domain/abilityEffect';
 import type { SaveAttribute } from '@/domain/abilitySave';
 import { describeAttack, describeWeaponEffect } from '@/domain/attack';
 import type { ConditionEntry } from '../types/combat';
@@ -52,6 +57,7 @@ function toastAbilityUse(use: CombatAbilityUse) {
       : describeAbilityUse({
           userName: use.user_name,
           abilityName: use.ability_name,
+          reminder: abilityReminderOf(use.ability_id),
           targets: abilityUseTargets(use.targets),
         });
   window.dispatchEvent(new CustomEvent('combat-toast', { detail: { message } }));

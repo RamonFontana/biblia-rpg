@@ -217,6 +217,22 @@ describe('descrição do uso', () => {
     ).toBe('Eliabe usou X: A ficou Cego e Caído; B ficou Cego.');
   });
 
+  it('quem falhou no TR de um efeito com lembrete mostra o lembrete, e quem passou, não', () => {
+    expect(
+      describeAbilityUse({
+        userName: 'Eliabe',
+        abilityName: 'Repreensão Divina',
+        reminder: 'foge do combate por 1 min (10 rodadas)',
+        targets: [
+          { name: 'Legião', conditionIds: [], failed: true },
+          { name: 'Gadareno', conditionIds: [], failed: false },
+        ],
+      }),
+    ).toBe(
+      'Eliabe usou Repreensão Divina: Legião falhou no TR: foge do combate por 1 min (10 rodadas); Gadareno passou no TR.',
+    );
+  });
+
   it('o alvo que ficou sem Condição resistiu', () => {
     expect(
       describeAbilityUse({

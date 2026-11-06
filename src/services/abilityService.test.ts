@@ -555,3 +555,121 @@ describe('submitAbilityUse: Habilidade que remove Condição', () => {
     );
   });
 });
+
+describe('Repreensão Divina: TR de Carisma e lembrete de fuga', () => {
+  const rebuke: AbilityDefinition = {
+    id: 'vocation-sacerdote-2-repreensao-divi',
+    name: 'Repreensão Divina',
+    sourceType: 'vocation',
+    sourceId: 'sacerdote',
+    minLevel: 2,
+    actionType: 'action',
+    usageType: 'short_rest',
+    maxUses: 1,
+    faithCost: 8,
+    effect: 'Endemoniado faz TR CAR ou foge do combate por 1 min.',
+    combatEffect: {
+      targets: 'enemy',
+      save: { attribute: 'car' },
+      reminder: 'foge do combate por 1 min (10 rodadas)',
+    },
+  };
+  const priest = {
+    id: 'char-1',
+    skills: {},
+    stats: { current_faith: 40 },
+    vocation: 'Sacerdote/Sábio',
+    level: 2,
+    attributes: { sab: 16 },
+  };
+
+  it('pede o TR de CAR com a CD 8 + Proficiência + SAB, gasta 8 de Fé e não manda Condição', async () => {
+    const outcome = await submitAbilityUse({ ...base, ability: rebuke, character: priest });
+    expect(sent()).toMatchObject({
+      p_targets: [{ participantId: 'p2', conditions: [] }],
+      p_save: { attribute: 'car', cd: 13 },
+    });
+    expect(outcome.pending).toEqual({ cd: 13, attribute: 'car' });
+    expect(charUpdates()[0].payload).toMatchObject({
+      stats: { current_faith: 32 },
+      skills: { ability_uses: { 'vocation-sacerdote-2-repreensao-divi': 1 } },
+    });
+  });
+
+  describe('resolução', () => {
+    const pendingUse = {
+      id: 'use-7',
+      ability_id: 'vocation-sacerdote-2-repreensao-divi',
+      cd: 13,
+      targets: [
+        { participantId: 'p2', name: 'Legião', conditions: [] },
+        { participantId: 'p3', name: 'Gadareno', conditions: [] },
+      ],
+    };
+    const participants = [
+      { id: 'p2', entity_id: 'e1', entity_type: 'enemy' as const },
+      { id: 'p3', entity_id: 'e2', entity_type: 'enemy' as const },
+    ];
+    beforeEach(() => {
+      state.respond = (call) =>
+        call.table === 'characters'
+          ? {
+              data: [
+                { id: 'e1', attributes: { car: 10 }, stats: {} },
+                // O bônus fixo do bloco vale no lugar do modificador (CAR +6).
+                { id: 'e2', attributes: { car: 10 }, stats: { saveBonuses: { car: 6 } } },
+              ],
+            }
+          : { data: 'resolved' };
+    });
+
+    it('quem falha volta como falhou, sem Condição; quem passa, como passou; o resultado traz o lembrete', async () => {
+      const outcome = await resolveAbilityUseRolls({
+        use: pendingUse,
+        participants,
+        rolls: [
+          { participantId: 'p2', natural: 12, mark: null },
+          { participantId: 'p3', natural: 8, mark: null },
+        ],
+      });
+      const results = (
+        callsOf(state.calls, 'resolve_ability_use', 'rpc')[0].payload as {
+          p_results: Record<string, unknown>[];
+        }
+      ).p_results;
+      expect(results).toEqual([
+        {
+          participantId: 'p2',
+          natural: 12,
+          total: 12,
+          failed: true,
+          mode: 'normal',
+          conditions: [],
+        },
+        {
+          participantId: 'p3',
+          natural: 8,
+          total: 14,
+          failed: false,
+          mode: 'normal',
+          conditions: [],
+        },
+      ]);
+      expect(outcome.failureReminder).toBe(
+        'Lembrete (Legião): foge do combate por 1 min (10 rodadas)',
+      );
+    });
+
+    it('se todos passam, não há lembrete', async () => {
+      const outcome = await resolveAbilityUseRolls({
+        use: pendingUse,
+        participants,
+        rolls: [
+          { participantId: 'p2', natural: 20, mark: null },
+          { participantId: 'p3', natural: 20, mark: null },
+        ],
+      });
+      expect(outcome.failureReminder).toBeNull();
+    });
+  });
+});

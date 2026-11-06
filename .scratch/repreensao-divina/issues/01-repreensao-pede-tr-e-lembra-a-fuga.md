@@ -1,6 +1,6 @@
 # 01: Repreensão Divina pede o TR de Carisma e o Mestre vê o lembrete de fuga
 
-Status: ready-for-agent
+Status: done
 Blocked by: None (can start immediately)
 Spec: `.scratch/repreensao-divina/spec.md`
 

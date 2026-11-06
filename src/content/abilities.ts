@@ -2059,6 +2059,11 @@ export const ABILITIES: AbilityDefinition[] = [
     maxUses: 1,
     faithCost: 8,
     effect: 'Endemoniado faz TR CAR ou foge do combate por 1 min.',
+    combatEffect: {
+      targets: 'enemy',
+      save: { attribute: 'car' },
+      reminder: 'foge do combate por 1 min (10 rodadas)',
+    },
   },
   {
     id: 'vocation-sacerdote-6-purificacao',

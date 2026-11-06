@@ -175,3 +175,30 @@ describe('Habilidades que removem Condição', () => {
     expect(cataplasma?.effect).toMatch(/Cura/);
   });
 });
+
+describe('efeito de Habilidade: lembrete de quem falha (Repreensão Divina)', () => {
+  const base = ABILITIES[0];
+  const parse = (combatEffect: unknown) => abilitySchema.safeParse({ ...base, combatEffect });
+
+  it('aceita um efeito só com TR e lembrete, sem Condição', () => {
+    expect(
+      parse({ targets: 'enemy', save: { attribute: 'car' }, reminder: 'foge por 1 min' }).success,
+    ).toBe(true);
+  });
+
+  it('o lembrete só vale com TR', () => {
+    expect(parse({ targets: 'enemy', reminder: 'foge por 1 min' }).success).toBe(false);
+  });
+
+  it('o efeito precisa aplicar, tirar Condição ou lembrar', () => {
+    expect(parse({ targets: 'enemy', save: { attribute: 'car' } }).success).toBe(false);
+  });
+
+  it('Repreensão Divina pede o TR de Carisma de um inimigo e lembra a fuga', () => {
+    expect(byId('vocation-sacerdote-2-repreensao-divi')?.combatEffect).toEqual({
+      targets: 'enemy',
+      save: { attribute: 'car' },
+      reminder: 'foge do combate por 1 min (10 rodadas)',
+    });
+  });
+});
