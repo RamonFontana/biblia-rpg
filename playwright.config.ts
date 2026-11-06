@@ -30,6 +30,7 @@ export default defineConfig({
         'map.spec.ts',
         'furia.spec.ts',
         'enemy-presets.spec.ts',
+        'furtivo.spec.ts',
       ],
     },
   ],

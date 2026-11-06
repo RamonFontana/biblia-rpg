@@ -709,7 +709,22 @@ O Bestiário (`docs/bestiario/`, 10 inimigos e o Template Endemoniado) vira cont
 
 **Dívida:** `src/data/npcPresets.json` segue fora do gate de dados.
 
-**Fatias:** 0 `CreateEnemyDialog` usa `buildEnemyRow` (um caminho só); 1 esquema, 10 Presets e teste dos docs; 2 Bloco no cartão e editor de ataques; 3 quantidade e numeração; 4 imunidade e bônus de TR; 5 Template Endemoniado; 6 Fúria Desumana; 7 lembrete do Ataque Furtivo.
+**Implementado (2026-11-06):** os 9 tickets de `.scratch/presets-de-inimigo/` (e o extra 10, imunidade em efeito de arma e Condição manual), com E2E de criação com Preset, Fúria Desumana e Ataque Furtivo (desktop e Pixel 7).
+
+**Decisões de regra a confirmar pelo autor (o código fez a escolha mais simples):**
+- Uma falha no TR da Fúria Desumana não consome um uso (só o TR que passa sobe a CD). O doc diz "a cada uso" sem definir.
+- O Template Endemoniado não sobe `saveBonuses`: General e Anakim ficam com o TR fixo do bloco depois do Template, mesmo com FOR e CON +4.
+- A imunidade passiva de jogador (Resistência a Condição) ainda não vale em efeito de arma; só a do inimigo.
+
+**Dívida técnica da feature:**
+- `ability_state` é gravado por leitura, mescla e escrita (`setEnemyAbilityState`, `setEnemyFuriaState`, `setEnemyFurtivoUsed`): seguro com um só Mestre; com dois clientes do Mestre, uma gravação pode apagar a outra. Resolver pede uma função no banco (migration com RLS).
+- `resolveFuriaSave` grava o PV e depois o estado; se a segunda gravação falhar, o inimigo fica de pé sem o uso contado.
+- O Ataque Furtivo trava pela rodada do combate, não pelo turno: se o Mestre mudar a ordem ou incluir participantes no meio da rodada, o inimigo pode ter um segundo turno na mesma rodada com o botão ainda travado.
+- "Só para o Mestre" no lembrete vale porque o `CombatDashboard` só é montado na visão do Mestre; não há checagem de papel nem teste que trave isso.
+- O texto "Imunidade: imune a X" está duplicado em 3 lugares; `UnifiedEnemyForm.tsx` está grande (extrair um hook); tipo e contexto do Preset não aparecem em "Detalhes".
+- Falta a conferência visual manual no celular e na web (só E2E).
+
+**Fatias:** 0 `CreateEnemyDialog` usa `buildEnemyRow` (um caminho só); 1 esquema, 10 Presets e teste dos docs; 2 Bloco no cartão e editor de ataques; 3 quantidade e numeração; 4 imunidade e bônus de TR; 5 Template Endemoniado; 6 Fúria Desumana; 7 lembrete do Ataque Furtivo (feita).
 
 ## 6. O que VOCÊ precisa fazer fora do código
 1. Rodar `/setup-matt-pocock-skills` no passo 12 da Onda 1.
