@@ -157,17 +157,15 @@ export function GmSessionView({
   // O Bloco do Preset só vai para a visão do Mestre: o resto do app não recebe a narrativa do inimigo.
   const dashboardEntities = useMemo(
     () =>
-      availableEntities.map((entity) =>
-        entity.type === 'enemy'
-          ? {
-              ...entity,
-              narrative: enemies.find((e) => e.id === entity.id)?.narrative,
-              immuneConditionIds: enemyConditionImmunities(
-                enemies.find((e) => e.id === entity.id)?.stats,
-              ),
-            }
-          : entity,
-      ),
+      availableEntities.map((entity) => {
+        if (entity.type !== 'enemy') return entity;
+        const enemy = enemies.find((e) => e.id === entity.id);
+        return {
+          ...entity,
+          narrative: enemy?.narrative,
+          immuneConditionIds: enemyConditionImmunities(enemy?.stats),
+        };
+      }),
     [availableEntities, enemies],
   );
 
